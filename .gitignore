@@ -4,7 +4,7 @@
 .idea
 .DS_Store
 .env
-
+config.yaml
 pnpm.lock
 node_modules
 
