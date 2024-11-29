@@ -10,7 +10,7 @@ import (
 	"runtime"
 )
 
-var ProjectRootPath = ConfigsDirPath() + "/../../../"
+var ProjectRootPath = ConfigsDirPath() + "/../"
 
 type Env int
 
