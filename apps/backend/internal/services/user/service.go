@@ -71,3 +71,13 @@ func (u *UserService) GetUsers() (*[]models.User, error) {
 
 	return users, nil
 }
+
+func (u *UserService) GetUserByUserName(username string) (*models.User, error) {
+
+	user, err := u.repo.GetUserByUserName(username)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}

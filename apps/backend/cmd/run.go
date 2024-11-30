@@ -6,6 +6,7 @@ import (
 	"github.com/skylogsio/skylogs/configs"
 	"github.com/skylogsio/skylogs/handlers/http"
 	"github.com/skylogsio/skylogs/internal/services/auth"
+	"github.com/skylogsio/skylogs/internal/services/endpoint"
 	"github.com/skylogsio/skylogs/internal/services/user"
 	"github.com/skylogsio/skylogs/storage/mongo"
 
@@ -47,9 +48,15 @@ func runCmdE(cmd *cobra.Command, args []string) error {
 		auth.WithRepository(mongoClient),
 	)
 
+	endpointService, err := endpoint.New(
+		endpoint.WithRedis(r),
+		endpoint.WithRepository(mongoClient),
+	)
+
 	httpServices := http.New(
 		userService,
 		authService,
+		endpointService,
 	)
 
 	err = httpServices.Launch()

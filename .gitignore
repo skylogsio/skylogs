@@ -1,4 +1,6 @@
 /apps/backend/main.exe
+/apps/backend/skylogs.exe
+Test.http
 .vscode
 *.http
 .idea

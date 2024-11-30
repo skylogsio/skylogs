@@ -49,9 +49,10 @@ func (u *AuthService) JwtSecret() []byte {
 	return []byte(configs.Configs.Auth.SecretKey)
 }
 
-func (u *AuthService) generateJWT(username string, duration time.Duration) (string, error) {
+func (u *AuthService) generateJWT(user *models.User, duration time.Duration) (string, error) {
 	claims := jwt.MapClaims{
-		"username": username,
+		"id":       user.ID.Hex(),
+		"username": user.Username,
 		"exp":      time.Now().Add(duration).Unix(), // Token expires in 72 hours
 	}
 
@@ -88,13 +89,13 @@ func (u *AuthService) Login(m *models.User) (string, string, error) {
 		return "", "", err
 	}
 
-	token, err := u.generateJWT(m.Username, time.Hour)
+	token, err := u.generateJWT(m, time.Hour)
 
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, err := u.generateJWT(m.Username, 24*time.Hour)
+	refreshToken, err := u.generateJWT(m, 24*time.Hour)
 	if err != nil {
 		return "", "", err
 	}
@@ -102,15 +103,15 @@ func (u *AuthService) Login(m *models.User) (string, string, error) {
 	return token, refreshToken, nil
 }
 
-func (u *AuthService) Refresh(username string) (string, string, error) {
+func (u *AuthService) Refresh(user *models.User) (string, string, error) {
 
-	token, err := u.generateJWT(username, time.Hour)
+	token, err := u.generateJWT(user, time.Hour)
 
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, err := u.generateJWT(username, 24*time.Hour)
+	refreshToken, err := u.generateJWT(user, 24*time.Hour)
 	if err != nil {
 		return "", "", err
 	}

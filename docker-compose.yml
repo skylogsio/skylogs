@@ -4,7 +4,7 @@ services:
   back:
     build:
       context: infra/docker
-      dockerfile: Dockerfile
+      dockerfile: apps/backend/Dockerfile
     ports:
       - "8080:8080"
     environment:
