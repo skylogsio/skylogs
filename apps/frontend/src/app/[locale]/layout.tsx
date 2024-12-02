@@ -38,7 +38,6 @@ export default async function RootLayout({
   params: { locale }
 }: PropsWithChildren<{ params: { locale: string } }>) {
   const dir = await getCurrentDirection();
-  console.log(dir);
   return (
     <html lang={locale} dir={dir}>
       <body className={dir === "ltr" ? inter.className : vazir.className}>
