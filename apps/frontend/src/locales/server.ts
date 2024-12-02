@@ -11,3 +11,16 @@ export async function getCurrentDirection() {
   const { direction } = new Locale(locale).textInfo;
   return direction;
 }
+
+export async function getAcceptLanguage() {
+  const language = await getCurrentLocale();
+  switch (language) {
+    case "fa":
+      return "fa-IR";
+    case "en":
+      return "en-US";
+
+    default:
+      return "en-US";
+  }
+}
