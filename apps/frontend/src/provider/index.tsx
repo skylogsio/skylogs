@@ -1,5 +1,6 @@
 import { type PropsWithChildren } from "react";
 
+// eslint-disable-next-line import/order
 import { I18nProviderClient } from "@/locales/client";
 
 import MuiProvider from "./MuiProvider";

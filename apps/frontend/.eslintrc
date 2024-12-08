@@ -24,7 +24,7 @@
     "import/order": [
       "error",
       {
-        "groups": ["builtin", "external", "internal", "parent", "sibling", "index"],
+        "groups": ["builtin", "external", "internal", "index", "parent", "sibling"],
         "pathGroups": [
           {
             "pattern": "next/**",
@@ -54,7 +54,7 @@
     "no-use-before-define": ["warn", { "variables": true, "functions": true }],
     "eqeqeq": "error",
     "no-duplicate-imports": "error",
-
+    "import/no-unresolved": "off",
     "newline-per-chained-call": "warn",
     "no-confusing-arrow": "off",
     "no-console": "off",
