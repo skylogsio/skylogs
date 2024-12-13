@@ -24,7 +24,7 @@
     "import/order": [
       "error",
       {
-        "groups": ["builtin", "external", "internal", "index", "parent", "sibling"],
+        "groups": ["builtin", "external", "internal", ["sibling", "parent"], "index", "object"],
         "pathGroups": [
           {
             "pattern": "next/**",
@@ -37,6 +37,10 @@
           {
             "pattern": "next",
             "group": "builtin"
+          },
+          {
+            "pattern": "@/**",
+            "group": "internal"
           }
         ],
         "pathGroupsExcludedImportTypes": ["react", "next"],
