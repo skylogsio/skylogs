@@ -1,3 +1,5 @@
+import { type MouseEventHandler } from "react";
+
 import { type ColumnDef } from "@tanstack/react-table";
 
 // Define the props for the TableComponent
@@ -11,4 +13,5 @@ export interface TableComponentProps<T> extends SearchBoxProps {
   defaultPage: number;
   defaultPageSize: number;
   rowsPerPageOptions?: Array<number>;
+  onCreate?: MouseEventHandler<HTMLButtonElement> | undefined;
 }

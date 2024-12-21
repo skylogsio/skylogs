@@ -43,7 +43,8 @@ export default function Table<T>({
   hasCheckbox,
   defaultPage = 0,
   defaultPageSize,
-  rowsPerPageOptions = [10, 25, 50, 100]
+  rowsPerPageOptions = [10, 25, 50, 100],
+  onCreate
 }: TableComponentProps<T>) {
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: defaultPage,
@@ -142,14 +143,17 @@ export default function Table<T>({
           >
             {t("filterButton")}
           </Button>
-          <Button
-            startIcon={<HiOutlinePlusSm size="1.3rem" />}
-            size="small"
-            variant="contained"
-            sx={{ paddingRight: "1rem" }}
-          >
-            {t("createButton")}
-          </Button>
+          {onCreate && (
+            <Button
+              startIcon={<HiOutlinePlusSm size="1.3rem" />}
+              onClick={onCreate}
+              size="small"
+              variant="contained"
+              sx={{ paddingRight: "1rem" }}
+            >
+              {t("createButton")}
+            </Button>
+          )}
         </Stack>
       </Box>
       <Box
