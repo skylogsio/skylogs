@@ -26,6 +26,7 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
           MuiTextField: {
             styleOverrides: {
               root: {
+                width: "100%",
                 "& .MuiInputBase-root": {
                   borderRadius: "0.55rem",
                   backgroundColor: "#F1F4F9",
@@ -44,6 +45,26 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
                   disableUnderline: true
                 }
               }
+            }
+          },
+          MuiSelect: {
+            styleOverrides: {
+              root: {
+                width: "100%",
+                "&.MuiInputBase-root": {
+                  borderRadius: "0.55rem",
+                  backgroundColor: "#F1F4F9",
+                  "&:hover": {
+                    backgroundColor: "#E8EFFA"
+                  },
+                  "&.Mui-focused": {
+                    backgroundColor: "#E8EFFA"
+                  }
+                }
+              }
+            },
+            defaultProps: {
+              disableUnderline: true
             }
           },
           MuiButton: {

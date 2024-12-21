@@ -38,7 +38,9 @@ export default function Wrapper({ children }: PropsWithChildren) {
       <Box display="flex" flexDirection="column" flex={1} height="100%">
         <TopBar />
         <Box component="main" height="90%">
-          {children}
+          <Box width="100%" height="100%" padding="1.7rem">
+            {children}
+          </Box>
         </Box>
       </Box>
     </Box>
