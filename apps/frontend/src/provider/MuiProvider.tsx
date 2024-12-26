@@ -2,13 +2,15 @@
 
 import { useMemo, type PropsWithChildren } from "react";
 
+import { alpha, inputBaseClasses } from "@mui/material";
+import { grey } from "@mui/material/colors";
 import { extendTheme, ThemeProvider } from "@mui/material/styles";
 
 export default function MuiProvider({ children }: PropsWithChildren<object>) {
   /*
-    info: Read the below documnet to create new theme
-    @link: https://mui.com/material-ui/experimental-api/css-theme-variables/customization/
-  */
+                    info: Read the below document to create new theme
+                    @link: https://mui.com/material-ui/experimental-api/css-theme-variables/customization/
+                  */
   const theme = useMemo(
     () =>
       extendTheme({
@@ -27,14 +29,18 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
             styleOverrides: {
               root: {
                 width: "100%",
-                "& .MuiInputBase-root": {
+                [`& .${inputBaseClasses.root}`]: {
                   borderRadius: "0.55rem",
                   backgroundColor: "#F1F4F9",
                   "&:hover": {
                     backgroundColor: "#E8EFFA"
                   },
-                  "&.Mui-focused": {
+                  [`&.${inputBaseClasses.focused}`]: {
                     backgroundColor: "#E8EFFA"
+                  },
+                  [`&.${inputBaseClasses.disabled}`]: {
+                    backgroundColor: `${alpha(grey[600], 0.1)}!important`,
+                    color: grey[600]
                   }
                 }
               }
@@ -51,14 +57,18 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
             styleOverrides: {
               root: {
                 width: "100%",
-                "&.MuiInputBase-root": {
+                [`& .${inputBaseClasses.root}`]: {
                   borderRadius: "0.55rem",
                   backgroundColor: "#F1F4F9",
                   "&:hover": {
                     backgroundColor: "#E8EFFA"
                   },
-                  "&.Mui-focused": {
+                  [`&.${inputBaseClasses.focused}`]: {
                     backgroundColor: "#E8EFFA"
+                  },
+                  [`&.${inputBaseClasses.disabled}`]: {
+                    backgroundColor: `${alpha(grey[600], 0.1)}!important`,
+                    color: grey[600]
                   }
                 }
               }
