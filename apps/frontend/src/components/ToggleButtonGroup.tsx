@@ -14,7 +14,11 @@ const ToggleButtonGroup = styled(MuiToggleButtonGroup)(({ theme: { palette } }) 
       borderRadius: "0.5rem",
       [`&.${toggleButtonGroupClasses.selected}`]: {
         backgroundColor: alpha(palette.primary.main, 0.11),
-        color: palette.primary.main
+        color: palette.primary.main,
+        [`&.${toggleButtonGroupClasses.disabled}`]: {
+          color: palette.grey[600],
+          backgroundColor: alpha(palette.grey[600], 0.1)
+        }
       }
     }
   }
