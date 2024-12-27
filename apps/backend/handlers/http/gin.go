@@ -39,11 +39,11 @@ func (s *Services) Launch() error {
 
 	paginator := pagination.New(
 		pagination.WithPageText("page"),
-		pagination.WithSizeText("rowsPerPage"),
+		pagination.WithSizeText("perPage"),
 		pagination.WithDefaultPage(1),
-		pagination.WithDefaultPageSize(15),
+		pagination.WithDefaultPageSize(25),
 		pagination.WithMinPageSize(5),
-		pagination.WithMaxPageSize(15),
+		pagination.WithMaxPageSize(100),
 	)
 
 	s.engine.POST("/api/v1/user", s.CreateUser)
@@ -83,7 +83,7 @@ func PaginationMiddleware() gin.HandlerFunc {
 
 		pageConfigs := util_models.Pagination{
 			Page:     int64(c.GetInt("page")),
-			PageSize: int64(c.GetInt("rowsPerPage")),
+			PageSize: int64(c.GetInt("perPage")),
 			SortBy:   sortBy,
 			SortType: sortType,
 		}
