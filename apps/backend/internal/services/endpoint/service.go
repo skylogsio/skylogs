@@ -4,6 +4,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/skylogsio/skylogs/internal/models"
 	"github.com/skylogsio/skylogs/internal/repository"
+	"github.com/skylogsio/skylogs/internal/util_models"
 )
 
 type EndpointService struct {
@@ -49,12 +50,12 @@ func (u *EndpointService) CreateEndpoint(m *models.Endpoint) error {
 	return nil
 }
 
-func (u *EndpointService) GetEndpoints() (*[]models.Endpoint, error) {
+func (u *EndpointService) GetEndpoints(pageConfigs *util_models.Pagination) (*util_models.ResultIndex, error) {
 
-	users, err := u.repo.GetEndpoints()
+	result, err := u.repo.GetEndpoints(pageConfigs)
 	if err != nil {
 		return nil, err
 	}
 
-	return users, nil
+	return result, nil
 }
