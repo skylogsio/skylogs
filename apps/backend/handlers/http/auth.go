@@ -9,14 +9,13 @@ import (
 )
 
 func (s *Services) Login(c *gin.Context) {
-	var userModel models.User
+	var userModel models.Auth
 
 	// Bind JSON payload to the User struct
 	if err := c.ShouldBindJSON(&userModel); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
-
 	token, refreshToken, err := s.AuthService.Login(&userModel)
 
 	if err != nil {
