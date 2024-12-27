@@ -4,6 +4,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/skylogsio/skylogs/internal/models"
 	"github.com/skylogsio/skylogs/internal/repository"
+	"github.com/skylogsio/skylogs/internal/util_models"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -62,14 +63,14 @@ func (u *UserService) CreateUser(m *models.User) error {
 	return nil
 }
 
-func (u *UserService) GetUsers() (*[]models.User, error) {
+func (u *UserService) GetUsers(pageConfigs *util_models.Pagination) (*util_models.ResultIndex, error) {
 
-	users, err := u.repo.GetUsers()
+	result, err := u.repo.GetUsers(pageConfigs)
 	if err != nil {
 		return nil, err
 	}
 
-	return users, nil
+	return result, nil
 }
 
 func (u *UserService) GetUserByUserName(username string) (*models.User, error) {
