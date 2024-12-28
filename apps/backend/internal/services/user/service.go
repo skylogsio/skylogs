@@ -2,6 +2,7 @@ package user
 
 import (
 	"github.com/redis/go-redis/v9"
+	"github.com/skylogsio/skylogs/internal/dtos"
 	"github.com/skylogsio/skylogs/internal/models"
 	"github.com/skylogsio/skylogs/internal/repository"
 	"github.com/skylogsio/skylogs/internal/util_models"
@@ -47,7 +48,7 @@ func hashPassword(password string) (string, error) {
 	return string(bytes), err
 }
 
-func (u *UserService) CreateUser(m *models.User) error {
+func (u *UserService) CreateUser(m *dtos.CreateUserInput) error {
 
 	hashedPassword, err := hashPassword(m.Password)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/skylogsio/skylogs/configs"
+	"github.com/skylogsio/skylogs/internal/dtos"
 	"github.com/skylogsio/skylogs/internal/models"
 	"github.com/skylogsio/skylogs/internal/util_models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -52,7 +53,7 @@ func CreateClient() (*MongoDB, error) {
 
 }
 
-func (m *MongoDB) CreateUser(user *models.User) error {
+func (m *MongoDB) CreateUser(user *dtos.CreateUserInput) error {
 	collection := m.db.Database(configs.Configs.Mongo.DBName).Collection("users")
 
 	filter := bson.M{"username": user.Username}
