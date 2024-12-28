@@ -82,20 +82,20 @@ func (u *AuthService) ValidateJWT(tokenString string) (jwt.MapClaims, error) {
 	return claims, nil
 }
 
-func (u *AuthService) Login(m *models.User) (string, string, error) {
+func (u *AuthService) Login(m *models.Auth) (string, string, error) {
 
-	err := u.repo.Login(m)
+	user, err := u.repo.Login(m)
 	if err != nil {
 		return "", "", err
 	}
 
-	token, err := u.generateJWT(m, time.Hour)
+	token, err := u.generateJWT(user, time.Hour)
 
 	if err != nil {
 		return "", "", err
 	}
 
-	refreshToken, err := u.generateJWT(m, 24*time.Hour)
+	refreshToken, err := u.generateJWT(user, 24*time.Hour)
 	if err != nil {
 		return "", "", err
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/skylogsio/skylogs/configs"
 	"github.com/skylogsio/skylogs/internal/models"
+	"github.com/skylogsio/skylogs/internal/util_models"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
 
@@ -69,10 +70,28 @@ func (m *MongoDB) CreateUser(user *models.User) error {
 	return nil
 }
 
-func (m *MongoDB) GetUsers() (*[]models.User, error) {
+func (m *MongoDB) GetUsers(pageConfigs *util_models.Pagination) (*util_models.ResultIndex, error) {
 	collection := m.db.Database(configs.Configs.Mongo.DBName).Collection("users")
 
-	cursor, err := collection.Find(nil, bson.M{})
+	totalCount, err := collection.CountDocuments(nil, bson.M{})
+	if err != nil {
+		return nil, errors.New("failed to count users")
+	}
+
+	totalPages := (totalCount + pageConfigs.PageSize - 1) / pageConfigs.PageSize
+	skip := (pageConfigs.Page - 1) * pageConfigs.PageSize
+	limit := pageConfigs.PageSize
+
+	sortOrder := 1
+	if pageConfigs.SortType == util_models.SortDescending {
+		sortOrder = -1
+	}
+	findOptions := options.Find()
+	findOptions.SetSkip(skip)
+	findOptions.SetLimit(limit)
+	findOptions.SetSort(bson.D{{Key: pageConfigs.SortBy, Value: sortOrder}})
+
+	cursor, err := collection.Find(nil, bson.M{}, findOptions)
 	if err != nil {
 		return nil, errors.New("failed to fetch users")
 	}
@@ -83,7 +102,14 @@ func (m *MongoDB) GetUsers() (*[]models.User, error) {
 		return nil, errors.New("failed to decode users")
 	}
 
-	return &users, nil
+	result := &util_models.ResultIndex{
+		CurrentPage: pageConfigs.Page,
+		TotalPage:   totalPages,
+		TotalData:   totalCount,
+		Data:        &users,
+	}
+
+	return result, nil
 }
 
 func (m *MongoDB) GetUserByUserName(username string) (*models.User, error) {

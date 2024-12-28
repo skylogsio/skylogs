@@ -2,6 +2,7 @@ package http
 
 import (
 	"github.com/skylogsio/skylogs/internal/models"
+	"github.com/skylogsio/skylogs/internal/util_models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -29,7 +30,10 @@ func (s *Services) CreateUser(c *gin.Context) {
 
 func (s *Services) GetUsers(c *gin.Context) {
 
-	users, err := s.UserService.GetUsers()
+	pc, _ := c.Get("pageConfigs")
+	PagConfigs := pc.(util_models.Pagination)
+
+	users, err := s.UserService.GetUsers(&PagConfigs)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user", "message": err.Error()})

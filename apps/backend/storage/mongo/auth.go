@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"errors"
+	"fmt"
 	"github.com/skylogsio/skylogs/configs"
 	"github.com/skylogsio/skylogs/internal/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -9,23 +10,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (m *MongoDB) Login(user *models.User) error {
+func (m *MongoDB) Login(auth *models.Auth) (*models.User, error) {
 	collection := m.db.Database(configs.Configs.Mongo.DBName).Collection("users")
 
-	filter := bson.M{"username": user.Username}
+	filter := bson.M{"username": auth.Username}
 	var storedUser models.User
 	err := collection.FindOne(nil, filter).Decode(&storedUser)
 	if errors.Is(err, mongo.ErrNoDocuments) {
-		return errors.New("invalid username or password")
+		return nil, errors.New("invalid username or password")
 	} else if err != nil {
-		return errors.New("database error")
+		return nil, errors.New("database error")
 	}
 
-	// Compare the provided password with the stored hashed password
-	err = bcrypt.CompareHashAndPassword([]byte(storedUser.Password), []byte(user.Password))
+	fmt.Println(storedUser, "*****", auth.Password)
+	err = bcrypt.CompareHashAndPassword([]byte(storedUser.Password), []byte(auth.Password))
 	if err != nil {
-		return errors.New("invalid username or password")
+		return nil, errors.New("invalid username or password")
 	}
 
-	return nil
+	return &storedUser, nil
 }

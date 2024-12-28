@@ -2,6 +2,7 @@ package http
 
 import (
 	"github.com/skylogsio/skylogs/internal/models"
+	"github.com/skylogsio/skylogs/internal/util_models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -31,13 +32,16 @@ func (s *Services) CreateEndpoint(c *gin.Context) {
 
 func (s *Services) GetEndpoints(c *gin.Context) {
 
-	endpoints, err := s.EndpointService.GetEndpoints()
+	pc, _ := c.Get("pageConfigs")
+	PagConfigs := pc.(util_models.Pagination)
+
+	result, err := s.EndpointService.GetEndpoints(&PagConfigs)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get endpoints", "message": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": endpoints})
+	c.JSON(http.StatusOK, result)
 
 }

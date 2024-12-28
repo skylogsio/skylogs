@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/skylogsio/skylogs/configs"
 	"github.com/skylogsio/skylogs/internal/models"
+	"github.com/skylogsio/skylogs/internal/util_models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (m *MongoDB) CreateEndpoint(endpoint *models.Endpoint) error {
@@ -19,10 +21,28 @@ func (m *MongoDB) CreateEndpoint(endpoint *models.Endpoint) error {
 	return nil
 }
 
-func (m *MongoDB) GetEndpoints() (*[]models.Endpoint, error) {
+func (m *MongoDB) GetEndpoints(pageConfigs *util_models.Pagination) (*util_models.ResultIndex, error) {
 	collection := m.db.Database(configs.Configs.Mongo.DBName).Collection("endpoints")
 
-	cursor, err := collection.Find(nil, bson.M{})
+	totalCount, err := collection.CountDocuments(nil, bson.M{})
+	if err != nil {
+		return nil, errors.New("failed to count endpoints")
+	}
+
+	totalPages := (totalCount + pageConfigs.PageSize - 1) / pageConfigs.PageSize
+	skip := (pageConfigs.Page - 1) * pageConfigs.PageSize
+	limit := pageConfigs.PageSize
+
+	sortOrder := 1
+	if pageConfigs.SortType == util_models.SortDescending {
+		sortOrder = -1
+	}
+	findOptions := options.Find()
+	findOptions.SetSkip(skip)
+	findOptions.SetLimit(limit)
+	findOptions.SetSort(bson.D{{Key: pageConfigs.SortBy, Value: sortOrder}})
+
+	cursor, err := collection.Find(nil, bson.M{}, findOptions)
 	if err != nil {
 		return nil, errors.New("failed to fetch endpoints")
 	}
@@ -33,5 +53,12 @@ func (m *MongoDB) GetEndpoints() (*[]models.Endpoint, error) {
 		return nil, errors.New("failed to decode endpoints")
 	}
 
-	return &endpoints, nil
+	result := &util_models.ResultIndex{
+		CurrentPage: pageConfigs.Page,
+		TotalPage:   totalPages,
+		TotalData:   totalCount,
+		Data:        &endpoints,
+	}
+
+	return result, nil
 }
