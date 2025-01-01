@@ -46,7 +46,7 @@ func (s *Services) Launch() error {
 		pagination.WithMaxPageSize(100),
 	)
 
-	s.engine.POST("/api/v1/user", s.CreateUser)
+	s.engine.POST("/api/v1/user", s.validateJWT(), s.CreateUser)
 	s.engine.GET("/api/v1/users", s.validateJWT(), paginator, PaginationMiddleware(), s.GetUsers)
 
 	s.engine.POST("/api/v1/endpoint", s.validateJWT(), s.CreateEndpoint)
