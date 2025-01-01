@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"errors"
-	"fmt"
 	"github.com/skylogsio/skylogs/configs"
 	"github.com/skylogsio/skylogs/internal/models"
 	"github.com/skylogsio/skylogs/internal/util_models"
@@ -17,7 +16,6 @@ func (m *MongoDB) CreateEndpoint(endpoint *models.Endpoint) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Inserted endpoint: ", endpoint)
 	return nil
 }
 

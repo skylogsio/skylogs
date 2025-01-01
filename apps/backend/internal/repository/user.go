@@ -7,7 +7,7 @@ import (
 )
 
 type UserRepository interface {
-	CreateUser(input *dtos.CreateUserInput) error
+	CreateUser(input *dtos.CreateUser) error
 	GetUserByUserName(string) (*models.User, error)
 	GetUsers(pagination *util_models.Pagination) (*util_models.ResultIndex, error)
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/skylogsio/skylogs/configs"
 	"github.com/skylogsio/skylogs/internal/dtos"
 	"github.com/skylogsio/skylogs/internal/models"
+	"github.com/skylogsio/skylogs/internal/services/user"
 	"github.com/skylogsio/skylogs/internal/util_models"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
@@ -53,7 +54,21 @@ func CreateClient() (*MongoDB, error) {
 
 }
 
-func (m *MongoDB) CreateUser(user *dtos.CreateUserInput) error {
+func (m *MongoDB) CreateAdmin() {
+
+	_, err := m.GetUserByUserName("admin")
+	if err != nil {
+		hashedPassword, _ := user.HashPassword("123456789")
+
+		_ = m.CreateUser(&dtos.CreateUser{
+			Username: "admin",
+			Password: hashedPassword,
+			Roles:    []string{"super_admin"},
+		})
+	}
+
+}
+func (m *MongoDB) CreateUser(user *dtos.CreateUser) error {
 	collection := m.db.Database(configs.Configs.Mongo.DBName).Collection("users")
 
 	filter := bson.M{"username": user.Username}
@@ -67,7 +82,7 @@ func (m *MongoDB) CreateUser(user *dtos.CreateUserInput) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Inserted user: ", user)
+
 	return nil
 }
 

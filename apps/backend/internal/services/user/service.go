@@ -43,14 +43,14 @@ func WithRepository(r repository.UserRepository) UserConfiguration {
 	}
 }
 
-func hashPassword(password string) (string, error) {
+func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(bytes), err
 }
 
-func (u *UserService) CreateUser(m *dtos.CreateUserInput) error {
+func (u *UserService) CreateUser(m *dtos.CreateUser) error {
 
-	hashedPassword, err := hashPassword(m.Password)
+	hashedPassword, err := HashPassword(m.Password)
 	if err != nil {
 		return err
 	}
