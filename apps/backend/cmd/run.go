@@ -38,6 +38,8 @@ func runCmdE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	mongoClient.CreateAdmin()
+
 	userService, err := user.New(
 		user.WithRedis(r),
 		user.WithRepository(mongoClient),
