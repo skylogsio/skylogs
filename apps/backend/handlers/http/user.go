@@ -1,7 +1,8 @@
 package http
 
 import (
-	"github.com/skylogsio/skylogs/internal/models"
+	"fmt"
+	"github.com/skylogsio/skylogs/internal/dtos"
 	"github.com/skylogsio/skylogs/internal/util_models"
 	"net/http"
 
@@ -9,13 +10,14 @@ import (
 )
 
 func (s *Services) CreateUser(c *gin.Context) {
-	var userModel models.User
+	var userModel dtos.CreateUserInput
 
-	// Bind JSON payload to the User struct
 	if err := c.ShouldBindJSON(&userModel); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return
 	}
+
+	fmt.Println(userModel)
 
 	err := s.UserService.CreateUser(&userModel)
 

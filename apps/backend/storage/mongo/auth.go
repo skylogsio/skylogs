@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"errors"
-	"fmt"
 	"github.com/skylogsio/skylogs/configs"
 	"github.com/skylogsio/skylogs/internal/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,7 +21,6 @@ func (m *MongoDB) Login(auth *models.Auth) (*models.User, error) {
 		return nil, errors.New("database error")
 	}
 
-	fmt.Println(storedUser, "*****", auth.Password)
 	err = bcrypt.CompareHashAndPassword([]byte(storedUser.Password), []byte(auth.Password))
 	if err != nil {
 		return nil, errors.New("invalid username or password")

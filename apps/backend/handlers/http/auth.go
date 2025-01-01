@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/skylogsio/skylogs/internal/models"
 	"net/http"
@@ -74,7 +73,7 @@ func (s *Services) validateJWT() gin.HandlerFunc {
 
 		c.Set("username", claims["username"])
 		c.Set("id", claims["id"])
-		fmt.Println(claims)
+
 		c.Next()
 	}
 }
