@@ -2,7 +2,6 @@
 /apps/backend/skylogs.exe
 Test.http
 .vscode
-*.http
 .idea
 .DS_Store
 .env
