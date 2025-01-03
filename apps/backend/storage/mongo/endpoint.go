@@ -41,6 +41,7 @@ func (m *MongoDB) GetEndpoints(pageConfigs *util_models.Pagination) (*util_model
 	findOptions.SetSort(bson.D{{Key: pageConfigs.SortBy, Value: sortOrder}})
 
 	cursor, err := collection.Find(nil, bson.M{}, findOptions)
+
 	if err != nil {
 		return nil, errors.New("failed to fetch endpoints")
 	}

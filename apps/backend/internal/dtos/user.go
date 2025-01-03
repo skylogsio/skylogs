@@ -1,9 +1,9 @@
 package dtos
 
 type CreateUser struct {
-	Username string   `json:"username" binding:"required"`
-	Password string   `json:"password" binding:"required"`
-	Roles    []string `json:"roles"`
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+	Role     string `json:"role"`
 }
 
 type UpdateUser struct {

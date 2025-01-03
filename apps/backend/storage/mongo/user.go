@@ -63,7 +63,7 @@ func (m *MongoDB) CreateAdmin() {
 		_ = m.CreateUser(&dtos.CreateUser{
 			Username: "admin",
 			Password: hashedPassword,
-			Roles:    []string{"super_admin"},
+			Role:     "super_admin",
 		})
 	}
 
@@ -78,7 +78,12 @@ func (m *MongoDB) CreateUser(user *dtos.CreateUser) error {
 		return errors.New("username already exists")
 	}
 
-	_, err = collection.InsertOne(nil, user)
+	insertUser := models.User{
+		Username: user.Username,
+		Password: user.Password,
+		Roles:    []string{user.Role},
+	}
+	_, err = collection.InsertOne(nil, insertUser)
 	if err != nil {
 		return err
 	}
