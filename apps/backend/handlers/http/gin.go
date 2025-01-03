@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/skylogsio/skylogs/configs"
 	"github.com/skylogsio/skylogs/internal/services/auth"
@@ -9,6 +10,7 @@ import (
 	"github.com/skylogsio/skylogs/internal/services/user"
 	"github.com/skylogsio/skylogs/internal/util_models"
 	"github.com/webstradev/gin-pagination/v2/pkg/pagination"
+	"time"
 )
 
 type Services struct {
@@ -36,6 +38,15 @@ func New(
 }
 
 func (s *Services) Launch() error {
+
+	s.engine.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},                               // Allow all origins
+		AllowMethods:     []string{"*"},                               // Allow all HTTP methods
+		AllowHeaders:     []string{"*"},                               // Allow all headers
+		ExposeHeaders:    []string{"Content-Length", "Authorization"}, // Optionally expose headers
+		AllowCredentials: true,                                        // Allow cookies and auth headers
+		MaxAge:           12 * time.Hour,                              // Cache preflight requests for 12 hours
+	}))
 
 	paginator := pagination.New(
 		pagination.WithPageText("page"),

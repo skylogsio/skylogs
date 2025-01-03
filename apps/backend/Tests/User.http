@@ -1,5 +1,6 @@
 POST {{domain}}/api/v1/user
 Content-Type: application/json
+Authorization: Bearer {{authToken}}
 
 {
   "username" : "test",
