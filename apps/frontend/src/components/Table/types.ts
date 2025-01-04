@@ -6,6 +6,11 @@ import { type ColumnDef } from "@tanstack/react-table";
 export interface SearchBoxProps {
   title?: string;
 }
+
+export interface TableComponentRef {
+  refreshData: () => void; // Method exposed via the ref
+}
+
 export interface TableComponentProps<T> extends SearchBoxProps {
   url: string;
   columns: ColumnDef<T>[];

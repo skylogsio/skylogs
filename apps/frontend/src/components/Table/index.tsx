@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React, { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 
 import {
   Table as MuiTable,
@@ -32,20 +32,24 @@ import { HiOutlinePlusSm, HiFilter } from "react-icons/hi";
 
 import { useCurrentDirection } from "@/hooks";
 import { useScopedI18n } from "@/locales/client";
+import axios from "@/utils/axios";
 
 import SearchBox from "./SearchBox";
-import type { TableComponentProps } from "./types";
+import type { TableComponentProps, TableComponentRef } from "./types";
 
-export default function Table<T>({
-  title,
-  url,
-  columns,
-  hasCheckbox,
-  defaultPage = 0,
-  defaultPageSize,
-  rowsPerPageOptions = [10, 25, 50, 100],
-  onCreate
-}: TableComponentProps<T>) {
+function Table<T>(
+  {
+    title,
+    url,
+    columns,
+    hasCheckbox,
+    defaultPage = 0,
+    defaultPageSize,
+    rowsPerPageOptions = [10, 25, 50, 100],
+    onCreate
+  }: TableComponentProps<T>,
+  ref: React.Ref<TableComponentRef>
+) {
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: defaultPage,
     pageSize: defaultPageSize
@@ -55,11 +59,14 @@ export default function Table<T>({
   const direction = useCurrentDirection();
   const t = useScopedI18n("table");
 
-  const { data, isLoading, isError } = useQuery<T[]>({
+  const { data, isLoading, isError, refetch } = useQuery<{ data: { Data: T[] } }>({
     queryKey: ["tableData", url, pageIndex, pageSize],
-    queryFn: () =>
-      fetch(`${url}?offset=${pageIndex * pageSize}&limit=${pageSize}`).then((res) => res.json())
+    queryFn: () => axios(`${url}?perPage=${pageSize}&page=${pageIndex}&sortBy=_id&sortType=asc`)
   });
+
+  useImperativeHandle(ref, () => ({
+    refreshData: refetch
+  }));
 
   const tableColumns = useMemo(() => {
     if (hasCheckbox) {
@@ -91,7 +98,7 @@ export default function Table<T>({
 
   //TODO:این قسمت باید متناسب با سرور تکمیل شود
   const table = useReactTable({
-    data: data || [],
+    data: data?.data?.Data || [],
     columns: tableColumns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -103,6 +110,8 @@ export default function Table<T>({
     },
     manualPagination: true
   });
+
+  console.log(data);
 
   if (isError)
     return (
@@ -178,9 +187,10 @@ export default function Table<T>({
                         ...typography.body1,
                         fontWeight: "bold",
                         width: header.id === "select" ? "50px" : "auto",
-                        paddingY: "0.4rem",
+                        paddingY: "1rem",
                         textTransform: "capitalize",
-                        borderBottomColor: palette.grey[200]
+                        borderBottomColor: palette.grey[200],
+                        fontSize: "0.9rem"
                       })}
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
@@ -221,7 +231,6 @@ export default function Table<T>({
                         transition: "background-color 200ms ease",
                         backgroundColor: ({ palette }) =>
                           row.getIsSelected() ? alpha(palette.primary.main, 0.06) : "transparent",
-
                         "&:hover": {
                           backgroundColor: ({ palette }) => alpha(palette.primary.main, 0.06)
                         }
@@ -284,3 +293,7 @@ export default function Table<T>({
     </Box>
   );
 }
+
+export default forwardRef(Table) as <T>(
+  props: TableComponentProps<T> & { ref?: React.Ref<TableComponentRef> }
+) => React.ReactElement;
