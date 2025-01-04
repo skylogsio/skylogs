@@ -20,14 +20,16 @@ export default function Users() {
     <>
       <Table
         title="Users"
-        url="https://api.escuelajs.co/api/v1/products"
-        hasCheckbox
-        defaultPage={0}
+        url={`${process.env.NEXT_PUBLIC_BASE_URL}users`}
+        defaultPage={1}
         defaultPageSize={10}
         columns={[
-          { header: "id", accessorKey: "id" },
-          { header: "title", accessorKey: "title" },
-          { header: "price", accessorKey: "price" }
+          { header: "Row", accessorFn: (_, index) => index },
+          { header: "Username", accessorKey: "name" },
+          { header: "Full Name", accessorKey: "price" },
+          { header: "Role", accessorKey: "price" },
+          { header: "Created At", accessorKey: "price" },
+          { header: "Updated At", accessorKey: "price" }
         ]}
         onCreate={handleOpen}
       />
