@@ -20,8 +20,7 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   async function (config) {
-    const authorization = await getAuthorizationHeader();
-    config.headers.Authorization = authorization;
+    config.headers.Authorization = await getAuthorizationHeader();
     return config;
   },
   function (error) {
