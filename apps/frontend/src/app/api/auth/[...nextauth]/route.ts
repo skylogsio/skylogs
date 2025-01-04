@@ -1,4 +1,5 @@
-import NextAuth from "next-auth";
+import axios from "axios";
+import NextAuth, { type User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 import { getAcceptLanguage } from "@/locales/server";
@@ -17,17 +18,21 @@ const handler = NextAuth({
           username: credentials?.username,
           password: credentials?.password
         };
-        const res = await fetch(`${process.env.NEXT_BASE_URL}auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Accept-Language": acceptLanguage },
-          body: JSON.stringify(body)
+        const user = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}auth/login`, body, {
+          headers: { "Content-Type": "application/json", "Accept-Language": acceptLanguage }
         });
+        return user.data;
+        // const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}auth/login`, {
+        //   method: "POST",
+        //   headers: { "Content-Type": "application/json", "Accept-Language": acceptLanguage },
+        //   body: JSON.stringify(body)
+        // });
 
-        const user = await res.json();
-        if (res.ok && user) {
-          return user;
-        }
-        throw new Error(JSON.stringify(user));
+        // const user = await res.json();
+        // if (res.ok && user) {
+        //   return user;
+        // }
+        // throw new Error(JSON.stringify(user));
       }
     })
   ],
@@ -37,12 +42,12 @@ const handler = NextAuth({
       session.user.token = token.accessToken;
       return session;
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
       }
-      if (account) {
-        token.accessToken = account.access_token;
+      if (user) {
+        token.accessToken = (user as User & { access_token: string }).access_token;
       }
       return token;
     }
