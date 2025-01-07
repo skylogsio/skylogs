@@ -18,7 +18,6 @@ import { HiEye, HiEyeOff } from "react-icons/hi";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
-import type { ServerResponseError } from "@/@types/global";
 import TopBarLanguage from "@/components/Wrapper/TopBarLanguage";
 import { useScopedI18n } from "@/locales/client";
 
@@ -53,14 +52,12 @@ export default function AuthenticationPage() {
       password: body.password
     });
     setLoading(false);
-    let parsedResponse: ServerResponseError;
     try {
       if (response?.error === null) {
         window.location.reload();
         return;
       }
-      parsedResponse = JSON.parse(response?.error ?? "");
-      toast.error(parsedResponse.message);
+      toast.error(response!.error);
     } catch (error) {
       console.log(error);
       toast.error(globalTranslate("SomethingWentWrongPleaseTryAgainLater"));
