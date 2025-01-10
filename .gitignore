@@ -1,10 +1,11 @@
-
+/apps/backend/main.exe
+/apps/backend/skylogs.exe
+Test.http
 .vscode
-*.http
 .idea
 .DS_Store
 .env
-
+config.yaml
 pnpm.lock
 node_modules
 

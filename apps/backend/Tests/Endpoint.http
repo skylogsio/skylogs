@@ -1,0 +1,18 @@
+POST {{domain}}/api/v1/endpoint
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name" : "name4",
+  "type" : "telegram",
+  "value" : "123456",
+  "metadata" : {
+    "threadId" : "2"
+  }
+}
+
+###
+GET {{domain}}/api/v1/endpoint?perPage=10&page=1&sortBy=_id&sortType=asc
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+###

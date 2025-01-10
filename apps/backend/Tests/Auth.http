@@ -1,0 +1,16 @@
+POST {{domain}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username" : "admin",
+  "password" : "123456789"
+}
+
+> {% client.global.set("authToken", response.body.access_token) %}
+###
+GET {{domain}}/api/v1/auth/refresh
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+> {% client.global.set("authToken", response.body.access_token) %}
+###
