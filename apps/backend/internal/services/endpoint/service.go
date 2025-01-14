@@ -2,6 +2,7 @@ package endpoint
 
 import (
 	"github.com/redis/go-redis/v9"
+	"github.com/skylogsio/skylogs/internal/dtos"
 	"github.com/skylogsio/skylogs/internal/models"
 	"github.com/skylogsio/skylogs/internal/repository"
 	"github.com/skylogsio/skylogs/internal/util_models"
@@ -41,9 +42,18 @@ func WithRepository(r repository.EndpointRepository) EndpointConfiguration {
 	}
 }
 
-func (u *EndpointService) CreateEndpoint(m *models.Endpoint) error {
+func (u *EndpointService) CreateEndpoint(m models.EndpointInterface) error {
 
 	err := u.repo.CreateEndpoint(m)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *EndpointService) UpdateEndpoint(m *dtos.UpdateEndpoint) error {
+
+	_, err := u.repo.UpdateEndpoint(m)
 	if err != nil {
 		return err
 	}

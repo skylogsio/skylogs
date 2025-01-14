@@ -137,11 +137,11 @@ func (m *MongoDB) GetUserByUserName(username string) (*models.User, error) {
 	collection := m.db.Database(configs.Configs.Mongo.DBName).Collection("users")
 
 	filter := bson.M{"username": username}
-	var user models.User
-	err := collection.FindOne(nil, filter).Decode(&user)
+	var u models.User
+	err := collection.FindOne(nil, filter).Decode(&u)
 	if err != nil {
 		return nil, errors.New("username not exist")
 	}
 
-	return &user, nil
+	return &u, nil
 }

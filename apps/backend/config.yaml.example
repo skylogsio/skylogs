@@ -5,6 +5,7 @@ auth:
 
 mongo:
   host: "127.0.0.1"
+#  host: "host.docker.internal"
   port: 27017
   username: ""
   password: ""

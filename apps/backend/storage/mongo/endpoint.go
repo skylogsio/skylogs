@@ -3,13 +3,15 @@ package mongo
 import (
 	"errors"
 	"github.com/skylogsio/skylogs/configs"
+	"github.com/skylogsio/skylogs/internal/dtos"
 	"github.com/skylogsio/skylogs/internal/models"
 	"github.com/skylogsio/skylogs/internal/util_models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (m *MongoDB) CreateEndpoint(endpoint *models.Endpoint) error {
+func (m *MongoDB) CreateEndpoint(endpoint models.EndpointInterface) error {
 	collection := m.db.Database(configs.Configs.Mongo.DBName).Collection("endpoints")
 
 	_, err := collection.InsertOne(nil, endpoint)
@@ -17,6 +19,43 @@ func (m *MongoDB) CreateEndpoint(endpoint *models.Endpoint) error {
 		return err
 	}
 	return nil
+}
+
+func (m *MongoDB) UpdateEndpoint(dtoEndpoint *dtos.UpdateEndpoint) (models.EndpointInterface, error) {
+
+	//existEndpoint, err := m.FindByID(dtoEndpoint.Id)
+	//
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//endpoint , _ := existEndpoint.(*models.Endpoint)
+	//
+	//if endpoint.UserId != dtoEndpoint.UserId {
+	return nil, errors.New("user not allowed")
+	//}
+	//
+	//collection := m.db.Database(configs.Configs.Mongo.DBName).Collection("endpoints")
+	//
+	//objectID, err := primitive.ObjectIDFromHex(dtoEndpoint.Id)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//switch endpoint.Type {
+	//
+	//}
+
+	//update := bson.M{"$set":}
+	//result, err := collection.UpdateOne(nil, bson.M{"_id": objectID}, update)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//if result.MatchedCount == 0 {
+	//	return nil, errors.New("endpoint not found")
+	//}
+
+	//return
 }
 
 func (m *MongoDB) GetEndpoints(pageConfigs *util_models.Pagination) (*util_models.ResultIndex, error) {
@@ -57,6 +96,48 @@ func (m *MongoDB) GetEndpoints(pageConfigs *util_models.Pagination) (*util_model
 		TotalPage:   totalPages,
 		TotalData:   totalCount,
 		Data:        &endpoints,
+	}
+
+	return result, nil
+}
+
+func (m *MongoDB) FindByID(id string) (models.EndpointInterface, error) {
+
+	collection := m.db.Database(configs.Configs.Mongo.DBName).Collection("endpoints")
+
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
+	var model bson.M
+	err = collection.FindOne(nil, bson.M{"_id": objectID}).Decode(&model)
+	if err != nil {
+		return nil, err
+		//if err == mongo.ErrNoDocuments {
+		//	c.JSON(404, gin.H{"error": "Document not found"})
+		//} else {
+		//	c.JSON(500, gin.H{"error": "Failed to fetch document"})
+		//}
+	}
+	var result models.EndpointInterface = nil
+	switch model["type"] {
+	case "telegram":
+		var endpointTelegram models.EndpointTelegram
+		bsonBytes, _ := bson.Marshal(model)
+		errM := bson.Unmarshal(bsonBytes, &endpointTelegram)
+		if errM != nil {
+			return nil, errM
+		}
+		result = &endpointTelegram
+	default:
+		var endpoint models.Endpoint
+		bsonBytes, _ := bson.Marshal(model)
+		errM := bson.Unmarshal(bsonBytes, &endpoint)
+		if errM != nil {
+			return nil, errM
+		}
+		result = &endpoint
 	}
 
 	return result, nil
