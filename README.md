@@ -1,4 +1,4 @@
-# Skylogs Laravel
+# Skylogs 
 
 <div align="center">
   <img src="https://github.com/skylogsio/skylogs-laravel/raw/main/public/images/logo.png" alt="Skylogs Logo" width="200">
