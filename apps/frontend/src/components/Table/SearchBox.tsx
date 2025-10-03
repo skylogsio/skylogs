@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 
 import { Box, Collapse, IconButton, TextField, useTheme } from "@mui/material";
 import { HiOutlineSearch, HiOutlineX } from "react-icons/hi";
@@ -9,21 +9,39 @@ import { useScopedI18n } from "@/locales/client";
 
 import type { SearchBoxProps } from "./types";
 
-export default function SearchBox({ title }: SearchBoxProps) {
+export default function SearchBox({ title, onSearch }: SearchBoxProps) {
   const { palette } = useTheme();
   const t = useScopedI18n("table");
-  const [isSearchBoxOpen, setIsSearchBoxOpen] = useState(false);
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
+
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchText(value);
+
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+
+      debounceTimer.current = setTimeout(() => {
+        onSearch?.(value);
+      }, 300);
+    },
+    [onSearch]
+  );
+
+  const handleToggleSearchBox = useCallback(() => {
+    setIsOpen((prev) => !prev);
+  }, []);
 
   return (
     <>
-      <Collapse
-        orientation="horizontal"
-        in={!isSearchBoxOpen}
-        timeout={{ enter: 370 }}
-        unmountOnExit
-      >
+      <Collapse orientation="horizontal" in={!isOpen} timeout={{ enter: 370 }} unmountOnExit>
         <IconButton
-          onClick={() => setIsSearchBoxOpen((prev) => !prev)}
+          onClick={handleToggleSearchBox}
           sx={{
             backgroundColor: palette.background.paper,
             border: "1px solid",
@@ -35,10 +53,12 @@ export default function SearchBox({ title }: SearchBoxProps) {
           <HiOutlineSearch size="1.1rem" color={palette.secondary.dark} />
         </IconButton>
       </Collapse>
-      <Collapse orientation="horizontal" in={isSearchBoxOpen} unmountOnExit>
+      <Collapse orientation="horizontal" in={isOpen} unmountOnExit>
         <Box>
           <TextField
             size="small"
+            value={searchText}
+            onChange={(event) => handleSearchChange(event.target.value)}
             sx={{
               "& .MuiInputBase-root": {
                 backgroundColor: `${palette.background.paper} !important`,
@@ -59,7 +79,7 @@ export default function SearchBox({ title }: SearchBoxProps) {
                 placeholder: t("searchBox.title", { title }),
                 startAdornment: <HiOutlineSearch size="1.4rem" color={palette.secondary.dark} />,
                 endAdornment: (
-                  <IconButton onClick={() => setIsSearchBoxOpen((prev) => !prev)}>
+                  <IconButton onClick={handleToggleSearchBox}>
                     <HiOutlineX size="1rem" color={palette.secondary.dark} />
                   </IconButton>
                 )

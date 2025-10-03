@@ -1,0 +1,44 @@
+GET {{domain}}/profile/asset/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+GET {{domain}}/profile/asset/67ab9d887ad723b5b807db12
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+POST {{domain}}/profile/asset/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "MyService",
+    "ownerId": "67a59178042804ad0d0a5076",
+    "config": "{}"
+}
+
+###
+PUT {{domain}}/profile/asset/67ab9d887ad723b5b807db12
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+{
+    "name": "MyService",
+    "ownerId": "a",
+    "config": "{\"ABC\":\"POI\"}"
+}
+
+
+###
+DELETE {{domain}}/profile/asset/67ab9d887ad723b5b807db12
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+

@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, IconButton, Modal, Paper, Typography, Fade } from "@mui/material";
+import { Box, IconButton, Modal, Paper, Typography, Fade, backdropClasses } from "@mui/material";
 import { HiOutlineX } from "react-icons/hi";
 
 import { type ModalContainerProps } from "./types";
@@ -22,7 +22,7 @@ export default function ModalContainer({
       aria-labelledby="modal-modal-title"
       aria-describedby="modal-modal-description"
       sx={{
-        "& .MuiBackdrop-root.MuiModal-backdrop": {
+        [`& .${backdropClasses.root}`]: {
           backdropFilter: "blur(4px)"
         }
       }}
@@ -47,7 +47,7 @@ export default function ModalContainer({
               alignItems="center"
             >
               <IconButton
-                onClick={() => onClose?.({}, "closeButton")}
+                onClick={() => onClose?.()}
                 type="button"
                 sx={{ margin: "-0.5rem -0.5rem 0 auto" }}
               >

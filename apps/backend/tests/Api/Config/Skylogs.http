@@ -1,0 +1,18 @@
+GET {{domain}}/config/skylogs/cluster
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###  type is agent or main -> if type is agent sourceUrl and sourceToken is required
+POST {{domain}}/config/skylogs/cluster
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "type": "main",
+    "sourceUrl": "http://127.0.0.1:8080",
+    "sourceToken": "ghfSDFhgdas4h6bbnaFDgh679n87864e"
+}
+

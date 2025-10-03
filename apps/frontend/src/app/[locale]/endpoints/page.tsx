@@ -1,240 +1,169 @@
 "use client";
 import { useRef, useState } from "react";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  alpha,
-  Box,
-  Button,
-  Chip,
-  Grid2 as Grid,
-  IconButton,
-  MenuItem,
-  TextField
-} from "@mui/material";
-import { useMutation } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { HiOutlinePencil, HiOutlineTrash } from "react-icons/hi";
-import { toast } from "react-toastify";
-import { z } from "zod";
+import { Box, Tab, Tabs } from "@mui/material";
 
-import { createEndpoint } from "@/api/endpoint";
-import ModalContainer from "@/components/Modal";
-import Table from "@/components/Table";
+import type { IEndpoint } from "@/@types/endpoint";
+import { CreateUpdateModal } from "@/@types/global";
+import DeleteEndPointModal from "@/app/[locale]/endpoints/DeleteEndPointModal";
+import ActionColumn from "@/components/ActionColumn";
+import Table from "@/components/Table/SmartTable";
 import { type TableComponentRef } from "@/components/Table/types";
+import { renderEndPointChip } from "@/utils/endpointVariants";
+import { truncateLongString } from "@/utils/general";
 
-const ENDPOINTS_TYPE = ["sms", "telegram", "teams", "call"] as const;
+import EndPointModal from "./EndPointModal";
+import Flows from "./flows/page";
 
-const ENDPOINT_TYPE_CHIP = {
-  sms: { title: "SMS", color: "#13C82B" },
-  telegram: { title: "Telegram", color: "#4880FF" },
-  teams: { title: "Teams", color: "#454DB3" },
-  call: { title: "Call", color: "#B65DFE" }
-};
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
 
-const createEndpointSchema = z.object({
-  name: z.string({ required_error: "Name is Required." }).refine((data) => data.trim() !== "", {
-    message: "Name is Required."
-  }),
-  type: z.enum(ENDPOINTS_TYPE, {
-    required_error: "Type is Required.",
-    message: "Type is Required."
-  }),
-  value: z.string({ required_error: "Value is Required." }).refine((data) => data.trim() !== "", {
-    message: "Value is Required."
-  }),
-  threadId: z.optional(z.string())
-});
+function CustomTabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
 
-type EndpointFormType = z.infer<typeof createEndpointSchema>;
-
-function ActionButtons({ onEdit = () => {} }) {
   return (
-    <Box>
-      <IconButton
-        onClick={onEdit}
-        sx={({ palette }) => ({
-          color: palette.info.light,
-          backgroundColor: alpha(palette.info.light, 0.05)
-        })}
-      >
-        <HiOutlinePencil size="1.4rem" />
-      </IconButton>
-      <IconButton
-        sx={({ palette }) => ({
-          color: palette.error.light,
-          backgroundColor: alpha(palette.error.light, 0.05),
-          marginLeft: "0.5rem"
-        })}
-      >
-        <HiOutlineTrash size="1.4rem" />
-      </IconButton>
-    </Box>
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`endpoint-tabpanel-${index}`}
+      aria-labelledby={`endpoint-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+    </div>
   );
 }
 
+function a11yProps(index: number) {
+  return {
+    id: `endpoint-tab-${index}`,
+    "aria-controls": `endpoint-tabpanel-${index}`
+  };
+}
+
 export default function EndPoints() {
-  const {
-    register,
-    handleSubmit,
-    watch,
-    reset,
-    formState: { errors }
-  } = useForm<EndpointFormType>({
-    resolver: zodResolver(createEndpointSchema),
-    defaultValues: {
-      name: "",
-      type: undefined,
-      value: ""
-    }
-  });
   const tableRef = useRef<TableComponentRef>(null);
-  const [open, setOpen] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
+  const [modalData, setModalData] = useState<CreateUpdateModal<IEndpoint>>(null);
+  const [deleteModalData, setDeleteModalData] = useState<IEndpoint | null>(null);
 
-  function handleClose() {
-    setOpen(false);
-    reset();
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  function handleEdit(data: IEndpoint) {
+    setModalData(data);
   }
 
-  function handleOpen() {
-    setOpen(true);
-  }
-
-  function handleEdit(data: EndpointFormType) {
-    reset(data);
-    handleOpen();
-  }
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: (data) => createEndpoint(data),
-    onSuccess: () => {
-      toast.success("Successfully created Endpoint!");
-      tableRef.current?.refreshData();
-      handleClose();
+  function handleRefreshData() {
+    if (tableRef.current) {
+      tableRef.current.refreshData();
     }
-    // onError: () => {}
-  });
+  }
 
-  function handleSubmitForm(data: EndpointFormType) {
-    console.log(data);
-    const temp = { ...data, metadata: {} };
-    if (temp.threadId !== undefined) {
-      delete temp.threadId;
-      temp.metadata = { threadId: data.threadId };
-    }
-    mutate(temp as unknown as void);
+  function handleDelete() {
+    setDeleteModalData(null);
+    handleRefreshData();
   }
 
   return (
-    <>
-      <Table<EndpointFormType>
-        ref={tableRef}
-        title="EndPoints"
-        url={`${process.env.NEXT_PUBLIC_BASE_URL}endpoint`}
-        defaultPage={1}
-        defaultPageSize={10}
-        columns={[
-          { header: "Row", accessorFn: (_, index) => index },
-          { header: "Name", accessorKey: "name" },
-          {
-            header: "Type",
-            accessorKey: "type",
-            cell: ({ cell }) => (
-              <Chip
-                sx={{
-                  backgroundColor: alpha(
-                    ENDPOINT_TYPE_CHIP[cell.getValue() as keyof typeof ENDPOINT_TYPE_CHIP].color,
-                    0.1
-                  ),
-                  color:
-                    ENDPOINT_TYPE_CHIP[cell.getValue() as keyof typeof ENDPOINT_TYPE_CHIP].color,
-                  borderRadius: "0.4rem"
-                }}
-                label={ENDPOINT_TYPE_CHIP[cell.getValue() as keyof typeof ENDPOINT_TYPE_CHIP].title}
-              />
-            )
+    <Box sx={{ width: "100%" }}>
+      <Tabs
+        value={tabValue}
+        onChange={handleTabChange}
+        aria-label="endpoint tabs"
+        centered
+        sx={{
+          "& .MuiTabs-fixed": {
+            display: "inline-block",
+            flex: "none",
+            marginX: "auto",
+            width: "auto",
+            boxSizing: "border-box",
+            border: "1px solid",
+            borderColor: ({ palette }) => palette.grey[300],
+            borderRadius: 2,
+            overflow: "hidden"
           },
-          { header: "Value", accessorKey: "value" },
-          { header: "Created At", accessorKey: "" },
-          {
-            header: "Action",
-            cell: ({ row }) => <ActionButtons onEdit={() => handleEdit(row.original)} />
+          "& .MuiTab-root": {
+            textTransform: "none",
+            fontSize: "1rem",
+            fontWeight: 600,
+            position: "relative",
+            zIndex: 3,
+            transition: "all 300ms ease-out",
+            "&.Mui-selected": {
+              transition: "all 300ms ease-out",
+              color: ({ palette }) => `${palette.common.white}!important`
+            }
+          },
+          "& .MuiTabs-indicator": {
+            height: "100%",
+            zIndex: 2,
+            ...(tabValue === 0 ? { left: `${0} !important` } : {})
           }
-        ]}
-        onCreate={handleOpen}
-      />
-      <ModalContainer
-        title="Create New EndPoint"
-        open={open}
-        onClose={handleClose}
-        disableEscapeKeyDown
+        }}
       >
-        <Grid
-          component="form"
-          onSubmit={handleSubmit(handleSubmitForm, (error) => console.log(error))}
-          container
-          spacing={2}
-          width="100%"
-          display="flex"
-          marginTop="2rem"
-        >
-          <Grid size={6}>
-            <TextField
-              label="Name"
-              variant="filled"
-              error={!!errors.name}
-              helperText={errors.name?.message}
-              {...register("name")}
-            />
-          </Grid>
-          <Grid size={6}>
-            <TextField
-              label="Type"
-              variant="filled"
-              error={!!errors.type}
-              helperText={errors.type?.message}
-              {...register("type")}
-              value={watch("type") ?? ""}
-              select
-            >
-              {ENDPOINTS_TYPE.map((item) => (
-                <MenuItem
-                  key={item}
-                  value={item}
-                  sx={{ textTransform: item === "sms" ? "uppercase" : "capitalize" }}
-                >
-                  {item}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-          <Grid size={watch("type") === "telegram" ? 6 : 12}>
-            <TextField
-              label={watch("type") === "telegram" ? "ChatID" : "Value"}
-              variant="filled"
-              error={!!errors.value}
-              helperText={errors.value?.message}
-              {...register("value")}
-            />
-          </Grid>
-          {watch("type") === "telegram" && (
-            <Grid size={6}>
-              <TextField
-                label="ThreadID"
-                variant="filled"
-                error={!!errors.threadId}
-                helperText={errors.threadId?.message}
-                {...register("threadId")}
-              />
-            </Grid>
-          )}
-          <Grid size={12} marginTop="1rem">
-            <Button disabled={isPending} type="submit" variant="contained" size="large" fullWidth>
-              Create
-            </Button>
-          </Grid>
-        </Grid>
-      </ModalContainer>
-    </>
+        <Tab label="EndPoint List" {...a11yProps(0)} />
+        <Tab label="Endpoint Flows" {...a11yProps(1)} />
+      </Tabs>
+
+      <CustomTabPanel value={tabValue} index={0}>
+        <Table<IEndpoint>
+          ref={tableRef}
+          title="EndPoints"
+          url="endpoint"
+          defaultPageSize={10}
+          columns={[
+            { header: "Row", accessorFn: (_, index) => ++index },
+            { header: "Name", accessorKey: "name" },
+            {
+              header: "Type",
+              accessorKey: "type",
+              cell: ({ cell }) => renderEndPointChip(cell.getValue())
+            },
+            {
+              header: "Value",
+              accessorFn: (row) =>
+                truncateLongString(row.type === "telegram" ? row.chatId : row.value)
+            },
+            {
+              header: "Action",
+              cell: ({ row }) => (
+                <ActionColumn
+                  onEdit={() => handleEdit(row.original)}
+                  onDelete={() => setDeleteModalData(row.original)}
+                />
+              )
+            }
+          ]}
+          onCreate={() => setModalData("NEW")}
+        />
+      </CustomTabPanel>
+
+      <CustomTabPanel value={tabValue} index={1}>
+        <Flows />
+      </CustomTabPanel>
+
+      {modalData && (
+        <EndPointModal
+          open={!!modalData}
+          onClose={() => setModalData(null)}
+          data={modalData}
+          onSubmit={handleRefreshData}
+        />
+      )}
+      {deleteModalData && (
+        <DeleteEndPointModal
+          open={!!deleteModalData}
+          onClose={() => setDeleteModalData(null)}
+          data={deleteModalData}
+          onAfterDelete={handleDelete}
+        />
+      )}
+    </Box>
   );
 }

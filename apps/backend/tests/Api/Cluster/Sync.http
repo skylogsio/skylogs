@@ -1,0 +1,5 @@
+GET {{domain}}/cluster/sync-data
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer theMainClusterToken
+

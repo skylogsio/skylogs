@@ -1,0 +1,74 @@
+GET {{domain}}/user?perPage=50
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+GET {{domain}}/user/all
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+GET {{domain}}/user/67ae64ca98509c886504e9e2
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+POST {{domain}}/user/changeOwner
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "fromUser": "67ae64ca98509c886504e9e2",
+    "toUser" : "67ae64ca98509c886504e9e3"
+}
+
+###
+// role can be owner , manager , member
+POST {{domain}}/user/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "user1",
+    "username" : "user1",
+    "password" : "123456",
+    "confirmPassword" : "123456",
+    "role" : "manager"
+}
+
+###
+PUT {{domain}}/user/pass/67ae64ca98509c886504e9e2
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "password": "123456",
+    "confirmPassword" : "123456"
+}
+
+###
+PUT {{domain}}/user/67c5dc54bdf1685c060cf8f2
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "user1",
+    "username" : "user1",
+    "role" : "member"
+}
+
+
+###
+DELETE {{domain}}/user/67ae64ca98509c886504e9e2
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+

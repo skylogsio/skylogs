@@ -1,0 +1,52 @@
+GET {{domain}}/skylogs-instance/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+GET {{domain}}/skylogs-instance/680d668e20f7ecb5bc026722
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+GET {{domain}}/skylogs-instance/status/681f545e36ecf6ff7300cfc2
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+POST {{domain}}/skylogs-instance/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "test1",
+    "type" : "agent",
+    "url" : "http://mymaindomain.com"
+}
+
+
+
+###
+PUT {{domain}}/skylogs-instance/67ab9d887ad723b5b807db12
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "test1",
+    "type" : "agent",
+    "url" : "http://mymaindomain.com"
+}
+
+
+###
+DELETE {{domain}}/skylogs-instance/67ab9d887ad723b5b807db12
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+

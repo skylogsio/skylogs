@@ -8,7 +8,5 @@ export interface ModalContainerProps
     Pick<BoxProps, "width" | "maxWidth" | "padding"> {
   title?: string | ReactNode;
   disableAccidentalClose?: boolean;
-  onClose?:
-    | ((event: unknown, reason: "backdropClick" | "escapeKeyDown" | "closeButton") => void)
-    | undefined;
+  onClose?: () => void;
 }

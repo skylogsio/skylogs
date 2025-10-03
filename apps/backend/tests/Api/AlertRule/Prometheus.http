@@ -1,0 +1,32 @@
+### Get All Rules
+GET {{domain}}/prometheus/rules
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+### Get DataSource Rule
+GET {{domain}}/prometheus/rules?data_source_id={data_source_id}
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+### Get Lebels
+GET {{domain}}/prometheus/labels
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+### Get Lebel Values
+GET {{domain}}/prometheus/label-values/{my_label}
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+### Get Triggered
+GET {{domain}}/prometheus/triggered
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+

@@ -1,0 +1,37 @@
+POST {{domain}}/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+    "username": "admin",
+    "password" : "123456"
+}
+
+> {%
+    client.global.set("authToken", response.body.accessToken);
+    client.global.set("refreshToken", response.body.refreshToken); %}
+
+###
+POST {{domain}}/auth/refresh
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{refreshToken}}
+
+> {%
+    client.global.set("authToken", response.body.accessToken);
+    client.global.set("refreshToken", response.body.refreshToken); %}
+
+###
+POST {{domain}}/auth/me
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+POST {{domain}}/auth/logout
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+

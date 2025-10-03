@@ -2,7 +2,7 @@
 
 import { useMemo, type PropsWithChildren } from "react";
 
-import { alpha, inputBaseClasses } from "@mui/material";
+import { alpha, inputBaseClasses, menuItemClasses } from "@mui/material";
 import { grey } from "@mui/material/colors";
 import { extendTheme, ThemeProvider } from "@mui/material/styles";
 
@@ -18,17 +18,44 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
           light: {
             palette: {
               primary: { light: "#6F9BFF", main: "#4880FF", dark: "#3D6FDF" },
-              secondary: { light: "#DDDDDD", main: "#9A9A9A", dark: "#565656" },
-              error: { light: "#FF7D76", main: "#FF3B30", dark: "#E3382E" },
+              secondary: { light: "#DDDDDD", main: "#9A9A9A", dark: "#525252" },
+              success: { light: "#7BEA85", main: "#13C82B", dark: "#0E8F1F" },
+              warning: { light: "#FABF7A", main: "#F28D22", dark: "#B86419" },
+              error: { light: "#FF7D76", main: "#E64940", dark: "#A8322C" },
               background: { default: "#F5F6FA", paper: "#FFFFFF" }
             }
           }
         },
         components: {
+          MuiPaper: {
+            styleOverrides: {
+              root: {
+                borderRadius: "0.5rem"
+              }
+            }
+          },
+          MuiChip: {
+            styleOverrides: {
+              root: {
+                borderRadius: "0.4rem"
+              }
+            }
+          },
           MuiTextField: {
             styleOverrides: {
               root: {
                 width: "100%",
+                "& input::-webkit-outer-spin-button,& input::-webkit-inner-spin-button": {
+                  WebkitAppearance: "none",
+                  margin: 0
+                },
+                "& input::-webkit-inner-spin-button": {
+                  WebkitAppearance: "none",
+                  margin: 0
+                },
+                "& input[type=number]": {
+                  MozAppearance: "textfield"
+                },
                 [`& .${inputBaseClasses.root}`]: {
                   borderRadius: "0.55rem",
                   backgroundColor: "#F1F4F9",
@@ -77,6 +104,15 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
               disableUnderline: true
             }
           },
+          MuiMenuItem: {
+            styleOverrides: {
+              root: {
+                [`&.${menuItemClasses.selected}`]: {
+                  backgroundColor: alpha("#6F9BFF", 0.2)
+                }
+              }
+            }
+          },
           MuiButton: {
             styleOverrides: {
               root: {
@@ -88,7 +124,7 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
           MuiIconButton: {
             styleOverrides: {
               root: {
-                borderRadius: "0.55rem"
+                borderRadius: "0.4rem"
               }
             }
           }

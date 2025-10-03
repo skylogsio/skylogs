@@ -1,0 +1,257 @@
+// status_label can be 1. resolved 2.unknown 3. critical 4.warning
+GET {{domain}}/alert-rule?alertname=&types=&endpointId=&perPage=500
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+GET {{domain}}/alert-rule/filter-endpoints
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+GET {{domain}}/alert-rule/types
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+GET {{domain}}/alert-rule/history/6890a245f0de5409ce0e4498
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+GET {{domain}}/alert-rule/triggered/68178152e4876e3b9b004e16
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+GET {{domain}}/alert-rule/create-data/data-source/prometheus
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+GET {{domain}}/alert-rule/create-data/rules?type=grafana
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+GET {{domain}}/alert-rule/create-data/zabbix
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+GET {{domain}}/alert-rule/684989606c8712ca9400aa78
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+POST {{domain}}/alert-rule/silent/67cf5e9d60f5ce9d5f003b52
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+POST {{domain}}/alert-rule/resolve/67cf5e9d60f5ce9d5f003b52
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+POST {{domain}}/alert-rule/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "test1",
+    "type" : "api",
+    "enableAutoResolve": true,
+    "autoResolveMinutes" : 5,
+    "endpoints": [
+        "a",
+        "b"
+    ],
+    "accessUsers": [
+        "a",
+        "b"
+    ]
+}
+
+###
+PUT {{domain}}/alert-rule/67cf5e9d60f5ce9d5f003b52
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "test23",
+    "type" : "api",
+    "enableAutoResolve": true,
+    "autoResolveMinutes" : 5,
+    "endpoints": [
+        "a",
+        "b"
+    ],
+    "accessUsers": [
+        "a",
+        "b"
+    ]
+}
+
+
+###
+DELETE {{domain}}/alert-rule/67ab9d887ad723b5b807db12
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+
+GET {{domain}}/alert-rule/types
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+
+###
+
+GET {{domain}}/alert-rule/create-data
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+
+
+###
+
+GET {{domain}}/alert-rule-tag/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+
+GET {{domain}}/alert-rule-tag/67f12f4ef7cc7cd3c4001702
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+
+###
+
+PUT {{domain}}/alert-rule-tag/67f12f4ef7cc7cd3c4001702
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "tags" : [
+        "firstTag","secondTag","thirdTag"
+    ]
+}
+
+
+###
+
+GET {{domain}}/alert-rule-notify/67cf5e9d60f5ce9d5f003b52
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+
+PUT {{domain}}/alert-rule-notify/67fa77984372d3fb19053de2
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "endpoint_ids" : [
+        "680d668e20f7ecb5bc026722"
+    ]
+}
+
+
+
+###
+// /alert-rule-notify/{alertId}/{endpointId}
+DELETE {{domain}}/alert-rule-notify/67cf5e9d60f5ce9d5f003b52/67d8a6adfd871d06510fef62
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+
+POST {{domain}}/alert-rule-notify/test/67cf5e9d60f5ce9d5f003b52
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+
+
+###
+
+GET {{domain}}/alert-rule-user/68412a014176e5b1c2dfc640
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+
+PUT {{domain}}/alert-rule-user/67fa71941a1b976f2f012aa2
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "user_ids" : [
+        "67c5dc54bdf1685c060cf8f2"
+    ]
+}
+
+
+
+###
+// /alert-rule-user/{alertId}/{userId}
+DELETE {{domain}}/alert-rule-user/67fa71941a1b976f2f012aa2/67c5dc54bdf1685c060cf8f2
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+
+POST {{domain}}/alert-rule/acknowledge/68d6a0bb1eabdb77b30b8d52
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+
+POST {{domain}}/alert-rule/acknowledgeL/68d6a0bb1eabdb77b30b8d52
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+

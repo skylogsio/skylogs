@@ -1,34 +1,34 @@
-# Stage 1: Build the Go binary
-FROM golang:1.23.4-alpine AS builder
+FROM php:8.2-fpm
 
-# Set the working directory in the container
-WORKDIR /app
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    zip \
+    unzip \
+    curl \
+    cron \
+    supervisor \
+    git \
+    libzip-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd pdo pdo_mysql bcmath zip pcntl
 
-# Copy go.mod and go.sum files to the workspace
-COPY go.mod ./
-# Download all dependencies
-RUN go mod download
+RUN pecl install mongodb && docker-php-ext-enable mongodb
 
-# Copy the rest of the source code
+RUN pecl install redis && docker-php-ext-enable redis
+
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /opt/skylogs
+
 COPY . .
 
-# Build the Go app
-RUN go build -o main .
+#RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# Stage 2: Create a small image for the Go app
-FROM alpine:latest
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
-# Set the working directory in the container
-WORKDIR /root/
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Copy the binary from the builder image
-#COPY --from=builder /app/jwt_secret.pem .
-COPY --from=builder /app/config.yaml .
-COPY --from=builder /app/main .
-
-# Expose the application on port 8080 (if needed)
-EXPOSE 8080
-
-# Command to run the executable
-CMD ["./main" ,"serve"]
-#CMD ["sleep", "infinity"]
+CMD ["/usr/local/bin/docker-entrypoint.sh"]

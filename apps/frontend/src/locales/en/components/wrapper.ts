@@ -3,7 +3,6 @@ export default {
     searchBoxPlaceholder: "Search",
     language: "Select Language",
     profile: {
-      fullName: "Moni Roy",
       role: "Admin",
       list: {
         manageAccount: "Manage Account",

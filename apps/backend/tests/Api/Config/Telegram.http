@@ -1,0 +1,62 @@
+GET {{domain}}/config/telegram/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+GET {{domain}}/config/telegram/67ab9d887ad723b5b807db12
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+POST {{domain}}/config/telegram/deactivate
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+
+###
+POST {{domain}}/config/telegram/activate/6856c55eb134a29cc1031cb2
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+POST {{domain}}/config/telegram/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "MyFirstConf",
+    "url": "http://127.0.0.1:8080"
+}
+
+###
+POST {{domain}}/config/telegram/off
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+PUT {{domain}}/config/telegram/6852809b6e7d7e44850d9403
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+{
+    "name": "MyFirstConf",
+    "url": "http://127.0.0.1:8080"
+}
+
+###
+DELETE {{domain}}/config/telegram/6852809b6e7d7e44850d9403
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+

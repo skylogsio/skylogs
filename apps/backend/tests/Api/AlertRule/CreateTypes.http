@@ -1,0 +1,146 @@
+### Create Prometheus Alert Rule
+POST {{domain}}/alert-rule/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "test1",
+    "type": "prometheus",
+    "queryType": "dynamic",
+    "dataSourceIds": [],
+    "dataSourceAlertName": "prometheusAlertNAme",
+    "extraField": [
+        {
+            "key" : "asd",
+            "value" : "adf"
+        },
+        {
+            "key" : "asd",
+            "value" : "adf"
+        }
+    ],
+    "queryText": "",
+    "queryObject": "",
+    "endpoints": [],
+    "accessUsers": [],
+    "tags": []
+}
+
+### Create Pmm Alert Rule
+POST {{domain}}/alert-rule/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "myPmmAlert",
+    "type": "pmm",
+    "queryType": "dynamic",
+    "dataSourceIds": ["6826d12427f551da450610b2"],
+    "dataSourceAlertName": "myPmmAlertRuleName",
+    "extraField": [],
+    "queryText": "",
+    "queryObject": "",
+    "endpoints": [
+    ],
+    "accessUsers": [
+    ],
+    "tags": []
+}
+
+### Create Sentry Alert Rule
+POST {{domain}}/alert-rule/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "TestSentry",
+    "type": "sentry",
+    "dataSourceIds": ["682777ead8edb934b17c5fe5"],
+    "dataSourceAlertName": "TestSentry",
+    "extraField": [],
+    "queryText": "",
+    "queryObject": "",
+    "endpoints": [],
+    "accessUsers": [],
+    "tags": []
+}
+
+
+### Create Zabbix Alert Rule -> severity can be (empty|null) or from 0 to 5
+POST {{domain}}/alert-rule/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "TestZabbix",
+    "type": "zabbix",
+    "dataSourceIds": ["682777ead8edb934b17c5fe5"],
+    "actions" : ["Action1"],
+    "hosts" : ["Host1"],
+    "severity" : "5",
+    "endpoints": [],
+    "accessUsers": [],
+    "tags": []
+}
+
+### Create API Alert Rule
+POST {{domain}}/alert-rule/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "test1",
+    "type" : "api",
+    "enableAutoResolve": true,
+    "autoResolveMinutes" : 5,
+    "endpoints": [
+    ],
+    "accessUsers": [
+    ],
+    "tags": []
+}
+
+### Create Notification Alert Rule
+POST {{domain}}/alert-rule/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "testNotif",
+    "type" : "notification",
+    "endpoints": [
+    ],
+    "accessUsers": [
+    ],
+    "tags": []
+}
+
+### Create Elastic Alert Rule
+# conditionType can be greaterOrEqual or lessOrEqual
+POST {{domain}}/alert-rule/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "testElastic",
+    "type" : "elastic",
+    "dataSourceId" : "dataSourceId",
+    "dataviewName" : "responses",
+    "dataviewTitle" : "responses*",
+    "queryString" : "OriginStatus:>=400 name:myName",
+    "minutes" : 15,
+    "conditionType" : "greaterOrEqual",
+    "countDocument" : 5,
+    "endpoints": [
+    ],
+    "accessUsers": [
+    ],
+    "tags": []
+}

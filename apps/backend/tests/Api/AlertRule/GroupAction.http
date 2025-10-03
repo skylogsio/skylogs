@@ -1,0 +1,44 @@
+###
+POST {{domain}}/alert-rule/group-action/silent
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+POST {{domain}}/alert-rule/group-action/unsilent
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+POST {{domain}}/alert-rule/group-action/delete
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+GET {{domain}}/alert-rule/group-action/add-user-notify
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
+POST {{domain}}/alert-rule/group-action/add-user-notify
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+{
+    "endpointIds": [
+        "a",
+        "b"
+    ],
+    "userIds": [
+        "a",
+        "b"
+    ]
+}
+
+

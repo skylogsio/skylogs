@@ -1,15 +1,38 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { type PropsWithChildren } from "react";
 
 import { Box } from "@mui/material";
+
+import SideBar from "@/components/Wrapper/SideBar";
+import { useRole } from "@/hooks";
 
 import TopBar from "./TopBar";
 
 export default function Wrapper({ children }: PropsWithChildren) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { userInfo, hasRole } = useRole();
+
   if (pathname.includes("/auth")) return children;
+
+  if (pathname.includes("/data-source") && userInfo && !hasRole(["owner", "manager"])) {
+    router.replace("/");
+    return null;
+  }
+  if (pathname.includes("/users") && userInfo && !hasRole(["owner", "manager"])) {
+    router.replace("/");
+    return null;
+  }
+  if (pathname.includes("/settings/telegram") && userInfo && !hasRole(["owner", "manager"])) {
+    router.replace("/");
+    return null;
+  }
+  if (pathname.includes("/clusters") && userInfo && !hasRole(["owner"])) {
+    router.replace("/");
+    return null;
+  }
 
   return (
     <Box
@@ -33,12 +56,12 @@ export default function Wrapper({ children }: PropsWithChildren) {
         maxWidth="300px"
         sx={{ backgroundColor: ({ palette }) => palette.background.paper }}
       >
-        {/* //TODO: Place SideBar component here. */}
+        <SideBar />
       </Box>
       <Box display="flex" flexDirection="column" flex={1} height="100%">
         <TopBar />
         <Box component="main" height="90%">
-          <Box width="100%" height="100%" padding="1.7rem">
+          <Box width="100%" height="100%" padding="1.7rem" overflow="auto">
             {children}
           </Box>
         </Box>

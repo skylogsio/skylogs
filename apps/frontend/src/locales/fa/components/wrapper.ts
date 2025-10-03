@@ -3,7 +3,6 @@ export default {
     searchBoxPlaceholder: "جستجو",
     language: "انتخاب زبان",
     profile: {
-      fullName: "حلما بهادر",
       role: "مدیر",
       list: {
         manageAccount: "حساب کاربری",

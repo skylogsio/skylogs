@@ -1,0 +1,226 @@
+###
+
+POST {{domain}}/fire-alert
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{alertToken}}
+
+{
+    "instance" : "test",
+    "description" : "myDes"
+}
+
+###
+
+POST {{domain}}/resolve-alert
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{alertToken}}
+
+{
+    "instance" : "test",
+    "description" : "myDes"
+}
+
+
+###
+
+POST {{domain}}/notification-alert
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{alertToken}}
+
+{
+    "instance" : "test",
+    "description" : "myDes"
+}
+
+
+###
+
+POST {{domain}}/pmm-alert/bkp4T
+Content-Type: application/json
+Accept: application/json
+
+{
+    "receiver": "skylogs-notifier",
+    "status": "resolved",
+    "alerts": [
+        {
+            "status": "resolved",
+            "labels": {
+                "agent_id": "\/agent_id\/e58bdd69-37f4-4bb0-92af-a1f9a60bb909",
+                "agent_type": "mysqld_exporter",
+                "alertname": "pmm_mysql_too_manrting Rule",
+                "container_name": "mysqlClient",
+                "grafana_folder": "MySQL",
+                "instance": "\/agent_id\/e58bdd69-37f4-4bb0-92af-a1f9a60bb909",
+                "testL": "tesstV",
+                "machine_id": "mysql",
+                "node_id": "\/node_id\/8c1920c2-2914-47e4-bbed-f49f3a76213f",
+                "node_name": "pmm-client-749c64d867-8jkdr",
+                "node_type": "generic",
+                "percona_alerting": "1",
+                "service_id": "\/service_id\/67e709ff-3dd8-4d23-be46-75ad2ec51961",
+                "service_name": "service_name=checkout_master_staging",
+                "service_type": "mysql",
+                "severity": "warning",
+                "template_name": "pmm_mysql_too_many_connections"
+            },
+            "annotations": {
+                "description": "[ var='A' labels={agent_id=\/agent_id\/e58bdd69-37f4-4bb0-92af-a1f9a60bb909, agent_type=mysqld_exporter, container_name=mysqlClient, instance=\/agent_id\/e58bdd69-37f4-4bb0-92af-a1f9a60bb909, machine_id=mysql, node_id=\/node_id\/8c1920c2-2914-47e4-bbed-f49f3a76213f, node_name=pmm-client-749c64d867-8jkdr, node_type=generic, service_id=\/service_id\/67e709ff-3dd8-4d23-be46-75ad2ec51961, service_name=service_name=checkout_master_staging, service_type=mysql} value=0 ]% of connections (more than 15%) are used\nby service_name=checkout_master_staging on pmm-client-749c64d867-8jkdr.",
+                "summary": "MySQL too many connections (service_name=checkout_master_staging)"
+            },
+            "startsAt": "2023-12-27T11:31:00Z",
+            "endsAt": "2023-12-27T11:33:00Z",
+            "generatorURL": "https:\/\/localhost\/graph\/alerting\/grafana\/mmRCH_HIz\/view",
+            "fingerprint": "5366bbc551e0bc30",
+            "silenceURL": "https:\/\/localhost\/graph\/alerting\/silence\/new?alertmanager=grafana&matcher=agent_id%3D%2Fagent_id%2Fe58bdd69-37f4-4bb0-92af-a1f9a60bb909&matcher=agent_type%3Dmysqld_exporter&matcher=alertname%3Dpmm_mysql_too_many_connections+Alerting+Rule&matcher=container_name%3DmysqlClient&matcher=grafanae%3Dpmm_mysql_too_many_connections",
+            "dashboardURL": null,
+            "panelURL": null,
+            "valueString": "[ var='A' labels={agent_id=\/agent_id\/e58bdd69-37f4-4bb0-92af-a1f9a60bb909, agent_type=mysqld_exporter, container_name=mysqlClient, instance=\/agent_id\/e58bdd69-37f4-4bb0-92af-a1f9a60bb909, machine_id=mysql, node_id=\/node_id\/8c1920c2-2914-47e4-bbed-f49f3a76213f, node_name=pmm-client-749c64d867-8jkdr, node_type=generic, service_id=\/service_id\/67e709ff-3dd8-4d23-be46-75ad2ec51961, service_name=service_name=checkout_master_staging, service_type=mysql} value=0 ]"
+        }
+    ],
+    "groupLabels": {
+        "alertname": "pmm_mysql_too_many_connectioning Rule",
+        "grafana_folder": "MySQL"
+    },
+    "commonLabels": {
+        "agent_id": "\/agent_id\/e58bdd69-37f4-4bb0-92af-a1f9a60bb909",
+        "agent_type": "mysqld_exporter",
+        "alertname": "pmm_mysql_too_many_coting Rule",
+        "container_name": "mysqlClient",
+        "grafana_folder": "MySQL",
+        "instance": "\/agent_id\/e58bdd69-37f4-4bb0-92af-a1f9a60bb909",
+        "machine_id": "mysql",
+        "node_id": "\/node_id\/8c1920c2-2914-47e4-bbed-f49f3a76213f",
+        "node_name": "pmm-client-749c64d867-8jkdr",
+        "node_type": "generic",
+        "percona_alerting": "1",
+        "service_id": "\/service_id\/67e709ff-3dd8-4d23-be46-75ad2ec51961",
+        "service_name": "service_name=checkout_master_staging",
+        "service_type": "mysql",
+        "severity": "warning",
+        "template_name": "pmm_mysql_too_many_connections"
+    },
+    "commonAnnotations": {
+        "description": "[ var='A' labels={agent_id=\/agent_id\/e58bdd69-37f4-4bb0-92af-a1f9a60bb909, agent_type=mysqld_exporter, container_name=mysqlClient, instance=\/agent_id\/e58bdd69-37f4-4bb0-92af-a1f9a60bb909, machine_id=mysql, node_id=\/node_id\/8c1920c2-2914-47e4-bbed-f49f3a76213f, node_name=pmm-client-749c64d867-8jkdr, node_type=generic, service_id=\/service_id\/67e709ff-3dd8-4d23-be46-75ad2ec51961, service_name=service_name=checkout_master_staging, service_type=mysql} value=0 ]% of connections (more than 15%) are used\nby service_name=checkout_master_staging on pmm-client-749c64d867-8jkdr.",
+        "summary": "MySQL too many connections (service_name=checkout_master_staging)"
+    },
+    "externalURL": "https:\/\/localhost\/graph\/",
+    "version": "1",
+    "groupKey": "{}:{alertname=\"pmm_mysql_too_many_connections Alerting Rule\", grafana_folder=\"MySQL\"}",
+    "truncatedAlerts": 0,
+    "orgId": 1,
+    "title": "[RESOLVED] pmm_mysql_too_many_connections Alerting Rule MySQL (\/agent_id\/e58bdd69-37f4-4bb0-92af-a1f9a60bb909 mysqld_exporter mysqlClient \/agent_id\/e58bdd69-37f4-4bb0-92af-a1f9a60bb909 mysql \/node_id\/8c1920c2-2914-47e4-bbed-f49f3a76213f pmm-client-749c64d867-8jkdr generic 1 \/service_id\/67e709ff-3dd8-4d23-be46-75ad2ec51961 service_name=checkout_master_staging mysql warning pmm_mysql_too_many_connections)",
+    "state": "ok",
+    "message": "**Resolved**\n\nValue: [ var3Dwarning&matcher=template_name%3Dpmm_mysql_too_many_connections"
+}
+
+
+###
+
+POST {{domain}}/sentry-alert/1Tcmw
+Content-Type: application/json
+Accept: application/json
+
+{
+    "action": "critical",
+    "installation": {
+        "uuid": "d1b2b611-9ce7-428f-846e-b1dd93f38837"
+    },
+    "data": {
+        "metric_alert": {
+            "id": "94",
+            "identifier": "94",
+            "organization_id": "1",
+            "projects": [
+                "escrow-production"
+            ],
+            "alert_rule": {
+                "id": "6",
+                "name": "TestSentry",
+                "organization_id": "1",
+                "status": 0,
+                "query_type": 1,
+                "dataset": "transactions",
+                "query": "transaction:/api/v1/integrations/divar transaction.status:ok",
+                "aggregate": "p95(transaction.duration)",
+                "threshold_type": 0,
+                "resolve_threshold": 600,
+                "time_window": 15,
+                "environment": null,
+                "resolution": 1,
+                "threshold_period": 1,
+                "triggers": [
+                    {
+                        "id": "10",
+                        "alert_rule_id": "6",
+                        "label": "critical",
+                        "threshold_type": 0,
+                        "alert_threshold": 800,
+                        "resolve_threshold": 600,
+                        "date_created": "2023-09-17T13:50:33.165385Z",
+                        "actions": [
+                            {
+                                "id": "18",
+                                "alert_rule_trigger_id": "10",
+                                "type": "sentry_app",
+                                "target_type": "sentry_app",
+                                "target_identifier": 1,
+                                "input_channel_id": null,
+                                "integration_id": null,
+                                "sentry_app_id": 1,
+                                "date_created": "2023-09-25T13:31:59.018139Z",
+                                "desc": "Send a notification via skylogs-notifier"
+                            }
+                        ]
+                    },
+                    {
+                        "id": "11",
+                        "alert_rule_id": "6",
+                        "label": "warning",
+                        "threshold_type": 0,
+                        "alert_threshold": 600,
+                        "resolve_threshold": 600,
+                        "date_created": "2023-09-17T13:50:33.181119Z",
+                        "actions": []
+                    }
+                ],
+                "projects": [
+                    "escrow-production"
+                ],
+                "include_all_projects": false,
+                "owner": "team:9",
+                "original_alert_rule_id": null,
+                "comparison_delta": null,
+                "date_modified": "2023-09-25T13:31:58.842715Z",
+                "date_created": "2023-09-17T13:50:33.065535Z",
+                "created_by": {
+                    "id": 17,
+                    "name": "Bardia",
+                    "email": "b.zamanian@toman.ir"
+                }
+            },
+            "activities": null,
+            "seen_by": null,
+            "has_seen": null,
+            "status": 2,
+            "status_method": 3,
+            "type": 2,
+            "title": "Divar Response Time",
+            "date_started": "2023-10-02T15:29:00.000000Z",
+            "date_detected": "2023-10-02T15:44:00.000000Z",
+            "date_created": "2023-10-02T15:45:39.090525Z",
+            "date_closed": "2023-10-02T19:34:00.000000Z"
+        },
+        "description_text": "595.5 p95(transaction.duration) in the last 15 minutes",
+        "description_title": "Resolved: Divar Response Time",
+        "web_url": "http://sentry.qcluster.org:9000/organizations/sentry/alerts/rules/details/6/?alert=94&referrer=metric_alert&notification_uuid=5406d27a-ada9-4325-83fe-f9238385eb18"
+    },
+    "actor": {
+        "type": "application",
+        "id": "sentry",
+        "name": "Sentry"
+    }
+}

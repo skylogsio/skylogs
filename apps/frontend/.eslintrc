@@ -60,7 +60,7 @@
     "eqeqeq": "error",
     "no-duplicate-imports": "error",
     "import/no-unresolved": "off",
-    "newline-per-chained-call": "warn",
+    "newline-per-chained-call": "off",
     "no-confusing-arrow": "off",
     "no-console": "off",
     "no-restricted-syntax": "warn",
