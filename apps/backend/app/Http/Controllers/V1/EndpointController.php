@@ -163,6 +163,7 @@ class EndpointController extends Controller
                         'email',
                         "sms",
                         "call",
+                        "flow",
                         "teams",
                         "matter-most",
                     ])
