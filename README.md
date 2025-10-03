@@ -66,6 +66,10 @@ Skylogs consolidates alerts from multiple observability systems, applies intelli
 - Custom dashboards and widgets
 - Role-Based Access Control (RBAC)
 
+### Reports 
+- SLA Report for each service for a long period of time
+- Service issues reports 
+- 
 ---
 
 ## 👨‍💻 Who Uses Skylogs?
