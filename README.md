@@ -1,7 +1,7 @@
 # Skylogs 
 
 <div align="center">
-  <img src="https://github.com/skylogsio/skylogs-laravel/raw/main/public/images/logo.png" alt="Skylogs Logo" width="200">
+  <img src="https://github.com/skylogsio/skylogs/raw/main/public/images/logo.png" alt="Skylogs Logo" width="200">
   
   <h3>A unified platform for alert and incident management that integrates seamlessly with your observability solutions</h3>
   
@@ -144,8 +144,8 @@ Skylogs consolidates alerts from multiple observability systems, applies intelli
 
 ```bash
 # Clone the repository
-git clone https://github.com/skylogsio/skylogs-laravel.git
-cd skylogs-laravel
+git clone https://github.com/skylogsio/skylogs.git
+cd skylogs
 
 # Copy environment file
 cp .env.example .env
@@ -193,13 +193,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support
 
 - **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/skylogsio/skylogs-laravel/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/skylogsio/skylogs-laravel/discussions)
+- **Issues**: [GitHub Issues](https://github.com/skylogsio/skylogs/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/skylogsio/skylogs/discussions)
 - **Email**: support@skylogs.io
 
 ## 🌟 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=skylogsio/skylogs-laravel&type=Date)](https://star-history.com/#skylogsio/skylogs-laravel&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=skylogsio/skylogs&type=Date)](https://star-history.com/#skylogsio/skylogs&Date)
 
 ---
 
