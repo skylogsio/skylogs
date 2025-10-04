@@ -1,8 +1,8 @@
 "use client";
 import { useRef, useState } from "react";
 
-import { Box, Chip } from "@mui/material";
-import { MdAccessTime, MdFlashOn } from "react-icons/md";
+import { Step, StepLabel, Stepper, useTheme } from "@mui/material";
+import { AiFillApi, AiFillClockCircle } from "react-icons/ai";
 
 import type { IFlow } from "@/@types/flow";
 import { CreateUpdateModal } from "@/@types/global";
@@ -13,6 +13,7 @@ import Table from "@/components/Table/SmartTable";
 import { type TableComponentRef } from "@/components/Table/types";
 
 export default function Flows() {
+  const { palette } = useTheme();
   const tableRef = useRef<TableComponentRef>(null);
   const [modalData, setModalData] = useState<CreateUpdateModal<IFlow>>(null);
   const [deleteModalData, setDeleteModalData] = useState<IFlow | null>(null);
@@ -34,24 +35,38 @@ export default function Flows() {
 
   const renderSteps = (steps: IFlow["steps"]) => {
     return (
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-        {steps?.map((step, index) => (
-          <Chip
-            key={index}
-            icon={step.type === "wait" ? <MdAccessTime size={14} /> : <MdFlashOn size={14} />}
-            label={step.type === "wait" ? `${step.duration}${step.timeUnit}` : "Endpoint"}
-            size="small"
-            variant="outlined"
-            sx={{
-              color: step.type === "wait" ? "#ff9800" : "#2196f3",
-              borderColor: step.type === "wait" ? "#ff9800" : "#2196f3",
-              "& .MuiChip-icon": {
-                color: step.type === "wait" ? "#ff9800" : "#2196f3"
+      <Stepper
+        activeStep={1}
+        alternativeLabel
+        sx={{
+          "& .MuiStepConnector-root": {
+            top: "50%",
+            transfrom: "translateY(-50%)"
+          }
+        }}
+      >
+        {steps.map((step, index) => (
+          <Step key={index}>
+            <StepLabel
+              sx={{
+                "& .MuiStepLabel-iconContainer": {
+                  backgroundColor: `${palette.grey[100]}!important`,
+                  padding: 1,
+                  borderRadius: "50%",
+                  aspectRatio: "1/1"
+                }
+              }}
+              icon={
+                step.type === "wait" ? (
+                  <AiFillClockCircle size={20} color={palette.warning.main} />
+                ) : (
+                  <AiFillApi size={20} color={palette.primary.main} />
+                )
               }
-            }}
-          />
+            ></StepLabel>
+          </Step>
         ))}
-      </Box>
+      </Stepper>
     );
   };
 
