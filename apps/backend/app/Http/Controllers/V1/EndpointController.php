@@ -24,7 +24,7 @@ class EndpointController extends Controller
     public function EndpointsToCreateFlow()
     {
         $endpoints = $this->endpointService->selectableUserEndpoint(\Auth::user());
-        $endpoints = $endpoints->where("type", "!=", EndpointType::FLOW->value);
+        $endpoints = $endpoints->where("type", "!=", EndpointType::FLOW->value)->values();
         return response()->json($endpoints);
     }
 

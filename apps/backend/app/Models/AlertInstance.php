@@ -158,8 +158,16 @@ class AlertInstance extends BaseModel implements Messageable
 
     public function callMessage(): string
     {
-        return $this->defaultMessage();
+        $text = "Alert ".$this->alertRuleName;
 
+        $text .= match ($this->state) {
+            self::FIRE => " fired",
+            self::RESOLVED => " resolved",
+            self::NOTIFICATION => " notified",
+            default => "",
+        };
+
+        return $text;
     }
 
     public function teamsMessage()

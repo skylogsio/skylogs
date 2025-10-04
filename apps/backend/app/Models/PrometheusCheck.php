@@ -176,7 +176,16 @@ class PrometheusCheck extends BaseModel implements Messageable
 
     public function callMessage(): string
     {
-        return $this->defaultMessage();
+
+        $text = "Alert ".$this->alertRuleName;
+
+        $text .= match ($this->state) {
+            self::FIRE => " fired",
+            self::RESOLVED => " resolved",
+            default => "",
+        };
+
+        return $text;
 
     }
 

@@ -125,7 +125,17 @@ class GrafanaWebhookAlert extends BaseModel implements Messageable
 
     public function callMessage(): string
     {
-        return $this->defaultMessage();
+        $alert = $this->alertRule;
+
+        $text = "Alert ".$alert->name;
+
+        $text .= match ($alert->state) {
+            AlertRule::CRITICAL => " fired",
+            AlertRule::RESOlVED => " resolved",
+            default => "",
+        };
+
+        return $text;
     }
 
     public function teamsMessage(): string
