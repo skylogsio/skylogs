@@ -22,7 +22,7 @@ import { HiFire, HiPencil, HiTrash } from "react-icons/hi";
 import { IoNotifications, IoNotificationsOff } from "react-icons/io5";
 import { RiTestTubeFill } from "react-icons/ri";
 
-import { type IAlertRule } from "@/@types/alertRule";
+import type { IZabbixAlertRule, IAlertRule } from "@/@types/alertRule";
 import { getAlertRuleById, silenceAlertRule, testAlertRule } from "@/api/alertRule";
 import AlertRuleModal from "@/app/[locale]/alert-rule/AlertRuleModal";
 import DeleteAlertRuleModal from "@/app/[locale]/alert-rule/DeleteAlertRuleModal";
@@ -268,19 +268,19 @@ export default function ViewAlertRule() {
               )}
             </Stack>
           </Stack>
-          <Stack marginTop={3} direction="row" flexWrap="wrap">
-            <Stack direction="row" spacing={1} alignItems="center" width="50%">
+          <Stack direction="row" rowGap={1} flexWrap="wrap" marginTop={3}>
+            <Stack direction="row" alignItems="center" spacing={1} width="50%">
               <Typography variant="subtitle1" fontWeight="bold">
                 Owner:
               </Typography>
               <Typography>{data.ownerName}</Typography>
             </Stack>
             {data.dataSourceLabels && (
-              <Stack direction="row" spacing={1} alignItems="center" width="50%">
+              <Stack direction="row" alignItems="center" spacing={1} width="50%">
                 <Typography variant="subtitle1" fontWeight="bold">
                   DataSources:
                 </Typography>
-                <Stack padding={1} direction="row" gap={1} flexWrap="wrap">
+                <Stack paddingX={1} direction="row" gap={1} flexWrap="wrap">
                   {data.dataSourceLabels.map((label, index) => (
                     <Chip key={index} variant="filled" label={label} size="small" />
                   ))}
@@ -288,14 +288,42 @@ export default function ViewAlertRule() {
               </Stack>
             )}
             {data.dataSourceAlertName && (
-              <Stack direction="row" spacing={1} alignItems="center" width="50%">
+              <Stack direction="row" alignItems="center" spacing={1} width="50%">
                 <Typography variant="subtitle1" fontWeight="bold">
                   DataSource Alert Names:
                 </Typography>
                 <Typography>{data.dataSourceAlertName}</Typography>
               </Stack>
             )}
-            <Stack direction="row" spacing={1} alignItems="center" width="50%">
+            {((data as IZabbixAlertRule)?.severityLabel?.length ?? 0) > 0 && (
+              <Stack direction="row" alignItems="center" spacing={1} width="50%">
+                <Typography variant="subtitle1" fontWeight="bold">
+                  Severity:
+                </Typography>
+                <Typography>{(data as IZabbixAlertRule).severityLabel}</Typography>
+              </Stack>
+            )}
+            {((data as IZabbixAlertRule)?.actions?.length ?? 0) > 0 && (
+              <Stack direction="row" alignItems="center" spacing={1} width="50%">
+                <Typography variant="subtitle1" fontWeight="bold">
+                  Actions:
+                </Typography>
+                {(data as IZabbixAlertRule).actions?.map((action) => (
+                  <Chip key={action} variant="filled" label={action} size="small" />
+                ))}
+              </Stack>
+            )}
+            {((data as IZabbixAlertRule)?.hosts?.length ?? 0) > 0 && (
+              <Stack direction="row" alignItems="center" spacing={1} width="50%">
+                <Typography variant="subtitle1" fontWeight="bold">
+                  Hosts:
+                </Typography>
+                {(data as IZabbixAlertRule).hosts?.map((host) => (
+                  <Chip key={host} variant="filled" label={host} size="small" />
+                ))}
+              </Stack>
+            )}
+            <Stack direction="row" alignItems="center" spacing={1} width="100%">
               <Typography variant="subtitle1" fontWeight="bold">
                 Tags:
               </Typography>

@@ -40,6 +40,13 @@ export interface IAlertRule {
   dataSourceLabels?: string[];
 }
 
+export interface IZabbixAlertRule extends IAlertRule {
+  actions?: string[];
+  hosts?: string[];
+  severity?: string;
+  severityLabel?: string;
+}
+
 export interface IAlertRuleEndpoints {
   alertEndpoints: Array<IEndpoint>;
   selectableEndpoints: Array<IEndpoint>;
