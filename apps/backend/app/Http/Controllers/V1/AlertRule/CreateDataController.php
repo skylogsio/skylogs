@@ -87,32 +87,7 @@ class CreateDataController extends Controller
         $hosts = $this->zabbixService->getHosts();
         $actions = $this->zabbixService->getActions();
 
-        $severity = [
-            [
-                "key" => "0",
-                "value" => "Not classified",
-            ],
-            [
-                "key" => "1",
-                "value" => "Information",
-            ],
-            [
-                "key" => "2",
-                "value" => "Warning",
-            ],
-            [
-                "key" => "3",
-                "value" => "Average",
-            ],
-            [
-                "key" => "4",
-                "value" => "High",
-            ],
-            [
-                "key" => "5",
-                "value" => "Disaster",
-            ],
-        ];
+        $severity = $this->zabbixService->getSeverities();
 
         return response()->json(compact("hosts", "actions", "severity"));
     }

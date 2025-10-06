@@ -24,6 +24,7 @@ use App\Services\ApiService;
 use App\Services\EndpointService;
 use App\Services\SendNotifyService;
 use App\Services\UserService;
+use App\Services\ZabbixService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,6 +37,7 @@ class AlertingController extends Controller
     public function __construct(
         protected AlertRuleService $alertRuleService,
         protected EndpointService  $endpointService,
+        protected ZabbixService    $zabbixService,
     )
     {
     }
@@ -171,8 +173,8 @@ class AlertingController extends Controller
     {
         $alert = AlertRule::where("_id", $id)->first();
         $user = app(UserService::class)->admin();
-        if($alert->isAcknowledged()){
-            return response()->json(['status' => false,"message" => "Alert rule Already Acknowledged."]);
+        if ($alert->isAcknowledged()) {
+            return response()->json(['status' => false, "message" => "Alert rule Already Acknowledged."]);
         }
         $alert->acknowledge($user);
         SendNotifyService::CreateNotify(SendNotifyJob::ALERT_RULE_ACKNOWLEDGED, $alert, $alert->_id);
@@ -381,6 +383,7 @@ class AlertingController extends Controller
         }
         $alert->extraField = $extraField;
 
+        $alert->severityLabel = $alert->severity ? $this->zabbixService->getSeverities()[$alert->severity] : "";
         $alert->hasAdminAccess = $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert);
         $alert->has_admin_access = $alert->hasAdminAccess;
         [$alertStatus, $alertStatusCount] = $alert->getStatus();
@@ -406,7 +409,7 @@ class AlertingController extends Controller
             $model = $model->where("userId", auth()->id());
         }
         $model = $model->firstOrFail();
-        $model->showAcknowledgeBtn= $request->boolean('showAcknowledgeBtn');
+        $model->showAcknowledgeBtn = $request->boolean('showAcknowledgeBtn');
 
         switch ($model->type) {
             case AlertRuleType::GRAFANA:
