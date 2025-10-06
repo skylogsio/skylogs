@@ -19,13 +19,13 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
-import type { IAlertRule } from "@/@types/alertRule";
+import type { IAlertRule, IZabbixCreateData } from "@/@types/alertRule";
 import type { CreateUpdateModal } from "@/@types/global";
 import {
   createAlertRule,
   getAlertRuleDataSourcesByAlertType,
   getAlertRuleTags,
-  getDataSourceAlertName,
+  getZabbixCreateData,
   updateAlertRule
 } from "@/api/alertRule";
 import AlertRuleEndpointUserSelector from "@/components/AlertRule/Forms/AlertRuleEndpointUserSelector";
@@ -41,12 +41,10 @@ const zabbixAlertRuleSchema = z.object({
   endpointIds: z.array(z.string()).optional().default([]),
   userIds: z.array(z.string()).optional().default([]),
   tags: z.array(z.string()).optional().default([]),
-  dataSourceIds: z.array(z.string()).min(1, "This field is Required."),
-  dataSourceAlertName: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    })
+  actions: z.array(z.string()).optional().default([]),
+  hosts: z.array(z.string()).optional().default([]),
+  severity: z.string().optional().default(""),
+  dataSourceIds: z.array(z.string()).min(1, "This field is Required.")
 });
 
 type ZabbixFromType = z.infer<typeof zabbixAlertRuleSchema>;
@@ -61,8 +59,10 @@ const defaultValues: ZabbixFromType = {
   userIds: [],
   endpointIds: [],
   tags: [],
+  actions: [],
+  hosts: [],
   dataSourceIds: [],
-  dataSourceAlertName: ""
+  severity: ""
 };
 
 export default function ZabbixAlertRuleForm({
@@ -78,27 +78,26 @@ export default function ZabbixAlertRuleForm({
     reset,
     control,
     getValues,
-    clearErrors,
-    trigger,
     formState: { errors }
   } = useForm<ZabbixFromType>({
     resolver: zodResolver(zabbixAlertRuleSchema),
     defaultValues
   });
 
-  const [{ data: tagsList }, { data: alertRuleNameList }, { data: dataSourceList }] = useQueries({
+  const [{ data: tagsList }, { data: dataSourceList }, { data: createData }] = useQueries({
     queries: [
       {
         queryKey: ["all-alert-rule-tags"],
         queryFn: () => getAlertRuleTags()
       },
-      {
-        queryKey: ["all-alert-rule-names", "zabbix"],
-        queryFn: () => getDataSourceAlertName("zabbix")
-      },
+
       {
         queryKey: ["alert-rule-data-source", "zabbix"],
         queryFn: () => getAlertRuleDataSourcesByAlertType("zabbix")
+      },
+      {
+        queryKey: ["zabbix-create-date"],
+        queryFn: () => getZabbixCreateData()
       }
     ]
   });
@@ -143,6 +142,33 @@ export default function ZabbixAlertRuleForm({
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
         {selectedDataSourceNames.map((value, index) => (
           <Chip size="small" key={index} label={value} />
+        ))}
+      </Box>
+    );
+  }
+
+  function removeChip(item: string, key: keyof Pick<IZabbixCreateData, "actions" | "hosts">) {
+    const allItems = getValues(key);
+    setValue(
+      key,
+      allItems.filter((value) => value !== item)
+    );
+  }
+
+  function renderChip(
+    selectedItems: unknown,
+    key: keyof Pick<IZabbixCreateData, "actions" | "hosts">
+  ): ReactNode {
+    return (
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+        {(selectedItems as string[]).map((value) => (
+          <Chip
+            size="small"
+            key={value}
+            label={value}
+            onMouseDown={(event) => event.stopPropagation()}
+            onDelete={() => removeChip(value, key)}
+          />
         ))}
       </Box>
     );
@@ -206,32 +232,61 @@ export default function ZabbixAlertRuleForm({
           </TextField>
         </Grid>
         <Grid size={6}>
-          <Autocomplete
-            id="data-source-alert-rule-name"
-            options={alertRuleNameList ?? []}
-            freeSolo
-            value={watch("dataSourceAlertName")}
-            onChange={(_, value) => {
-              setValue("dataSourceAlertName", value ?? "");
-              trigger("dataSourceAlertName");
+          <TextField
+            label="Severity"
+            variant="filled"
+            error={!!errors.severity}
+            helperText={errors.severity?.message}
+            {...register("severity")}
+            value={watch("severity") ?? ""}
+            select
+          >
+            {createData?.severity?.map((item) => (
+              <MenuItem key={item.key} value={item.key}>
+                {item.value}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Grid>
+        <Grid size={6}>
+          <TextField
+            label="Actions"
+            variant="filled"
+            error={!!errors.actions}
+            helperText={errors.actions?.message}
+            {...register("actions")}
+            value={watch("actions") ?? ""}
+            select
+            slotProps={{
+              select: { multiple: true, renderValue: (value) => renderChip(value, "actions") }
             }}
-            autoSelect
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                slotProps={{
-                  input: params.InputProps,
-                  inputLabel: params.InputLabelProps,
-                  htmlInput: params.inputProps
-                }}
-                onChange={() => clearErrors("dataSourceAlertName")}
-                error={!!errors.dataSourceAlertName}
-                helperText={errors.dataSourceAlertName?.message}
-                variant="filled"
-                label="DataSource Alert Name"
-              />
-            )}
-          />
+          >
+            {createData?.actions?.map((action) => (
+              <MenuItem key={action} value={action}>
+                {action}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Grid>
+        <Grid size={6}>
+          <TextField
+            label="Hosts"
+            variant="filled"
+            error={!!errors.hosts}
+            helperText={errors.hosts?.message}
+            {...register("hosts")}
+            value={watch("hosts") ?? ""}
+            select
+            slotProps={{
+              select: { multiple: true, renderValue: (value) => renderChip(value, "hosts") }
+            }}
+          >
+            {createData?.hosts?.map((host) => (
+              <MenuItem key={host} value={host}>
+                {host}
+              </MenuItem>
+            ))}
+          </TextField>
         </Grid>
         <Grid size={12}>
           <Autocomplete

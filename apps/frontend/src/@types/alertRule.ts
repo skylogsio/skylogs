@@ -7,6 +7,12 @@ export interface IAlertRuleCreateData {
   users: IUser[];
 }
 
+export interface IZabbixCreateData {
+  actions: string[];
+  hosts: string[];
+  severity: Array<{ key: string; value: string }>;
+}
+
 export type AlertRuleStatus = "resolved" | "warning" | "critical" | "triggered" | "unknown";
 
 export interface IAlertRule {
