@@ -115,6 +115,36 @@ class ZabbixService
 
     }
 
+    public function getSeverities()
+    {
+        return [
+            [
+                "key" => "0",
+                "value" => "Not classified",
+            ],
+            [
+                "key" => "1",
+                "value" => "Information",
+            ],
+            [
+                "key" => "2",
+                "value" => "Warning",
+            ],
+            [
+                "key" => "3",
+                "value" => "Average",
+            ],
+            [
+                "key" => "4",
+                "value" => "High",
+            ],
+            [
+                "key" => "5",
+                "value" => "Disaster",
+            ],
+        ];
+    }
+
     public function checkAlertRules($dataSource, $alertRules, $data)
     {
 
