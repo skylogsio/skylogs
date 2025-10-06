@@ -96,7 +96,7 @@ class SendNotifyService
             return;
         }
 
-        if ($notify->alertRule->isAcknowledged()) {
+        if ($notify->alertRule->isAcknowledged() && !$isAcknowledged) {
             $notify->status = Notify::STATUS_ACKNOWLEDGED;
             $notify->save();
             return;
@@ -120,7 +120,7 @@ class SendNotifyService
         $telegrams = $endpoints->where("type", EndpointType::TELEGRAM->value)->toArray();
         $flows = $endpoints->where("type", EndpointType::FLOW->value);
 
-        if ($flows->isNotEmpty()) {
+        if (!$isAcknowledged && $flows->isNotEmpty()) {
             if ($notify->alertRule->state == AlertRule::CRITICAL)
                 foreach ($flows as $flow) {
                     NotifyFlowEndpointJob::dispatch($notify, $flow->id);

@@ -42,12 +42,20 @@ class PrometheusCheck extends BaseModel implements Messageable
         $countResolve = 0;
         $countFire = 0;
 
-
+        foreach ($this->alerts as $alert) {
+            if ($alert['skylogsStatus'] == self::RESOLVED) {
+                $countResolve++;
+            } elseif ($alert['skylogsStatus'] == self::FIRE) {
+                $countFire++;
+            }
+        }
         PrometheusHistory::create(
             [
                 "alertRuleId" => $this->alertRuleId,
-                "alert" => $this->alert,
+                "alerts" => $this->alerts,
                 "state" => $this->state,
+                "countResolve" => $countResolve,
+                "countFire" => $countFire,
             ]
         );
     }
@@ -63,8 +71,6 @@ class PrometheusCheck extends BaseModel implements Messageable
             PrometheusHistory::create(
                 [
                     "alertRuleId" => $this->alertRuleId,
-                    "dataSourceId" => $this->dataSourceId,
-                    "dataSourceName" => $this->dataSourceName,
                     "alerts" => $this->alerts,
                     "state" => $this->state,
                 ]
@@ -97,37 +103,44 @@ class PrometheusCheck extends BaseModel implements Messageable
             }
         }
 
-        $text .= "Data Source: " . $this->dataSourceName . "\n";
 
-        if (empty($this->state) || $this->state == self::FIRE) {
-            $severity = $this->alert["labels"]['severity'] ?? "";
-            switch ($severity) {
-                case "warning":
-                    $text .= "Warning ⚠️" . "\n";
-                    break;
-                case "info":
-                    $text .= "Info ℹ️" . "\n";
-                    break;
-                default:
-                    $text .= "Fire 🔥" . "\n";
-                    break;
+        if (!empty($this->alerts)) {
+            foreach ($this->alerts as $alert) {
+                if (empty($alert['skylogsStatus']) || $alert['skylogsStatus'] == self::FIRE) {
+                    $severity = $alert["labels"]['severity'] ?? "";
+                    switch ($severity) {
+                        case "warning":
+                            $text .= "Warning ⚠️" . "\n";
+                            break;
+                        case "info":
+                            $text .= "Info ℹ️" . "\n";
+                            break;
+                        default:
+                            $text .= "Fire 🔥" . "\n";
+                            break;
+                    }
+                } else {
+                    $text .= "Resolved ✅" . "\n";
+
+                }
+
+                $text .= "Data Source: " . $alert['dataSourceName'] . "\n";
+                if (!empty($alert['labels']))
+                    foreach ($needLabelArray as $label) {
+                        if (!empty($alert['labels'][$label])) {
+                            $text .= "$label : " . $alert['labels'][$label] . "\n";
+                        }
+                    }
+                if (!empty($alert['annotations']))
+                    foreach ($needLabelAnotArray as $label) {
+                        if (!empty($alert['annotations'][$label])) {
+                            $text .= "$label : " . $alert['annotations'][$label] . "\n";
+                        }
+                    }
+                $text .= "\n************\n\n";
             }
-        } else {
-            $text .= "Resolved ✅" . "\n";
         }
 
-        if (!empty($this->alert['labels']))
-            foreach ($needLabelArray as $label) {
-                if (!empty($this->alert['labels'][$label])) {
-                    $text .= "$label : " . $this->alert['labels'][$label] . "\n";
-                }
-            }
-        if (!empty($this->alert['annotations']))
-            foreach ($needLabelAnotArray as $label) {
-                if (!empty($this->alert['annotations'][$label])) {
-                    $text .= "$label : " . $this->alert['annotations'][$label] . "\n";
-                }
-            }
 
         $text .= "date: " . Jalalian::now()->format("Y/m/d");
 
@@ -176,7 +189,16 @@ class PrometheusCheck extends BaseModel implements Messageable
 
     public function callMessage(): string
     {
-        return $this->defaultMessage();
+
+        $text = "Alert ".$this->alertRuleName;
+
+        $text .= match ($this->state) {
+            self::FIRE => " fired",
+            self::RESOLVED => " resolved",
+            default => "",
+        };
+
+        return $text;
 
     }
 

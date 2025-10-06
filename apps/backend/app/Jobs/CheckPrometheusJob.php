@@ -18,7 +18,6 @@ class CheckPrometheusJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
 
-
     /**
      * Create a new job instance.
      *
@@ -41,9 +40,8 @@ class CheckPrometheusJob implements ShouldQueue
         $alerts = app(PrometheusInstanceService::class)->getTriggered();
 
         $prometheusService = app(PrometheusService::class);
-        $fireAlertsByRule = $prometheusService->CheckPrometheusFiredAlerts($alerts,$alertRules);
-        $prometheusService->CheckAlerts($fireAlertsByRule);
-        $prometheusService->refreshStatus();
+        $fireAlertsByRule = $prometheusService->CheckPrometheusFiredAlerts($alerts, $alertRules);
+        $prometheusService->CheckAlerts($alertRules, $fireAlertsByRule);
 
 
     }
