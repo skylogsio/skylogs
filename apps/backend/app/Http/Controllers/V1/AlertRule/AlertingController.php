@@ -383,7 +383,8 @@ class AlertingController extends Controller
         }
         $alert->extraField = $extraField;
 
-        $alert->severityLabel = $alert->severity ? $this->zabbixService->getSeverities()[$alert->severity] : "";
+        $severities = $this->zabbixService->getSeverities()->pluck("value", "key")->toArray();
+        $alert->severityLabel = ( $alert->severity !== null && $alert->severity !== '' ) ? $severities[$alert->severity] : "";
         $alert->hasAdminAccess = $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert);
         $alert->has_admin_access = $alert->hasAdminAccess;
         [$alertStatus, $alertStatusCount] = $alert->getStatus();

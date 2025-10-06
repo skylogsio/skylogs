@@ -117,7 +117,7 @@ class ZabbixService
 
     public function getSeverities()
     {
-        return [
+        return collect([
             [
                 "key" => "0",
                 "value" => "Not classified",
@@ -142,7 +142,7 @@ class ZabbixService
                 "key" => "5",
                 "value" => "Disaster",
             ],
-        ];
+        ]);
     }
 
     public function checkAlertRules($dataSource, $alertRules, $data)
