@@ -458,6 +458,19 @@ class AlertingController extends Controller
                 }
 
                 break;
+            case AlertRuleType::ZABBIX:
+                $model->name = $request->name;
+                $model->dataSourceIds = array_unique($request->dataSourceIds ?? []);
+                $model->hosts = $request->hosts ?? [];
+                $model->actions = $request->actions ?? [];
+                $model->severity = $request->severity ?? "";
+
+                if ($model->isDirty()) {
+                    $model->state = null;
+                    $model->save();
+                }
+
+                break;
             case AlertRuleType::ELASTIC:
                 $model->name = $request->name;
                 $model->dataSourceId = $request->dataSourceId;
