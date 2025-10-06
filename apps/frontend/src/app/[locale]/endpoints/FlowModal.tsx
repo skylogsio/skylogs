@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -11,17 +11,19 @@ import {
   MenuItem,
   Stack,
   TextField,
-  Typography
+  useTheme
 } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
-import { MdAccessTime, MdDelete, MdFlashOn } from "react-icons/md";
+import { AiFillClockCircle, AiFillApi } from "react-icons/ai";
+import { MdDelete } from "react-icons/md";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
 import type { IFlow } from "@/@types/flow";
 import { type CreateUpdateModal } from "@/@types/global";
-import { createFlow, updateFlow, getAllEndpoints } from "@/api/flow";
+import { createEndpoint, updateEndpoint } from "@/api/endpoint";
+import { getAllEndpoints } from "@/api/flow";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
@@ -66,8 +68,7 @@ const defaultValues: FlowFormType = {
 };
 
 export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalProps) {
-  const [selectedEndpoints, setSelectedEndpoints] = useState<Record<number, string[]>>({});
-
+  const { palette } = useTheme();
   const {
     register,
     handleSubmit,
@@ -98,7 +99,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
         ...body,
         type: "flow"
       };
-      return createFlow(payload);
+      return createEndpoint(payload);
     },
     onSuccess: () => {
       toast.success("Flow Created Successfully.");
@@ -111,13 +112,9 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
     mutationFn: ({ id, body }: { id: string; body: FlowFormType }) => {
       const payload = {
         ...body,
-        type: "flow",
-        steps: body.steps.map((step, index) => ({
-          ...step,
-          endpointIds: step.type === "endpoint" ? selectedEndpoints[index] || [] : undefined
-        }))
+        type: "flow"
       };
-      return updateFlow(id, payload);
+      return updateEndpoint(id, payload);
     },
     onSuccess: () => {
       toast.success("Flow Updated Successfully.");
@@ -127,7 +124,6 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
   });
 
   function handleSubmitForm(body: FlowFormType) {
-    console.log(body);
     if (data === "NEW") {
       createFlowMutation(body);
     } else if (data) {
@@ -141,7 +137,6 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
 
   function addEndpointStep() {
     append({ type: "endpoint" as const, endpointIds: [] });
-    setSelectedEndpoints((prev) => ({ ...prev, [fields.length]: [] }));
   }
 
   const handleRemoveEndpointChip = (endpointId: string, index: number) => {
@@ -179,7 +174,6 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
   useEffect(() => {
     if (data === "NEW") {
       reset(defaultValues);
-      setSelectedEndpoints({});
     } else if (data) {
       reset(data as FlowFormType);
       const endpointSelections: Record<number, string[]> = {};
@@ -188,13 +182,12 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
           endpointSelections[index] = step.endpointIds;
         }
       });
-      setSelectedEndpoints(endpointSelections);
     }
   }, [data, open, reset]);
 
   return (
     <ModalContainer
-      title="Create New Flow"
+      title={data === "NEW" ? "Create New Flow" : "Update Flow"}
       open={open}
       onClose={onClose}
       disableEscapeKeyDown
@@ -214,42 +207,23 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
           {...register("name")}
         />
 
-        {/* Flow Steps */}
-        <Box sx={{ mb: 3 }}>
+        <Stack spacing={2} my={2}>
           {fields.map((field, index) => (
-            <Box
-              key={field.id}
-              sx={{
-                border: "1px solid #e0e0e0",
-                borderRadius: 1,
-                p: 2,
-                mb: 2,
-                position: "relative"
-              }}
-            >
-              <IconButton
-                onClick={() => remove(index)}
-                sx={{ position: "absolute", top: 8, right: 8 }}
-                size="small"
-              >
-                <MdDelete size={16} />
-              </IconButton>
-
+            <Stack key={field.id} direction="row" alignItems="center" spacing={2}>
               {field.type === "wait" ? (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <MdAccessTime size={20} color="#ff9800" />
-                  <Typography variant="body2" sx={{ minWidth: 80 }}>
-                    Duration
-                  </Typography>
+                <>
+                  <Box component="span">
+                    <AiFillClockCircle size={28} color={palette.warning.main} />
+                  </Box>
                   <TextField
-                    label="ThreadID"
+                    label="Duration"
                     variant="filled"
                     error={!!errors.steps?.[index]}
                     helperText={errors.steps?.[index]?.message}
                     {...register(`steps.${index}.duration`, { valueAsNumber: true })}
                   />
                   <TextField
-                    label="ThreadID"
+                    label="Time Unit"
                     variant="filled"
                     error={!!errors.steps?.[index]}
                     helperText={errors.steps?.[index]?.message}
@@ -263,13 +237,12 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
                       </MenuItem>
                     ))}
                   </TextField>
-                </Box>
+                </>
               ) : (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <MdFlashOn size={20} color="#2196f3" />
-                  <Typography variant="body2" sx={{ minWidth: 80 }}>
-                    Endpoints
-                  </Typography>
+                <>
+                  <Box component="span">
+                    <AiFillApi size={28} color={palette.primary.main} />
+                  </Box>
                   <Controller
                     control={control}
                     name={`steps.${index}.endpointIds`}
@@ -298,48 +271,25 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
                       </TextField>
                     )}
                   />
-                  {/* <FormControl sx={{ flex: 1 }}>
-                    <InputLabel>Select Endpoints</InputLabel>
-                    <Select
-                      multiple
-                      value={selectedEndpoints[index] || []}
-                      onChange={(e) => handleEndpointSelection(index, e.target.value as string[])}
-                      input={<OutlinedInput label="Select Endpoints" />}
-                      renderValue={(selected) => (
-                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                          {selected.map((value) => {
-                            const endpoint = endpointsData?.find((ep) => ep.id === value);
-                            return (
-                              <Chip key={value} label={endpoint?.name || value} size="small" />
-                            );
-                          })}
-                        </Box>
-                      )}
-                    >
-                      {endpointsData?.map((endpoint) => (
-                        <MenuItem key={endpoint.id} value={endpoint.id}>
-                          {endpoint.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl> */}
-                </Box>
+                </>
               )}
-            </Box>
+              <IconButton onClick={() => remove(index)}>
+                <MdDelete />
+              </IconButton>
+            </Stack>
           ))}
-        </Box>
+        </Stack>
 
-        {/* Add Step Buttons */}
         <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
           <Button
             variant="outlined"
             onClick={addWaitStep}
-            startIcon={<MdAccessTime size={16} />}
+            startIcon={<AiFillClockCircle size={18} />}
             sx={{
-              color: "#ff9800",
-              borderColor: "#ff9800",
+              color: palette.warning.main,
+              borderColor: palette.warning.main,
               "&:hover": {
-                borderColor: "#ff9800",
+                borderColor: palette.warning.main,
                 backgroundColor: "rgba(255, 152, 0, 0.04)"
               }
             }}
@@ -349,12 +299,12 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
           <Button
             variant="outlined"
             onClick={addEndpointStep}
-            startIcon={<MdFlashOn size={16} />}
+            startIcon={<AiFillApi size={18} color={palette.primary.main} />}
             sx={{
-              color: "#2196f3",
-              borderColor: "#2196f3",
+              color: palette.primary.main,
+              borderColor: palette.primary.main,
               "&:hover": {
-                borderColor: "#2196f3",
+                borderColor: palette.primary.main,
                 backgroundColor: "rgba(33, 150, 243, 0.04)"
               }
             }}
@@ -381,7 +331,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
           size="large"
           fullWidth
         >
-          CREATE
+          {data === "NEW" ? "Create" : "Update"}
         </Button>
       </Box>
     </ModalContainer>

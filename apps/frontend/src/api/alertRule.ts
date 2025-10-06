@@ -4,7 +4,8 @@ import type {
   IAlertRule,
   IAlertRuleCreateData,
   IAlertRuleEndpoints,
-  IAlertRuleUsers
+  IAlertRuleUsers,
+  IZabbixCreateData
 } from "@/@types/alertRule";
 import type { IEndpoint } from "@/@types/endpoint";
 import type {
@@ -20,6 +21,7 @@ const ALERT_RULE_NOTIFY_URL = "alert-rule-notify";
 const ALERT_RULE_USER_URL = "alert-rule-user";
 const ALERT_RULE_TAGS_URL = "alert-rule-tag";
 const ALERT_RULE_CREATE_DATA_URL = `${ALERT_RULE_URL}/create-data`;
+const ZABBIX_CREATE_DATA_URL = `${ALERT_RULE_URL}/create-data/zabbix`;
 const ALERT_RULE_GROUP_ACTION = `${ALERT_RULE_URL}/group-action`;
 
 export async function createAlertRule(body: unknown): Promise<ServerResponse<unknown>> {
@@ -244,6 +246,15 @@ export async function getAlertRuleLabelValues(label: string): Promise<string[]> 
 export async function getAlertRuleCreateData(): Promise<IAlertRuleCreateData> {
   try {
     const response = await axios.get<IAlertRuleCreateData>(ALERT_RULE_CREATE_DATA_URL);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getZabbixCreateData(): Promise<IZabbixCreateData> {
+  try {
+    const response = await axios.get<IZabbixCreateData>(ZABBIX_CREATE_DATA_URL);
     return response.data;
   } catch (error) {
     throw error;

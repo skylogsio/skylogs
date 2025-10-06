@@ -2,6 +2,7 @@ import { alpha, Chip } from "@mui/material";
 import { BsChatDotsFill, BsMicrosoftTeams, BsTelegram, BsTelephoneFill } from "react-icons/bs";
 import { MdEmail } from "react-icons/md";
 import { SiMattermost } from "react-icons/si";
+import { TiFlowChildren } from "react-icons/ti";
 
 export const ENDPOINT_TYPE_CHIP = {
   sms: {
@@ -28,6 +29,11 @@ export const ENDPOINT_TYPE_CHIP = {
     title: "Email",
     color: "#f6a645",
     icon: <MdEmail style={{ padding: "0.2rem" }} color="#f6a645" />
+  },
+  flow: {
+    title: "Flow",
+    color: "#ff00ff",
+    icon: <TiFlowChildren style={{ padding: "0.2rem" }} color="#ff00ff" />
   },
   "matter-most": {
     title: "Matter Most",
