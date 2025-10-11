@@ -83,6 +83,13 @@ class AlertRuleService
             ];
         }
 
+        if ($request->filled("userId")) {
+            $match['$or'] = [
+                ['userId' =>  $request->userId],
+                ['userIds' =>  $request->userId]
+            ];
+        }
+
         if ($request->filled("types")) {
             $types = explode(',', $request->types);
             $match['type'] = ['$in' => $types];
