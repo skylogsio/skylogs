@@ -738,8 +738,8 @@ class AlertingController extends Controller
 
         $arrayData = $data["data"];
         foreach ($arrayData as &$item) {
-            $item["updatedAt"] = Jalalian::fromCarbon(Carbon::parse($item["updatedAt"]))->format('Y/m/d H:i:s');
-            $item["createdAt"] = Jalalian::fromCarbon(Carbon::parse($item["createdAt"]))->format('Y/m/d H:i:s');
+            $item["updatedAt"] = Jalalian::fromCarbon(Carbon::parse($item["updatedAt"])->setTimezone('Asia/Tehran'))->format('Y/m/d H:i:s');
+            $item["createdAt"] = Jalalian::fromCarbon(Carbon::parse($item["createdAt"])->setTimezone('Asia/Tehran'))->format('Y/m/d H:i:s');
         }
         $data['data'] = $arrayData;
 
