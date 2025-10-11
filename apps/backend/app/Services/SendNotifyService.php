@@ -121,10 +121,25 @@ class SendNotifyService
         $flows = $endpoints->where("type", EndpointType::FLOW->value);
 
         if (!$isAcknowledged && $flows->isNotEmpty()) {
-            if ($notify->alertRule->state == AlertRule::CRITICAL)
+
+            $resultFlows = $notify->resultFlows ?? [];
+
+            if ($notify->alertRule->state == AlertRule::CRITICAL) {
                 foreach ($flows as $flow) {
-                    NotifyFlowEndpointJob::dispatch($notify, $flow->id);
+                    $runningAlertIds = $flow->runningAlertIds ?? [];
+                    if(!in_array($flow->id, $runningAlertIds)) {
+                        $flow->push("runningAlertIds", $notify->alertRuleId);
+                        NotifyFlowEndpointJob::dispatch($notify, $flow->id);
+
+                    } else {
+                        $resultFlows[$flow->id] = "Flow is already running";
+                    }
                 }
+            }else{
+                $resultFlows[] =  "Not Critical Alert";
+            }
+
+            $notify->resultFlows = $resultFlows;
         }
 
         if ($phones->isNotEmpty()) {
@@ -266,6 +281,7 @@ class SendNotifyService
 
             $notify->resultFlows = $resultFlows;
             $notify->save();
+            $endpoint->pull("runningAlertIds",$notify->alertRuleId);
             return;
         }
 
@@ -280,6 +296,7 @@ class SendNotifyService
             ];
             $notify->resultFlows = $resultFlows;
             $notify->save();
+            $endpoint->pull("runningAlertIds",$notify->alertRuleId);
             return;
         }
 
@@ -296,12 +313,13 @@ class SendNotifyService
             ];
             $notify->resultFlows = $resultFlows;
             $notify->save();
+            $endpoint->pull("runningAlertIds",$notify->alertRuleId);
             return;
         }
         $steps = $endpoint->steps;
 
         if ($currentStepIndex >= count($steps)) {
-
+            $endpoint->pull("runningAlertIds",$notify->alertRuleId);
             return;
         }
 
