@@ -128,9 +128,8 @@ class SendNotifyService
                 foreach ($flows as $flow) {
                     $runningAlertIds = $flow->runningAlertIds ?? [];
                     if(!in_array($flow->id, $runningAlertIds)) {
-                        $flow->push("runningAlertIds", $notify->alertRuleId);
+                        $flow->push("runningAlertIds", $notify->alertRuleId,true);
                         NotifyFlowEndpointJob::dispatch($notify, $flow->id);
-
                     } else {
                         $resultFlows[$flow->id] = "Flow is already running";
                     }
