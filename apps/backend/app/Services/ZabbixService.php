@@ -118,30 +118,12 @@ class ZabbixService
     public function getSeverities()
     {
         return collect([
-            [
-                "key" => "0",
-                "value" => "Not classified",
-            ],
-            [
-                "key" => "1",
-                "value" => "Information",
-            ],
-            [
-                "key" => "2",
-                "value" => "Warning",
-            ],
-            [
-                "key" => "3",
-                "value" => "Average",
-            ],
-            [
-                "key" => "4",
-                "value" => "High",
-            ],
-            [
-                "key" => "5",
-                "value" => "Disaster",
-            ],
+           "Not classified",
+           "Information",
+           "Warning",
+           "Average",
+           "High",
+           "Disaster"
         ]);
     }
 
@@ -162,7 +144,7 @@ class ZabbixService
                     continue;
                 }
 
-                if (!empty($rule['severity']) && $data['event_nseverity'] != $rule['severity']) {
+                if (!empty($rule['severity']) && !in_array($data['event_severity'], $rule['severity'])) {
                     continue;
                 }
 

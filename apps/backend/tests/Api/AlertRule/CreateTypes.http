@@ -81,7 +81,7 @@ Authorization: Bearer {{authToken}}
     "dataSourceIds": ["682777ead8edb934b17c5fe5"],
     "actions" : ["Action1"],
     "hosts" : ["Host1"],
-    "severity" : "5",
+    "severities" : ["5"],
     "endpoints": [],
     "accessUsers": [],
     "tags": []
