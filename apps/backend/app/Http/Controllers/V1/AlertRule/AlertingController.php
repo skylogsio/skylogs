@@ -293,7 +293,7 @@ class AlertingController extends Controller
                         "dataSourceIds" => array_unique($request->dataSourceIds ?? []),
                         "hosts" => $request->hosts ?? [],
                         "actions" => $request->actions ?? [],
-                        "severity" => $request->severity ?? "",
+                        "severities" => $request->severities ?? [],
                     ]);
                     break;
                 case AlertRuleType::NOTIFICATION:
@@ -383,8 +383,6 @@ class AlertingController extends Controller
         }
         $alert->extraField = $extraField;
 
-        $severities = $this->zabbixService->getSeverities()->pluck("value", "key")->toArray();
-        $alert->severityLabel = ( $alert->severity !== null && $alert->severity !== '' ) ? $severities[$alert->severity] : "";
         $alert->hasAdminAccess = $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert);
         $alert->has_admin_access = $alert->hasAdminAccess;
         [$alertStatus, $alertStatusCount] = $alert->getStatus();
@@ -466,7 +464,7 @@ class AlertingController extends Controller
                 $model->dataSourceIds = array_unique($request->dataSourceIds ?? []);
                 $model->hosts = $request->hosts ?? [];
                 $model->actions = $request->actions ?? [];
-                $model->severity = $request->severity ?? "";
+                $model->severities = $request->severities ?? [];
 
                 if ($model->isDirty()) {
                     $model->state = null;
@@ -738,8 +736,8 @@ class AlertingController extends Controller
 
         $arrayData = $data["data"];
         foreach ($arrayData as &$item) {
-            $item["updatedAt"] = Jalalian::fromCarbon(Carbon::parse($item["updatedAt"]))->format('Y/m/d H:i:s');
-            $item["createdAt"] = Jalalian::fromCarbon(Carbon::parse($item["createdAt"]))->format('Y/m/d H:i:s');
+            $item["updatedAt"] = Jalalian::fromCarbon(Carbon::parse($item["updatedAt"])->setTimezone('Asia/Tehran'))->format('Y/m/d H:i:s');
+            $item["createdAt"] = Jalalian::fromCarbon(Carbon::parse($item["createdAt"])->setTimezone('Asia/Tehran'))->format('Y/m/d H:i:s');
         }
         $data['data'] = $arrayData;
 
