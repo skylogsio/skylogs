@@ -70,7 +70,8 @@ export default function ViewAlertRule() {
   const { data, refetch } = useQuery({
     queryKey: ["view-alert-rule", alertId],
     queryFn: () => getAlertRuleById(alertId),
-    enabled: Boolean(alertId)
+    enabled: Boolean(alertId),
+    refetchInterval: 10 * 1000
   });
 
   const { mutate: silenceAlertRuleMutation, isPending: isSilencing } = useMutation({
