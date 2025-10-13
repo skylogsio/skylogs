@@ -162,7 +162,7 @@ class ZabbixService
                     continue;
                 }
 
-                if (!empty($rule['severity']) && $data['event_nseverity'] != $rule['actions']) {
+                if (!empty($rule['severity']) && $data['event_nseverity'] != $rule['severity']) {
                     continue;
                 }
 
