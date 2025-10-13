@@ -43,7 +43,7 @@ const zabbixAlertRuleSchema = z.object({
   tags: z.array(z.string()).optional().default([]),
   actions: z.array(z.string()).optional().default([]),
   hosts: z.array(z.string()).optional().default([]),
-  severity: z.string().optional().default(""),
+  severities: z.array(z.string()).optional().default([]),
   dataSourceIds: z.array(z.string()).min(1, "This field is Required.")
 });
 
@@ -62,7 +62,7 @@ const defaultValues: ZabbixFromType = {
   actions: [],
   hosts: [],
   dataSourceIds: [],
-  severity: ""
+  severities: []
 };
 
 export default function ZabbixAlertRuleForm({
@@ -147,7 +147,10 @@ export default function ZabbixAlertRuleForm({
     );
   }
 
-  function removeChip(item: string, key: keyof Pick<IZabbixCreateData, "actions" | "hosts">) {
+  function removeChip(
+    item: string,
+    key: keyof Pick<IZabbixCreateData, "actions" | "hosts" | "severities">
+  ) {
     const allItems = getValues(key);
     setValue(
       key,
@@ -157,7 +160,7 @@ export default function ZabbixAlertRuleForm({
 
   function renderChip(
     selectedItems: unknown,
-    key: keyof Pick<IZabbixCreateData, "actions" | "hosts">
+    key: keyof Pick<IZabbixCreateData, "actions" | "hosts" | "severities">
   ): ReactNode {
     return (
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
@@ -235,15 +238,18 @@ export default function ZabbixAlertRuleForm({
           <TextField
             label="Severity"
             variant="filled"
-            error={!!errors.severity}
-            helperText={errors.severity?.message}
-            {...register("severity")}
-            value={watch("severity") ?? ""}
+            error={!!errors.severities}
+            helperText={errors.severities?.message}
+            {...register("severities")}
+            value={watch("severities") ?? ""}
             select
+            slotProps={{
+              select: { multiple: true, renderValue: (value) => renderChip(value, "severities") }
+            }}
           >
-            {createData?.severity?.map((item) => (
-              <MenuItem key={item.key} value={item.key}>
-                {item.value}
+            {createData?.severities?.map((item) => (
+              <MenuItem key={item} value={item}>
+                {item}
               </MenuItem>
             ))}
           </TextField>
