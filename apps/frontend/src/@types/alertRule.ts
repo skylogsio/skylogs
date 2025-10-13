@@ -43,8 +43,7 @@ export interface IAlertRule {
 export interface IZabbixAlertRule extends IAlertRule {
   actions?: string[];
   hosts?: string[];
-  severity?: string;
-  severityLabel?: string;
+  severities?: string[];
 }
 
 export interface IAlertRuleEndpoints {

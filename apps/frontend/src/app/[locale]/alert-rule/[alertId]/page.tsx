@@ -296,12 +296,16 @@ export default function ViewAlertRule() {
                 <Typography>{data.dataSourceAlertName}</Typography>
               </Stack>
             )}
-            {((data as IZabbixAlertRule)?.severityLabel?.length ?? 0) > 0 && (
+            {((data as IZabbixAlertRule)?.severities?.length ?? 0) > 0 && (
               <Stack direction="row" alignItems="center" spacing={1} width="50%">
                 <Typography variant="subtitle1" fontWeight="bold">
                   Severity:
                 </Typography>
-                <Typography>{(data as IZabbixAlertRule).severityLabel}</Typography>
+                <Stack paddingX={1} direction="row" gap={1} flexWrap="wrap">
+                  {(data as IZabbixAlertRule).severities?.map((severity) => (
+                    <Chip key={severity} variant="filled" label={severity} size="small" />
+                  ))}
+                </Stack>
               </Stack>
             )}
             {((data as IZabbixAlertRule)?.actions?.length ?? 0) > 0 && (
@@ -309,9 +313,11 @@ export default function ViewAlertRule() {
                 <Typography variant="subtitle1" fontWeight="bold">
                   Actions:
                 </Typography>
-                {(data as IZabbixAlertRule).actions?.map((action) => (
-                  <Chip key={action} variant="filled" label={action} size="small" />
-                ))}
+                <Stack paddingX={1} direction="row" gap={1} flexWrap="wrap">
+                  {(data as IZabbixAlertRule).actions?.map((action) => (
+                    <Chip key={action} variant="filled" label={action} size="small" />
+                  ))}
+                </Stack>
               </Stack>
             )}
             {((data as IZabbixAlertRule)?.hosts?.length ?? 0) > 0 && (
@@ -319,9 +325,11 @@ export default function ViewAlertRule() {
                 <Typography variant="subtitle1" fontWeight="bold">
                   Hosts:
                 </Typography>
-                {(data as IZabbixAlertRule).hosts?.map((host) => (
-                  <Chip key={host} variant="filled" label={host} size="small" />
-                ))}
+                <Stack paddingX={1} direction="row" gap={1} flexWrap="wrap">
+                  {(data as IZabbixAlertRule).hosts?.map((host) => (
+                    <Chip key={host} variant="filled" label={host} size="small" />
+                  ))}
+                </Stack>
               </Stack>
             )}
             <Stack direction="row" alignItems="center" spacing={1} width="100%">
