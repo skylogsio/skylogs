@@ -20,7 +20,7 @@ class ZabbixWebhookAlert extends BaseModel implements Messageable
 
     public function alertRule()
     {
-        return AlertRule::where("id", $this->alertRuleId)->first();
+        return $this->belongsTo(AlertRule::class, "alertRuleId", "_id");
     }
 
     public function defaultMessage(): string
@@ -61,7 +61,19 @@ class ZabbixWebhookAlert extends BaseModel implements Messageable
 
     public function telegram()
     {
-        return $this->defaultMessage();
+        $result = [
+            "message" => $this->defaultMessage(),
+        ];
+        if ($this->alertRule->enableAcknowledgeBtnInMessage() && $this->state == self::PROBLEM) {
+            $result["meta"] = [
+                [
+                    "text" => "Acknowledge",
+                    "url" => route("acknowledgeLink",['id' => $this->alertRuleId])
+                ]
+            ];
+        }
+
+        return $result;
     }
 
     public function matterMostMessage()
