@@ -15,6 +15,9 @@ class ZabbixWebhookAlert extends BaseModel implements Messageable
 
     protected $guarded = ['id', '_id',];
 
+    public const RESOLVED = "RESOLVED";
+    public const PROBLEM = "PROBLEM";
+
     public function alertRule()
     {
         return AlertRule::where("id", $this->alertRuleId)->first();
@@ -22,25 +25,35 @@ class ZabbixWebhookAlert extends BaseModel implements Messageable
 
     public function defaultMessage(): string
     {
-        $text = $this->alertRuleName;
+        $text = $this->alertRuleName. "\n\n";
 
-        $text .= "\nDataSource: ".$this->dataSourceName;
+        if (!empty($this->event_status )) {
+            switch ($this->event_status ) {
+                case self::RESOLVED:
+                    $text .= "State: Resolved ✅" . "\n\n";
+                    break;
+                case self::PROBLEM:
+                    $text .= "State: Fire 🔥" . "\n\n";
+                    break;
+            }
+        }
+
+        $text .= "\nDataSource: " . $this->dataSourceName;
         $text .= "\n\n" . $this->alert_subject;
 
         $text .= "\n\n" . $this->alert_message;
 
-        if (!empty($this->event_nseverity) && in_array($this->event_nseverity, ["0", "1", "2", "3", "4", "5",])) {
+        $text .= "\n\nSeverity: ";
+        $text .= match ($this->event_severity) {
+            "Not classified" => "Not classified",
+            "Information" => "Information ℹ️",
+            "Warning" => "Warning ⚠️",
+            "Average" => "Average 🟠",
+            "High" => "High ⚡",
+            "Disaster" => "Disaster 🔥",
+            default => $this->event_severity,
+        };
 
-            $text .= "\n\nSeverity: ";
-            $text .= match ($this->event_nseverity) {
-                "0" => "Not classified",
-                "1" => "Information ℹ️",
-                "2" => "Warning ⚠️",
-                "3" => "Average 🟠",
-                "4" => "High ⚡",
-                "5" => "Disaster 🔥"
-            };
-        }
         $text .= "\nDate: " . Jalalian::now()->format("Y/m/d");
 
         return $text;
@@ -50,6 +63,7 @@ class ZabbixWebhookAlert extends BaseModel implements Messageable
     {
         return $this->defaultMessage();
     }
+
     public function matterMostMessage()
     {
         return $this->defaultMessage();

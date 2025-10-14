@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\DataSourceType;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertRule;
+use App\Models\ZabbixCheck;
 use App\Models\ZabbixWebhookAlert;
 use Http;
 use Illuminate\Http\Client\Pool;
@@ -118,12 +119,12 @@ class ZabbixService
     public function getSeverities()
     {
         return collect([
-           "Not classified",
-           "Information",
-           "Warning",
-           "Average",
-           "High",
-           "Disaster"
+            "Not classified",
+            "Information",
+            "Warning",
+            "Average",
+            "High",
+            "Disaster"
         ]);
     }
 
@@ -167,11 +168,35 @@ class ZabbixService
                     $model->alertRuleId = $includedAlert->id;
                     $model->alertRuleName = $includedAlert->name;
                     $model->save();
+
                     SendNotifyService::CreateNotify(SendNotifyJob::ZABBIX_WEBHOOK, $model, $includedAlert->id);
 
                     $includedAlert->notifyAt = time();
                     $includedAlert->save();
 
+                    $check = ZabbixCheck::firstOrCreate([
+                        "alertRuleId" => $includedAlert->id,
+                    ], [
+                        "alertRuleId" => $includedAlert->id,
+                        "fireEvents" => []
+                    ]);
+
+                    if ($model->event_status == ZabbixWebhookAlert::RESOLVED) {
+                        $check->pull("fireEvents", $model->event_id);
+                    } elseif ($model->event_status == ZabbixWebhookAlert::PROBLEM) {
+                        $check->push("fireEvents", $model->event_id, true);
+                    }
+
+                    if(!empty($check->fireEvents)){
+                        $includedAlert->fireCount = count($check->fireEvents);
+                        $includedAlert->state = AlertRule::CRITICAL;
+                        $includedAlert->save();
+                    }else{
+                        $includedAlert->fireCount = 0;
+                        $includedAlert->state = AlertRule::RESOlVED;
+                        $includedAlert->save();
+                        $includedAlert->removeAcknowledge();
+                    }
                 }
             }
 

@@ -18,6 +18,7 @@ use App\Models\MetabaseWebhookAlert;
 use App\Models\PrometheusCheck;
 use App\Models\PrometheusHistory;
 use App\Models\SentryWebhookAlert;
+use App\Models\ZabbixCheck;
 use App\Models\ZabbixWebhookAlert;
 use App\Services\AlertRuleService;
 use App\Services\ApiService;
@@ -593,7 +594,13 @@ class AlertingController extends Controller
                 if (empty($alert->status) || $alert->status != AlertRule::RESOlVED) {
                     $sendResolve = true;
                     $alert->status = AlertRule::RESOlVED;
+                    $alert->fireCount = 0;
                     $alert->save();
+                    $zabbixCheck = ZabbixCheck::where("alertRuleId",$alert->id)->first();
+                    if ($zabbixCheck) {
+                        $zabbixCheck->fireEvents = [];
+                        $zabbixCheck->save();
+                    }
                 }
                 break;
             case AlertRuleType::PROMETHEUS:
