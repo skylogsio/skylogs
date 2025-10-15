@@ -145,7 +145,7 @@ class ZabbixService
                     continue;
                 }
 
-                if (!empty($rule['severity']) && !in_array($data['event_severity'], $rule['severity'])) {
+                if (!empty($rule['severities']) && !in_array($data['event_severity'], $rule['severities'])) {
                     continue;
                 }
 
