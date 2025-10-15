@@ -38,7 +38,7 @@ Route::prefix('v1')->group(function () {
 
     Route::post("auth/login", [AuthController::class, "login"]);
     Route::get("status/all", [StatusController::class, "Status"])->name("status.all");
-    Route::post('alert-rule/acknowledgeL/{id}', [AlertingController::class,'AcknowledgeLoginLink'])->name("acknowledgeLink");
+    Route::get('alert-rule/acknowledgeL/{id}', [AlertingController::class,'AcknowledgeLoginLink'])->name("acknowledgeLink");
 
     Route::middleware("apiAuth")->controller(ApiAlertController::class)->group(function () {
         Route::post("fire-alert", "FireAlert")->name("webhook.api.fire");
