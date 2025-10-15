@@ -68,7 +68,7 @@ class ZabbixWebhookAlert extends BaseModel implements Messageable
             $result["meta"] = [
                 [
                     "text" => "Acknowledge",
-                    "url" => route("acknowledgeLink",['id' => $this->alertRuleId])
+                    "url" => config("app.url").route("acknowledgeLink", ['id' => $this->alertRuleId],false)
                 ]
             ];
         }
