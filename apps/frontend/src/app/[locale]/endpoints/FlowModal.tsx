@@ -2,6 +2,7 @@ import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  alpha,
   Box,
   Button,
   Checkbox,
@@ -193,11 +194,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
       disableEscapeKeyDown
       maxWidth="md"
     >
-      <Box
-        component="form"
-        onSubmit={handleSubmit(handleSubmitForm, (error) => console.log(error))}
-        sx={{ width: "100%", mt: 2 }}
-      >
+      <Box component="form" onSubmit={handleSubmit(handleSubmitForm)} sx={{ width: "100%", mt: 2 }}>
         <TextField
           fullWidth
           label="Name"
@@ -207,13 +204,41 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
           {...register("name")}
         />
 
-        <Stack spacing={2} my={2}>
+        <Stack
+          spacing={2}
+          my={2}
+          p={2}
+          maxHeight="50vh"
+          sx={{ overflow: "auto", border: 1, borderColor: palette.grey[200], borderRadius: 2 }}
+        >
           {fields.map((field, index) => (
             <Stack key={field.id} direction="row" alignItems="center" spacing={2}>
               {field.type === "wait" ? (
                 <>
-                  <Box component="span">
-                    <AiFillClockCircle size={28} color={palette.warning.main} />
+                  <Box
+                    p={1}
+                    component="span"
+                    sx={{
+                      borderRadius: "50%",
+                      backgroundColor: alpha(palette.warning.main, 0.1),
+                      ...(index !== 0
+                        ? {
+                            position: "relative",
+                            "&::before": {
+                              content: "''",
+                              position: "absolute",
+                              display: "inline-block",
+                              left: "50%",
+                              bottom: "100%",
+                              width: "1px",
+                              height: "75%",
+                              backgroundColor: palette.grey[300]
+                            }
+                          }
+                        : {})
+                    }}
+                  >
+                    <AiFillClockCircle size={26} color={palette.warning.main} />
                   </Box>
                   <TextField
                     label="Duration"
@@ -240,8 +265,29 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
                 </>
               ) : (
                 <>
-                  <Box component="span">
-                    <AiFillApi size={28} color={palette.primary.main} />
+                  <Box
+                    p={1}
+                    sx={{
+                      borderRadius: "50%",
+                      backgroundColor: alpha(palette.primary.main, 0.1),
+                      ...(index !== 0
+                        ? {
+                            position: "relative",
+                            "&::before": {
+                              content: "''",
+                              position: "absolute",
+                              display: "inline-block",
+                              left: "50%",
+                              bottom: "100%",
+                              width: "1px",
+                              height: "75%",
+                              backgroundColor: palette.grey[300]
+                            }
+                          }
+                        : {})
+                    }}
+                  >
+                    <AiFillApi size={26} color={palette.primary.main} />
                   </Box>
                   <Controller
                     control={control}
@@ -273,21 +319,29 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
                   />
                 </>
               )}
-              <IconButton onClick={() => remove(index)}>
+              <IconButton
+                sx={{
+                  backgroundColor: palette.grey[100],
+                  transition: "all 200ms ease",
+                  "&:hover": { backgroundColor: palette.grey[200] }
+                }}
+                onClick={() => remove(index)}
+              >
                 <MdDelete />
               </IconButton>
             </Stack>
           ))}
         </Stack>
 
-        <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+        <Box sx={{ display: "flex", gap: 2, mb: 3, justifyContent: "center" }}>
           <Button
             variant="outlined"
             onClick={addWaitStep}
             startIcon={<AiFillClockCircle size={18} />}
             sx={{
               color: palette.warning.main,
-              borderColor: palette.warning.main,
+              backgroundColor: alpha(palette.warning.main, 0.1),
+              border: "none",
               "&:hover": {
                 borderColor: palette.warning.main,
                 backgroundColor: "rgba(255, 152, 0, 0.04)"
@@ -302,7 +356,8 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
             startIcon={<AiFillApi size={18} color={palette.primary.main} />}
             sx={{
               color: palette.primary.main,
-              borderColor: palette.primary.main,
+              backgroundColor: alpha(palette.primary.main, 0.1),
+              border: "none",
               "&:hover": {
                 borderColor: palette.primary.main,
                 backgroundColor: "rgba(33, 150, 243, 0.04)"
