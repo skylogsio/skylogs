@@ -243,7 +243,7 @@ export default function GeneralAlertRuleForm({
             </ToggleButtonGroup>
           </Grid>
           {watch("queryType") === "dynamic" ? (
-            <Grid container size={12}>
+            <Grid container size={12} spacing={2}>
               <Grid size={6}>
                 <TextField
                   label="Data Source"
