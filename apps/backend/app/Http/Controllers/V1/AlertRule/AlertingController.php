@@ -232,6 +232,7 @@ class AlertingController extends Controller
             $commonFields = [
                 'name' => $request->name,
                 'type' => $request->type,
+                'description' => $request->description ?? "",
                 'showAcknowledgeBtn' => $request->boolean('showAcknowledgeBtn'),
                 'tags' => $request->tags ?? [],
 //                "userId" => $request->userId,
@@ -383,7 +384,8 @@ class AlertingController extends Controller
             }
         }
         $alert->extraField = $extraField;
-
+        $alert->description = $alert->description ?? "";
+        $alert->showAcknowledgeBtn = $alert->showAcknowledgeBtn ?? false;
         $alert->hasAdminAccess = $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert);
         $alert->has_admin_access = $alert->hasAdminAccess;
         [$alertStatus, $alertStatusCount] = $alert->getStatus();
@@ -410,6 +412,7 @@ class AlertingController extends Controller
         }
         $model = $model->firstOrFail();
         $model->showAcknowledgeBtn = $request->boolean('showAcknowledgeBtn');
+        $model->description = $request->description ?? "";
 
         switch ($model->type) {
             case AlertRuleType::GRAFANA:
