@@ -13,13 +13,13 @@ import {
   ToggleButton,
   Typography
 } from "@mui/material";
-import { useMutation, useQueries  } from "@tanstack/react-query";
+import { useMutation, useQueries } from "@tanstack/react-query";
 import { useFieldArray, useForm } from "react-hook-form";
 import { HiPlus } from "react-icons/hi";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
-import type { IAlertRule  } from "@/@types/alertRule";
+import type { IAlertRule } from "@/@types/alertRule";
 import type { CreateUpdateModal } from "@/@types/global";
 import {
   createAlertRule,
@@ -28,7 +28,7 @@ import {
   getDataSourceAlertName,
   updateAlertRule
 } from "@/api/alertRule";
-import AlertRuleEndpointUserSelector from "@/components/AlertRule/Forms/AlertRuleEndpointUserSelector";
+import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGeneralFields";
 import ExtraField from "@/components/AlertRule/Forms/ExtraField";
 import type { ModalContainerProps } from "@/components/Modal/types";
 import ToggleButtonGroup from "@/components/ToggleButtonGroup";
@@ -60,7 +60,8 @@ const generalAlertRuleSchema = z.object({
   tags: z.array(z.string()).optional().default([]),
   dataSourceIds: z.array(z.string()).min(1, "Select at least one Data Source."),
   queryType: z.enum(QUERY_TYPE),
-  dataSourceAlertName: z.optional(z.string()).nullable()
+  dataSourceAlertName: z.optional(z.string()).nullable(),
+  description: z.string().optional().default("")
 });
 
 type GeneralAlertRuleType = z.infer<typeof generalAlertRuleSchema>;
@@ -81,7 +82,8 @@ const defaultValues: GeneralAlertRuleType = {
   tags: [],
   dataSourceIds: [],
   dataSourceAlertName: "",
-  queryType: "dynamic"
+  queryType: "dynamic",
+  description: ""
 };
 
 export default function GeneralAlertRuleForm({
@@ -111,7 +113,6 @@ export default function GeneralAlertRuleForm({
     control,
     name: "extraField"
   });
-
 
   const [{ data: tagsList }, { data: alertRuleNameList }, { data: dataSourceList }] = useQueries({
     queries: [
@@ -219,139 +220,140 @@ export default function GeneralAlertRuleForm({
             {...register("name")}
           />
         </Grid>
-        <AlertRuleEndpointUserSelector<GeneralAlertRuleType>
+        <AlertRuleGeneralFields<GeneralAlertRuleType>
           methods={{ control, getValues, setValue }}
           errors={errors}
-        />
-        <Grid size={12} display="flex" justifyContent="center">
-          <ToggleButtonGroup
-            exclusive
-            value={watch("queryType")}
-            onChange={(_, value) => value !== null && setValue("queryType", value)}
-          >
-            {QUERY_TYPE.map((value) => (
-              <ToggleButton
-                key={value}
-                disabled={value === "textQuery"}
-                value={value}
-                sx={{ textTransform: "capitalize !important" }}
-              >
-                {value}
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
-        </Grid>
-        {watch("queryType") === "dynamic" ? (
-          <Grid container size={12}>
-            <Grid size={6}>
-              <TextField
-                label="Data Source"
-                variant="filled"
-                error={!!errors.dataSourceIds}
-                helperText={errors.dataSourceIds?.message}
-                {...register("dataSourceIds")}
-                value={watch("dataSourceIds") ?? []}
-                select
-                slotProps={{ select: { multiple: true, renderValue: renderDataSourceChip } }}
-              >
-                {dataSourceList?.map((dataSource) => (
-                  <MenuItem key={dataSource.id} value={dataSource.id}>
-                    {dataSource.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid size={6}>
-              <Autocomplete
-                id="data-source-alert-rule-name"
-                options={alertRuleNameList ?? []}
-                freeSolo={type !== "prometheus"}
-                value={watch("dataSourceAlertName")}
-                onChange={(_, value) => setValue("dataSourceAlertName", value ?? "")}
-                autoSelect={type !== "prometheus"}
-                renderTags={(value: readonly string[], getItemProps) =>
-                  value.map((option: string, index: number) => {
-                    const { key, ...itemProps } = getItemProps({ index });
-                    return <Chip variant="filled" label={option} key={key} {...itemProps} />;
-                  })
-                }
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    slotProps={{
-                      input: params.InputProps,
-                      inputLabel: params.InputLabelProps,
-                      htmlInput: params.inputProps
-                    }}
-                    error={!!errors.dataSourceAlertName}
-                    helperText={errors.dataSourceAlertName?.message}
-                    variant="filled"
-                    label="DataSource Alert Name"
-                  />
-                )}
-              />
-            </Grid>
-            {fields.map((field, index) => (
-              <ExtraField
-                key={field.id}
-                keyTextFieldProps={{
-                  value: watch(`extraField.${index}.key`),
-                  onChange: (value) => setValue(`extraField.${index}.key`, value ?? ""),
-                  error: !!errors.extraField?.[index]?.key,
-                  helperText: errors.extraField?.[index]?.key?.message
-                }}
-                valueTextFieldProps={{
-                  value: watch(`extraField.${index}.value`),
-                  onChange: (value) => setValue(`extraField.${index}.value`, value ?? ""),
-                  error: !!errors.extraField?.[index]?.value,
-                  helperText: errors.extraField?.[index]?.value?.message
-                }}
-                onDelete={() => removeKeyPair(index)}
-              />
-            ))}
-            <Button
-              startIcon={<HiPlus />}
-              variant="outlined"
-              fullWidth
-              onClick={() => appendNewKeyPair(defaultKeyValue)}
+        >
+          <Grid size={12} display="flex" justifyContent="center">
+            <ToggleButtonGroup
+              exclusive
+              value={watch("queryType")}
+              onChange={(_, value) => value !== null && setValue("queryType", value)}
             >
-              Add New Key Value
-            </Button>
+              {QUERY_TYPE.map((value) => (
+                <ToggleButton
+                  key={value}
+                  disabled={value === "textQuery"}
+                  value={value}
+                  sx={{ textTransform: "capitalize !important" }}
+                >
+                  {value}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
           </Grid>
-        ) : (
-          <Grid size={12}>
-            <TextField label="Query" variant="filled" multiline minRows={4} />
-          </Grid>
-        )}
+          {watch("queryType") === "dynamic" ? (
+            <Grid container size={12}>
+              <Grid size={6}>
+                <TextField
+                  label="Data Source"
+                  variant="filled"
+                  error={!!errors.dataSourceIds}
+                  helperText={errors.dataSourceIds?.message}
+                  {...register("dataSourceIds")}
+                  value={watch("dataSourceIds") ?? []}
+                  select
+                  slotProps={{ select: { multiple: true, renderValue: renderDataSourceChip } }}
+                >
+                  {dataSourceList?.map((dataSource) => (
+                    <MenuItem key={dataSource.id} value={dataSource.id}>
+                      {dataSource.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid size={6}>
+                <Autocomplete
+                  id="data-source-alert-rule-name"
+                  options={alertRuleNameList ?? []}
+                  freeSolo={type !== "prometheus"}
+                  value={watch("dataSourceAlertName")}
+                  onChange={(_, value) => setValue("dataSourceAlertName", value ?? "")}
+                  autoSelect={type !== "prometheus"}
+                  renderTags={(value: readonly string[], getItemProps) =>
+                    value.map((option: string, index: number) => {
+                      const { key, ...itemProps } = getItemProps({ index });
+                      return <Chip variant="filled" label={option} key={key} {...itemProps} />;
+                    })
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      slotProps={{
+                        input: params.InputProps,
+                        inputLabel: params.InputLabelProps,
+                        htmlInput: params.inputProps
+                      }}
+                      error={!!errors.dataSourceAlertName}
+                      helperText={errors.dataSourceAlertName?.message}
+                      variant="filled"
+                      label="DataSource Alert Name"
+                    />
+                  )}
+                />
+              </Grid>
+              {fields.map((field, index) => (
+                <ExtraField
+                  key={field.id}
+                  keyTextFieldProps={{
+                    value: watch(`extraField.${index}.key`),
+                    onChange: (value) => setValue(`extraField.${index}.key`, value ?? ""),
+                    error: !!errors.extraField?.[index]?.key,
+                    helperText: errors.extraField?.[index]?.key?.message
+                  }}
+                  valueTextFieldProps={{
+                    value: watch(`extraField.${index}.value`),
+                    onChange: (value) => setValue(`extraField.${index}.value`, value ?? ""),
+                    error: !!errors.extraField?.[index]?.value,
+                    helperText: errors.extraField?.[index]?.value?.message
+                  }}
+                  onDelete={() => removeKeyPair(index)}
+                />
+              ))}
+              <Button
+                startIcon={<HiPlus />}
+                variant="outlined"
+                fullWidth
+                onClick={() => appendNewKeyPair(defaultKeyValue)}
+              >
+                Add New Key Value
+              </Button>
+            </Grid>
+          ) : (
+            <Grid size={12}>
+              <TextField label="Query" variant="filled" multiline minRows={4} />
+            </Grid>
+          )}
 
-        <Grid size={12}>
-          <Autocomplete
-            multiple
-            id="alert-tags"
-            options={tagsList ?? []}
-            freeSolo
-            value={watch("tags")}
-            onChange={(_, value) => setValue("tags", value)}
-            renderTags={(value: readonly string[], getItemProps) =>
-              value.map((option: string, index: number) => {
-                const { key, ...itemProps } = getItemProps({ index });
-                return <Chip variant="filled" label={option} key={key} {...itemProps} />;
-              })
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                slotProps={{
-                  input: params.InputProps,
-                  inputLabel: params.InputLabelProps,
-                  htmlInput: params.inputProps
-                }}
-                variant="filled"
-                label="Tags"
-              />
-            )}
-          />
-        </Grid>
+          <Grid size={12}>
+            <Autocomplete
+              multiple
+              id="alert-tags"
+              options={tagsList ?? []}
+              freeSolo
+              value={watch("tags")}
+              onChange={(_, value) => setValue("tags", value)}
+              renderTags={(value: readonly string[], getItemProps) =>
+                value.map((option: string, index: number) => {
+                  const { key, ...itemProps } = getItemProps({ index });
+                  return <Chip variant="filled" label={option} key={key} {...itemProps} />;
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  slotProps={{
+                    input: params.InputProps,
+                    inputLabel: params.InputLabelProps,
+                    htmlInput: params.inputProps
+                  }}
+                  variant="filled"
+                  label="Tags"
+                />
+              )}
+            />
+          </Grid>
+        </AlertRuleGeneralFields>
       </Grid>
       <Stack direction="row" justifyContent="flex-end" spacing={2} paddingY={2}>
         <Button variant="outlined" disabled={isCreating || isUpdating} onClick={onClose}>

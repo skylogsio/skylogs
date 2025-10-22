@@ -1,3 +1,5 @@
+import { type ReactNode } from "react";
+
 import { Chip, MenuItem, Stack, TextField } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -8,21 +10,24 @@ import {
   type FormState
 } from "react-hook-form";
 
-import { getAlertRuleCreateData } from "@/api/alertRule"; // Assuming you have a user type
+import { getAlertRuleCreateData } from "@/api/alertRule";
 
 type MustHaveFields = {
   endpointIds: string[];
   userIds: string[];
+  description: string;
 };
 
 type AlertRuleEndpointUserSelectorProps<T extends MustHaveFields> = {
   methods: Pick<UseFormReturn<T>, "control" | "setValue" | "getValues">;
   errors: FormState<T>["errors"];
+  children?: ReactNode;
 };
 
-export default function AlertRuleEndpointUserSelector<T extends MustHaveFields>({
+export default function AlertRuleGeneralFields<T extends MustHaveFields>({
   methods,
-  errors
+  errors,
+  children
 }: AlertRuleEndpointUserSelectorProps<T>) {
   const { control, setValue, getValues } = methods;
 
@@ -93,62 +98,81 @@ export default function AlertRuleEndpointUserSelector<T extends MustHaveFields>(
   };
 
   return (
-    <Stack direction="row" spacing={2} width="100%">
+    <>
+      <Stack direction="row" spacing={2} width="100%">
+        <Controller
+          control={control}
+          name={"endpointIds" as Path<T>}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              select
+              label="Endpoints"
+              variant="filled"
+              error={!!errors.endpointIds}
+              helperText={errors.endpointIds?.message as string}
+              value={field.value ?? []}
+              slotProps={{
+                select: {
+                  multiple: true,
+                  renderValue: renderEndpointChips
+                }
+              }}
+            >
+              {data?.endpoints.map((endpoint) => (
+                <MenuItem key={endpoint.id} value={endpoint.id}>
+                  {endpoint.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+        />
+        <Controller
+          control={control}
+          name={"userIds" as Path<T>}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              select
+              label="Users"
+              variant="filled"
+              error={!!errors.userIds}
+              helperText={errors.userIds?.message as string}
+              value={field.value ?? []}
+              slotProps={{
+                select: {
+                  multiple: true,
+                  renderValue: renderUserChips
+                }
+              }}
+            >
+              {data?.users.map((user) => (
+                <MenuItem key={user.id} value={user.id}>
+                  {user.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+        />
+      </Stack>
+      {children}
       <Controller
         control={control}
-        name={"endpointIds" as Path<T>}
+        name={"description" as Path<T>}
         render={({ field }) => (
           <TextField
             {...field}
-            select
-            label="Endpoints"
+            label="Description"
             variant="filled"
-            error={!!errors.endpointIds}
-            helperText={errors.endpointIds?.message as string}
+            error={!!errors.description}
+            helperText={errors.description?.message as string}
             value={field.value ?? []}
-            slotProps={{
-              select: {
-                multiple: true,
-                renderValue: renderEndpointChips
-              }
-            }}
-          >
-            {data?.endpoints.map((endpoint) => (
-              <MenuItem key={endpoint.id} value={endpoint.id}>
-                {endpoint.name}
-              </MenuItem>
-            ))}
-          </TextField>
+            multiline
+            minRows={3}
+            maxRows={8}
+          ></TextField>
         )}
       />
-
-      <Controller
-        control={control}
-        name={"userIds" as Path<T>}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            select
-            label="Users"
-            variant="filled"
-            error={!!errors.userIds}
-            helperText={errors.userIds?.message as string}
-            value={field.value ?? []}
-            slotProps={{
-              select: {
-                multiple: true,
-                renderValue: renderUserChips
-              }
-            }}
-          >
-            {data?.users.map((user) => (
-              <MenuItem key={user.id} value={user.id}>
-                {user.name}
-              </MenuItem>
-            ))}
-          </TextField>
-        )}
-      />
-    </Stack>
+    </>
   );
 }

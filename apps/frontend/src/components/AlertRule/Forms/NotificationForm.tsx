@@ -18,7 +18,7 @@ import { z } from "zod";
 import type { IAlertRule } from "@/@types/alertRule";
 import type { CreateUpdateModal } from "@/@types/global";
 import { createAlertRule, getAlertRuleTags, updateAlertRule } from "@/api/alertRule";
-import AlertRuleEndpointUserSelector from "@/components/AlertRule/Forms/AlertRuleEndpointUserSelector";
+import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGeneralFields";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
 const clientApiSchema = z.object({
@@ -30,7 +30,8 @@ const clientApiSchema = z.object({
   type: z.literal("notification").default("notification"),
   endpointIds: z.array(z.string()).optional().default([]),
   userIds: z.array(z.string()).optional().default([]),
-  tags: z.array(z.string()).optional().default([])
+  tags: z.array(z.string()).optional().default([]),
+  description: z.string().optional().default("")
 });
 
 type NotificationFormType = z.infer<typeof clientApiSchema>;
@@ -44,7 +45,8 @@ const defaultValues: NotificationFormType = {
   type: "notification",
   userIds: [],
   endpointIds: [],
-  tags: []
+  tags: [],
+  description: ""
 };
 
 export default function NotificationForm({ onClose, onSubmit, data }: NotificationModalProps) {
@@ -130,38 +132,39 @@ export default function NotificationForm({ onClose, onSubmit, data }: Notificati
             {...register("name")}
           />
         </Grid>
-        <AlertRuleEndpointUserSelector<NotificationFormType>
+        <AlertRuleGeneralFields<NotificationFormType>
           methods={{ control, getValues, setValue }}
           errors={errors}
-        />
-        <Grid size={12}>
-          <Autocomplete
-            multiple
-            id="api-alert-tags"
-            options={tagsList ?? []}
-            freeSolo
-            value={watch("tags")}
-            onChange={(_, value) => setValue("tags", value)}
-            renderTags={(value: readonly string[], getItemProps) =>
-              value.map((option: string, index: number) => {
-                const { key, ...itemProps } = getItemProps({ index });
-                return <Chip variant="filled" label={option} key={key} {...itemProps} />;
-              })
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                slotProps={{
-                  input: params.InputProps,
-                  inputLabel: params.InputLabelProps,
-                  htmlInput: params.inputProps
-                }}
-                variant="filled"
-                label="Tags"
-              />
-            )}
-          />
-        </Grid>
+        >
+          <Grid size={12}>
+            <Autocomplete
+              multiple
+              id="api-alert-tags"
+              options={tagsList ?? []}
+              freeSolo
+              value={watch("tags")}
+              onChange={(_, value) => setValue("tags", value)}
+              renderTags={(value: readonly string[], getItemProps) =>
+                value.map((option: string, index: number) => {
+                  const { key, ...itemProps } = getItemProps({ index });
+                  return <Chip variant="filled" label={option} key={key} {...itemProps} />;
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  slotProps={{
+                    input: params.InputProps,
+                    inputLabel: params.InputLabelProps,
+                    htmlInput: params.inputProps
+                  }}
+                  variant="filled"
+                  label="Tags"
+                />
+              )}
+            />
+          </Grid>
+        </AlertRuleGeneralFields>
       </Grid>
       <Stack direction="row" justifyContent="flex-end" spacing={2} marginTop={2}>
         <Button disabled={isCreating || isUpdating} variant="outlined" onClick={onClose}>

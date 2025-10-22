@@ -26,7 +26,7 @@ import {
   getDataSourceAlertName,
   updateAlertRule
 } from "@/api/alertRule";
-import AlertRuleEndpointUserSelector from "@/components/AlertRule/Forms/AlertRuleEndpointUserSelector";
+import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGeneralFields";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
 const sentryAlertRuleSchema = z.object({
@@ -44,7 +44,8 @@ const sentryAlertRuleSchema = z.object({
     .string({ required_error: "This field is Required." })
     .refine((data) => data.trim() !== "", {
       message: "This field is Required."
-    })
+    }),
+  description: z.string().optional().default("")
 });
 
 type SentryFromType = z.infer<typeof sentryAlertRuleSchema>;
@@ -60,7 +61,8 @@ const defaultValues: SentryFromType = {
   endpointIds: [],
   tags: [],
   dataSourceIds: [],
-  dataSourceAlertName: ""
+  dataSourceAlertName: "",
+  description: ""
 };
 
 export default function SentryAlertRuleForm({
@@ -181,84 +183,85 @@ export default function SentryAlertRuleForm({
             {...register("name")}
           />
         </Grid>
-        <AlertRuleEndpointUserSelector<SentryFromType>
+        <AlertRuleGeneralFields<SentryFromType>
           methods={{ control, getValues, setValue }}
           errors={errors}
-        />
-        <Grid size={6}>
-          <TextField
-            label="Data Source"
-            variant="filled"
-            error={!!errors.dataSourceIds}
-            helperText={errors.dataSourceIds?.message}
-            {...register("dataSourceIds")}
-            value={watch("dataSourceIds") ?? []}
-            select
-            slotProps={{ select: { multiple: true, renderValue: renderDataSourceChip } }}
-          >
-            {dataSourceList?.map((dataSource) => (
-              <MenuItem key={dataSource.id} value={dataSource.id}>
-                {dataSource.name}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Grid>
-        <Grid size={6}>
-          <Autocomplete
-            id="data-source-alert-rule-name"
-            options={alertRuleNameList ?? []}
-            freeSolo
-            value={watch("dataSourceAlertName")}
-            onChange={(_, value) => {
-              setValue("dataSourceAlertName", value ?? "");
-              trigger("dataSourceAlertName");
-            }}
-            autoSelect
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                slotProps={{
-                  input: params.InputProps,
-                  inputLabel: params.InputLabelProps,
-                  htmlInput: params.inputProps
-                }}
-                onChange={() => clearErrors("dataSourceAlertName")}
-                error={!!errors.dataSourceAlertName}
-                helperText={errors.dataSourceAlertName?.message}
-                variant="filled"
-                label="DataSource Alert Name"
-              />
-            )}
-          />
-        </Grid>
-        <Grid size={12}>
-          <Autocomplete
-            multiple
-            id="alert-tags"
-            options={tagsList ?? []}
-            freeSolo
-            value={watch("tags")}
-            onChange={(_, value) => setValue("tags", value)}
-            renderTags={(value: readonly string[], getItemProps) =>
-              value.map((option: string, index: number) => {
-                const { key, ...itemProps } = getItemProps({ index });
-                return <Chip variant="filled" label={option} key={key} {...itemProps} />;
-              })
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                slotProps={{
-                  input: params.InputProps,
-                  inputLabel: params.InputLabelProps,
-                  htmlInput: params.inputProps
-                }}
-                variant="filled"
-                label="Tags"
-              />
-            )}
-          />
-        </Grid>
+        >
+          <Grid size={6}>
+            <TextField
+              label="Data Source"
+              variant="filled"
+              error={!!errors.dataSourceIds}
+              helperText={errors.dataSourceIds?.message}
+              {...register("dataSourceIds")}
+              value={watch("dataSourceIds") ?? []}
+              select
+              slotProps={{ select: { multiple: true, renderValue: renderDataSourceChip } }}
+            >
+              {dataSourceList?.map((dataSource) => (
+                <MenuItem key={dataSource.id} value={dataSource.id}>
+                  {dataSource.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid size={6}>
+            <Autocomplete
+              id="data-source-alert-rule-name"
+              options={alertRuleNameList ?? []}
+              freeSolo
+              value={watch("dataSourceAlertName")}
+              onChange={(_, value) => {
+                setValue("dataSourceAlertName", value ?? "");
+                trigger("dataSourceAlertName");
+              }}
+              autoSelect
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  slotProps={{
+                    input: params.InputProps,
+                    inputLabel: params.InputLabelProps,
+                    htmlInput: params.inputProps
+                  }}
+                  onChange={() => clearErrors("dataSourceAlertName")}
+                  error={!!errors.dataSourceAlertName}
+                  helperText={errors.dataSourceAlertName?.message}
+                  variant="filled"
+                  label="DataSource Alert Name"
+                />
+              )}
+            />
+          </Grid>
+          <Grid size={12}>
+            <Autocomplete
+              multiple
+              id="alert-tags"
+              options={tagsList ?? []}
+              freeSolo
+              value={watch("tags")}
+              onChange={(_, value) => setValue("tags", value)}
+              renderTags={(value: readonly string[], getItemProps) =>
+                value.map((option: string, index: number) => {
+                  const { key, ...itemProps } = getItemProps({ index });
+                  return <Chip variant="filled" label={option} key={key} {...itemProps} />;
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  slotProps={{
+                    input: params.InputProps,
+                    inputLabel: params.InputLabelProps,
+                    htmlInput: params.inputProps
+                  }}
+                  variant="filled"
+                  label="Tags"
+                />
+              )}
+            />
+          </Grid>
+        </AlertRuleGeneralFields>
       </Grid>
       <Stack direction="row" justifyContent="flex-end" spacing={2} paddingTop={2}>
         <Button variant="outlined" disabled={isCreating || isUpdating} onClick={onClose}>
