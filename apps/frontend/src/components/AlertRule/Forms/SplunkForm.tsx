@@ -45,7 +45,8 @@ const splunkAlertRuleSchema = z.object({
     .refine((data) => data.trim() !== "", {
       message: "This field is Required."
     }),
-  description: z.string().optional().default("")
+  description: z.string().optional().default(""),
+  showAcknowledgeBtn: z.boolean().optional().default(false)
 });
 
 type SplunkFromType = z.infer<typeof splunkAlertRuleSchema>;
@@ -62,7 +63,8 @@ const defaultValues: SplunkFromType = {
   tags: [],
   dataSourceIds: [],
   dataSourceAlertName: "",
-  description: ""
+  description: "",
+  showAcknowledgeBtn: false
 };
 
 export default function SplunkAlertRuleForm({
@@ -184,7 +186,7 @@ export default function SplunkAlertRuleForm({
           />
         </Grid>
         <AlertRuleGeneralFields<SplunkFromType>
-          methods={{ control, getValues, setValue }}
+          methods={{ control, getValues, setValue, watch }}
           errors={errors}
         >
           <Grid size={6}>

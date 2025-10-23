@@ -61,7 +61,8 @@ const generalAlertRuleSchema = z.object({
   dataSourceIds: z.array(z.string()).min(1, "Select at least one Data Source."),
   queryType: z.enum(QUERY_TYPE),
   dataSourceAlertName: z.optional(z.string()).nullable(),
-  description: z.string().optional().default("")
+  description: z.string().optional().default(""),
+  showAcknowledgeBtn: z.boolean().optional().default(false)
 });
 
 type GeneralAlertRuleType = z.infer<typeof generalAlertRuleSchema>;
@@ -83,7 +84,8 @@ const defaultValues: GeneralAlertRuleType = {
   dataSourceIds: [],
   dataSourceAlertName: "",
   queryType: "dynamic",
-  description: ""
+  description: "",
+  showAcknowledgeBtn: false
 };
 
 export default function GeneralAlertRuleForm({
@@ -221,7 +223,7 @@ export default function GeneralAlertRuleForm({
           />
         </Grid>
         <AlertRuleGeneralFields<GeneralAlertRuleType>
-          methods={{ control, getValues, setValue }}
+          methods={{ control, getValues, setValue, watch }}
           errors={errors}
         >
           <Grid size={12} display="flex" justifyContent="center">

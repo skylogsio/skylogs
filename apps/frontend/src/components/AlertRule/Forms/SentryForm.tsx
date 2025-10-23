@@ -45,7 +45,8 @@ const sentryAlertRuleSchema = z.object({
     .refine((data) => data.trim() !== "", {
       message: "This field is Required."
     }),
-  description: z.string().optional().default("")
+  description: z.string().optional().default(""),
+  showAcknowledgeBtn: z.boolean().optional().default(false)
 });
 
 type SentryFromType = z.infer<typeof sentryAlertRuleSchema>;
@@ -62,7 +63,8 @@ const defaultValues: SentryFromType = {
   tags: [],
   dataSourceIds: [],
   dataSourceAlertName: "",
-  description: ""
+  description: "",
+  showAcknowledgeBtn: false
 };
 
 export default function SentryAlertRuleForm({
@@ -184,7 +186,7 @@ export default function SentryAlertRuleForm({
           />
         </Grid>
         <AlertRuleGeneralFields<SentryFromType>
-          methods={{ control, getValues, setValue }}
+          methods={{ control, getValues, setValue, watch }}
           errors={errors}
         >
           <Grid size={6}>

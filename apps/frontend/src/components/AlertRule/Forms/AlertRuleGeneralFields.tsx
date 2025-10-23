@@ -1,6 +1,16 @@
 import { type ReactNode } from "react";
 
-import { Chip, MenuItem, Stack, TextField } from "@mui/material";
+import {
+  Chip,
+  FormControlLabel,
+  MenuItem,
+  Stack,
+  TextField,
+  Checkbox,
+  Tooltip,
+  Box,
+  Typography
+} from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import {
   Controller,
@@ -9,6 +19,7 @@ import {
   type UseFormReturn,
   type FormState
 } from "react-hook-form";
+import { MdInfoOutline } from "react-icons/md";
 
 import { getAlertRuleCreateData } from "@/api/alertRule";
 
@@ -16,6 +27,7 @@ type MustHaveFields = {
   endpointIds: string[];
   userIds: string[];
   description: string;
+  showAcknowledgeBtn?: boolean; // New field
 };
 
 type AlertRuleEndpointUserSelectorProps<T extends MustHaveFields> = {
@@ -158,6 +170,38 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
       {children}
       <Controller
         control={control}
+        name={"showAcknowledgeBtn" as Path<T>}
+        render={({ field }) => (
+          <Stack direction="row" alignItems="center" spacing={1} width="100%">
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={Boolean(field.value ?? false)}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                />
+              }
+              label="Show Acknowledge Button in Telegram"
+              sx={{ margin: 0 }}
+            />
+            <Tooltip
+              title={
+                <Typography variant="caption">
+                  When enabled, Telegram alert messages will include an Acknowledge button that
+                  allows users to mark the alert as seen and handled directly from Telegram.
+                </Typography>
+              }
+              arrow
+              placement="top"
+            >
+              <Box sx={{ color: ({ palette }) => palette.primary.light, cursor: "pointer" }}>
+                <MdInfoOutline size={20} />
+              </Box>
+            </Tooltip>
+          </Stack>
+        )}
+      />
+      <Controller
+        control={control}
         name={"description" as Path<T>}
         render={({ field }) => (
           <TextField
@@ -170,7 +214,7 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
             multiline
             minRows={3}
             maxRows={8}
-          ></TextField>
+          />
         )}
       />
     </>

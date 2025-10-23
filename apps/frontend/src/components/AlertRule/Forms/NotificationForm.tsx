@@ -31,7 +31,8 @@ const clientApiSchema = z.object({
   endpointIds: z.array(z.string()).optional().default([]),
   userIds: z.array(z.string()).optional().default([]),
   tags: z.array(z.string()).optional().default([]),
-  description: z.string().optional().default("")
+  description: z.string().optional().default(""),
+  showAcknowledgeBtn: z.boolean().optional().default(false)
 });
 
 type NotificationFormType = z.infer<typeof clientApiSchema>;
@@ -46,7 +47,8 @@ const defaultValues: NotificationFormType = {
   userIds: [],
   endpointIds: [],
   tags: [],
-  description: ""
+  description: "",
+  showAcknowledgeBtn: false
 };
 
 export default function NotificationForm({ onClose, onSubmit, data }: NotificationModalProps) {
@@ -133,7 +135,7 @@ export default function NotificationForm({ onClose, onSubmit, data }: Notificati
           />
         </Grid>
         <AlertRuleGeneralFields<NotificationFormType>
-          methods={{ control, getValues, setValue }}
+          methods={{ control, getValues, setValue, watch }}
           errors={errors}
         >
           <Grid size={12}>

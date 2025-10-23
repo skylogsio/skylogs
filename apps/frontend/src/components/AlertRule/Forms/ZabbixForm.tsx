@@ -45,7 +45,8 @@ const zabbixAlertRuleSchema = z.object({
   hosts: z.array(z.string()).optional().default([]),
   severities: z.array(z.string()).optional().default([]),
   dataSourceIds: z.array(z.string()).min(1, "This field is Required."),
-  description: z.string().optional().default("")
+  description: z.string().optional().default(""),
+  showAcknowledgeBtn: z.boolean().optional().default(false)
 });
 
 type ZabbixFromType = z.infer<typeof zabbixAlertRuleSchema>;
@@ -64,7 +65,8 @@ const defaultValues: ZabbixFromType = {
   hosts: [],
   dataSourceIds: [],
   severities: [],
-  description: ""
+  description: "",
+  showAcknowledgeBtn: false
 };
 
 export default function ZabbixAlertRuleForm({
@@ -215,7 +217,7 @@ export default function ZabbixAlertRuleForm({
           />
         </Grid>
         <AlertRuleGeneralFields<ZabbixFromType>
-          methods={{ control, getValues, setValue }}
+          methods={{ control, getValues, setValue, watch }}
           errors={errors}
         >
           <Grid size={6}>
