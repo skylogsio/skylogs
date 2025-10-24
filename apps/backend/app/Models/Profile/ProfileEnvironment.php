@@ -6,10 +6,9 @@ use App\Models\BaseModel;
 
 class ProfileEnvironment extends BaseModel
 {
-    const TITLE = "environment";
+    const TITLE = 'environment';
 
     public $timestamps = true;
 
-    protected $guarded = ['id','_id',];
-
+    protected $guarded = ['id', '_id'];
 }

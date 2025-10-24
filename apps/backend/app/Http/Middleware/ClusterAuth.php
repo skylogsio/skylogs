@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use App\Enums\ClusterType;
-use App\Services\ApiService;
 use App\Services\ClusterService;
 use Closure;
 use Illuminate\Http\Request;
@@ -20,13 +19,13 @@ class ClusterAuth
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($this->clusterService->type() == ClusterType::MAIN){
+        if ($this->clusterService->type() == ClusterType::MAIN) {
             $bearerToken = $request->bearerToken();
             $cluster = app(ClusterService::class)->clusterByToken($bearerToken);
             if ($cluster) {
                 return $next($request);
             }
-            abort(Response::HTTP_UNAUTHORIZED,"Wrong cluster token");
+            abort(Response::HTTP_UNAUTHORIZED, 'Wrong cluster token');
         }
         abort(Response::HTTP_VERSION_NOT_SUPPORTED);
 

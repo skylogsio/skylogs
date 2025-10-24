@@ -18,9 +18,7 @@ class IntervalJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * Execute the job.
@@ -29,11 +27,11 @@ class IntervalJob implements ShouldQueue
      */
     public function handle()
     {
-        $alerts = AlertRule::whereIn("type", [Constants::PROMETHEUS])->get();
+        $alerts = AlertRule::whereIn('type', [Constants::PROMETHEUS])->get();
         if ($alerts->isNotEmpty()) {
             foreach ($alerts as $alert) {
                 $status = $alert->getStatus();
-                if ($status != AlertRule::RESOlVED && !empty($alert->interval) && $alert->interval > 0) {
+                if ($status != AlertRule::RESOlVED && ! empty($alert->interval) && $alert->interval > 0) {
                     if (empty($alert->notify_at)) {
                         $alert->notify_at = 0;
                     }
@@ -50,7 +48,7 @@ class IntervalJob implements ShouldQueue
                             if ($status == AlertRule::CRITICAL || $status == AlertRule::WARNING) {
                                 if ($alert->notify_at + (60 * $alert->interval) < time()) {
                                     $sentryWebhook = $alert->sentryWebhook;
-                                    if (!empty($sentryWebhook)) {
+                                    if (! empty($sentryWebhook)) {
                                         $alert->notify_at = time();
                                         $alert->save();
                                         SendNotifyService::CreateNotify(SendNotifyJob::SENTRY_WEBHOOK, $sentryWebhook, $alert->_id);
@@ -59,8 +57,8 @@ class IntervalJob implements ShouldQueue
                             }
                             break;
                         case Constants::HEALTH:
-                            $check = HealthCheck::where("alert_rule_id", $alert->_id)->first();
-                            if (!empty($check) && $check->state == HealthCheck::DOWN) {
+                            $check = HealthCheck::where('alert_rule_id', $alert->_id)->first();
+                            if (! empty($check) && $check->state == HealthCheck::DOWN) {
                                 if ($check->notify_at + (60 * $check->interval) < time()) {
                                     $check->notify_at = time();
                                     $check->save();
@@ -70,18 +68,19 @@ class IntervalJob implements ShouldQueue
                             break;
                         case Constants::PROMETHEUS:
                             $check = $alert->prometheusCheck;
-                            if (!empty($check) && $check->state == PrometheusCheck::FIRE)
+                            if (! empty($check) && $check->state == PrometheusCheck::FIRE) {
                                 if (($check->notify_at + (60 * $alert->interval)) < time()) {
                                     $check->notify_at = time();
                                     $check->save();
                                     SendNotifyService::CreateNotify(SendNotifyJob::PROMETHEUS_FIRE, $check, $alert->_id);
                                 }
+                            }
                             break;
                         case Constants::ELASTIC:
                             if ($status == AlertRule::CRITICAL) {
                                 if ($alert->notify_at + (60 * $alert->interval) < time()) {
                                     $check = ElasticCheck::where('alert_rule_id', $alert->_id)->first();
-                                    if (!empty($check)) {
+                                    if (! empty($check)) {
                                         $alert->notify_at = time();
                                         $alert->save();
                                         SendNotifyService::CreateNotify(SendNotifyJob::ELASTIC_CHECK, $check, $alert->_id);
@@ -95,5 +94,4 @@ class IntervalJob implements ShouldQueue
         }
 
     }
-
 }

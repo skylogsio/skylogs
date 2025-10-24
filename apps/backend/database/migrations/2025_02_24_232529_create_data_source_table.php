@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('data_sources', function (Blueprint $table) {
 
-            $table->string("name");
-            $table->string("type");
-            $table->unique(["name", "type"]);
+            $table->string('name');
+            $table->string('type');
+            $table->unique(['name', 'type']);
 
-            $table->string("url")->unique();
+            $table->string('url')->unique();
 
             $table->timestamps();
         });

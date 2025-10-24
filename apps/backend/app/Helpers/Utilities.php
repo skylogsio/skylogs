@@ -2,12 +2,10 @@
 
 namespace App\Helpers;
 
-use Config;
 use Illuminate\Support\Str;
 
 class Utilities
 {
-
     public static function removeEmptyKeys(array &$array): void
     {
         foreach ($array as $key => &$value) {
@@ -35,46 +33,43 @@ class Utilities
         $firstPart = Str::substr($longString, 0, $maxLength);
         $lastPart = Str::substr($longString, -$maxLength);
 
-        $shortenedString = $firstPart . ' ... ' . $lastPart;
+        $shortenedString = $firstPart.' ... '.$lastPart;
 
         return $shortenedString;
     }
 
-    static function CheckPatternsString($pattern, $string)
+    public static function CheckPatternsString($pattern, $string)
     {
         $pattern = trim($pattern);
 
-        $isNot = Str::contains($pattern, "!");
+        $isNot = Str::contains($pattern, '!');
         if ($isNot) {
-            $pattern = Str::replace("!", "", $pattern);
+            $pattern = Str::replace('!', '', $pattern);
             $pattern = trim($pattern);
         }
 
         $finalPatterns = [];
-        $patternArrays = explode("|", $pattern);
+        $patternArrays = explode('|', $pattern);
 
         foreach ($patternArrays as $onePattern) {
             $onePattern = trim($onePattern);
 
-            if (!empty($onePattern)) {
+            if (! empty($onePattern)) {
                 $finalPatterns[] = $onePattern;
             }
         }
 
-
-
         foreach ($finalPatterns as $onePattern) {
             if (self::CheckPattern($onePattern, $string)) {
-                return !$isNot;
+                return ! $isNot;
             }
         }
-
 
         return $isNot;
 
     }
 
-    static function CheckPattern($pattern, $string)
+    public static function CheckPattern($pattern, $string)
     {
         // Escape special characters in the pattern
         $pattern = preg_quote($pattern, '/');
@@ -83,13 +78,14 @@ class Utilities
         $pattern = str_replace('\*', '.*', $pattern);
 
         // Add regex delimiters and flags for case insensitivity
-        $pattern = '/^' . $pattern . '$/i';
+        $pattern = '/^'.$pattern.'$/i';
 
         // Check if the string matches the pattern
         return preg_match($pattern, $string);
     }
 
-    public static function parseLogicStringToArrayN($string) {
+    public static function parseLogicStringToArrayN($string)
+    {
         $string = preg_replace('/\s+/', '', $string); // Remove whitespace
         $length = strlen($string);
         $stack = [];
@@ -142,9 +138,11 @@ class Utilities
 
         return $output;
     }
-    public static   function parseLogicStringToArray($alert,$query) {
 
-//        if ($query['token']['type'] == "LITERAL")
+    public static function parseLogicStringToArray($alert, $query)
+    {
+
+        //        if ($query['token']['type'] == "LITERAL")
 
         $string = preg_replace('/\s+/', '', $string); // Remove whitespace
         $length = strlen($string);
@@ -179,5 +177,4 @@ class Utilities
 
         return $output;
     }
-
 }

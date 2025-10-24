@@ -6,7 +6,6 @@ use App\Models\User;
 use Closure;
 use Hash;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class HorizonBasicAuthMiddleware
 {
@@ -23,7 +22,7 @@ class HorizonBasicAuthMiddleware
             $username = $request->header('PHP_AUTH_USER');
             $password = $request->header('PHP_AUTH_PW');
 
-            $usernameDB = "admin";
+            $usernameDB = 'admin';
             $passDB = User::where('username', $username)->first()->password;
             if ($username === $usernameDB && Hash::check($password, $passDB)) {
                 $authenticationHasPassed = true;
@@ -35,4 +34,5 @@ class HorizonBasicAuthMiddleware
         }
 
         return $next($request);
-    }}
+    }
+}

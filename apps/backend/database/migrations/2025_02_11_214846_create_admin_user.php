@@ -4,7 +4,6 @@ use App\Enums\Constants;
 use App\Models\Auth\Role;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
-use PHPUnit\TextUI\Configuration\Constant;
 
 return new class extends Migration
 {
@@ -13,10 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        $user =  User::Create([
+        $user = User::Create([
             'name' => 'admin',
             'username' => 'admin',
-            "password" => Hash::make("123456"),
+            'password' => Hash::make('123456'),
         ]);
 
         $role = Role::firstOrCreate([
@@ -32,7 +31,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        User::where("username", "admin")->delete();
-        Role::where("name", Constants::ROLE_OWNER)->delete();
+        User::where('username', 'admin')->delete();
+        Role::where('name', Constants::ROLE_OWNER)->delete();
     }
 };

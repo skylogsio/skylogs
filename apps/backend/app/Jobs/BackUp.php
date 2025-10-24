@@ -3,13 +3,13 @@
 namespace App\Jobs;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class BackUp implements ShouldQueue {
+class BackUp implements ShouldQueue
+{
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $alert;
@@ -19,8 +19,9 @@ class BackUp implements ShouldQueue {
      *
      * @return void
      */
-    public function __construct() {
-//        $this->backup = $backup;
+    public function __construct()
+    {
+        //        $this->backup = $backup;
     }
 
     /**
@@ -28,14 +29,14 @@ class BackUp implements ShouldQueue {
      *
      * @return void
      */
-    public function handle() {
+    public function handle()
+    {
         sleep(20);
-//        \Artisan::call("backup:run", [
-//            "--only-db"               => true,
-//            "--disable-notifications" => true,
-//        ]);
-//        $this->backup->status = 2;
-//        $this->backup->save();
+        //        \Artisan::call("backup:run", [
+        //            "--only-db"               => true,
+        //            "--disable-notifications" => true,
+        //        ]);
+        //        $this->backup->status = 2;
+        //        $this->backup->save();
     }
-
 }

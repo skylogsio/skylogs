@@ -20,7 +20,7 @@ class SendNotifyService
 {
     public static function CreateNotify($type, $alert, $alertRuleId = 0)
     {
-        $notify = new Notify();
+        $notify = new Notify;
         $notify->type = $type;
         $notify->alertRuleId = $alertRuleId;
 
@@ -32,37 +32,36 @@ class SendNotifyService
 
         if ($type == SendNotifyJob::ALERT_RULE_TEST) {
             $messages = [
-                "matterMostMessage" => $notify->alertRule->testMessage(),
-                "telegram" => $notify->alertRule->testMessage(),
-                "teamsMessage" => $notify->alertRule->testMessage(),
-                "emailMessage" => $notify->alertRule->testMessage(),
-                "smsMessage" => $notify->alertRule->testMessage(),
-                "callMessage" => $notify->alertRule->testMessage(),
-                "defaultMessage" => $notify->alertRule->testMessage(),
+                'matterMostMessage' => $notify->alertRule->testMessage(),
+                'telegram' => $notify->alertRule->testMessage(),
+                'teamsMessage' => $notify->alertRule->testMessage(),
+                'emailMessage' => $notify->alertRule->testMessage(),
+                'smsMessage' => $notify->alertRule->testMessage(),
+                'callMessage' => $notify->alertRule->testMessage(),
+                'defaultMessage' => $notify->alertRule->testMessage(),
             ];
 
         } elseif ($type == SendNotifyJob::ALERT_RULE_ACKNOWLEDGED) {
             $messages = [
-                "matterMostMessage" => $notify->alertRule->acknowledgedMessage(),
-                "telegram" => $notify->alertRule->acknowledgedMessage(),
-                "teamsMessage" => $notify->alertRule->acknowledgedMessage(),
-                "emailMessage" => $notify->alertRule->acknowledgedMessage(),
-                "smsMessage" => $notify->alertRule->acknowledgedMessage(),
-                "callMessage" => $notify->alertRule->acknowledgedMessage(),
-                "defaultMessage" => $notify->alertRule->acknowledgedMessage(),
+                'matterMostMessage' => $notify->alertRule->acknowledgedMessage(),
+                'telegram' => $notify->alertRule->acknowledgedMessage(),
+                'teamsMessage' => $notify->alertRule->acknowledgedMessage(),
+                'emailMessage' => $notify->alertRule->acknowledgedMessage(),
+                'smsMessage' => $notify->alertRule->acknowledgedMessage(),
+                'callMessage' => $notify->alertRule->acknowledgedMessage(),
+                'defaultMessage' => $notify->alertRule->acknowledgedMessage(),
             ];
 
         } else {
 
-
             $messages = [
-                "matterMostMessage" => $alert->matterMostMessage(),
-                "telegram" => $alert->telegram(),
-                "teamsMessage" => $alert->teamsMessage(),
-                "emailMessage" => $alert->emailMessage(),
-                "smsMessage" => $alert->smsMessage(),
-                "callMessage" => $alert->callMessage(),
-                "defaultMessage" => $alert->defaultMessage(),
+                'matterMostMessage' => $alert->matterMostMessage(),
+                'telegram' => $alert->telegram(),
+                'teamsMessage' => $alert->teamsMessage(),
+                'emailMessage' => $alert->emailMessage(),
+                'smsMessage' => $alert->smsMessage(),
+                'callMessage' => $alert->callMessage(),
+                'defaultMessage' => $alert->defaultMessage(),
             ];
 
         }
@@ -79,63 +78,64 @@ class SendNotifyService
     public static function SendMessage(Notify $notify, $isTest = false, $isAcknowledged = false)
     {
 
-        if (empty($notify->alertRule) || !($notify->alertRule instanceof AlertRule)) {
+        if (empty($notify->alertRule) || ! ($notify->alertRule instanceof AlertRule)) {
             return;
         }
 
         $endpointIds = $notify->alertRule->endpointIds ?? [];
         $silentUserIds = $notify->alertRule->silentUserIds ?? [];
 
-        if (!$isTest && (
-                in_array($notify->alertRule->userId, $silentUserIds) ||
-                in_array(app(UserService::class)->admin()->id, $silentUserIds)
-//            in_array($notify->alertRule->_id, SilentRuleService::getCurrentSilents())
-            )) {
+        if (! $isTest && (
+            in_array($notify->alertRule->userId, $silentUserIds) ||
+            in_array(app(UserService::class)->admin()->id, $silentUserIds)
+            //            in_array($notify->alertRule->_id, SilentRuleService::getCurrentSilents())
+        )) {
             $notify->status = Notify::STATUS_SILENT;
             $notify->save();
+
             return;
         }
 
-        if ($notify->alertRule->isAcknowledged() && !$isAcknowledged) {
+        if ($notify->alertRule->isAcknowledged() && ! $isAcknowledged) {
             $notify->status = Notify::STATUS_ACKNOWLEDGED;
             $notify->save();
+
             return;
         }
 
         $notify->endpointIds = $endpointIds;
         $notify->silentUserIds = $silentUserIds;
 
-        $endpointsQuery = Endpoint::whereIn("_id", $endpointIds);
-        if (!$isTest) {
-            $endpointsQuery = $endpointsQuery->whereNotIn("userId", $silentUserIds);
+        $endpointsQuery = Endpoint::whereIn('_id', $endpointIds);
+        if (! $isTest) {
+            $endpointsQuery = $endpointsQuery->whereNotIn('userId', $silentUserIds);
         }
         $endpoints = $endpointsQuery->get();
 
+        $phones = $endpoints->where('type', EndpointType::SMS->value)->pluck('value');
+        $phonesCalls = $endpoints->where('type', EndpointType::CALL->value)->pluck('value');
+        $teamsUrls = $endpoints->where('type', EndpointType::TEAMS->value)->pluck('value');
+        $matterMostUrls = $endpoints->where('type', EndpointType::MATTER_MOST->value)->pluck('value');
+        $emails = $endpoints->where('type', EndpointType::EMAIL->value)->pluck('value')->toArray();
+        $telegrams = $endpoints->where('type', EndpointType::TELEGRAM->value)->toArray();
+        $flows = $endpoints->where('type', EndpointType::FLOW->value);
 
-        $phones = $endpoints->where("type", EndpointType::SMS->value)->pluck("value");
-        $phonesCalls = $endpoints->where("type", EndpointType::CALL->value)->pluck("value");
-        $teamsUrls = $endpoints->where("type", EndpointType::TEAMS->value)->pluck("value");
-        $matterMostUrls = $endpoints->where("type", EndpointType::MATTER_MOST->value)->pluck("value");
-        $emails = $endpoints->where("type", EndpointType::EMAIL->value)->pluck("value")->toArray();
-        $telegrams = $endpoints->where("type", EndpointType::TELEGRAM->value)->toArray();
-        $flows = $endpoints->where("type", EndpointType::FLOW->value);
-
-        if (!$isAcknowledged && $flows->isNotEmpty()) {
+        if (! $isAcknowledged && $flows->isNotEmpty()) {
 
             $resultFlows = $notify->resultFlows ?? [];
 
             if ($notify->alertRule->state == AlertRule::CRITICAL) {
                 foreach ($flows as $flow) {
                     $runningAlertIds = $flow->runningAlertIds ?? [];
-                    if(!in_array($flow->id, $runningAlertIds)) {
-                        $flow->push("runningAlertIds", $notify->alertRuleId,true);
+                    if (! in_array($flow->id, $runningAlertIds)) {
+                        $flow->push('runningAlertIds', $notify->alertRuleId, true);
                         NotifyFlowEndpointJob::dispatch($notify, $flow->id);
                     } else {
-                        $resultFlows[$flow->id] = "Flow is already running";
+                        $resultFlows[$flow->id] = 'Flow is already running';
                     }
                 }
-            }else{
-                $resultFlows[] =  "Not Critical Alert";
+            } else {
+                $resultFlows[] = 'Not Critical Alert';
             }
 
             $notify->resultFlows = $resultFlows;
@@ -168,14 +168,14 @@ class SendNotifyService
             $notify->resultMatterMost = $result;
         }
 
-        if (!empty($telegrams)) {
+        if (! empty($telegrams)) {
             $result = Telegram::sendMessageAlert($telegrams,
                 $notify
             );
             $notify->resultTelegram = $result;
         }
 
-        if (!empty($emails)) {
+        if (! empty($emails)) {
             $result = Email::sendMessageAlert($emails,
                 $notify
             );
@@ -190,19 +190,18 @@ class SendNotifyService
 
         $silentUserIds = $notify->alertRule->silentUserIds ?? [];
 
-        $endpointsQuery = Endpoint::whereIn("_id", $stepEndpointIds);
+        $endpointsQuery = Endpoint::whereIn('_id', $stepEndpointIds);
 
-        $endpointsQuery = $endpointsQuery->whereNotIn("userId", $silentUserIds);
+        $endpointsQuery = $endpointsQuery->whereNotIn('userId', $silentUserIds);
 
         $endpoints = $endpointsQuery->get();
 
-
-        $phones = $endpoints->where("type", EndpointType::SMS->value)->pluck("value");
-        $phonesCalls = $endpoints->where("type", EndpointType::CALL->value)->pluck("value");
-        $teamsUrls = $endpoints->where("type", EndpointType::TEAMS->value)->pluck("value");
-        $matterMostUrls = $endpoints->where("type", EndpointType::MATTER_MOST->value)->pluck("value");
-        $emails = $endpoints->where("type", EndpointType::EMAIL->value)->pluck("value")->toArray();
-        $telegrams = $endpoints->where("type", EndpointType::TELEGRAM->value)->toArray();
+        $phones = $endpoints->where('type', EndpointType::SMS->value)->pluck('value');
+        $phonesCalls = $endpoints->where('type', EndpointType::CALL->value)->pluck('value');
+        $teamsUrls = $endpoints->where('type', EndpointType::TEAMS->value)->pluck('value');
+        $matterMostUrls = $endpoints->where('type', EndpointType::MATTER_MOST->value)->pluck('value');
+        $emails = $endpoints->where('type', EndpointType::EMAIL->value)->pluck('value')->toArray();
+        $telegrams = $endpoints->where('type', EndpointType::TELEGRAM->value)->toArray();
 
         $resultStep = [];
 
@@ -233,14 +232,14 @@ class SendNotifyService
             $resultStep['resultMatterMost'] = $result;
         }
 
-        if (!empty($telegrams)) {
+        if (! empty($telegrams)) {
             $result = Telegram::sendMessageAlert($telegrams,
                 $notify
             );
             $resultStep['resultTelegram'] = $result;
         }
 
-        if (!empty($emails)) {
+        if (! empty($emails)) {
             $result = Email::sendMessageAlert($emails,
                 $notify
             );
@@ -261,7 +260,7 @@ class SendNotifyService
     public function processStep(Notify $notify, $endpointId, int $currentStepIndex = 0)
     {
         $notify->refresh();
-        $endpoint = Endpoint::where("_id", $endpointId)->first();
+        $endpoint = Endpoint::where('_id', $endpointId)->first();
 
         $silentUserIds = $notify->alertRule->silentUserIds ?? [];
 
@@ -274,13 +273,14 @@ class SendNotifyService
                 $resultFlows[$endpointId] = [];
             }
             $resultFlows[$endpointId][] = [
-                "status" => Notify::STATUS_SILENT,
-                "label" => "silent"
+                'status' => Notify::STATUS_SILENT,
+                'label' => 'silent',
             ];
 
             $notify->resultFlows = $resultFlows;
             $notify->save();
-            $endpoint->pull("runningAlertIds",$notify->alertRuleId);
+            $endpoint->pull('runningAlertIds', $notify->alertRuleId);
+
             return;
         }
 
@@ -290,12 +290,13 @@ class SendNotifyService
                 $resultFlows[$endpointId] = [];
             }
             $resultFlows[$endpointId][] = [
-                "status" => Notify::STATUS_ACKNOWLEDGED,
-                "label" => "acknowledged"
+                'status' => Notify::STATUS_ACKNOWLEDGED,
+                'label' => 'acknowledged',
             ];
             $notify->resultFlows = $resultFlows;
             $notify->save();
-            $endpoint->pull("runningAlertIds",$notify->alertRuleId);
+            $endpoint->pull('runningAlertIds', $notify->alertRuleId);
+
             return;
         }
 
@@ -306,19 +307,21 @@ class SendNotifyService
                 $resultFlows[$endpointId] = [];
             }
             $resultFlows[$endpointId][] = [
-                "status" => -1,
-                "label" => "not critical alert",
-                "description" => "AlertRule state is ".$notify->alertRule->state,
+                'status' => -1,
+                'label' => 'not critical alert',
+                'description' => 'AlertRule state is '.$notify->alertRule->state,
             ];
             $notify->resultFlows = $resultFlows;
             $notify->save();
-            $endpoint->pull("runningAlertIds",$notify->alertRuleId);
+            $endpoint->pull('runningAlertIds', $notify->alertRuleId);
+
             return;
         }
         $steps = $endpoint->steps;
 
         if ($currentStepIndex >= count($steps)) {
-            $endpoint->pull("runningAlertIds",$notify->alertRuleId);
+            $endpoint->pull('runningAlertIds', $notify->alertRuleId);
+
             return;
         }
 
@@ -327,13 +330,13 @@ class SendNotifyService
         if ($step['type'] === FlowEndpointStepType::WAIT->value) {
             $delay = 0;
             switch ($step['timeUnit']) {
-                case "s":
+                case 's':
                     $delay = $step['duration'];
                     break;
-                case "m":
+                case 'm':
                     $delay = $step['duration'] * 60;
                     break;
-                case "h":
+                case 'h':
                     $delay = $step['duration'] * 3600;
                     break;
             }
@@ -343,7 +346,7 @@ class SendNotifyService
         } elseif ($step['type'] === FlowEndpointStepType::ENDPOINT->value) {
 
             $subEndpointIds = $step['endpointIds'] ?? [];
-            if (!empty($subEndpointIds)) {
+            if (! empty($subEndpointIds)) {
 
                 $this->SendFlowEndpointsNotify($notify, $endpoint->id, $subEndpointIds);
 

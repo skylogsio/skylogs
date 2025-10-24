@@ -8,10 +8,9 @@ use Carbon\Carbon;
 
 class SilentRuleService
 {
-
     public static function getCurrentSilents()
     {
-        $now = Carbon::now()->format("H:i:s");
+        $now = Carbon::now()->format('H:i:s');
 
         $silentRule = SilentRule::get();
         $alert_ids = collect();
@@ -23,9 +22,9 @@ class SilentRuleService
 
                         $query = AlertRule::query();
 
-                        $query = $query->where("type", $silent->alert_rule_types);
+                        $query = $query->where('type', $silent->alert_rule_types);
 
-                        $alerts = $query->get()->pluck("_id");
+                        $alerts = $query->get()->pluck('_id');
                         $alert_ids = $alert_ids->merge($alerts);
 
                         break;
@@ -33,13 +32,13 @@ class SilentRuleService
 
                         $query = AlertRule::query();
 
-                        if (!empty($silent->tags)) {
-                            $query = $query->whereIn("tags", $silent->tags);
+                        if (! empty($silent->tags)) {
+                            $query = $query->whereIn('tags', $silent->tags);
                         } else {
                             break;
                         }
 
-                        $alerts = $query->get()->pluck("_id");
+                        $alerts = $query->get()->pluck('_id');
                         $alert_ids = $alert_ids->merge($alerts);
 
                         break;
@@ -52,7 +51,5 @@ class SilentRuleService
 
         return $alert_ids->toArray();
 
-
     }
-
 }

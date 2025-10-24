@@ -2,22 +2,16 @@
 
 namespace App\Services;
 
-
-use App\Models\SkylogsInstance;
-
 use App\Helpers\Constants;
+use App\Models\SkylogsInstance;
 use DB;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Predis\Connection\ConnectionException;
 use Queue;
 
-
 class SkylogsInstanceService
 {
-
-
     public function isConnected(string $instanceId): bool
     {
         $ds = SkylogsInstance::query()->whereId($instanceId)->firstOrFail();
@@ -37,33 +31,33 @@ class SkylogsInstanceService
     public static function SendPing()
     {
         $serverPriority = self::GetServerPriority();
-        $instances = SkylogsInstance::whereNotIn("priority", [$serverPriority])->get();
+        $instances = SkylogsInstance::whereNotIn('priority', [$serverPriority])->get();
         $urls = [];
 
         foreach ($instances as $instance) {
             $urls[] = $instance->getPingUrl();
         }
 
-
         $result = Http::pool(function (Pool $pool) use ($urls, $serverPriority) {
             $result = [];
 
             foreach ($urls as $url) {
-                $result[] = $pool->get($url, ["priority" => $serverPriority]);
+                $result[] = $pool->get($url, ['priority' => $serverPriority]);
             }
+
             return $result;
         });
 
     }
 
-
     public static function GetServerPriority()
     {
         $serverPriority = intval(config('variables.priority'));
+
         return $serverPriority;
     }
 
-    public static function SetServerPriority(SkylogsInstance $instance = null)
+    public static function SetServerPriority(?SkylogsInstance $instance = null)
     {
         if (empty($instance)) {
             $serverPriority = intval(config('variables.priority'));
@@ -71,14 +65,14 @@ class SkylogsInstanceService
             $serverPriority = $instance->priority;
         }
 
-        $leaderPriority = \Cache::store("database")->delete(Constants::LEADER_PRIORITY);
-        $leaderPriority = \Cache::store("database")->put(Constants::LEADER_PRIORITY, $serverPriority);
+        $leaderPriority = \Cache::store('database')->delete(Constants::LEADER_PRIORITY);
+        $leaderPriority = \Cache::store('database')->put(Constants::LEADER_PRIORITY, $serverPriority);
 
     }
 
     public static function GetLeaderPriority()
     {
-        return \Cache::store("database")->get(Constants::LEADER_PRIORITY, PHP_INT_MAX);
+        return \Cache::store('database')->get(Constants::LEADER_PRIORITY, PHP_INT_MAX);
     }
 
     public static function isLeader(SkylogsInstance $instance): bool
@@ -87,6 +81,7 @@ class SkylogsInstanceService
         $serverPriority = empty($instance) ? self::getServerPriority() : $instance->priority;
 
         $leaderPriority = self::GetLeaderPriority();
+
         return $leaderPriority == $serverPriority;
     }
 
@@ -94,7 +89,7 @@ class SkylogsInstanceService
     {
         $isLeader = self::isLeader();
         $serverPriority = self::getServerPriority();
-        if (!$isLeader) {
+        if (! $isLeader) {
             $lastLeaderPing = \Cache::get(Constants::LAST_LEADER_PING, time());
             if ($lastLeaderPing < time() - ($serverPriority * 10)) {
                 self::SetServerPriority();
@@ -106,10 +101,10 @@ class SkylogsInstanceService
     public static function UpdateLastLeaderPing($priority)
     {
 
-//        if ($priority < self::GetServerPriority()) {
-//            \Cache::put(Constants::LAST_LEADER_PING."_".$priority, time());
+        //        if ($priority < self::GetServerPriority()) {
+        //            \Cache::put(Constants::LAST_LEADER_PING."_".$priority, time());
         \Cache::put(Constants::LAST_LEADER_PING, time());
-//        }
+        //        }
 
     }
 
@@ -117,20 +112,21 @@ class SkylogsInstanceService
     {
         try {
             $request = \Http::acceptJson();
-            if (!empty($instance->username) && !empty($instance->password)) {
+            if (! empty($instance->username) && ! empty($instance->password)) {
                 $request = $request->withBasicAuth($instance->username, $instance->password);
             }
             $response = $request->timeout(5)->get($instance->getHealthUrl());
+
             return $response->status() == 200;
         } catch (\Exception $e) {
             return false;
         }
     }
 
-
     public static function GetPriorities()
     {
         $instances = SkylogsInstance::all()->pluck('priority');
+
         return $instances;
     }
 
@@ -147,6 +143,7 @@ class SkylogsInstanceService
     {
         try {
             \Illuminate\Support\Facades\Redis::ping();
+
             return true;
         } catch (ConnectionException $e) {
             return false;
@@ -164,5 +161,4 @@ class SkylogsInstanceService
             return false;
         }
     }
-
 }

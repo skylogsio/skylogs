@@ -34,7 +34,7 @@ class EndpointDocs
                 description: 'Filter by name',
                 in: 'query',
                 schema: new OA\Schema(type: 'string')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -46,11 +46,11 @@ class EndpointDocs
                             property: 'data',
                             type: 'array',
                             items: new OA\Items(ref: '#/components/schemas/Endpoint')
-                        )
+                        ),
                     ]
                 )
             ),
-            new OA\Response(response: 401, description: 'Unauthorized')
+            new OA\Response(response: 401, description: 'Unauthorized'),
         ]
     )]
     public function index() {}
@@ -71,11 +71,11 @@ class EndpointDocs
                             property: 'data',
                             type: 'array',
                             items: new OA\Items(ref: '#/components/schemas/Endpoint')
-                        )
+                        ),
                     ]
                 )
             ),
-            new OA\Response(response: 401, description: 'Unauthorized')
+            new OA\Response(response: 401, description: 'Unauthorized'),
         ]
     )]
     public function indexFlow() {}
@@ -95,7 +95,7 @@ class EndpointDocs
                     items: new OA\Items(ref: '#/components/schemas/Endpoint')
                 )
             ),
-            new OA\Response(response: 401, description: 'Unauthorized')
+            new OA\Response(response: 401, description: 'Unauthorized'),
         ]
     )]
     public function createFlowEndpoints() {}
@@ -112,7 +112,7 @@ class EndpointDocs
                 in: 'path',
                 required: true,
                 schema: new OA\Schema(type: 'string')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -120,7 +120,7 @@ class EndpointDocs
                 description: 'Endpoint details. Response structure varies based on endpoint type (sms, email, telegram, flow, etc.)',
                 content: new OA\JsonContent(ref: '#/components/schemas/Endpoint')
             ),
-            new OA\Response(response: 404, description: 'Not found')
+            new OA\Response(response: 404, description: 'Not found'),
         ]
     )]
     public function show() {}
@@ -175,10 +175,10 @@ class EndpointDocs
                                     description: 'Array of endpoint IDs for endpoint type steps',
                                     type: 'array',
                                     items: new OA\Items(type: 'string')
-                                )
+                                ),
                             ]
                         )
-                    )
+                    ),
                 ]
             )
         ),
@@ -193,11 +193,11 @@ class EndpointDocs
                         new OA\Property(
                             property: 'data',
                             ref: '#/components/schemas/Endpoint'
-                        )
+                        ),
                     ]
                 )
             ),
-            new OA\Response(response: 422, description: 'Validation error')
+            new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
     public function create() {}
@@ -252,10 +252,10 @@ class EndpointDocs
                                     description: 'Array of endpoint IDs for endpoint type steps',
                                     type: 'array',
                                     items: new OA\Items(type: 'string')
-                                )
+                                ),
                             ]
                         )
-                    )
+                    ),
                 ]
             )
         ),
@@ -266,7 +266,7 @@ class EndpointDocs
                 in: 'path',
                 required: true,
                 schema: new OA\Schema(type: 'string')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -278,11 +278,11 @@ class EndpointDocs
                         new OA\Property(
                             property: 'data',
                             ref: '#/components/schemas/Endpoint'
-                        )
+                        ),
                     ]
                 )
             ),
-            new OA\Response(response: 404, description: 'Not found')
+            new OA\Response(response: 404, description: 'Not found'),
         ]
     )]
     public function update() {}
@@ -297,7 +297,7 @@ class EndpointDocs
             content: new OA\JsonContent(
                 required: ['userId'],
                 properties: [
-                    new OA\Property(property: 'userId', type: 'string', example: 'user123')
+                    new OA\Property(property: 'userId', type: 'string', example: 'user123'),
                 ]
             )
         ),
@@ -308,7 +308,7 @@ class EndpointDocs
                 in: 'path',
                 required: true,
                 schema: new OA\Schema(type: 'string')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -317,11 +317,11 @@ class EndpointDocs
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'status', type: 'boolean', example: true),
-                        new OA\Property(property: 'message', type: 'string', example: 'Successfully change owner')
+                        new OA\Property(property: 'message', type: 'string', example: 'Successfully change owner'),
                     ]
                 )
             ),
-            new OA\Response(response: 404, description: 'Not found')
+            new OA\Response(response: 404, description: 'Not found'),
         ]
     )]
     public function changeOwner() {}
@@ -338,7 +338,7 @@ class EndpointDocs
                 in: 'path',
                 required: true,
                 schema: new OA\Schema(type: 'string')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -346,7 +346,7 @@ class EndpointDocs
                 description: 'Endpoint deleted successfully',
                 content: new OA\JsonContent(ref: '#/components/schemas/Endpoint')
             ),
-            new OA\Response(response: 404, description: 'Not found')
+            new OA\Response(response: 404, description: 'Not found'),
         ]
     )]
     public function delete() {}
@@ -396,14 +396,14 @@ class EndpointDocs
                         description: 'Array of endpoint IDs for endpoint type steps',
                         type: 'array',
                         items: new OA\Items(type: 'string')
-                    )
+                    ),
                 ]
             )
         ),
         new OA\Property(property: 'userId', description: 'User ID who owns this endpoint', type: 'string'),
         new OA\Property(property: 'isPublic', description: 'Whether this endpoint is publicly available', type: 'boolean'),
         new OA\Property(property: 'createdAt', description: 'Creation timestamp', type: 'string', format: 'date-time'),
-        new OA\Property(property: 'updatedAt', description: 'Last update timestamp', type: 'string', format: 'date-time')
+        new OA\Property(property: 'updatedAt', description: 'Last update timestamp', type: 'string', format: 'date-time'),
     ],
     example: [
         'id' => '680d668e20f7ecb5bc026722',
@@ -413,7 +413,7 @@ class EndpointDocs
         'userId' => 'userId',
         'isPublic' => false,
         'createdAt' => '2024-01-01T10:00:00Z',
-        'updatedAt' => '2024-01-01T10:00:00Z'
+        'updatedAt' => '2024-01-01T10:00:00Z',
     ]
 )]
 class EndpointSchema {}
@@ -463,10 +463,10 @@ class EndpointSchema {}
                         description: 'Array of endpoint IDs for endpoint type steps',
                         type: 'array',
                         items: new OA\Items(type: 'string')
-                    )
+                    ),
                 ]
             )
-        )
+        ),
     ]
 )]
 class EndpointInputSchema {}

@@ -4,16 +4,14 @@ use App\Enums\Constants;
 use App\Models\Auth\Permission;
 use App\Models\Auth\Role;
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-
 
         $roleOwner = Role::firstOrCreate([
             'name' => Constants::ROLE_OWNER,
@@ -31,12 +29,12 @@ return new class extends Migration {
         ]);
 
         $permissionMangerAdminUsers = Permission::createOrFirst([
-            "name" => Constants::PERMISSION_MANAGE_ADMIN_USER,
+            'name' => Constants::PERMISSION_MANAGE_ADMIN_USER,
             'guard_name' => 'api',
         ]);
 
         $permissionMangerMemberUsers = Permission::createOrFirst([
-            "name" => Constants::PERMISSION_MANAGE_MEMBER_USER,
+            'name' => Constants::PERMISSION_MANAGE_MEMBER_USER,
             'guard_name' => 'api',
         ]);
 
@@ -44,8 +42,6 @@ return new class extends Migration {
         $roleOwner->givePermissionTo($permissionMangerAdminUsers);
 
         $roleManager->givePermissionTo($permissionMangerMemberUsers);
-
-
 
     }
 
@@ -67,11 +63,11 @@ return new class extends Migration {
         ])->delete();
 
         $permissionMangerAdminUsers = Permission::createOrFirst([
-            "name" => Constants::PERMISSION_MANAGE_ADMIN_USER
+            'name' => Constants::PERMISSION_MANAGE_ADMIN_USER,
         ])->delete();
 
         $permissionMangerMemberUsers = Permission::createOrFirst([
-            "name" => Constants::PERMISSION_MANAGE_MEMBER_USER
+            'name' => Constants::PERMISSION_MANAGE_MEMBER_USER,
         ])->delete();
 
     }

@@ -2,30 +2,19 @@
 
 namespace App\Http\Controllers\V1;
 
-
 use App\Enums\Constants;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\UserResource;
-use App\Jobs\SendNotifyJob;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\User;
-use App\Models\MetabaseWebhookAlert;
-use App\Models\SentryWebhookAlert;
-use App\Models\ZabbixWebhookAlert;
 use App\Services\AlertRuleService;
 use App\Services\EndpointService;
-use App\Services\GrafanaService;
-use App\Services\SendNotifyService;
 use Hash;
 use Illuminate\Http\Request;
 use Validator;
 
-
 class UserController extends Controller
 {
-
-
     public function Index(Request $request)
     {
         $perPage = $request->perPage ?? 25;
@@ -33,19 +22,21 @@ class UserController extends Controller
         $data = User::query();
 
         if ($request->filled('username')) {
-            $data->where('username', 'like', '%' . $request->username . '%');
+            $data->where('username', 'like', '%'.$request->username.'%');
         }
 
         $data = $data->paginate($perPage);
         foreach ($data as &$value) {
             $value->roles = $value->roles()->pluck('name')->toArray();
         }
+
         return response()->json($data);
     }
 
     public function All()
     {
         $data = User::all();
+
         return response()->json($data);
     }
 
@@ -53,6 +44,7 @@ class UserController extends Controller
     {
         $model = User::where('_id', $id);
         $model = $model->firstOrFail();
+
         return response()->json($model);
     }
 
@@ -61,16 +53,16 @@ class UserController extends Controller
         $model = User::whereNot('username', 'admin')->where('_id', $id)->firstOrFail();
 
         $currentUser = auth()->user();
-        if (($model->hasRole(Constants::ROLE_OWNER) && !$currentUser->hasRole(Constants::ROLE_OWNER)) ||
-            (!$model->hasRole(Constants::ROLE_MEMBER) && $currentUser->hasRole(Constants::ROLE_MANAGER))
+        if (($model->hasRole(Constants::ROLE_OWNER) && ! $currentUser->hasRole(Constants::ROLE_OWNER)) ||
+            (! $model->hasRole(Constants::ROLE_MEMBER) && $currentUser->hasRole(Constants::ROLE_MANAGER))
         ) {
             abort(403);
         }
 
-        $admin = User::where('username', "admin")->firstOrFail();
+        $admin = User::where('username', 'admin')->firstOrFail();
         $adminId = $admin->_id;
         $alertRules = AlertRule::get();
-        $modelUserEndpoints = Endpoint::where("userId", $model->_id)->get();
+        $modelUserEndpoints = Endpoint::where('userId', $model->_id)->get();
 
         foreach ($modelUserEndpoints as $modelUserEndpoint) {
             $modelUserEndpoint->userId = $adminId;
@@ -81,9 +73,8 @@ class UserController extends Controller
             $ruleUserIds = $rule->userIds ?? [];
             $needToUpdate = false;
 
-
-            if (!empty($ruleUserIds) && in_array($model->_id, $ruleUserIds)) {
-                $rule->pull("userIds", $rule->_id);
+            if (! empty($ruleUserIds) && in_array($model->_id, $ruleUserIds)) {
+                $rule->pull('userIds', $rule->_id);
                 $needToUpdate = true;
             }
             if ($rule->userId == $model->_id) {
@@ -95,8 +86,8 @@ class UserController extends Controller
             }
         }
 
-
         $model->delete();
+
         return response()->json($model);
     }
 
@@ -106,15 +97,15 @@ class UserController extends Controller
         \Validator::validate(
             $request->all(),
             [
-                'username' => "required|unique:users,username",
-                'name' => "required|string|max:255",
-                'password' => "required",
-                'confirmPassword' => "required|same:password",
-                'role' => "required|in:owner,member,manager",
+                'username' => 'required|unique:users,username',
+                'name' => 'required|string|max:255',
+                'password' => 'required',
+                'confirmPassword' => 'required|same:password',
+                'role' => 'required|in:owner,member,manager',
             ],
         );
 
-        if (!auth()->user()->hasRole(Constants::ROLE_OWNER) &&
+        if (! auth()->user()->hasRole(Constants::ROLE_OWNER) &&
             $request->post('role') == Constants::ROLE_OWNER) {
             abort(403);
         }
@@ -139,7 +130,7 @@ class UserController extends Controller
 
         return response()->json([
             'status' => true,
-            "data" => $model
+            'data' => $model,
         ]);
 
     }
@@ -149,18 +140,17 @@ class UserController extends Controller
 
         Validator::validate($request->all(), [
             'username' => "required|unique:users,username,{$id}",
-            'name' => "required|string|max:255",
-            'role' => "required|in:owner,member,manager",
+            'name' => 'required|string|max:255',
+            'role' => 'required|in:owner,member,manager',
         ]);
 
         $model = User::where('_id', $id)->firstOrFail();
         $currentUser = auth()->user();
-        if (($model->hasRole(Constants::ROLE_OWNER) && !$currentUser->hasRole(Constants::ROLE_OWNER)) ||
-            (!$model->hasRole(Constants::ROLE_MANAGER) && $currentUser->hasRole(Constants::ROLE_MANAGER))
+        if (($model->hasRole(Constants::ROLE_OWNER) && ! $currentUser->hasRole(Constants::ROLE_OWNER)) ||
+            (! $model->hasRole(Constants::ROLE_MANAGER) && $currentUser->hasRole(Constants::ROLE_MANAGER))
         ) {
             abort(403);
         }
-
 
         if ($model->username != Constants::ADMIN->value) {
 
@@ -189,6 +179,7 @@ class UserController extends Controller
                 'name' => $request->post('name'),
             ]);
         }
+
         return response()->json([
             'status' => true,
             'data' => $model,
@@ -201,14 +192,14 @@ class UserController extends Controller
         Validator::validate(
             $request->all(),
             [
-                'password' => "required",
-                'confirmPassword' => "required|same:password",
+                'password' => 'required',
+                'confirmPassword' => 'required|same:password',
             ],
         );
 
         $model = User::where('_id', $id)->firstOrFail();
         $currentUser = auth()->user();
-        if (!$currentUser->hasRole(Constants::ROLE_OWNER) && $model->hasRole(Constants::ROLE_OWNER)) {
+        if (! $currentUser->hasRole(Constants::ROLE_OWNER) && $model->hasRole(Constants::ROLE_OWNER)) {
             abort(403);
         }
 
@@ -223,7 +214,6 @@ class UserController extends Controller
 
     }
 
-
     public function ChangeOwnerShipOfData(Request $request)
     {
         $fromUser = User::where('id', $request->fromUser)->firstOrFail();
@@ -237,6 +227,4 @@ class UserController extends Controller
         ]);
 
     }
-
-
 }

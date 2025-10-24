@@ -2,7 +2,6 @@
 
 namespace App\Docs;
 
-
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(
@@ -57,7 +56,7 @@ class AuthDocs
         security: [['bearerAuth' => []]],
         tags: ['Authentication'],
         responses: [
-            new OA\Response(response: 200, description: 'Authenticated user', content:new OA\JsonContent(
+            new OA\Response(response: 200, description: 'Authenticated user', content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: 'name', type: 'string', example: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJI...'),
                     new OA\Property(property: 'username', type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5...'),
@@ -67,7 +66,7 @@ class AuthDocs
                         property: 'roles',
                         type: 'array',
                         items: new OA\Items(type: 'string'),
-                        example: ['owner', ]
+                        example: ['owner']
                     ),
                     new OA\Property(
                         property: 'permissions',
@@ -81,6 +80,7 @@ class AuthDocs
         ]
     )]
     public function me() {}
+
     #[OA\Post(
         path: '/api/v1/auth/logout',
         operationId: 'logoutUser',
@@ -121,7 +121,7 @@ class AuthDocs
                             property: 'roles',
                             type: 'array',
                             items: new OA\Items(type: 'string'),
-                            example: ['owner', ]
+                            example: ['owner']
                         ),                        new OA\Property(property: 'expiresIn', type: 'integer', example: 3600),
                         new OA\Property(property: 'refreshExpiresIn', type: 'integer', example: 10800),
                     ]

@@ -22,41 +22,37 @@ use App\Http\Controllers\V1\Webhooks\ApiAlertController;
 use App\Http\Controllers\V1\Webhooks\WebhookAlertsController;
 use Illuminate\Support\Facades\Route;
 
-
 Route::prefix('cluster')
     ->controller(SyncController::class)
     ->middleware('clusterAuth')
     ->group(function () {
 
-        Route::get("/sync-data", "Data")->name("cluster.data");
+        Route::get('/sync-data', 'Data')->name('cluster.data');
 
     });
-
 
 Route::prefix('v1')->group(function () {
 
+    Route::post('auth/login', [AuthController::class, 'login']);
+    Route::get('status/all', [StatusController::class, 'Status'])->name('status.all');
+    Route::get('alert-rule/acknowledgeL/{id}', [AlertingController::class, 'AcknowledgeLoginLink'])->name('acknowledgeLink');
 
-    Route::post("auth/login", [AuthController::class, "login"]);
-    Route::get("status/all", [StatusController::class, "Status"])->name("status.all");
-    Route::get('alert-rule/acknowledgeL/{id}', [AlertingController::class,'AcknowledgeLoginLink'])->name("acknowledgeLink");
-
-    Route::middleware("apiAuth")->controller(ApiAlertController::class)->group(function () {
-        Route::post("fire-alert", "FireAlert")->name("webhook.api.fire");
-        Route::post("resolve-alert", "ResolveAlert")->name("webhook.api.resolve");
-        Route::post("status-alert", "StatusAlert")->name("webhook.api.status");
-        Route::post("notification-alert", "NotificationAlert")->name("webhook.notification");
-        Route::post("stop-alert", "ResolveAlert")->name("webhook.api.stop");
+    Route::middleware('apiAuth')->controller(ApiAlertController::class)->group(function () {
+        Route::post('fire-alert', 'FireAlert')->name('webhook.api.fire');
+        Route::post('resolve-alert', 'ResolveAlert')->name('webhook.api.resolve');
+        Route::post('status-alert', 'StatusAlert')->name('webhook.api.status');
+        Route::post('notification-alert', 'NotificationAlert')->name('webhook.notification');
+        Route::post('stop-alert', 'ResolveAlert')->name('webhook.api.stop');
     });
-
 
     Route::middleware('webhookAuth')->controller(WebhookAlertsController::class)->group(function () {
 
-//        Route::post("/metabase-alert/{token}", 'MetabaseWebhook')->name("webhook.metabase");
-        Route::post("/sentry-alert/{token}", 'SentryWebhook')->name("webhook.sentry");
-        Route::post("/splunk-alert/{token}", 'SplunkWebhook')->name("webhook.splunk");
-        Route::post("/zabbix-alert/{token}", 'ZabbixWebhook')->name("webhook.zabbix");
-        Route::post("/grafana-alert/{token}", 'GrafanaWebhook')->name("webhook.grafana");
-        Route::post("/pmm-alert/{token}", 'PmmWebhook')->name("webhook.pmm");
+        //        Route::post("/metabase-alert/{token}", 'MetabaseWebhook')->name("webhook.metabase");
+        Route::post('/sentry-alert/{token}', 'SentryWebhook')->name('webhook.sentry');
+        Route::post('/splunk-alert/{token}', 'SplunkWebhook')->name('webhook.splunk');
+        Route::post('/zabbix-alert/{token}', 'ZabbixWebhook')->name('webhook.zabbix');
+        Route::post('/grafana-alert/{token}', 'GrafanaWebhook')->name('webhook.grafana');
+        Route::post('/pmm-alert/{token}', 'PmmWebhook')->name('webhook.pmm');
 
     });
 
@@ -70,21 +66,21 @@ Route::prefix('v1')->group(function () {
                 Route::post('me', 'me');
             });
 
-        Route::prefix("/user")
+        Route::prefix('/user')
             ->controller(UserController::class)
-            ->middleware("role:" . Constants::ROLE_OWNER->value . "|" . Constants::ROLE_MANAGER->value)
+            ->middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)
             ->group(function () {
                 Route::get('/', 'Index');
                 Route::get('/all', 'All');
                 Route::get('/{id}', 'Show');
                 Route::post('/', 'Create');
-                Route::middleware("role:" . Constants::ROLE_OWNER->value)->post('/changeOwner', 'ChangeOwnerShipOfData');
+                Route::middleware('role:'.Constants::ROLE_OWNER->value)->post('/changeOwner', 'ChangeOwnerShipOfData');
                 Route::put('/pass/{id}', 'ChangePassword');
                 Route::put('/{id}', 'Update');
                 Route::delete('/{id}', 'Delete');
             });
 
-        Route::prefix("/endpoint")
+        Route::prefix('/endpoint')
             ->controller(EndpointController::class)
             ->group(function () {
                 Route::get('/', 'Index');
@@ -96,9 +92,9 @@ Route::prefix('v1')->group(function () {
                 Route::post('/changeOwner/{id}', 'ChangeOwner');
                 Route::delete('/{id}', 'Delete');
             });
-        Route::prefix("/skylogs-instance")
+        Route::prefix('/skylogs-instance')
             ->controller(SkylogsInstanceController::class)
-            ->middleware("role:" . Constants::ROLE_OWNER->value)
+            ->middleware('role:'.Constants::ROLE_OWNER->value)
             ->group(function () {
                 Route::get('/', 'Index');
                 Route::get('/status/{id}', 'IsConnected');
@@ -108,9 +104,9 @@ Route::prefix('v1')->group(function () {
                 Route::delete('/{id}', 'Delete');
             });
 
-        Route::prefix("/data-source")
+        Route::prefix('/data-source')
             ->controller(DataSourceController::class)
-            ->middleware("role:" . Constants::ROLE_OWNER->value . "|" . Constants::ROLE_MANAGER->value)
+            ->middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)
             ->group(function () {
                 Route::get('/', 'Index');
                 Route::get('/types', 'GetTypes');
@@ -121,7 +117,7 @@ Route::prefix('v1')->group(function () {
                 Route::delete('/{id}', 'Delete');
             });
 
-        Route::prefix("/status")
+        Route::prefix('/status')
             ->controller(StatusController::class)
             ->group(function () {
                 Route::get('/', 'Index');
@@ -131,7 +127,7 @@ Route::prefix('v1')->group(function () {
                 Route::delete('/{id}', 'Delete');
             });
 
-        Route::prefix("/alert-rule")
+        Route::prefix('/alert-rule')
             ->controller(AlertingController::class)
             ->group(function () {
                 Route::get('/', 'Index');
@@ -140,7 +136,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/triggered/{id}', 'FiredAlerts');
                 Route::get('/filter-endpoints', 'FilterEndpoints');
 
-                Route::prefix("/create-data")
+                Route::prefix('/create-data')
                     ->controller(CreateDataController::class)
                     ->group(function () {
                         Route::get('/', 'CreateData');
@@ -151,7 +147,7 @@ Route::prefix('v1')->group(function () {
                         Route::get('/label-values/{label}', 'LabelValues');
                     });
 
-                Route::prefix("/group-action")
+                Route::prefix('/group-action')
                     ->controller(GroupActionController::class)
                     ->group(function () {
                         Route::post('/silent', 'Silent');
@@ -170,7 +166,7 @@ Route::prefix('v1')->group(function () {
                 Route::delete('/{id}', 'Delete');
             });
 
-        Route::prefix("/prometheus")
+        Route::prefix('/prometheus')
             ->controller(PrometheusController::class)
             ->group(function () {
                 Route::get('/rules', 'Rules');
@@ -179,14 +175,14 @@ Route::prefix('v1')->group(function () {
                 Route::get('/label-values/{label}', 'LabelValues');
             });
 
-        Route::prefix("/alert-rule-tag")
+        Route::prefix('/alert-rule-tag')
             ->controller(TagsController::class)
             ->group(function () {
                 Route::get('/', 'All');
                 Route::get('/{id}', 'Create');
                 Route::put('/{id}', 'Store');
             });
-        Route::prefix("/alert-rule-notify")
+        Route::prefix('/alert-rule-notify')
             ->controller(NotifyController::class)
             ->group(function () {
                 Route::get('/{id}', 'Create');
@@ -199,7 +195,7 @@ Route::prefix('v1')->group(function () {
                 Route::put('/batchAlert', 'StoreBatch');
 
             });
-        Route::prefix("/alert-rule-user")
+        Route::prefix('/alert-rule-user')
             ->controller(AccessUserController::class)
             ->group(function () {
                 Route::get('/{id}', 'CreateData');
@@ -208,11 +204,10 @@ Route::prefix('v1')->group(function () {
 
             });
 
-
-        Route::prefix("/profile")
-            ->middleware("role:" . Constants::ROLE_OWNER->value)
+        Route::prefix('/profile')
+            ->middleware('role:'.Constants::ROLE_OWNER->value)
             ->group(function () {
-                Route::prefix("/asset")
+                Route::prefix('/asset')
                     ->controller(AssetController::class)
                     ->group(function () {
                         Route::get('/', 'Index');
@@ -224,18 +219,18 @@ Route::prefix('v1')->group(function () {
 
             });
 
-        Route::prefix("/config")
-            ->middleware("role:" . Constants::ROLE_OWNER->value)
+        Route::prefix('/config')
+            ->middleware('role:'.Constants::ROLE_OWNER->value)
             ->group(function () {
 
-                Route::prefix("/skylogs")
+                Route::prefix('/skylogs')
                     ->controller(SkylogsController::class)
                     ->group(function () {
                         Route::get('/cluster', 'ClusterType');
                         Route::post('/cluster', 'StoreClusterType');
                     });
 
-                Route::prefix("/telegram")
+                Route::prefix('/telegram')
                     ->controller(TelegramController::class)
                     ->group(function () {
                         Route::get('/', 'Index');
@@ -250,8 +245,6 @@ Route::prefix('v1')->group(function () {
 
             });
 
-
     });
-
 
 });

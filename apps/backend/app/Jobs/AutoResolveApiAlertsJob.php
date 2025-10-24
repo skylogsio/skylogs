@@ -16,7 +16,6 @@ class AutoResolveApiAlertsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-
     /**
      * Execute the job.
      *
@@ -28,18 +27,20 @@ class AutoResolveApiAlertsJob implements ShouldQueue
         $now = time();
         if ($alerts->isNotEmpty()) {
             foreach ($alerts as $alert) {
-                if (!$alert['enableAutoResolve']) continue;
+                if (! $alert['enableAutoResolve']) {
+                    continue;
+                }
                 $minutes = $alert->autoResolveMinutes;
                 $instances = $alert->apiInstances();
-                if (!empty($instances) && $instances->isNotEmpty()) {
-                    $fireInstances = $instances->where("state", AlertInstance::FIRE);
+                if (! empty($instances) && $instances->isNotEmpty()) {
+                    $fireInstances = $instances->where('state', AlertInstance::FIRE);
                     foreach ($fireInstances as $instance) {
                         $lastUpdate = $instance->updatedAt->getTimeStamp();
                         if (($lastUpdate + ($minutes * 60)) < $now) {
                             $post = [
-                                "apiToken" => $alert->apiToken,
-                                "instance" => $instance->instance,
-                                "description" => "Alert Resolved Automatically"
+                                'apiToken' => $alert->apiToken,
+                                'instance' => $instance->instance,
+                                'description' => 'Alert Resolved Automatically',
                             ];
                             app(ApiService::class)->resolveAlert($post);
                         }
@@ -51,5 +52,4 @@ class AutoResolveApiAlertsJob implements ShouldQueue
         }
 
     }
-
 }

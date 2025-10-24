@@ -8,7 +8,6 @@ use App\Jobs\RefreshStatusHistoryJob;
 use App\Jobs\SyncCluster;
 use App\Services\ClusterService;
 
-
 Artisan::command('app:test', function () {
     if (config('app.env') === 'local') {
 
@@ -31,4 +30,3 @@ Schedule::job(new CheckPrometheusJob)->everyFiveSeconds();
 Schedule::job(new AddChecksJob)->everyFiveSeconds();
 Schedule::job(new AutoResolveApiAlertsJob)->everyFiveSeconds();
 Schedule::job(new RefreshStatusHistoryJob)->everyFiveSeconds();
-

@@ -2,10 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\HealthCheck;
-use App\Models\HealthHistory;
 use App\Services\HealthService;
-use App\Services\SendNotifyService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,7 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class CheckHealthJob implements ShouldQueue, ShouldBeUnique
+class CheckHealthJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -32,7 +29,7 @@ class CheckHealthJob implements ShouldQueue, ShouldBeUnique
      */
     public function handle()
     {
-//        echo "TEST";
+        //        echo "TEST";
         app(HealthService::class)->check($this->alert);
 
     }
@@ -41,5 +38,4 @@ class CheckHealthJob implements ShouldQueue, ShouldBeUnique
     {
         return $this->alert->_id;
     }
-
 }

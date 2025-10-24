@@ -3,15 +3,11 @@
 namespace App\Services;
 
 use App\Models\AlertRule;
-use App\Models\ApiAlertHistory;
-use App\Helpers\Constants;
 use App\Models\Status;
 use App\Models\StatusHistory;
-use Carbon\Carbon;
 
 class StatusService
 {
-
     public function refresh()
     {
         $statuses = Status::get();
@@ -22,7 +18,7 @@ class StatusService
             $tags = $status->tags;
 
             if ($tags) {
-                $query = $query->where("tags", "all", $tags);
+                $query = $query->where('tags', 'all', $tags);
             }
 
             $alerts = $query->get();
@@ -35,7 +31,7 @@ class StatusService
             $alertTags = collect();
 
             foreach ($alerts as $alert) {
-                list($alertState, $alertCount) = $alert->getStatus();
+                [$alertState, $alertCount] = $alert->getStatus();
                 if ($alertState == AlertRule::WARNING) {
                     $isWarning = true;
                     $numberWarning++;
@@ -66,17 +62,16 @@ class StatusService
 
                 $status->save();
                 StatusHistory::create([
-                    "statusId" => $status->id,
-                    "alertRuleIds" => $alerts->pluck("id")->toArray(),
-                    "criticalCount" => $status->criticalCount,
-                    "alertsTags" => $status->alertsTags ?? [],
-                    "warningCount" => $status->warningCount
+                    'statusId' => $status->id,
+                    'alertRuleIds' => $alerts->pluck('id')->toArray(),
+                    'criticalCount' => $status->criticalCount,
+                    'alertsTags' => $status->alertsTags ?? [],
+                    'warningCount' => $status->warningCount,
                 ]);
             }
 
-
         }
+
         return $result;
     }
-
 }

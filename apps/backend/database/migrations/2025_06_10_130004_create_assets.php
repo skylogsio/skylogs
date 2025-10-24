@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('profile_assets', function (Blueprint $table) {
-            $table->unique("name");
+            $table->unique('name');
         });
     }
 

@@ -2,20 +2,15 @@
 
 namespace App\Http\Controllers\V1;
 
-
 use App\Enums\DataSourceType;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\DataSourceResource;
 use App\Models\DataSource\DataSource;
-use App\Models\Service;
 use App\Services\DataSourceService;
 use Illuminate\Http\Request;
 
-
 class DataSourceController extends Controller
 {
-
-    public function __construct(protected DataSourceService $dataSourceService){}
+    public function __construct(protected DataSourceService $dataSourceService) {}
 
     public function Index(Request $request)
     {
@@ -23,7 +18,7 @@ class DataSourceController extends Controller
 
         $data = DataSource::latest();
         if ($request->filled('name')) {
-            $data->where('name', 'like', '%' . $request->name . '%');
+            $data->where('name', 'like', '%'.$request->name.'%');
         }
         $data = $data->paginate($perPage);
 
@@ -35,6 +30,7 @@ class DataSourceController extends Controller
     {
         $model = DataSource::where('_id', $id);
         $model = $model->firstOrFail();
+
         return response()->json($model);
     }
 
@@ -43,6 +39,7 @@ class DataSourceController extends Controller
         $model = DataSource::where('_id', $id);
         $model = $model->firstOrFail();
         $model->delete();
+
         return response()->json($model);
     }
 
@@ -51,33 +48,34 @@ class DataSourceController extends Controller
         $va = \Validator::make(
             $request->all(),
             [
-                'name' => "required",
-                'type' => "required",
-                "url" => "required",
+                'name' => 'required',
+                'type' => 'required',
+                'url' => 'required',
             ],
         );
         if ($va->passes()) {
 
-            $url = rtrim($request->url, "/");
+            $url = rtrim($request->url, '/');
 
             do {
                 $webhookToken = \Str::random(5);
             } while (DataSource::where('webhookToken', $webhookToken)->first());
 
             $modelArray = [
-                "type" => $request->type,
-                "name" => $request->name,
-                "url" => $url,
-                "webhookToken" => $webhookToken,
+                'type' => $request->type,
+                'name' => $request->name,
+                'url' => $url,
+                'webhookToken' => $webhookToken,
             ];
-            $modelArray["api_token"] = $request->api_token ?? "";
-            $modelArray["apiToken"] = $request->api_token ?? "";
-            $modelArray["username"] = $request->username ?? "";
-            $modelArray['password'] = $request->password ?? "";
+            $modelArray['api_token'] = $request->api_token ?? '';
+            $modelArray['apiToken'] = $request->api_token ?? '';
+            $modelArray['username'] = $request->username ?? '';
+            $modelArray['password'] = $request->password ?? '';
             $model = DataSource::create($modelArray);
+
             return response()->json([
                 'status' => true,
-                "data" => $model
+                'data' => $model,
             ]);
         } else {
             return response()->json([
@@ -91,27 +89,26 @@ class DataSourceController extends Controller
         $model = DataSource::where('_id', $id);
         $model = $model->firstOrFail();
 
-
         $va = \Validator::make(
             $request->all(),
             [
-                'name' => "required",
-                'type' => "required",
-                "url" => "required",
+                'name' => 'required',
+                'type' => 'required',
+                'url' => 'required',
             ],
         );
 
         if ($va->passes()) {
-            $url = rtrim($request->url, "/");
+            $url = rtrim($request->url, '/');
             $modelArray = [
-                "type" => $request->type,
-                "name" => $request->name,
-                "url" => $url,
+                'type' => $request->type,
+                'name' => $request->name,
+                'url' => $url,
             ];
-            $modelArray["api_token"] = $request->api_token ?? "";
-            $modelArray["apiToken"] = $request->api_token ?? "";
-            $modelArray["username"] = $request->username ?? "";
-            $modelArray['password'] = $request->password ?? "";
+            $modelArray['api_token'] = $request->api_token ?? '';
+            $modelArray['apiToken'] = $request->api_token ?? '';
+            $modelArray['username'] = $request->username ?? '';
+            $modelArray['password'] = $request->password ?? '';
 
             $model->update($modelArray);
 
@@ -134,7 +131,7 @@ class DataSourceController extends Controller
     public function IsConnected($id)
     {
         $isConnected = $this->dataSourceService->isConnected($id);
-        return response()->json(["isConnected" => $isConnected]);
-    }
 
+        return response()->json(['isConnected' => $isConnected]);
+    }
 }

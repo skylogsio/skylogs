@@ -7,11 +7,8 @@ use App\Models\DataSource\DataSource;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Http;
 
-
 class DataSourceService
 {
-
-
     public function isConnected(string $dataSourceId): bool
     {
         $ds = DataSource::query()->whereId($dataSourceId)->firstOrFail();
@@ -26,9 +23,10 @@ class DataSourceService
                 case DataSourceType::PMM:
                 case DataSourceType::SPLUNK:
                 case DataSourceType::ZABBIX:
-                $response = $request->get($ds->url);
+                    $response = $request->get($ds->url);
                     break;
             }
+
             return $response->successful();
         } catch (\Exception $e) {
             return false;
@@ -36,13 +34,13 @@ class DataSourceService
 
     }
 
-    public function get(DataSourceType $dataSourceType = null): Collection
+    public function get(?DataSourceType $dataSourceType = null): Collection
     {
         $tagsArray = ['dataSource'];
         $keyName = 'dataSource';
         if ($dataSourceType) {
             $tagsArray[] = $dataSourceType->value;
-            $keyName .= ':' . $dataSourceType->value;
+            $keyName .= ':'.$dataSourceType->value;
         }
 
         $dataSources = cache()
@@ -52,20 +50,20 @@ class DataSourceService
                 if ($dataSourceType) {
                     $dataSource = $dataSource->where('type', $dataSourceType);
                 }
+
                 return $dataSource->get()->keyBy('id');
             });
 
         return $dataSources;
     }
 
-    public function byToken($token) : ?DataSource
+    public function byToken($token): ?DataSource
     {
-        return DataSource::query()->where("webhookToken",$token)->firstOrFail();
+        return DataSource::query()->where('webhookToken', $token)->firstOrFail();
     }
 
     public static function flushCache()
     {
         cache()->tags(['dataSource'])->flush();
     }
-
 }

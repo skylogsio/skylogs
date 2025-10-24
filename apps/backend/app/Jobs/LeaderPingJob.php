@@ -31,17 +31,15 @@ class LeaderPingJob implements ShouldQueue
     public function handle()
     {
 
-
-//        die();
+        //        die();
         $serverPriority = SkylogsInstanceService::GetServerPriority();
         $leaderPriority = SkylogsInstanceService::GetLeaderPriority();
 
-        if ($serverPriority <= $leaderPriority ){
+        if ($serverPriority <= $leaderPriority) {
             SkylogsInstanceService::SendPing();
         }
 
         SkylogsInstanceService::CheckLeaderPing();
 
     }
-
 }

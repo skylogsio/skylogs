@@ -32,7 +32,7 @@ class DataSourceDocs
                 name: 'name',
                 in: 'query',
                 schema: new OA\Schema(type: 'string')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -44,10 +44,10 @@ class DataSourceDocs
                             property: 'data',
                             type: 'array',
                             items: new OA\Items(ref: '#/components/schemas/DataSource')
-                        )
+                        ),
                     ]
                 )
-            )
+            ),
         ]
     )]
     public function index() {}
@@ -69,7 +69,7 @@ class DataSourceDocs
                         enum: ['prometheus', 'sentry', 'grafana', 'pmm', 'zabbix', 'splunk', 'elastic']
                     )
                 )
-            )
+            ),
         ]
     )]
     public function getTypes() {}
@@ -86,7 +86,7 @@ class DataSourceDocs
                 in: 'path',
                 required: true,
                 schema: new OA\Schema(type: 'string')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -94,7 +94,7 @@ class DataSourceDocs
                 description: 'Data source details',
                 content: new OA\JsonContent(ref: '#/components/schemas/DataSource')
             ),
-            new OA\Response(response: 404, description: 'Not found')
+            new OA\Response(response: 404, description: 'Not found'),
         ]
     )]
     public function show() {}
@@ -111,7 +111,7 @@ class DataSourceDocs
                 in: 'path',
                 required: true,
                 schema: new OA\Schema(type: 'string')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -119,10 +119,10 @@ class DataSourceDocs
                 description: 'Connection status',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'isConnected', type: 'boolean')
+                        new OA\Property(property: 'isConnected', type: 'boolean'),
                     ]
                 )
-            )
+            ),
         ]
     )]
     public function isConnected() {}
@@ -147,7 +147,7 @@ class DataSourceDocs
                     new OA\Property(property: 'url', type: 'string', example: 'https://prometheus.example.com'),
                     new OA\Property(property: 'api_token', type: 'string'),
                     new OA\Property(property: 'username', type: 'string'),
-                    new OA\Property(property: 'password', type: 'string')
+                    new OA\Property(property: 'password', type: 'string'),
                 ]
             )
         ),
@@ -159,11 +159,11 @@ class DataSourceDocs
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'status', type: 'boolean'),
-                        new OA\Property(property: 'data', ref: '#/components/schemas/DataSource')
+                        new OA\Property(property: 'data', ref: '#/components/schemas/DataSource'),
                     ]
                 )
             ),
-            new OA\Response(response: 422, description: 'Validation error')
+            new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
     public function create() {}
@@ -184,11 +184,11 @@ class DataSourceDocs
                 in: 'path',
                 required: true,
                 schema: new OA\Schema(type: 'string')
-            )
+            ),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Data source updated'),
-            new OA\Response(response: 404, description: 'Not found')
+            new OA\Response(response: 404, description: 'Not found'),
         ]
     )]
     public function update() {}
@@ -205,11 +205,11 @@ class DataSourceDocs
                 in: 'path',
                 required: true,
                 schema: new OA\Schema(type: 'string')
-            )
+            ),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Data source deleted'),
-            new OA\Response(response: 404, description: 'Not found')
+            new OA\Response(response: 404, description: 'Not found'),
         ]
     )]
     public function delete() {}
@@ -225,7 +225,7 @@ class DataSourceDocs
         new OA\Property(property: 'webhookToken', type: 'string'),
         new OA\Property(property: 'copy', description: 'Webhook URL', type: 'string'),
         new OA\Property(property: 'createdAt', type: 'string', format: 'date-time'),
-        new OA\Property(property: 'updatedAt', type: 'string', format: 'date-time')
+        new OA\Property(property: 'updatedAt', type: 'string', format: 'date-time'),
     ]
 )]
 class DataSourceSchema {}
@@ -239,7 +239,7 @@ class DataSourceSchema {}
         new OA\Property(property: 'url', type: 'string'),
         new OA\Property(property: 'api_token', type: 'string'),
         new OA\Property(property: 'username', type: 'string'),
-        new OA\Property(property: 'password', type: 'string')
+        new OA\Property(property: 'password', type: 'string'),
     ]
 )]
 class DataSourceInputSchema {}

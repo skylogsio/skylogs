@@ -10,7 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-//use Log;
+// use Log;
 
 class SendNotifyJob implements ShouldQueue
 {
@@ -18,24 +18,41 @@ class SendNotifyJob implements ShouldQueue
 
     public Notify $notify;
 
-    public const HEALTH_CHECK = "health-check";
-    public const ELASTIC_CHECK = "elastic-check";
-    public const RESOLVED_MANUALLY = "resolved_manually";
-    public const PROMETHEUS_WEBHOOK_RESOLVE = "prometheus-webhook-resolve";
-    public const PROMETHEUS_WEBHOOK_FIRE = "prometheus-webhook-fire";
-    public const GRAFANA_WEBHOOK = "grafana-webhook";
-    public const PROMETHEUS_RESOLVE = "prometheus-resolve";
-    public const PROMETHEUS_FIRE = "prometheus-fire";
-    public const API_RESOLVE = "user-resolve";
-    public const API_FIRE = "user-fire";
-    public const API_NOTIFICATION = "user-notification";
-    public const USER_TEST = "user-test";
-    public const ALERT_RULE_TEST = "alert-rule-test";
-    public const ALERT_RULE_ACKNOWLEDGED = "alert-rule-acknowledged";
-    public const SENTRY_WEBHOOK = "sentry-webhook";
-    public const METABASE_WEBHOOK = "metabase-webhook";
-    public const ZABBIX_WEBHOOK = "zabbix-webhook";
-    public const SENTRY_WEBHOOK_TEST = "sentry-webhook-test";
+    public const HEALTH_CHECK = 'health-check';
+
+    public const ELASTIC_CHECK = 'elastic-check';
+
+    public const RESOLVED_MANUALLY = 'resolved_manually';
+
+    public const PROMETHEUS_WEBHOOK_RESOLVE = 'prometheus-webhook-resolve';
+
+    public const PROMETHEUS_WEBHOOK_FIRE = 'prometheus-webhook-fire';
+
+    public const GRAFANA_WEBHOOK = 'grafana-webhook';
+
+    public const PROMETHEUS_RESOLVE = 'prometheus-resolve';
+
+    public const PROMETHEUS_FIRE = 'prometheus-fire';
+
+    public const API_RESOLVE = 'user-resolve';
+
+    public const API_FIRE = 'user-fire';
+
+    public const API_NOTIFICATION = 'user-notification';
+
+    public const USER_TEST = 'user-test';
+
+    public const ALERT_RULE_TEST = 'alert-rule-test';
+
+    public const ALERT_RULE_ACKNOWLEDGED = 'alert-rule-acknowledged';
+
+    public const SENTRY_WEBHOOK = 'sentry-webhook';
+
+    public const METABASE_WEBHOOK = 'metabase-webhook';
+
+    public const ZABBIX_WEBHOOK = 'zabbix-webhook';
+
+    public const SENTRY_WEBHOOK_TEST = 'sentry-webhook-test';
 
     /**
      * Create a new job instance.
@@ -75,10 +92,10 @@ class SendNotifyJob implements ShouldQueue
                 SendNotifyService::SendMessage($this->notify);
                 break;
             case self::ALERT_RULE_TEST:
-                SendNotifyService::SendMessage($this->notify, isTest:true);
+                SendNotifyService::SendMessage($this->notify, isTest: true);
                 break;
             case self::ALERT_RULE_ACKNOWLEDGED:
-                SendNotifyService::SendMessage($this->notify, isAcknowledged:true);
+                SendNotifyService::SendMessage($this->notify, isAcknowledged: true);
                 break;
         }
         $this->notify->status = Notify::STATUS_DONE;
@@ -89,10 +106,10 @@ class SendNotifyJob implements ShouldQueue
     {
         if (is_array($exception)) {
 
-            \Log::debug("notify error ", $exception);
+            \Log::debug('notify error ', $exception);
         } else {
             try {
-                \Log::debug("notify error ", array($exception));
+                \Log::debug('notify error ', [$exception]);
 
             } catch (\Exception $exception) {
 
@@ -102,8 +119,6 @@ class SendNotifyJob implements ShouldQueue
         $this->notify->error = $exception;
         $this->notify->status = Notify::STATUS_FAIL;
         $this->notify->save();
-//        echo $exception;
+        //        echo $exception;
     }
-
-
 }

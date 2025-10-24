@@ -11,12 +11,9 @@ use Http;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 
-
 class ZabbixService
 {
-    public function __construct(protected DataSourceService $dataSourceService)
-    {
-    }
+    public function __construct(protected DataSourceService $dataSourceService) {}
 
     public function getHosts()
     {
@@ -30,14 +27,14 @@ class ZabbixService
 
                     $request = $pool->as($zabbix->name)->acceptJson();
                     $body = [
-                        "auth" => $zabbix->apiToken,
-                        "jsonrpc" => "2.0",
-                        "method" => "host.get",
-                        "params" => new \stdClass(),
-                        "id" => 1,
+                        'auth' => $zabbix->apiToken,
+                        'jsonrpc' => '2.0',
+                        'method' => 'host.get',
+                        'params' => new \stdClass,
+                        'id' => 1,
                     ];
                     $result[] = $request->withOptions([
-                        'verify' => false
+                        'verify' => false,
                     ])->post($zabbix->zabbixApiUrl(), $body);
                 }
 
@@ -48,7 +45,9 @@ class ZabbixService
 
                 try {
 
-                    if (!($response instanceof Response && $response->ok())) continue;
+                    if (! ($response instanceof Response && $response->ok())) {
+                        continue;
+                    }
                     $response = $response->json();
 
                     $data = $response['result'];
@@ -79,14 +78,14 @@ class ZabbixService
 
                     $request = $pool->as($zabbix->name)->acceptJson();
                     $body = [
-                        "auth" => $zabbix->apiToken,
-                        "jsonrpc" => "2.0",
-                        "method" => "action.get",
-                        "params" => new \stdClass(),
-                        "id" => 1,
+                        'auth' => $zabbix->apiToken,
+                        'jsonrpc' => '2.0',
+                        'method' => 'action.get',
+                        'params' => new \stdClass,
+                        'id' => 1,
                     ];
                     $result[] = $request->withOptions([
-                        'verify' => false
+                        'verify' => false,
                     ])->post($zabbix->zabbixApiUrl(), $body);
                 }
 
@@ -97,7 +96,9 @@ class ZabbixService
 
                 try {
 
-                    if (!($response instanceof Response && $response->ok())) continue;
+                    if (! ($response instanceof Response && $response->ok())) {
+                        continue;
+                    }
                     $response = $response->json();
 
                     $data = $response['result'];
@@ -112,6 +113,7 @@ class ZabbixService
             }
 
         }
+
         return $resultHosts;
 
     }
@@ -119,12 +121,12 @@ class ZabbixService
     public function getSeverities()
     {
         return collect([
-            "Not classified",
-            "Information",
-            "Warning",
-            "Average",
-            "High",
-            "Disaster"
+            'Not classified',
+            'Information',
+            'Warning',
+            'Average',
+            'High',
+            'Disaster',
         ]);
     }
 
@@ -133,19 +135,18 @@ class ZabbixService
 
         try {
 
-
             $includedAlerts = collect();
             foreach ($alertRules as $rule) {
 
-                if (!empty($rule['hosts']) && !in_array($data['host_name'], $rule['hosts'])) {
+                if (! empty($rule['hosts']) && ! in_array($data['host_name'], $rule['hosts'])) {
                     continue;
                 }
 
-                if (!empty($rule['actions']) && !in_array($data['action_name'], $rule['actions'])) {
+                if (! empty($rule['actions']) && ! in_array($data['action_name'], $rule['actions'])) {
                     continue;
                 }
 
-                if (!empty($rule['severities']) && !in_array($data['event_severity'], $rule['severities'])) {
+                if (! empty($rule['severities']) && ! in_array($data['event_severity'], $rule['severities'])) {
                     continue;
                 }
 
@@ -155,7 +156,7 @@ class ZabbixService
             if ($includedAlerts->isNotEmpty()) {
                 foreach ($includedAlerts as $includedAlert) {
 
-                    $model = new ZabbixWebhookAlert();
+                    $model = new ZabbixWebhookAlert;
                     $model->dataSourceId = $dataSource->id;
                     $model->dataSourceName = $dataSource->name;
 
@@ -163,7 +164,6 @@ class ZabbixService
                         $model->$key = $value;
 
                     }
-
 
                     $model->alertRuleId = $includedAlert->id;
                     $model->alertRuleName = $includedAlert->name;
@@ -175,23 +175,23 @@ class ZabbixService
                     $includedAlert->save();
 
                     $check = ZabbixCheck::firstOrCreate([
-                        "alertRuleId" => $includedAlert->id,
+                        'alertRuleId' => $includedAlert->id,
                     ], [
-                        "alertRuleId" => $includedAlert->id,
-                        "fireEvents" => []
+                        'alertRuleId' => $includedAlert->id,
+                        'fireEvents' => [],
                     ]);
 
                     if ($model->event_status == ZabbixWebhookAlert::RESOLVED) {
-                        $check->pull("fireEvents", $model->event_id);
+                        $check->pull('fireEvents', $model->event_id);
                     } elseif ($model->event_status == ZabbixWebhookAlert::PROBLEM) {
-                        $check->push("fireEvents", $model->event_id, true);
+                        $check->push('fireEvents', $model->event_id, true);
                     }
 
-                    if(!empty($check->fireEvents)){
+                    if (! empty($check->fireEvents)) {
                         $includedAlert->fireCount = count($check->fireEvents);
                         $includedAlert->state = AlertRule::CRITICAL;
                         $includedAlert->save();
-                    }else{
+                    } else {
                         $includedAlert->fireCount = 0;
                         $includedAlert->state = AlertRule::RESOlVED;
                         $includedAlert->save();
@@ -200,10 +200,8 @@ class ZabbixService
                 }
             }
 
-
         } catch (\Exception $e) {
         }
-
 
     }
 }

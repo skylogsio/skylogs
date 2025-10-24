@@ -6,9 +6,7 @@ use App\Models\BaseModel;
 
 class ProfileService extends BaseModel
 {
-
     public $timestamps = true;
 
-    protected $guarded = ['id','_id',];
-
+    protected $guarded = ['id', '_id'];
 }

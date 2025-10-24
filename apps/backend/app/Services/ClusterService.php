@@ -10,7 +10,6 @@ use App\Models\Config\ConfigSkylogs;
 use App\Models\Endpoint;
 use App\Models\SkylogsInstance;
 use App\Models\User;
-use Illuminate\Container\Attributes\Config;
 
 class ClusterService
 {
@@ -33,8 +32,8 @@ class ClusterService
 
     public function refreshHealthMain(ConfigSkylogs $model)
     {
-        $alert = AlertRule::where("type", AlertRuleType::HEALTH)
-            ->where("checkType", HealthAlertType::SOURCE_CLUSTER)
+        $alert = AlertRule::where('type', AlertRuleType::HEALTH)
+            ->where('checkType', HealthAlertType::SOURCE_CLUSTER)
             ->first();
         if ($model->type == ClusterType::MAIN) {
             if ($alert) {
@@ -49,15 +48,14 @@ class ClusterService
                 app(AlertRuleService::class)->createHealthCluster($model);
             }
 
-
         }
     }
 
     public function refreshHealthAgent(SkylogsInstance $model)
     {
-        $alert = AlertRule::where("type", AlertRuleType::HEALTH)
-            ->where("checkType", HealthAlertType::AGENT_CLUSTER)
-            ->where("skylogsInstanceId", $model->id)
+        $alert = AlertRule::where('type', AlertRuleType::HEALTH)
+            ->where('checkType', HealthAlertType::AGENT_CLUSTER)
+            ->where('skylogsInstanceId', $model->id)
             ->first();
 
         if ($alert) {
@@ -77,20 +75,20 @@ class ClusterService
             $sourceUrl = $config->sourceUrl;
             $sourceToken = $config->sourceToken;
 
-            $response = \Http::withToken($sourceToken)->get($sourceUrl . "/api/cluster/sync-data");
+            $response = \Http::withToken($sourceToken)->get($sourceUrl.'/api/cluster/sync-data');
             $users = $response->json();
 
             foreach ($users as $user) {
 
-                $model = User::where("username", $user["username"])->firstOrNew();
-                $model->name = $user["name"];
-                $model->username = $user["username"];
-                $model->password = $user["password"];
+                $model = User::where('username', $user['username'])->firstOrNew();
+                $model->name = $user['name'];
+                $model->username = $user['username'];
+                $model->password = $user['password'];
                 $model->save();
 
-                $roles = collect($user["roles"])->pluck("name");
+                $roles = collect($user['roles'])->pluck('name');
                 foreach ($roles as $role) {
-                    if (!$model->hasRole($role)) {
+                    if (! $model->hasRole($role)) {
                         foreach ($model->roles as $userRole) {
                             $model->removeRole($userRole);
                         }
@@ -98,25 +96,22 @@ class ClusterService
                     }
                 }
 
-                $endpoints = collect($user["endpoints"]);
+                $endpoints = collect($user['endpoints']);
                 foreach ($endpoints as $endpoint) {
-                    $endpointModel = Endpoint::where("id", $endpoint["id"])->firstOrNew();
+                    $endpointModel = Endpoint::where('id', $endpoint['id'])->firstOrNew();
                     $endpointModel->_id = $endpoint['id'];
                     $endpointModel->userId = $model->id;
-                    $endpointModel->name = $endpoint["name"];
-                    $endpointModel->type = $endpoint["type"];
-                    $endpointModel->value = $endpoint["value"] ?? "";
-                    $endpointModel->chatId = $endpoint["chatId"] ?? "";
-                    $endpointModel->threadId = $endpoint["threadId"] ?? "";
-                    $endpointModel->botToken = $endpoint["botToken"] ?? "";
-                    $endpointModel->isPublic = $endpoint["isPublic"];
+                    $endpointModel->name = $endpoint['name'];
+                    $endpointModel->type = $endpoint['type'];
+                    $endpointModel->value = $endpoint['value'] ?? '';
+                    $endpointModel->chatId = $endpoint['chatId'] ?? '';
+                    $endpointModel->threadId = $endpoint['threadId'] ?? '';
+                    $endpointModel->botToken = $endpoint['botToken'] ?? '';
+                    $endpointModel->isPublic = $endpoint['isPublic'];
                     $endpointModel->save();
                 }
             }
 
-
         }
     }
-
-
 }

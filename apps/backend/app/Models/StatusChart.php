@@ -7,22 +7,25 @@ use MongoDB\Laravel\Relations\BelongsTo;
 
 class StatusChart extends BaseModel
 {
-
     public $timestamps = true;
-    public static $title = "Status Chart";
-    public static $KEY = "status_chart";
 
-    protected $guarded = ['id', '_id',];
+    public static $title = 'Status Chart';
+
+    public static $KEY = 'status_chart';
+
+    protected $guarded = ['id', '_id'];
 
     public const CRITICAL = 1;
-    public const RESOLVED = 2;
-    public const WARNING = 3;
-    public const UNKNOWN = 4;
 
+    public const RESOLVED = 2;
+
+    public const WARNING = 3;
+
+    public const UNKNOWN = 4;
 
     public function alertRule(): BelongsTo
     {
-        return $this->belongsTo(AlertRule::class, "alertRuleId", "_id");
+        return $this->belongsTo(AlertRule::class, 'alertRuleId', '_id');
     }
 
     public static function GenerateArrays($statusCharts): array
@@ -48,17 +51,18 @@ class StatusChart extends BaseModel
             }
 
             $newItem = [];
-            $newItem["name"] = $item->alertname;
-            $newItem["data"] = [[
-                "x" => $item->alertname,
-                "y" => [
+            $newItem['name'] = $item->alertname;
+            $newItem['data'] = [[
+                'x' => $item->alertname,
+                'y' => [
                     $item->from,
                     $item->to,
                 ],
-                "fillColor" => $color,
+                'fillColor' => $color,
             ]];
             $result[] = $newItem;
         }
+
         return $result;
     }
 
@@ -108,9 +112,9 @@ class StatusChart extends BaseModel
         }
 
     }
+
     public static function GetStatusHealth($history)
     {
-
 
         switch ($history->state) {
             case HealthCheck::DOWN:
@@ -122,6 +126,7 @@ class StatusChart extends BaseModel
         }
 
     }
+
     public static function GetStatusElastic($history)
     {
 
@@ -135,6 +140,4 @@ class StatusChart extends BaseModel
         }
 
     }
-
-
 }

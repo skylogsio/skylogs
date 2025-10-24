@@ -2,12 +2,11 @@
 
 namespace App\Enums;
 
-
-enum HealthAlertType:string
+enum HealthAlertType: string
 {
-    case AGENT_CLUSTER = "agentCluster";
-    case SOURCE_CLUSTER = "sourceCluster";
+    case AGENT_CLUSTER = 'agentCluster';
+    case SOURCE_CLUSTER = 'sourceCluster';
 
-    case DATASOURCE = "datasource";
+    case DATASOURCE = 'datasource';
 
 }
