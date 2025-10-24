@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "skylogsio/skylogs-laravel",
+    "name": "skylogsio/skylogs",
     "type": "project",
     "description": "skylogs backend",
     "keywords": ["laravel", "framework","skylogs","prometheus","zabbix","sentry","elastic","grafana","alerting"],
