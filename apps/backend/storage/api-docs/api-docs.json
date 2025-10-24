@@ -252,9 +252,1135 @@
                     }
                 ]
             }
+        },
+        "/api/v1/data-source": {
+            "get": {
+                "tags": [
+                    "Data Sources"
+                ],
+                "summary": "Get list of data sources",
+                "operationId": "getDataSources",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of data sources",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DataSource"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Data Sources"
+                ],
+                "summary": "Create new data source",
+                "operationId": "createDataSource",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "type",
+                                    "url"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Production Prometheus"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "prometheus",
+                                            "sentry",
+                                            "grafana",
+                                            "pmm",
+                                            "zabbix",
+                                            "splunk",
+                                            "elastic"
+                                        ],
+                                        "example": "prometheus"
+                                    },
+                                    "url": {
+                                        "type": "string",
+                                        "example": "https://prometheus.example.com"
+                                    },
+                                    "api_token": {
+                                        "type": "string"
+                                    },
+                                    "username": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Data source created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/DataSource"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/data-source/types": {
+            "get": {
+                "tags": [
+                    "Data Sources"
+                ],
+                "summary": "Get available data source types",
+                "operationId": "getDataSourceTypes",
+                "responses": {
+                    "200": {
+                        "description": "List of data source types",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "enum": [
+                                            "prometheus",
+                                            "sentry",
+                                            "grafana",
+                                            "pmm",
+                                            "zabbix",
+                                            "splunk",
+                                            "elastic"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/data-source/{id}": {
+            "get": {
+                "tags": [
+                    "Data Sources"
+                ],
+                "summary": "Get data source by ID",
+                "operationId": "getDataSource",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data source details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/DataSource"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Data Sources"
+                ],
+                "summary": "Update data source",
+                "operationId": "updateDataSource",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DataSourceInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Data source updated"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Data Sources"
+                ],
+                "summary": "Delete data source",
+                "operationId": "deleteDataSource",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data source deleted"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/data-source/status/{id}": {
+            "get": {
+                "tags": [
+                    "Data Sources"
+                ],
+                "summary": "Check if data source is connected",
+                "operationId": "checkDataSourceConnection",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Connection status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "isConnected": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/endpoint": {
+            "get": {
+                "tags": [
+                    "Endpoints"
+                ],
+                "summary": "Get list of endpoints",
+                "operationId": "getEndpoints",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "description": "Items per page",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Filter by name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of endpoints",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Endpoint"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Endpoints"
+                ],
+                "summary": "Create new endpoint",
+                "operationId": "createEndpoint",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "type",
+                                    "value"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "My SMS Endpoint"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "sms",
+                                            "call",
+                                            "email",
+                                            "telegram",
+                                            "teams",
+                                            "matter-most",
+                                            "flow"
+                                        ],
+                                        "example": "sms"
+                                    },
+                                    "value": {
+                                        "type": "string",
+                                        "example": "09000000000"
+                                    },
+                                    "chatId": {
+                                        "description": "For Telegram type",
+                                        "type": "string"
+                                    },
+                                    "threadId": {
+                                        "description": "For Telegram type",
+                                        "type": "string"
+                                    },
+                                    "botToken": {
+                                        "description": "For Telegram type",
+                                        "type": "string"
+                                    },
+                                    "isPublic": {
+                                        "type": "boolean",
+                                        "default": false
+                                    },
+                                    "steps": {
+                                        "description": "For flow type - array of steps with wait and endpoint types",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "type": {
+                                                    "description": "Step type - wait for delay or endpoint for notification",
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "wait",
+                                                        "endpoint"
+                                                    ]
+                                                },
+                                                "duration": {
+                                                    "description": "Duration for wait type steps",
+                                                    "type": "integer"
+                                                },
+                                                "timeUnit": {
+                                                    "description": "Time unit for wait type steps (seconds, minutes, hours)",
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "s",
+                                                        "m",
+                                                        "h"
+                                                    ]
+                                                },
+                                                "endpointIds": {
+                                                    "description": "Array of endpoint IDs for endpoint type steps",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Endpoint created successfully. Response structure varies based on endpoint type.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Endpoint"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/endpoint/indexFlow": {
+            "get": {
+                "tags": [
+                    "Endpoints"
+                ],
+                "summary": "Get list of flow endpoints",
+                "operationId": "getFlowEndpoints",
+                "responses": {
+                    "200": {
+                        "description": "List of flow endpoints",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Endpoint"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/endpoint/createFlowEndpoints": {
+            "get": {
+                "tags": [
+                    "Endpoints"
+                ],
+                "summary": "Get endpoints available for flow creation",
+                "operationId": "getEndpointsForFlow",
+                "responses": {
+                    "200": {
+                        "description": "List of available endpoints",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Endpoint"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/endpoint/{id}": {
+            "get": {
+                "tags": [
+                    "Endpoints"
+                ],
+                "summary": "Get endpoint by ID",
+                "operationId": "getEndpoint",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Endpoint details. Response structure varies based on endpoint type (sms, email, telegram, flow, etc.)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Endpoint"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Endpoints"
+                ],
+                "summary": "Update endpoint",
+                "operationId": "updateEndpoint",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "type",
+                                    "value"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Updated Endpoint Name"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "sms",
+                                            "call",
+                                            "email",
+                                            "telegram",
+                                            "teams",
+                                            "matter-most",
+                                            "flow"
+                                        ],
+                                        "example": "telegram"
+                                    },
+                                    "value": {
+                                        "type": "string",
+                                        "example": "09000000000"
+                                    },
+                                    "chatId": {
+                                        "description": "For Telegram type",
+                                        "type": "string"
+                                    },
+                                    "threadId": {
+                                        "description": "For Telegram type",
+                                        "type": "string"
+                                    },
+                                    "botToken": {
+                                        "description": "For Telegram type",
+                                        "type": "string"
+                                    },
+                                    "isPublic": {
+                                        "type": "boolean",
+                                        "default": false
+                                    },
+                                    "steps": {
+                                        "description": "For flow type - array of steps with wait and endpoint types",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "type": {
+                                                    "description": "Step type - wait for delay or endpoint for notification",
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "wait",
+                                                        "endpoint"
+                                                    ]
+                                                },
+                                                "duration": {
+                                                    "description": "Duration for wait type steps",
+                                                    "type": "integer"
+                                                },
+                                                "timeUnit": {
+                                                    "description": "Time unit for wait type steps (seconds, minutes, hours)",
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "s",
+                                                        "m",
+                                                        "h"
+                                                    ]
+                                                },
+                                                "endpointIds": {
+                                                    "description": "Array of endpoint IDs for endpoint type steps",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Endpoint updated successfully. Response structure varies based on endpoint type.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Endpoint"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Endpoints"
+                ],
+                "summary": "Delete endpoint",
+                "operationId": "deleteEndpoint",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Endpoint deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Endpoint"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/endpoint/changeOwner/{id}": {
+            "post": {
+                "tags": [
+                    "Endpoints"
+                ],
+                "summary": "Change endpoint owner",
+                "operationId": "changeEndpointOwner",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "userId"
+                                ],
+                                "properties": {
+                                    "userId": {
+                                        "type": "string",
+                                        "example": "user123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Owner changed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Successfully change owner"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
+        "schemas": {
+            "DataSource": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string"
+                    },
+                    "webhookToken": {
+                        "type": "string"
+                    },
+                    "copy": {
+                        "description": "Webhook URL",
+                        "type": "string"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "DataSourceInput": {
+                "required": [
+                    "name",
+                    "type",
+                    "url"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string"
+                    },
+                    "api_token": {
+                        "type": "string"
+                    },
+                    "username": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "Endpoint": {
+                "description": "Endpoint model with different structures based on type. The structure varies depending on the endpoint type (sms, email, telegram, flow, etc.)",
+                "properties": {
+                    "id": {
+                        "description": "Unique identifier for the endpoint",
+                        "type": "string"
+                    },
+                    "name": {
+                        "description": "Display name for the endpoint",
+                        "type": "string"
+                    },
+                    "type": {
+                        "description": "Type of the endpoint",
+                        "type": "string",
+                        "enum": [
+                            "sms",
+                            "call",
+                            "email",
+                            "telegram",
+                            "teams",
+                            "matter-most",
+                            "flow"
+                        ]
+                    },
+                    "value": {
+                        "description": "Primary value (phone number, email address, etc.) - used for most types except telegram and flow",
+                        "type": "string"
+                    },
+                    "chatId": {
+                        "description": "Chat ID for telegram type endpoints",
+                        "type": "string"
+                    },
+                    "threadId": {
+                        "description": "Thread ID for telegram type endpoints",
+                        "type": "string"
+                    },
+                    "botToken": {
+                        "description": "Bot token for telegram type endpoints",
+                        "type": "string"
+                    },
+                    "steps": {
+                        "description": "Steps array for flow type endpoints",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "type": {
+                                    "description": "Step type - wait for delay or endpoint for notification",
+                                    "type": "string",
+                                    "enum": [
+                                        "wait",
+                                        "endpoint"
+                                    ]
+                                },
+                                "duration": {
+                                    "description": "Duration for wait type steps",
+                                    "type": "integer"
+                                },
+                                "timeUnit": {
+                                    "description": "Time unit for wait type steps (seconds, minutes, hours)",
+                                    "type": "string",
+                                    "enum": [
+                                        "s",
+                                        "m",
+                                        "h"
+                                    ]
+                                },
+                                "endpointIds": {
+                                    "description": "Array of endpoint IDs for endpoint type steps",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "userId": {
+                        "description": "User ID who owns this endpoint",
+                        "type": "string"
+                    },
+                    "isPublic": {
+                        "description": "Whether this endpoint is publicly available",
+                        "type": "boolean"
+                    },
+                    "createdAt": {
+                        "description": "Creation timestamp",
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "description": "Last update timestamp",
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object",
+                "example": {
+                    "id": "680d668e20f7ecb5bc026722",
+                    "name": "My SMS Endpoint",
+                    "type": "sms",
+                    "value": "09000000000",
+                    "userId": "userId",
+                    "isPublic": false,
+                    "createdAt": "2024-01-01T10:00:00Z",
+                    "updatedAt": "2024-01-01T10:00:00Z"
+                }
+            },
+            "EndpointInput": {
+                "description": "Input schema for creating/updating endpoints. Structure varies based on type.",
+                "required": [
+                    "name",
+                    "type"
+                ],
+                "properties": {
+                    "name": {
+                        "description": "Display name for the endpoint",
+                        "type": "string"
+                    },
+                    "type": {
+                        "description": "Type of the endpoint",
+                        "type": "string",
+                        "enum": [
+                            "sms",
+                            "call",
+                            "email",
+                            "telegram",
+                            "teams",
+                            "matter-most",
+                            "flow"
+                        ]
+                    },
+                    "value": {
+                        "description": "Primary value (phone number, email address, etc.) - required for most types",
+                        "type": "string"
+                    },
+                    "chatId": {
+                        "description": "Chat ID for telegram type endpoints",
+                        "type": "string"
+                    },
+                    "threadId": {
+                        "description": "Thread ID for telegram type endpoints",
+                        "type": "string"
+                    },
+                    "botToken": {
+                        "description": "Bot token for telegram type endpoints",
+                        "type": "string"
+                    },
+                    "isPublic": {
+                        "description": "Whether this endpoint is publicly available",
+                        "type": "boolean"
+                    },
+                    "steps": {
+                        "description": "Steps array for flow type endpoints",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "type": {
+                                    "description": "Step type - wait for delay or endpoint for notification",
+                                    "type": "string",
+                                    "enum": [
+                                        "wait",
+                                        "endpoint"
+                                    ]
+                                },
+                                "duration": {
+                                    "description": "Duration for wait type steps",
+                                    "type": "integer"
+                                },
+                                "timeUnit": {
+                                    "description": "Time unit for wait type steps (seconds, minutes, hours)",
+                                    "type": "string",
+                                    "enum": [
+                                        "s",
+                                        "m",
+                                        "h"
+                                    ]
+                                },
+                                "endpointIds": {
+                                    "description": "Array of endpoint IDs for endpoint type steps",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            }
+        },
         "securitySchemes": {
             "bearerAuth": {
                 "type": "http",
@@ -268,6 +1394,14 @@
         {
             "name": "Authentication",
             "description": "JWT-based authentication endpoints for Skylogs API"
+        },
+        {
+            "name": "Data Sources",
+            "description": "Manage monitoring data sources (Prometheus, Grafana, Sentry, etc.)"
+        },
+        {
+            "name": "Endpoints",
+            "description": "Manage notification endpoints (SMS, Email, Telegram, Teams, etc.)"
         }
     ]
 }
