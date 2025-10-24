@@ -34,5 +34,4 @@ class RefreshPrometheusCheckJob implements ShouldQueue
         PrometheusService::CleanChecks();
 
     }
-
 }

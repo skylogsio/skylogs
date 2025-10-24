@@ -2,10 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Enums\AlertRuleType;
-use App\Models\AlertInstance;
-use App\Services\AlertRuleService;
-use App\Services\ApiService;
 use App\Services\StatusService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,7 +13,6 @@ class RefreshStatusHistoryJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-
     /**
      * Execute the job.
      *
@@ -25,7 +20,6 @@ class RefreshStatusHistoryJob implements ShouldQueue
      */
     public function handle()
     {
-         app(StatusService::class)->refresh();
+        app(StatusService::class)->refresh();
     }
-
 }

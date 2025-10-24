@@ -8,16 +8,17 @@ use Morilog\Jalali\Jalalian;
 
 class MetabaseWebhookAlert extends BaseModel implements Messageable
 {
-
     public $timestamps = true;
-    public static $title = "Metabase Alert Webhook";
-    public static $KEY = "metabase_alert_webhook";
 
-    protected $guarded = ['id', '_id',];
+    public static $title = 'Metabase Alert Webhook';
+
+    public static $KEY = 'metabase_alert_webhook';
+
+    protected $guarded = ['id', '_id'];
 
     public function alertRule()
     {
-        return AlertRule::where("type", Constants::METABASE)->where('alertname', $this->alert_name)->first();
+        return AlertRule::where('type', Constants::METABASE)->where('alertname', $this->alert_name)->first();
     }
 
     public function CustomSave($jsonWebhook)
@@ -34,7 +35,7 @@ class MetabaseWebhookAlert extends BaseModel implements Messageable
             $this->alert_name = $dataArray['question_name'];
             $this->question_url = $dataArray['question_url'];
 
-            $alert = AlertRule::where("alertname", $this->alert_name)->first();
+            $alert = AlertRule::where('alertname', $this->alert_name)->first();
             if ($alert) {
                 $this->alertRuleId = $alert->_id;
                 $alert->state = AlertRule::UNKNOWN;
@@ -42,10 +43,10 @@ class MetabaseWebhookAlert extends BaseModel implements Messageable
                 $alert->save();
             }
 
-
         } catch (\Exception $e) {
 
         }
+
         return $this->save();
     }
 
@@ -55,8 +56,8 @@ class MetabaseWebhookAlert extends BaseModel implements Messageable
 
         $text .= "\n⚠️ TRIGGERED Metabase Alert ";
 
-        $text .= "\nUrl: " . $this->question_url;
-        $text .= "\nDate: " . Jalalian::now()->format("Y/m/d");
+        $text .= "\nUrl: ".$this->question_url;
+        $text .= "\nDate: ".Jalalian::now()->format('Y/m/d');
 
         return $text;
     }

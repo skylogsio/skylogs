@@ -2,11 +2,7 @@
 
 namespace App\Http\Controllers\V1\AlertRule;
 
-
 use App\Http\Controllers\Controller;
-use App\Models\AlertRule;
-use App\Models\Endpoint;
-use App\Models\User;
 use App\Services\AlertRuleService;
 use App\Services\EndpointService;
 use Illuminate\Http\Request;
@@ -14,40 +10,32 @@ use Illuminate\Support\Facades\Auth;
 
 class GroupActionController extends Controller
 {
-
-
     public function __construct(
         protected AlertRuleService $alertRuleService,
-        protected EndpointService  $endpointService,
-    )
-    {
-
-    }
+        protected EndpointService $endpointService,
+    ) {}
 
     public function AddUserAccessNotify(Request $request)
     {
-
 
         $alertRules = $this->alertRuleService->getAlertRules($request);
         $user = Auth::user();
         $isAdmin = $user->isAdmin();
 
-
         foreach ($alertRules as $alert) {
-            if ($request->has("userIds") && !empty($request->post("userIds"))) {
+            if ($request->has('userIds') && ! empty($request->post('userIds'))) {
 
                 if ($this->alertRuleService->hasAdminAccessAlert($user, $alert)) {
 
                     foreach ($request->userIds as $userId) {
-                        $alert->push("userIds", $userId, true);
+                        $alert->push('userIds', $userId, true);
                     }
                     $alert->save();
                 }
 
             }
 
-
-            if ($request->has("endpointIds") && !empty($request->post("endpointIds"))) {
+            if ($request->has('endpointIds') && ! empty($request->post('endpointIds'))) {
 
                 $selectableEndpointIds = app(EndpointService::class)->selectableUserEndpoint($user, $alert)->pluck('id');
                 foreach ($request->endpointIds as $endpointId) {
@@ -55,8 +43,8 @@ class GroupActionController extends Controller
                     $hasAccessToAdd = $isAdmin || $selectableEndpointIds->contains($endpointId);
 
                     if ($hasAccessToAdd) {
-                        $alert->push("endpoint_ids", $endpointId, true);
-                        $alert->push("endpointIds", $endpointId, true);
+                        $alert->push('endpoint_ids', $endpointId, true);
+                        $alert->push('endpointIds', $endpointId, true);
                     }
 
                 }
@@ -66,7 +54,7 @@ class GroupActionController extends Controller
 
         }
 
-        return response()->json(["status" => true]);
+        return response()->json(['status' => true]);
     }
 
     public function Silent(Request $request)
@@ -75,11 +63,12 @@ class GroupActionController extends Controller
         $alertRules = $this->alertRuleService->getAlertRules($request);
 
         foreach ($alertRules as $alert) {
-            if (!$alert->isSilent()) {
+            if (! $alert->isSilent()) {
                 $alert->silent();
             }
         }
-        return response()->json(["status" => true]);
+
+        return response()->json(['status' => true]);
 
     }
 
@@ -93,7 +82,8 @@ class GroupActionController extends Controller
                 $alert->unSilent();
             }
         }
-        return response()->json(["status" => true]);
+
+        return response()->json(['status' => true]);
 
     }
 
@@ -108,9 +98,8 @@ class GroupActionController extends Controller
             $this->alertRuleService->deleteForUser($user, $alert);
 
         }
-        return response()->json(["status" => true]);
+
+        return response()->json(['status' => true]);
 
     }
-
-
 }

@@ -13,7 +13,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class CheckServiceJob implements ShouldQueue, ShouldBeUnique
+class CheckServiceJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -32,21 +32,21 @@ class CheckServiceJob implements ShouldQueue, ShouldBeUnique
      */
     public function handle()
     {
-//        echo "TEST";
+        //        echo "TEST";
         $check = ServiceCheck::firstOrCreate(
             [
-                "alertRuleId" => $this->alert->_id
+                'alertRuleId' => $this->alert->_id,
             ],
             [
-                "service_id" => $this->alert->service_id,
-                "url" => $this->alert->service->url,
-                "threshold_down" => $this->alert->threshold_down,
-                "threshold_up" => $this->alert->threshold_up,
-                "basic_auth_username" => $this->alert->service->basic_auth_username,
-                "basic_auth_password" => $this->alert->service->basic_auth_password,
-                "api_token" => $this->alert->service->api_token,
-                "state" => HealthCheck::UP,
-                "counter" => 0
+                'service_id' => $this->alert->service_id,
+                'url' => $this->alert->service->url,
+                'threshold_down' => $this->alert->threshold_down,
+                'threshold_up' => $this->alert->threshold_up,
+                'basic_auth_username' => $this->alert->service->basic_auth_username,
+                'basic_auth_password' => $this->alert->service->basic_auth_password,
+                'api_token' => $this->alert->service->api_token,
+                'state' => HealthCheck::UP,
+                'counter' => 0,
             ]
         );
 
@@ -58,16 +58,16 @@ class CheckServiceJob implements ShouldQueue, ShouldBeUnique
                 ServiceCheckService::CheckZabbix($check);
                 break;
             case Service::TYPE_ELASTIC:
-//                ServiceCheckService::CheckElastic($check);
+                //                ServiceCheckService::CheckElastic($check);
                 break;
             case Service::TYPE_PMM:
-//                ServiceCheckService::CheckPmm($check);
+                //                ServiceCheckService::CheckPmm($check);
                 break;
             case Service::TYPE_PROMETHEUS:
-//                ServiceCheckService::CheckPrometheus($check);
+                //                ServiceCheckService::CheckPrometheus($check);
                 break;
             case Service::TYPE_GRAFANA:
-//                ServiceCheckService::CheckGrafana($check);
+                //                ServiceCheckService::CheckGrafana($check);
                 break;
         }
 
@@ -77,5 +77,4 @@ class CheckServiceJob implements ShouldQueue, ShouldBeUnique
     {
         return $this->alert->_id;
     }
-
 }

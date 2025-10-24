@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\V1\AlertRule;
 
-
 use App\Enums\AlertRuleType;
 use App\Enums\DataSourceType;
 use App\Http\Controllers\Controller;
@@ -16,28 +15,26 @@ use Illuminate\Http\Request;
 
 class CreateDataController extends Controller
 {
-
     public function __construct(
         protected PrometheusInstanceService $prometheusInstanceService,
         protected GrafanaInstanceService $grafanaInstanceService,
         protected ZabbixService $zabbixService,
     ) {}
 
-
     public function CreateData(Request $request)
     {
 
         $adminUserId = User::where('username', 'admin')->first()->_id;
 
-        $endpoints = Endpoint::where("userId", \Auth::user()->_id)
+        $endpoints = Endpoint::where('userId', \Auth::user()->_id)
             ->orWhere('isPublic', true)
             ->get();
-        $users = User::whereNotIn("_id", [$adminUserId, \Auth::id()])->get();
+        $users = User::whereNotIn('_id', [$adminUserId, \Auth::id()])->get();
 
         return response()->json(
             compact(
-                "endpoints",
-                "users"
+                'endpoints',
+                'users'
             )
         );
 
@@ -46,12 +43,12 @@ class CreateDataController extends Controller
     public function DataSources(Request $request, $type)
     {
         $type = DataSourceType::tryFrom($type);
-        $dataSources = DataSource::where("type", $type)->get();
+        $dataSources = DataSource::where('type', $type)->get();
 
         $result = [];
         foreach ($dataSources as $dataSource) {
             $result[] = [
-                "name" => $dataSource->name,
+                'name' => $dataSource->name,
                 'id' => $dataSource->id,
             ];
         }
@@ -63,12 +60,13 @@ class CreateDataController extends Controller
     public function Rules(Request $request)
     {
 
-        $type = AlertRuleType::tryFrom($request->input("type"));
+        $type = AlertRuleType::tryFrom($request->input('type'));
         $rules = match ($type) {
             AlertRuleType::PROMETHEUS => $this->prometheusInstanceService->getRules($request->dataSourceId),
             AlertRuleType::GRAFANA => $this->grafanaInstanceService->alertRulesName($request->dataSourceId),
             default => [],
         };
+
         return response()->json($rules);
     }
 
@@ -89,7 +87,6 @@ class CreateDataController extends Controller
 
         $severities = $this->zabbixService->getSeverities();
 
-        return response()->json(compact("hosts", "actions", "severities"));
+        return response()->json(compact('hosts', 'actions', 'severities'));
     }
-
 }

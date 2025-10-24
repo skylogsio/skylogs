@@ -16,5 +16,6 @@ php /var/www/artisan config:clear
 php /var/www/artisan optimize:clear
 php /var/www/artisan config:cache
 php /var/www/artisan route:cache
+php /var/www/artisan l5-swagger:generate
 
 exec php-fpm

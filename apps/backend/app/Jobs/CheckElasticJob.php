@@ -14,7 +14,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class CheckElasticJob implements ShouldQueue, ShouldBeUnique
+class CheckElasticJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -35,23 +35,23 @@ class CheckElasticJob implements ShouldQueue, ShouldBeUnique
     {
         $check = ElasticCheck::firstOrCreate(
             [
-                "alertRuleId" => $this->alert->_id
+                'alertRuleId' => $this->alert->_id,
             ],
             [
-                "dataviewName" => $this->alert->dataviewName,
-                "dataviewTitle" => $this->alert->dataviewTitle,
-                "queryString" => $this->alert->queryString,
-                "minutes" => $this->alert->minutes,
-                "countDocument" => $this->alert->countDocument,
-                "state" => ElasticCheck::RESOLVED,
+                'dataviewName' => $this->alert->dataviewName,
+                'dataviewTitle' => $this->alert->dataviewTitle,
+                'queryString' => $this->alert->queryString,
+                'minutes' => $this->alert->minutes,
+                'countDocument' => $this->alert->countDocument,
+                'state' => ElasticCheck::RESOLVED,
             ]
         );
 
         $documents = ElasticService::getDocuments($check);
         $check->refresh();
-        if(empty($this->alert->conditionType) || $this->alert->conditionType == ElasticCheck::CONDITION_TYPE_GREATER_OR_EQUAL ){
+        if (empty($this->alert->conditionType) || $this->alert->conditionType == ElasticCheck::CONDITION_TYPE_GREATER_OR_EQUAL) {
             $isFired = count($documents) >= $check->countDocument;
-        }else{
+        } else {
             $isFired = count($documents) <= $check->countDocument;
         }
 
@@ -67,19 +67,19 @@ class CheckElasticJob implements ShouldQueue, ShouldBeUnique
                 $check->save();
 
                 ElasticHistory::create([
-                    "alertRuleId" => $this->alert->_id,
-                    "alertRuleName" => $this->alert->name,
-                    "dataSourceId" => $this->alert->dataSourceId,
-                    "dataviewName" => $this->alert->dataviewName,
-                    "dataviewTitle" => $this->alert->dataviewTitle,
-                    "queryString" => $this->alert->queryString,
-                    "minutes" => $this->alert->minutes,
-                    "countDocument" => $this->alert->countDocument,
-                    "currentCountDocument" => count($documents),
-                    "state" => ElasticCheck::FIRE,
+                    'alertRuleId' => $this->alert->_id,
+                    'alertRuleName' => $this->alert->name,
+                    'dataSourceId' => $this->alert->dataSourceId,
+                    'dataviewName' => $this->alert->dataviewName,
+                    'dataviewTitle' => $this->alert->dataviewTitle,
+                    'queryString' => $this->alert->queryString,
+                    'minutes' => $this->alert->minutes,
+                    'countDocument' => $this->alert->countDocument,
+                    'currentCountDocument' => count($documents),
+                    'state' => ElasticCheck::FIRE,
                 ]);
 
-                SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check,$this->alert->_id);
+                SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check, $this->alert->_id);
             }
 
         } else {
@@ -94,23 +94,22 @@ class CheckElasticJob implements ShouldQueue, ShouldBeUnique
                 $check->save();
 
                 ElasticHistory::create([
-                    "alertRuleId" => $this->alert->_id,
-                    "alertRuleName" => $this->alert->name,
-                    "dataSourceId" => $this->alert->dataSourceId,
-                    "dataviewName" => $this->alert->dataviewName,
-                    "dataviewTitle" => $this->alert->dataviewTitle,
-                    "queryString" => $this->alert->queryString,
-                    "minutes" => $this->alert->minutes,
-                    "countDocument" => $this->alert->countDocument,
-                    "currentCountDocument" => count($documents),
-                    "state" => ElasticCheck::RESOLVED,
+                    'alertRuleId' => $this->alert->_id,
+                    'alertRuleName' => $this->alert->name,
+                    'dataSourceId' => $this->alert->dataSourceId,
+                    'dataviewName' => $this->alert->dataviewName,
+                    'dataviewTitle' => $this->alert->dataviewTitle,
+                    'queryString' => $this->alert->queryString,
+                    'minutes' => $this->alert->minutes,
+                    'countDocument' => $this->alert->countDocument,
+                    'currentCountDocument' => count($documents),
+                    'state' => ElasticCheck::RESOLVED,
                 ]);
 
-                SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check,$this->alert->_id);
+                SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check, $this->alert->_id);
 
             }
         }
-
 
     }
 
@@ -118,5 +117,4 @@ class CheckElasticJob implements ShouldQueue, ShouldBeUnique
     {
         return $this->alert->_id;
     }
-
 }

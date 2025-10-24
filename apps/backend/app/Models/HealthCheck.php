@@ -3,58 +3,54 @@
 namespace App\Models;
 
 use App\Interfaces\Messageable;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use MongoDB\Laravel\Eloquent\Model;
 use MongoDB\Laravel\Relations\BelongsTo;
-use MongoDB\Laravel\Relations\HasMany;
 use Morilog\Jalali\Jalalian;
 
 class HealthCheck extends BaseModel implements Messageable
 {
-
     public $timestamps = true;
-    public static $title = "Health Check";
-    public static $KEY = "health_check";
 
-    protected $guarded = ['id', '_id',];
+    public static $title = 'Health Check';
+
+    public static $KEY = 'health_check';
+
+    protected $guarded = ['id', '_id'];
 
     public const DOWN = 1;
-    public const UP = 2;
 
+    public const UP = 2;
 
     public function alertRule(): BelongsTo
     {
-        return $this->belongsTo(AlertRule::class, "alertRuleId", "_id");
+        return $this->belongsTo(AlertRule::class, 'alertRuleId', '_id');
     }
-
 
     public function defaultMessage(): string
     {
 
-        $text = $this->alertRule->alertname . "\n\n";
-        if (!empty($this->state)) {
+        $text = $this->alertRule->alertname."\n\n";
+        if (! empty($this->state)) {
             switch ($this->state) {
                 case self::UP:
-                    $text .= "State: UP ✅" . "\n\n";
+                    $text .= 'State: UP ✅'."\n\n";
                     break;
                 case self::DOWN:
-                    $text .= "State: DOWN 🔥" . "\n\n";
+                    $text .= 'State: DOWN 🔥'."\n\n";
                     break;
             }
         }
 
-
-        $text .= "date: " . Jalalian::now()->format("Y/m/d");
+        $text .= 'date: '.Jalalian::now()->format('Y/m/d');
 
         return $text;
     }
-
 
     public function telegram(): string
     {
 
         return $this->defaultMessage();
     }
+
     public function matterMostMessage(): string
     {
 
@@ -83,5 +79,4 @@ class HealthCheck extends BaseModel implements Messageable
     {
         return $this->defaultMessage();
     }
-
 }

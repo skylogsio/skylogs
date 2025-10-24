@@ -9,9 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 #[ObservedBy(ConfigTelegramObserver::class)]
 class ConfigTelegram extends BaseModel
 {
-
     public $timestamps = true;
 
-    protected $guarded = ['id', '_id',];
-
+    protected $guarded = ['id', '_id'];
 }

@@ -6,23 +6,19 @@ use App\Enums\AlertRuleType;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
-use Illuminate\Support\Facades\Cache;
 
 class ApiService
 {
-
-    public function __construct(protected AlertRuleService $alertRuleService)
-    {
-    }
+    public function __construct(protected AlertRuleService $alertRuleService) {}
 
     public function fireAlert($post): array
     {
         $alertRule = AlertRule::firstWhere('apiToken', $post['apiToken']);
 
-        if (!$alertRule) {
+        if (! $alertRule) {
             return [
-                "status" => false,
-                "message" => "Alertname Doesn't Exists."
+                'status' => false,
+                'message' => "Alertname Doesn't Exists.",
             ];
         }
 
@@ -34,8 +30,8 @@ class ApiService
             $isCurrentStateResolved = $alert->state == AlertInstance::RESOLVED;
 
             $alert->state = AlertInstance::FIRE;
-            $alert->description = $post['description'] ?? "";
-            $alert->summary = $post['summary'] ?? "";
+            $alert->description = $post['description'] ?? '';
+            $alert->summary = $post['summary'] ?? '';
 
             $alert->touch();
             $alert->save();
@@ -46,24 +42,23 @@ class ApiService
             $apiHistory = $alert->createHistory();
             $alert->createStatusHistory($apiHistory);
 
-
             return [
                 'status' => true,
-                'message' => $isCurrentStateResolved ? 'Activated' : 'Already Active'
+                'message' => $isCurrentStateResolved ? 'Activated' : 'Already Active',
             ];
 
         } else {
 
-            $model = new AlertInstance();
+            $model = new AlertInstance;
             $model->alertRuleId = $alertRule->_id;
             $model->alertRuleName = $alertRule->name;
             $model->instance = $post['instance'];
-            $model->job = $post['job'] ?? "";
+            $model->job = $post['job'] ?? '';
 
             $model->state = AlertInstance::FIRE;
 
-            $model->description = $post['description'] ?? "";
-            $model->summary = $post['summary'] ?? "";
+            $model->description = $post['description'] ?? '';
+            $model->summary = $post['summary'] ?? '';
 
             $model->save();
 
@@ -71,13 +66,13 @@ class ApiService
             $this->refreshStatus($model->alertRule);
             $apiHistory = $model->createHistory();
             $model->createStatusHistory($apiHistory);
+
             return [
                 'status' => true,
-                'message' => 'Activated'
+                'message' => 'Activated',
             ];
 
         }
-
 
     }
 
@@ -93,8 +88,8 @@ class ApiService
             if ($alert->state == AlertInstance::FIRE) {
 
                 $alert->state = AlertInstance::RESOLVED;
-                $alert->description = $post['description'] ?? "";
-                $alert->summary = $post['summary'] ?? "";
+                $alert->description = $post['description'] ?? '';
+                $alert->summary = $post['summary'] ?? '';
 
                 $alert->touch();
 
@@ -104,22 +99,22 @@ class ApiService
                 $this->refreshStatus($alert->alertRule);
                 $apiHistory = $alert->createHistory();
                 $alert->createStatusHistory($apiHistory);
+
                 return [
                     'status' => true,
-                    'message' => 'Stopped'
+                    'message' => 'Stopped',
                 ];
             } else {
 
-
                 return [
                     'status' => true,
-                    'message' => 'Already Stopped'
+                    'message' => 'Already Stopped',
                 ];
             }
         } else {
             return [
                 'status' => false,
-                'message' => 'Alert Instance Doesn\'t Exists'
+                'message' => 'Alert Instance Doesn\'t Exists',
             ];
         }
     }
@@ -128,11 +123,10 @@ class ApiService
     {
         $alertRule = AlertRule::firstWhere('apiToken', $post['apiToken']);
 
-
-        if (!$alertRule) {
+        if (! $alertRule) {
             return [
-                "status" => false,
-                "message" => "Alertname Doesn't Exists."
+                'status' => false,
+                'message' => "Alertname Doesn't Exists.",
             ];
         }
 
@@ -143,12 +137,12 @@ class ApiService
         if ($alert) {
             return [
                 'status' => true,
-                "isFire" => $alert->state == AlertInstance::FIRE,
+                'isFire' => $alert->state == AlertInstance::FIRE,
             ];
         } else {
             return [
                 'status' => true,
-                'isFire' => false
+                'isFire' => false,
             ];
         }
     }
@@ -158,31 +152,30 @@ class ApiService
 
         $alertRule = AlertRule::firstWhere('apiToken', $post['apiToken']);
 
-        if (!$alertRule) {
+        if (! $alertRule) {
             return [
-                "status" => false,
-                "message" => "Alertname Doesn't Exists."
+                'status' => false,
+                'message' => "Alertname Doesn't Exists.",
             ];
         }
 
-
         $alert = AlertInstance::where([
-            "alertRuleId" => $alertRule->_id,
-            "alertRuleName" => $alertRule['name'],
-            "instance" => $post['instance'],
+            'alertRuleId' => $alertRule->_id,
+            'alertRuleName' => $alertRule['name'],
+            'instance' => $post['instance'],
         ])->first();
 
         if ($alert) {
-            $alert->description =  $post['description'] ?? null;
+            $alert->description = $post['description'] ?? null;
             $alert->touch();
             $alert->save();
-        }else{
+        } else {
             $alert = AlertInstance::create([
-                "alertRuleId" => $alertRule->_id,
-                "alertRuleName" => $alertRule['name'],
-                "instance" => $post['instance'],
-                "state" => AlertInstance::NOTIFICATION,
-                "description" => $post['description'] ?? null,
+                'alertRuleId' => $alertRule->_id,
+                'alertRuleName' => $alertRule['name'],
+                'instance' => $post['instance'],
+                'state' => AlertInstance::NOTIFICATION,
+                'description' => $post['description'] ?? null,
             ]);
 
         }
@@ -196,18 +189,17 @@ class ApiService
 
         return [
             'status' => true,
-            'message' => 'Done'
+            'message' => 'Done',
         ];
-
 
     }
 
-    public function alertRuleByToken($token, AlertRuleType $type = null)
+    public function alertRuleByToken($token, ?AlertRuleType $type = null)
     {
 
         $alertRules = $this->alertRuleService->getAlerts($type);
 
-        $alert = $alertRules->where("apiToken", $token)->first();
+        $alert = $alertRules->where('apiToken', $token)->first();
 
         if ($alert) {
             return $alert;
@@ -219,11 +211,12 @@ class ApiService
     public function refreshStatus(AlertRule $alertRule)
     {
         $count = AlertInstance::where('alertRuleId', $alertRule->id)
-            ->where("state", AlertInstance::FIRE)->count();
+            ->where('state', AlertInstance::FIRE)->count();
         $alertRule->state = $count == 0 ? AlertRule::RESOlVED : AlertRule::CRITICAL;
         $alertRule->fireCount = $count;
         $alertRule->save();
-        if($alertRule->state == AlertRule::RESOlVED)
+        if ($alertRule->state == AlertRule::RESOlVED) {
             $alertRule->removeAcknowledge();
+        }
     }
 }

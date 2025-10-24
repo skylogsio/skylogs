@@ -1,30 +1,22 @@
 <?php
 
 namespace App\Http\Controllers\V1\Config;
-;
-
 
 use App\Http\Controllers\Controller;
 use App\Models\Config\ConfigTelegram;
 use App\Services\ConfigTelegramService;
 use Illuminate\Http\Request;
 
-
 class TelegramController extends Controller
 {
-
-
-    public function __construct(protected ConfigTelegramService $configService)
-    {
-    }
+    public function __construct(protected ConfigTelegramService $configService) {}
 
     public function Index(Request $request)
     {
 
-
-        $data = ConfigTelegram::query()->orderByDesc("active")->latest();
+        $data = ConfigTelegram::query()->orderByDesc('active')->latest();
         if ($request->filled('name')) {
-            $data->where('name', 'like', '%' . $request->name . '%');
+            $data->where('name', 'like', '%'.$request->name.'%');
         }
         $data = $data->get();
 
@@ -36,6 +28,7 @@ class TelegramController extends Controller
     {
         $model = ConfigTelegram::where('_id', $id);
         $model = $model->firstOrFail();
+
         return response()->json($model);
     }
 
@@ -44,6 +37,7 @@ class TelegramController extends Controller
         $model = ConfigTelegram::where('_id', $id);
         $model = $model->firstOrFail();
         $model->delete();
+
         return response()->json($model);
     }
 
@@ -52,24 +46,25 @@ class TelegramController extends Controller
         $va = \Validator::make(
             $request->all(),
             [
-                'name' => "required",
-                "url" => "required",
+                'name' => 'required',
+                'url' => 'required',
             ],
         );
         if ($va->passes()) {
 
-            $url = rtrim($request->url, "/");
+            $url = rtrim($request->url, '/');
 
             $modelArray = [
-                "name" => $request->name,
-                "url" => $url,
-                "active" => false,
+                'name' => $request->name,
+                'url' => $url,
+                'active' => false,
             ];
 
             $model = ConfigTelegram::create($modelArray);
+
             return response()->json([
                 'status' => true,
-                "data" => $model
+                'data' => $model,
             ]);
         } else {
             return response()->json([
@@ -83,21 +78,20 @@ class TelegramController extends Controller
         $model = ConfigTelegram::where('_id', $id);
         $model = $model->firstOrFail();
 
-
         $va = \Validator::make(
             $request->all(),
             [
-                'name' => "required",
-                "url" => "required",
+                'name' => 'required',
+                'url' => 'required',
             ],
         );
 
         if ($va->passes()) {
-            $url = rtrim($request->url, "/");
+            $url = rtrim($request->url, '/');
 
             $modelArray = [
-                "name" => $request->name,
-                "url" => $url,
+                'name' => $request->name,
+                'url' => $url,
             ];
             $model->update($modelArray);
 
@@ -114,8 +108,9 @@ class TelegramController extends Controller
 
     public function Activate($id)
     {
-        $model = ConfigTelegram::where("id",$id)->firstOrFail();
+        $model = ConfigTelegram::where('id', $id)->firstOrFail();
         $this->configService->activate($model);
+
         return response()->json([
             'status' => true,
             'data' => $model,
@@ -125,10 +120,9 @@ class TelegramController extends Controller
     public function Deactivate()
     {
         $this->configService->deactivate();
+
         return response()->json([
             'status' => true,
         ]);
     }
-
-
 }

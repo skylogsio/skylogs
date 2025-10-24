@@ -12,7 +12,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class WebhookAuth
 {
-
     public function __construct(protected DataSourceService $dataSourceService) {}
 
     /**
@@ -22,22 +21,22 @@ class WebhookAuth
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if($request->routeIs('webhook.pmm')) {
+        if ($request->routeIs('webhook.pmm')) {
             $dataSourceType = DataSourceType::PMM;
             $alertRuleType = AlertRuleType::PMM;
-        }elseif($request->routeIs('webhook.grafana')) {
+        } elseif ($request->routeIs('webhook.grafana')) {
             $dataSourceType = DataSourceType::GRAFANA;
             $alertRuleType = AlertRuleType::GRAFANA;
-        }elseif($request->routeIs('webhook.sentry')) {
+        } elseif ($request->routeIs('webhook.sentry')) {
             $dataSourceType = DataSourceType::SENTRY;
             $alertRuleType = AlertRuleType::SENTRY;
-        }elseif($request->routeIs('webhook.splunk')) {
+        } elseif ($request->routeIs('webhook.splunk')) {
             $dataSourceType = DataSourceType::SPLUNK;
             $alertRuleType = AlertRuleType::SPLUNK;
-        }elseif($request->routeIs('webhook.zabbix')){
+        } elseif ($request->routeIs('webhook.zabbix')) {
             $dataSourceType = DataSourceType::ZABBIX;
             $alertRuleType = AlertRuleType::ZABBIX;
-        }else{
+        } else {
             abort(Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -45,16 +44,18 @@ class WebhookAuth
         $dataSource = $this->dataSourceService->get($dataSourceType)
             ->where('webhookToken', $token)
             ->first();
-        if (!$dataSource) abort(403);
+        if (! $dataSource) {
+            abort(403);
+        }
 
         $alertRules = AlertRule::where('type', $alertRuleType)
             ->where('dataSourceIds', $dataSource->id)
             ->get();
 
-        if ($alertRules->isEmpty())
-            abort(422,'Alert rule not found');
+        if ($alertRules->isEmpty()) {
+            abort(422, 'Alert rule not found');
+        }
 
-
-        return $next($request->merge(['alertRules' => $alertRules,'dataSource' => $dataSource]));
+        return $next($request->merge(['alertRules' => $alertRules, 'dataSource' => $dataSource]));
     }
 }

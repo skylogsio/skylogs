@@ -2,23 +2,19 @@
 
 namespace App\Http\Controllers\V1\Profile;
 
-
 use App\Http\Controllers\Controller;
 use App\Models\Profile\ProfileService;
 use Illuminate\Http\Request;
 
-
 class ServiceController extends Controller
 {
-
-
     public function Index(Request $request)
     {
         $perPage = $request->perPage ?? 25;
 
         $data = ProfileService::latest();
         if ($request->filled('name')) {
-            $data->where('name', 'like', '%' . $request->name . '%');
+            $data->where('name', 'like', '%'.$request->name.'%');
         }
         $data = $data->paginate($perPage);
 
@@ -30,6 +26,7 @@ class ServiceController extends Controller
     {
         $model = ProfileService::where('_id', $id);
         $model = $model->firstOrFail();
+
         return response()->json($model);
     }
 
@@ -38,6 +35,7 @@ class ServiceController extends Controller
         $model = ProfileService::where('_id', $id);
         $model = $model->firstOrFail();
         $model->delete();
+
         return response()->json($model);
     }
 
@@ -46,20 +44,21 @@ class ServiceController extends Controller
         $va = \Validator::make(
             $request->all(),
             [
-                'name' => "required",
-                "ownerId" => "required",
+                'name' => 'required',
+                'ownerId' => 'required',
             ],
         );
         if ($va->passes()) {
 
             $modelArray = [
-                "name" => $request->name,
-                "ownerId" => $request->ownerId,
+                'name' => $request->name,
+                'ownerId' => $request->ownerId,
             ];
             $model = ProfileService::create($modelArray);
+
             return response()->json([
                 'status' => true,
-                "data" => $model
+                'data' => $model,
             ]);
         } else {
             return response()->json([
@@ -73,19 +72,18 @@ class ServiceController extends Controller
         $model = ProfileService::where('_id', $id);
         $model = $model->firstOrFail();
 
-
         $va = \Validator::make(
             $request->all(),
             [
-                'name' => "required",
-                "ownerId" => "required",
+                'name' => 'required',
+                'ownerId' => 'required',
             ],
         );
 
         if ($va->passes()) {
             $modelArray = [
-                "name" => $request->name,
-                "ownerId" => $request->ownerId,
+                'name' => $request->name,
+                'ownerId' => $request->ownerId,
             ];
             $model->update($modelArray);
 
@@ -99,6 +97,4 @@ class ServiceController extends Controller
             ]);
         }
     }
-
-
 }

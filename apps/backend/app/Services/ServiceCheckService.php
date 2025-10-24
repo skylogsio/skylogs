@@ -20,7 +20,7 @@ class ServiceCheckService
             if ($response->status() == 200 || $response->status() == 201) {
                 self::ResultCheckProcess($check, true);
             } else {
-                throw new \Exception("Not Ok");
+                throw new \Exception('Not Ok');
             }
 
         } catch (\Exception $e) {
@@ -35,12 +35,12 @@ class ServiceCheckService
 
             $response = \Http::timeout(5)
 //                ->withToken($check->api_token)
-                ->contentType("application/json-rpc")
+                ->contentType('application/json-rpc')
                 ->post($check->getUrl(), [
-                    "jsonrpc" => "2.0",
-                    "method" => "apiinfo.version",
-                    "params" => [],
-                    "id" => 1
+                    'jsonrpc' => '2.0',
+                    'method' => 'apiinfo.version',
+                    'params' => [],
+                    'id' => 1,
                 ]);
 
             $check->refresh();
@@ -48,7 +48,7 @@ class ServiceCheckService
             if ($response->status() == 200 || $response->status() == 201) {
                 self::ResultCheckProcess($check, true);
             } else {
-                throw new \Exception("Not Ok");
+                throw new \Exception('Not Ok');
             }
 
         } catch (\Exception $e) {
@@ -62,19 +62,18 @@ class ServiceCheckService
 
             $pendingRequest = \Http::timeout(5);
 
-            if(!empty($check->basic_auth_username) && !empty($check->basic_auth_password)){
+            if (! empty($check->basic_auth_username) && ! empty($check->basic_auth_password)) {
                 $pendingRequest = $pendingRequest->withBasicAuth($check->basic_auth_username, $check->basic_auth_password);
             }
 
             $response = $pendingRequest->get($check->getUrl());
-
 
             $check->refresh();
 
             if ($response->status() == 200 || $response->status() == 201) {
                 self::ResultCheckProcess($check, true);
             } else {
-                throw new \Exception("Not Ok");
+                throw new \Exception('Not Ok');
             }
 
         } catch (\Exception $e) {
@@ -95,7 +94,7 @@ class ServiceCheckService
             if ($response->status() == 200 || $response->status() == 201) {
                 self::ResultCheckProcess($check, true);
             } else {
-                throw new \Exception("Not Ok");
+                throw new \Exception('Not Ok');
             }
 
         } catch (\Exception $e) {
@@ -116,7 +115,7 @@ class ServiceCheckService
             if ($response->status() == 200 || $response->status() == 201) {
                 self::ResultCheckProcess($check, true);
             } else {
-                throw new \Exception("Not Ok");
+                throw new \Exception('Not Ok');
             }
 
         } catch (\Exception $e) {
@@ -137,14 +136,13 @@ class ServiceCheckService
             if ($response->status() == 200 || $response->status() == 201) {
                 self::ResultCheckProcess($check, true);
             } else {
-                throw new \Exception("Not Ok");
+                throw new \Exception('Not Ok');
             }
 
         } catch (\Exception $e) {
             self::ResultCheckProcess($check, false);
         }
     }
-
 
     public static function ResultCheckProcess(ServiceCheck $check, bool $isOK)
     {
@@ -179,8 +177,9 @@ class ServiceCheckService
         } else {
 
             if ($check->counter != $check->threshold_down) {
-                if ($check->counter < $check->threshold_down)
+                if ($check->counter < $check->threshold_down) {
                     $check->counter += 1;
+                }
                 if ($check->counter >= $check->threshold_down && $check->state == ServiceCheck::UP) {
                     $check->state = ServiceCheck::DOWN;
                     $check->notifyAt = time();
@@ -198,7 +197,6 @@ class ServiceCheckService
                                 "counter" => $check->counter
                             ]
                         );*/
-
 
                 } else {
                     $check->save();

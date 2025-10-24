@@ -11,14 +11,13 @@ use Illuminate\Support\Facades\Http;
 
 class GrafanaInstanceService
 {
-
-
-    public function __construct(protected DataSourceService $dataSourceService){}
+    public function __construct(protected DataSourceService $dataSourceService) {}
 
     protected function resolveDataSources(?int $dataSourceId): Collection
     {
         if ($dataSourceId) {
             $source = $this->dataSourceService->get(DataSourceType::GRAFANA)->get($dataSourceId);
+
             return $source ? collect([$dataSourceId => $source]) : collect();
         }
 
@@ -42,25 +41,23 @@ class GrafanaInstanceService
     private function fetchRules($dataSources)
     {
 
-
         $requestsData = [];
-        $rulesResponses = Http::pool(function (Pool $pool) use ($dataSources,&$requestsData) {
+        $rulesResponses = Http::pool(function (Pool $pool) use ($dataSources, &$requestsData) {
 
             $requests = [];
 
             foreach ($dataSources as $dataSource) {
 
-
-                if (!empty($dataSource->orgs)) {
+                if (! empty($dataSource->orgs)) {
 
                     foreach ($dataSource->orgs as $org) {
                         $request = $pool->acceptJson();
 
-                        if (!empty($dataSource->username) && !empty($dataSource->password)) {
+                        if (! empty($dataSource->username) && ! empty($dataSource->password)) {
                             $request = $request->withBasicAuth($dataSource->username, $dataSource->password);
                         }
                         $requests[] = $request
-                            ->withHeader("X-Grafana-Org-Id", $org['id'])
+                            ->withHeader('X-Grafana-Org-Id', $org['id'])
                             ->get($dataSource->grafanaAlertRulesUrl());
                         $dataSource->org = $org;
                         $requestsData[] = $dataSource;
@@ -68,7 +65,7 @@ class GrafanaInstanceService
                 } else {
                     $request = $pool->acceptJson();
 
-                    if (!empty($dataSource->username) && !empty($dataSource->password)) {
+                    if (! empty($dataSource->username) && ! empty($dataSource->password)) {
                         $request = $request->withBasicAuth($dataSource->username, $dataSource->password);
                     }
                     $requests[] = $request->get($dataSource->grafanaAlertRulesUrl());
@@ -83,24 +80,26 @@ class GrafanaInstanceService
         $alerts = collect();
         foreach ($rulesResponses as $index => $ruleResponse) {
             $dataSource = $requestsData[$index] ?? null;
-            if (!($ruleResponse instanceof Response && $ruleResponse->ok())) continue;
+            if (! ($ruleResponse instanceof Response && $ruleResponse->ok())) {
+                continue;
+            }
 
             $response = $ruleResponse->json();
             try {
                 foreach ($response as $alert) {
-//                    ds($alert);
-                    $model = new AlertRuleGrafana();
+                    //                    ds($alert);
+                    $model = new AlertRuleGrafana;
                     $model->dataSourceId = $dataSource->id;
                     $model->dataSourceName = $dataSource->name;
                     $model->organizationId = $dataSource->org['id'] ?? null;
-                    $model->organizationName = $dataSource->org['name'] ?? "";
-                    $model->ruleGroup = $alert["ruleGroup"] ?? "";
-                    $model->title = $alert["title"];
+                    $model->organizationName = $dataSource->org['name'] ?? '';
+                    $model->ruleGroup = $alert['ruleGroup'] ?? '';
+                    $model->title = $alert['title'];
                     $model->annotations = $alert['annotations'] ?? [];
                     $model->labels = $alert['labels'] ?? [];
                     $alerts[] = $model;
                 }
-            } catch  (\Exception $e) {
+            } catch (\Exception $e) {
             }
 
         }
@@ -108,9 +107,7 @@ class GrafanaInstanceService
         return $alerts;
     }
 
-
     /**
-     * @param Collection $dataSources
      * @return void
      */
     public function fetchOrganizations(Collection &$dataSources): Collection
@@ -120,27 +117,28 @@ class GrafanaInstanceService
             foreach ($dataSources as $dataSource) {
                 $request = $pool->as($dataSource->id)->acceptJson();
 
-                if (!empty($dataSource->username) && !empty($dataSource->password)) {
+                if (! empty($dataSource->username) && ! empty($dataSource->password)) {
                     $request = $request->withBasicAuth($dataSource->username, $dataSource->password);
                 }
 
-
                 $result[] = $request->get($dataSource->grafanaOrganizationsUrl());
             }
+
             return $result;
         });
         foreach ($orgResponses as $dataSourceId => $orgResponse) {
 
-            if (!($orgResponse instanceof Response && $orgResponse->ok())) continue;
+            if (! ($orgResponse instanceof Response && $orgResponse->ok())) {
+                continue;
+            }
 
             $response = $orgResponse->json();
 
             $dataSources->get($dataSourceId)->orgs = $response;
 
         }
+
         return $dataSources;
 
-
     }
-
 }

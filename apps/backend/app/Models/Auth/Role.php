@@ -2,7 +2,6 @@
 
 namespace App\Models\Auth;
 
-
 use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use MongoDB\Laravel\Eloquent\Model;
@@ -15,7 +14,6 @@ use Spatie\Permission\Guard;
 use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Traits\HasPermissions;
 use Spatie\Permission\Traits\RefreshesPermissionCache;
-
 
 /**
  * @property ?\Illuminate\Support\Carbon $createdAt

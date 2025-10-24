@@ -70,7 +70,7 @@ return [
     |
     */
 
-    'middleware' => ["api","horizonBasicAuth"],
+    'middleware' => ['api', 'horizonBasicAuth'],
 
     /*
     |--------------------------------------------------------------------------
@@ -119,10 +119,10 @@ return [
     */
 
     'silenced' => [
-         App\Jobs\AddChecksJob::class,
-         App\Jobs\CheckPrometheusJob::class,
-         App\Jobs\AutoResolveApiAlertsJob::class,
-         App\Jobs\RefreshStatusHistoryJob::class,
+        App\Jobs\AddChecksJob::class,
+        App\Jobs\CheckPrometheusJob::class,
+        App\Jobs\AutoResolveApiAlertsJob::class,
+        App\Jobs\RefreshStatusHistoryJob::class,
     ],
 
     /*
@@ -233,8 +233,6 @@ return [
             'nice' => 0,
         ],
     ],
-
-
 
     'environments' => [
         'production' => [

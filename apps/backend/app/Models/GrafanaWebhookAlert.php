@@ -8,15 +8,17 @@ use Morilog\Jalali\Jalalian;
 
 class GrafanaWebhookAlert extends BaseModel implements Messageable
 {
-
     public $timestamps = true;
-    public static $title = "Grafana Alert Webhook";
-    public static $KEY = "grafana_alert_webhook";
 
-    protected $guarded = ['id', '_id',];
-    public const FIRING = "firing";
-    public const RESOLVED = "resolved";
+    public static $title = 'Grafana Alert Webhook';
 
+    public static $KEY = 'grafana_alert_webhook';
+
+    protected $guarded = ['id', '_id'];
+
+    public const FIRING = 'firing';
+
+    public const RESOLVED = 'resolved';
 
     public function customSave($array)
     {
@@ -29,69 +31,69 @@ class GrafanaWebhookAlert extends BaseModel implements Messageable
             $alert = $this->alertRule;
 
             if ($alert) {
-                if ($this->status == self::RESOLVED)
+                if ($this->status == self::RESOLVED) {
                     $alert->state = AlertRule::RESOlVED;
-                elseif ($this->status == self::FIRING)
+                } elseif ($this->status == self::FIRING) {
                     $alert->state = AlertRule::CRITICAL;
+                }
                 $alert->save();
             }
         } catch (\Exception $e) {
 
         }
+
         return $this->save();
     }
 
-
     public function alertRule(): BelongsTo
     {
-        return $this->belongsTo(AlertRule::class, "alertRuleId", "_id");
+        return $this->belongsTo(AlertRule::class, 'alertRuleId', '_id');
     }
 
     public function defaultMessage(): string
     {
 
-        $needLabelAnotArray = ["summary", "description"];
+        $needLabelAnotArray = ['summary', 'description'];
 
         $alert = $this->alertRule;
 
-        $text = $alert->name . "\n\n";
+        $text = $alert->name."\n\n";
 
-        if (!empty($alert->state)) {
+        if (! empty($alert->state)) {
             switch ($alert->state) {
                 case AlertRule::RESOlVED:
-                    $text .= "State: Resolved ✅" . "\n\n";
+                    $text .= 'State: Resolved ✅'."\n\n";
                     break;
                 case AlertRule::CRITICAL:
-                    $text .= "State: Fire 🔥" . "\n\n";
+                    $text .= 'State: Fire 🔥'."\n\n";
                     break;
             }
         }
 
+        $text .= 'Data Source: '.$this->dataSourceName."\n\n";
 
-        $text .= "Data Source: " . $this->dataSourceName . "\n\n";
-
-
-        if (!empty($this->alerts)) {
+        if (! empty($this->alerts)) {
             foreach ($this->alerts as $alert) {
-//                $text .= "Grafana Instance: " . $alert['dataSourceName'] . "\n";
+                //                $text .= "Grafana Instance: " . $alert['dataSourceName'] . "\n";
 
-                if (!empty($alert['labels']))
+                if (! empty($alert['labels'])) {
                     foreach ($alert['labels'] as $label => $labelValue) {
                         $text .= "$label : $labelValue\n";
                     }
+                }
 
-                if (!empty($alert['annotations']))
+                if (! empty($alert['annotations'])) {
                     foreach ($needLabelAnotArray as $label) {
-                        if (!empty($alert['annotations'][$label])) {
-                            $text .= "$label : " . $alert['annotations'][$label] . "\n";
+                        if (! empty($alert['annotations'][$label])) {
+                            $text .= "$label : ".$alert['annotations'][$label]."\n";
                         }
                     }
+                }
                 $text .= "\n************\n\n";
             }
         }
 
-
-        $text .= "Date: " . Jalalian::now()->format("Y/m/d");
+        $text .= 'Date: '.Jalalian::now()->format('Y/m/d');
 
         return $text;
     }
@@ -99,14 +101,14 @@ class GrafanaWebhookAlert extends BaseModel implements Messageable
     public function telegram()
     {
         $result = [
-            "message" => $this->defaultMessage(),
+            'message' => $this->defaultMessage(),
         ];
         if ($this->alertRule->enableAcknowledgeBtnInMessage() && $this->status == self::FIRING) {
-            $result["meta"] = [
+            $result['meta'] = [
                 [
-                    "text" => "Acknowledge",
-                    "url" => config("app.url").route("acknowledgeLink", ['id' => $this->alertRuleId],false)
-                ]
+                    'text' => 'Acknowledge',
+                    'url' => config('app.url').route('acknowledgeLink', ['id' => $this->alertRuleId], false),
+                ],
             ];
         }
 
@@ -127,12 +129,12 @@ class GrafanaWebhookAlert extends BaseModel implements Messageable
     {
         $alert = $this->alertRule;
 
-        $text = "Alert ".$alert->name;
+        $text = 'Alert '.$alert->name;
 
         $text .= match ($alert->state) {
-            AlertRule::CRITICAL => " fired",
-            AlertRule::RESOlVED => " resolved",
-            default => "",
+            AlertRule::CRITICAL => ' fired',
+            AlertRule::RESOlVED => ' resolved',
+            default => '',
         };
 
         return $text;
