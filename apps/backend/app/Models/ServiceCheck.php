@@ -80,6 +80,11 @@ class ServiceCheck extends BaseModel implements Messageable
         return $this->defaultMessage();
     }
 
+    public function discordMessage(): string
+    {
+        return $this->defaultMessage();
+    }
+
     public function callMessage(): string
     {
         return $this->defaultMessage();

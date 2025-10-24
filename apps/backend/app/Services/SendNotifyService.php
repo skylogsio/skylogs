@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\EndpointType;
 use App\Enums\FlowEndpointStepType;
 use App\Helpers\Call;
+use App\Helpers\Discord;
 use App\Helpers\Email;
 use App\Helpers\MatterMost;
 use App\Helpers\SMS;
@@ -37,6 +38,7 @@ class SendNotifyService
                 'teamsMessage' => $notify->alertRule->testMessage(),
                 'emailMessage' => $notify->alertRule->testMessage(),
                 'smsMessage' => $notify->alertRule->testMessage(),
+                'discordMessage' => $notify->alertRule->testMessage(),
                 'callMessage' => $notify->alertRule->testMessage(),
                 'defaultMessage' => $notify->alertRule->testMessage(),
             ];
@@ -48,6 +50,7 @@ class SendNotifyService
                 'teamsMessage' => $notify->alertRule->acknowledgedMessage(),
                 'emailMessage' => $notify->alertRule->acknowledgedMessage(),
                 'smsMessage' => $notify->alertRule->acknowledgedMessage(),
+                'discordMessage' => $notify->alertRule->acknowledgedMessage(),
                 'callMessage' => $notify->alertRule->acknowledgedMessage(),
                 'defaultMessage' => $notify->alertRule->acknowledgedMessage(),
             ];
@@ -60,6 +63,7 @@ class SendNotifyService
                 'teamsMessage' => $alert->teamsMessage(),
                 'emailMessage' => $alert->emailMessage(),
                 'smsMessage' => $alert->smsMessage(),
+                'discordMessage' => $alert->discordMessage(),
                 'callMessage' => $alert->callMessage(),
                 'defaultMessage' => $alert->defaultMessage(),
             ];
@@ -115,6 +119,7 @@ class SendNotifyService
         $phones = $endpoints->where('type', EndpointType::SMS->value)->pluck('value');
         $phonesCalls = $endpoints->where('type', EndpointType::CALL->value)->pluck('value');
         $teamsUrls = $endpoints->where('type', EndpointType::TEAMS->value)->pluck('value');
+        $discordsUrls = $endpoints->where('type', EndpointType::DISCORD->value)->pluck('value');
         $matterMostUrls = $endpoints->where('type', EndpointType::MATTER_MOST->value)->pluck('value');
         $emails = $endpoints->where('type', EndpointType::EMAIL->value)->pluck('value')->toArray();
         $telegrams = $endpoints->where('type', EndpointType::TELEGRAM->value)->toArray();
@@ -161,6 +166,13 @@ class SendNotifyService
             $notify->resultTeams = $result;
         }
 
+        if ($discordsUrls->isNotEmpty()) {
+            $result = Discord::sendMessageAlert($discordsUrls,
+                $notify,
+            );
+            $notify->resultDiscords = $result;
+        }
+
         if ($matterMostUrls->isNotEmpty()) {
             $result = MatterMost::sendMessageAlert($matterMostUrls,
                 $notify,
@@ -199,6 +211,7 @@ class SendNotifyService
         $phones = $endpoints->where('type', EndpointType::SMS->value)->pluck('value');
         $phonesCalls = $endpoints->where('type', EndpointType::CALL->value)->pluck('value');
         $teamsUrls = $endpoints->where('type', EndpointType::TEAMS->value)->pluck('value');
+        $discordsUrls = $endpoints->where('type', EndpointType::DISCORD->value)->pluck('value');
         $matterMostUrls = $endpoints->where('type', EndpointType::MATTER_MOST->value)->pluck('value');
         $emails = $endpoints->where('type', EndpointType::EMAIL->value)->pluck('value')->toArray();
         $telegrams = $endpoints->where('type', EndpointType::TELEGRAM->value)->toArray();
@@ -223,6 +236,13 @@ class SendNotifyService
                 $notify,
             );
             $resultStep['resultTeams'] = $result;
+        }
+
+        if ($discordsUrls->isNotEmpty()) {
+            $result = Discord::sendMessageAlert($discordsUrls,
+                $notify,
+            );
+            $resultStep['resultDiscords'] = $result;
         }
 
         if ($matterMostUrls->isNotEmpty()) {

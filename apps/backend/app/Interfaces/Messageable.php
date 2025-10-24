@@ -14,6 +14,8 @@ interface Messageable
 
     public function smsMessage();
 
+    public function discordMessage();
+
     public function callMessage();
 
     public function emailMessage();
