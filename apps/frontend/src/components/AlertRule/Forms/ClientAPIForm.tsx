@@ -19,7 +19,7 @@ import { z } from "zod";
 import type { IAlertRule } from "@/@types/alertRule";
 import type { CreateUpdateModal } from "@/@types/global";
 import { createAlertRule, getAlertRuleTags, updateAlertRule } from "@/api/alertRule";
-import AlertRuleEndpointUserSelector from "@/components/AlertRule/Forms/AlertRuleEndpointUserSelector";
+import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGeneralFields";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
 const clientApiSchema = z
@@ -37,7 +37,9 @@ const clientApiSchema = z
     }),
     endpointIds: z.array(z.string()).optional().default([]),
     userIds: z.array(z.string()).optional().default([]),
-    tags: z.array(z.string()).optional().default([])
+    description: z.string().optional().default(""),
+    tags: z.array(z.string()).optional().default([]),
+    showAcknowledgeBtn: z.boolean().optional().default(false)
   })
   .superRefine((data, ctx) => {
     if (data.enableAutoResolve) {
@@ -70,7 +72,9 @@ const defaultValues: ClientAPIFormType = {
   endpointIds: [],
   enableAutoResolve: false,
   autoResolveMinutes: 0,
-  tags: []
+  tags: [],
+  description: "",
+  showAcknowledgeBtn: false
 };
 
 export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModalProps) {
@@ -159,58 +163,59 @@ export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModa
             {...register("name")}
           />
         </Grid>
-        <AlertRuleEndpointUserSelector<ClientAPIFormType>
-          methods={{ control, getValues, setValue }}
+        <AlertRuleGeneralFields<ClientAPIFormType>
+          methods={{ control, getValues, setValue, watch }}
           errors={errors}
-        />
-        <Grid size={6}>
-          <Stack height="100%" direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <Typography>Auto Resolve</Typography>
-            <Switch checked={watch("enableAutoResolve")} onChange={handleAutoResolve} />
-          </Stack>
-        </Grid>
-        <Grid size={6}>
-          <TextField
-            label="Auto Resolve After (Minutes)"
-            variant="filled"
-            type="number"
-            disabled={!watch("enableAutoResolve")}
-            error={!!errors.autoResolveMinutes}
-            helperText={errors.autoResolveMinutes?.message}
-            {...register("autoResolveMinutes", {
-              valueAsNumber: true,
-              setValueAs: (value) => parseInt(value)
-            })}
-          />
-        </Grid>
-        <Grid size={12}>
-          <Autocomplete
-            multiple
-            id="api-alert-tags"
-            options={tagsList ?? []}
-            freeSolo
-            value={watch("tags")}
-            onChange={(_, value) => setValue("tags", value)}
-            renderTags={(value: readonly string[], getItemProps) =>
-              value.map((option: string, index: number) => {
-                const { key, ...itemProps } = getItemProps({ index });
-                return <Chip variant="filled" label={option} key={key} {...itemProps} />;
-              })
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                slotProps={{
-                  input: params.InputProps,
-                  inputLabel: params.InputLabelProps,
-                  htmlInput: params.inputProps
-                }}
-                variant="filled"
-                label="Tags"
-              />
-            )}
-          />
-        </Grid>
+        >
+          <Grid size={6}>
+            <Stack height="100%" direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <Typography>Auto Resolve</Typography>
+              <Switch checked={watch("enableAutoResolve")} onChange={handleAutoResolve} />
+            </Stack>
+          </Grid>
+          <Grid size={6}>
+            <TextField
+              label="Auto Resolve After (Minutes)"
+              variant="filled"
+              type="number"
+              disabled={!watch("enableAutoResolve")}
+              error={!!errors.autoResolveMinutes}
+              helperText={errors.autoResolveMinutes?.message}
+              {...register("autoResolveMinutes", {
+                valueAsNumber: true,
+                setValueAs: (value) => parseInt(value)
+              })}
+            />
+          </Grid>
+          <Grid size={12}>
+            <Autocomplete
+              multiple
+              id="api-alert-tags"
+              options={tagsList ?? []}
+              freeSolo
+              value={watch("tags")}
+              onChange={(_, value) => setValue("tags", value)}
+              renderTags={(value: readonly string[], getItemProps) =>
+                value.map((option: string, index: number) => {
+                  const { key, ...itemProps } = getItemProps({ index });
+                  return <Chip variant="filled" label={option} key={key} {...itemProps} />;
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  slotProps={{
+                    input: params.InputProps,
+                    inputLabel: params.InputLabelProps,
+                    htmlInput: params.inputProps
+                  }}
+                  variant="filled"
+                  label="Tags"
+                />
+              )}
+            />
+          </Grid>
+        </AlertRuleGeneralFields>
       </Grid>
       <Stack direction="row" justifyContent="flex-end" spacing={2} marginTop={2}>
         <Button disabled={isCreating || isUpdating} variant="outlined" onClick={onClose}>
