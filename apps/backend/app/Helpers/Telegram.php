@@ -21,6 +21,27 @@ class Telegram
         return config('variables.telegramBotToken', '');
     }
 
+    private static function generateProxy(): ?string
+    {
+        $configTelegram = app(ConfigTelegramService::class)->getActive();
+
+        if (empty($configTelegram)) {
+            return null;
+        }
+
+        $type = $configTelegram->type;
+        $auth = '';
+
+        if (! empty($configTelegram->username) && ! empty($configTelegram->password)) {
+            $auth = $configTelegram->username.':'.$configTelegram->password.'@';
+        } elseif (! empty($configTelegram->username)) {
+            $auth = $configTelegram->username.'@';
+        }
+
+        return "{$type}://{$auth}{$configTelegram->host}:{$configTelegram->port}";
+
+    }
+
     public static function sendMessageAlert($chatIds, Messageable $alert): array
     {
         $responses = [];
@@ -28,60 +49,48 @@ class Telegram
             return $responses;
         }
 
-        $configTelegram = app(ConfigTelegramService::class)->getActive();
+        $proxy = self::generateProxy();
 
-        if ($configTelegram) {
+        $result = Http::pool(function (Pool $pool) use ($chatIds, $alert, $proxy) {
+            foreach ($chatIds as $chat) {
+                $botToken = $chat['botToken'] ?? self::token();
+                $sendData = $alert->telegram();
 
-            $result = Http::pool(function (Pool $pool) use ($chatIds, $alert, $configTelegram) {
-                foreach ($chatIds as $chat) {
-                    $pool->acceptJson()->post(self::Url($configTelegram), [
-                        'apiToken' => $chat['botToken'] ?? self::token(),
-                        'chatID' => $chat['chatId'],
-                        'message' => $alert->telegram(),
-                        'thread_id' => $chat['threadId'],
+                if (is_string($sendData)) {
+                    $message = $sendData;
+                    $meta = [];
+                } else {
+                    $message = $sendData['message'];
+                    $meta = $sendData['meta'] ?? [];
+                }
+
+                $body = [
+                    'chat_id' => $chat['chatId'],
+                    'text' => $message,
+                ];
+
+                if (! empty($chat['threadId'])) {
+                    $body['message_thread_id'] = $chat['threadId'];
+                }
+
+                if (! empty($meta)) {
+                    $body['reply_markup'] = [
+                        'inline_keyboard' => [$meta],
+                    ];
+                }
+
+                $p = $pool->acceptJson();
+
+                if ($proxy) {
+                    $p = $p->withOptions([
+                        'proxy' => $proxy,
                     ]);
                 }
+                $p->post("https://api.telegram.org/bot{$botToken}/sendMessage", $body);
+            }
 
-                return [];
-            });
-
-        } else {
-
-            $result = Http::pool(function (Pool $pool) use ($chatIds, $alert) {
-                foreach ($chatIds as $chat) {
-                    $botToken = $chat['botToken'] ?? self::token();
-                    $sendData = $alert->telegram();
-
-                    if (is_string($sendData)) {
-                        $message = $sendData;
-                        $meta = [];
-                    } else {
-                        $message = $sendData['message'];
-                        $meta = $sendData['meta'] ?? [];
-                    }
-
-                    $body = [
-                        'chat_id' => $chat['chatId'],
-                        'text' => $message,
-                    ];
-
-                    if (! empty($chat['threadId'])) {
-                        $body['message_thread_id'] = $chat['threadId'];
-                    }
-
-                    if (! empty($meta)) {
-                        $body['reply_markup'] = [
-                            'inline_keyboard' => [$meta],
-                        ];
-                    }
-
-                    $pool->acceptJson()->post("https://api.telegram.org/bot{$botToken}/sendMessage", $body);
-                }
-
-                return [];
-            });
-
-        }
+            return [];
+        });
 
         $resultJson = [];
         foreach ($result as $item) {

@@ -47,16 +47,20 @@ class TelegramController extends Controller
             $request->all(),
             [
                 'name' => 'required',
-                'url' => 'required',
+                'type' => 'required|in:http,socks5',
+                'host' => 'required',
+                'port' => 'required',
             ],
         );
         if ($va->passes()) {
 
-            $url = rtrim($request->url, '/');
-
             $modelArray = [
                 'name' => $request->name,
-                'url' => $url,
+                'type' => $request->type,
+                'host' => $request->host,
+                'port' => $request->port,
+                'username' => $request->username ?? '',
+                'password' => $request->password ?? '',
                 'active' => false,
             ];
 
@@ -82,17 +86,24 @@ class TelegramController extends Controller
             $request->all(),
             [
                 'name' => 'required',
-                'url' => 'required',
+                'type' => 'required|in:http,socks5',
+                'host' => 'required',
+                'port' => 'required',
             ],
         );
 
         if ($va->passes()) {
-            $url = rtrim($request->url, '/');
 
             $modelArray = [
                 'name' => $request->name,
-                'url' => $url,
+                'type' => $request->type,
+                'host' => $request->host,
+                'port' => $request->port,
+                'username' => $request->username ?? '',
+                'password' => $request->password ?? '',
+                'active' => false,
             ];
+
             $model->update($modelArray);
 
             return response()->json([

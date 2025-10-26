@@ -9,6 +9,7 @@ enum EndpointType: string
     case SMS = 'sms';
     case CALL = 'call';
     case TEAMS = 'teams';
+    case DISCORD = 'discord';
     case EMAIL = 'email';
     case MATTER_MOST = 'matter-most';
 
@@ -19,6 +20,7 @@ enum EndpointType: string
             self::SMS,
             self::CALL,
             self::TEAMS,
+            self::DISCORD,
             self::EMAIL,
             self::MATTER_MOST,
         ];

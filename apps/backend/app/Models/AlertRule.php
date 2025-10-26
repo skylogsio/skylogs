@@ -288,6 +288,11 @@ class AlertRule extends BaseModel implements Messageable
         return $this->defaultMessage();
     }
 
+    public function discordMessage()
+    {
+        return $this->defaultMessage();
+    }
+
     public function callMessage()
     {
         return $this->defaultMessage();

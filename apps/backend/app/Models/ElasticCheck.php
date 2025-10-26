@@ -88,6 +88,13 @@ class ElasticCheck extends BaseModel implements Messageable
 
     }
 
+    public function discordMessage(): string
+    {
+
+        return $this->defaultMessage();
+
+    }
+
     public function callMessage(): string
     {
 

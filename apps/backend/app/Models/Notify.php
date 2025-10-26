@@ -64,6 +64,11 @@ class Notify extends BaseModel implements Messageable
         return $this->messages['smsMessage'];
     }
 
+    public function discordMessage()
+    {
+        return $this->messages['discordMessage'];
+    }
+
     public function callMessage()
     {
         return $this->messages['callMessage'];
