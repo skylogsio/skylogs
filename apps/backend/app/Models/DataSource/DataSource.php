@@ -39,11 +39,11 @@ class DataSource extends BaseModel
     public function getCopyAttribute()
     {
         return match ($this->type) {
-            DataSourceType::SENTRY => config('app.url').route('webhook.sentry', ['token' => $this->webhookToken], false),
-            DataSourceType::GRAFANA => config('app.url').route('webhook.grafana', ['token' => $this->webhookToken], false),
-            DataSourceType::PMM => config('app.url').route('webhook.pmm', ['token' => $this->webhookToken], false),
-            DataSourceType::ZABBIX => config('app.url').route('webhook.zabbix', ['token' => $this->webhookToken], false),
-            DataSourceType::SPLUNK => config('app.url').route('webhook.splunk', ['token' => $this->webhookToken], false),
+            DataSourceType::SENTRY => config('app.frontend_url').route('webhook.sentry', ['token' => $this->webhookToken], false),
+            DataSourceType::GRAFANA => config('app.frontend_url').route('webhook.grafana', ['token' => $this->webhookToken], false),
+            DataSourceType::PMM => config('app.frontend_url').route('webhook.pmm', ['token' => $this->webhookToken], false),
+            DataSourceType::ZABBIX => config('app.frontend_url').route('webhook.zabbix', ['token' => $this->webhookToken], false),
+            DataSourceType::SPLUNK => config('app.frontend_url').route('webhook.splunk', ['token' => $this->webhookToken], false),
             default => $this->webhookToken,
         };
     }

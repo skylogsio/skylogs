@@ -16,6 +16,8 @@ use App\Models\HealthCheck;
 use App\Models\PrometheusCheck;
 use App\Models\SkylogsInstance;
 use App\Models\User;
+use App\Models\ZabbixCheck;
+use App\Models\ZabbixWebhookAlert;
 use Cache;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -38,7 +40,16 @@ class AlertRuleService
                 $check = PrometheusCheck::where('alertRuleId', $alertRuleId)->first();
 
                 return $check ? ($check->alerts ?? []) : [];
+
+            case AlertRuleType::ZABBIX:
+                $check = ZabbixCheck::where('alertRuleId', $alertRuleId)->first();
+                if ($check && ! empty($check->fireEvents)) {
+                    return ZabbixWebhookAlert::whereIn('event_id', $check->fireEvents)->get();
+                }
+                break;
         }
+
+        return [];
 
     }
 
