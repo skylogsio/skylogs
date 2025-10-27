@@ -8,7 +8,7 @@ import { HiInformationCircle } from "react-icons/hi";
 
 import type { IAlertRule,IAlertRuleHistoryInstance } from "@/@types/alertRule";
 import { getFiredInstances } from "@/api/alertRule";
-import AlertRuleStatus from "@/components/AlertRule/AlertRuleStatus";
+import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndicator";
 import ModalContainer from "@/components/Modal";
 import DataTable from "@/components/Table/DataTable";
 import { truncateLongString } from "@/utils/general";
@@ -35,7 +35,7 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
           {
             header: "Status",
             cell: ({ row }) => (
-              <AlertRuleStatus
+              <AlertRuleStatusIndicator
                 status={row.original.skylogsStatus === 2 ? "critical" : "resolved"}
               />
             )
@@ -66,7 +66,7 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
               <Typography variant="body1" fontWeight="bold">
                 {details.alertRuleName}
               </Typography>
-              <AlertRuleStatus
+              <AlertRuleStatusIndicator
                 size="small"
                 status={details.skylogsStatus === 2 ? "critical" : "resolved"}
               />

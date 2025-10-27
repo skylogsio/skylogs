@@ -6,7 +6,7 @@ import { HiChevronDoubleDown, HiInformationCircle } from "react-icons/hi";
 
 import type { IAlertRule, IGrafanaAndPmmAlertHistory } from "@/@types/alertRule";
 import { getAlertRuleHistory } from "@/api/alertRule";
-import AlertRuleStatus from "@/components/AlertRule/AlertRuleStatus";
+import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndicator";
 import HistoryDetailsModal from "@/components/AlertRule/History/HistoryDetailsModal";
 import DataTable from "@/components/Table/DataTable";
 
@@ -46,7 +46,7 @@ export default function GrafanaAndPmmAlertHistory({ alertId }: { alertId: IAlert
             {
               header: "Status",
               cell: ({ row }) => (
-                <AlertRuleStatus
+                <AlertRuleStatusIndicator
                   status={row.original.status === "firing" ? "critical" : row.original.status}
                   statusTitle={row.original.status}
                 />

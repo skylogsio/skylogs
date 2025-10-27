@@ -5,7 +5,7 @@ import JsonView from "@uiw/react-json-view";
 import { githubLightTheme } from "@uiw/react-json-view/githubLight";
 
 import type { IAlertRuleHistoryInstance } from "@/@types/alertRule";
-import AlertRuleStatus from "@/components/AlertRule/AlertRuleStatus";
+import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndicator";
 import ModalContainer from "@/components/Modal";
 import { ModalContainerProps } from "@/components/Modal/types";
 
@@ -41,7 +41,7 @@ export default function HistoryDetailsModal({
               <Typography variant="body1" fontWeight="bold">
                 {alert.alertRuleName}
               </Typography>
-              <AlertRuleStatus
+              <AlertRuleStatusIndicator
                 size="small"
                 status={alert.skylogsStatus === 2 ? "critical" : "resolved"}
               />

@@ -25,7 +25,7 @@ interface AlertRuleStatusProps extends Pick<ChipProps, "size"> {
   showAcknowledge?: boolean;
 }
 
-export default function AlertRuleStatus({
+export default function AlertRuleStatusIndicator({
   status,
   onAfterResolve,
   id,
