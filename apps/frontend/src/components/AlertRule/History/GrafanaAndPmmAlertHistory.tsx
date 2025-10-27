@@ -97,7 +97,11 @@ export default function GrafanaAndPmmAlertHistory({ alertId }: { alertId: IAlert
           )}
         </Stack>
       </Stack>
-      <HistoryDetailsModal alerts={details?.alerts} onClose={() => setDetails(null)} />
+      <HistoryDetailsModal
+        alerts={details?.alerts}
+        status={details?.status === "firing" ? "critical" : details?.status}
+        onClose={() => setDetails(null)}
+      />
     </>
   );
 }
