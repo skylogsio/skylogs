@@ -121,7 +121,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
     >
       <Grid
         component="form"
-        onSubmit={handleSubmit(handleSubmitForm, (error) => console.log(error))}
+        onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
         width="100%"
