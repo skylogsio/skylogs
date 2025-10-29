@@ -1,14 +1,14 @@
 import { alpha, Chip } from "@mui/material";
 import { BsChatDotsFill, BsMicrosoftTeams, BsTelegram, BsTelephoneFill } from "react-icons/bs";
 import { MdEmail } from "react-icons/md";
-import { SiMattermost } from "react-icons/si";
+import { SiDiscord, SiMattermost } from "react-icons/si";
 import { TiFlowChildren } from "react-icons/ti";
 
 export const ENDPOINT_TYPE_CHIP = {
   sms: {
     title: "SMS",
-    color: "#13C82B",
-    icon: <BsChatDotsFill style={{ padding: "0.2rem" }} color="#13C82B" />
+    color: "#11AC26",
+    icon: <BsChatDotsFill style={{ padding: "0.2rem" }} color="#11AC26" />
   },
   telegram: {
     title: "Telegram",
@@ -27,13 +27,18 @@ export const ENDPOINT_TYPE_CHIP = {
   },
   email: {
     title: "Email",
-    color: "#f6a645",
-    icon: <MdEmail style={{ padding: "0.2rem" }} color="#f6a645" />
+    color: "#C54040",
+    icon: <MdEmail style={{ padding: "0.2rem" }} color="#C54040" />
   },
   flow: {
     title: "Flow",
-    color: "#ff00ff",
-    icon: <TiFlowChildren style={{ padding: "0.2rem" }} color="#ff00ff" />
+    color: "#FF00FF",
+    icon: <TiFlowChildren style={{ padding: "0.2rem" }} color="#FF00FF" />
+  },
+  discord: {
+    title: "Discord",
+    color: "#5865F2",
+    icon: <SiDiscord style={{ padding: "0.2rem" }} color="#5865F2" />
   },
   "matter-most": {
     title: "Matter Most",
@@ -51,7 +56,7 @@ export function renderEndPointChip(type: unknown, size: "small" | "medium" = "me
       size={size}
       avatar={Avatar}
       sx={{
-        backgroundColor: alpha(color, 0.1),
+        backgroundColor: alpha(color, 0.07),
         color
       }}
       label={ENDPOINT_TYPE_CHIP[variant].title}
