@@ -3,7 +3,7 @@
 namespace App\Helpers;
 
 use App\interfaces\Messageable;
-use App\Models\Endpoint;
+use App\Models\EndpointOTP;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
@@ -62,11 +62,20 @@ class Call
 
     }
 
-    public static function sendOTP(Endpoint $endpoint)
+    public static function sendOTP(EndpointOTP $endpoint)
     {
-        Http::post(self::Url(), [
+        $response = Http::post(self::Url(), [
             'receptor' => $endpoint->value,
-            'message' => $endpoint->generateOTPMessage().$endpoint->generateOTPMessage(),
+            'message' => $endpoint->generateOTPMessage(),
         ]);
+        try {
+            if ($response instanceof Response) {
+                return $response->json();
+            } else {
+                return $response->getMessage();
+            }
+        } catch (\Exception $e) {
+            return $e->getMessage();
+        }
     }
 }

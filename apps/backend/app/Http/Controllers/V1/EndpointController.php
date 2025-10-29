@@ -5,11 +5,11 @@ namespace App\Http\Controllers\V1;
 use App\Enums\EndpointType;
 use App\Http\Controllers\Controller;
 use App\Models\Endpoint;
-use App\Models\EndpointOTP;
 use App\Models\User;
 use App\Services\EndpointService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\Response;
 
 class EndpointController extends Controller
 {
@@ -125,15 +125,31 @@ class EndpointController extends Controller
     public function SendOTPCode(Request $request)
     {
 
-        EndpointOTP::updateOrCreate([
-            'type' => $request->type,
-            'value' => $request->value,
-        ], [
+        $va = \Validator::make(
+            $request->all(),
+            [
+                'type' => [
+                    'required',
+                    Rule::in([
+                        'email',
+                        'sms',
+                        'call',
+                    ]),
+                ],
+                'value' => 'required',
+            ],
+        );
 
+        if ($va->fails()) {
+            abort(Response::HTTP_UNPROCESSABLE_ENTITY, 'Invalid Entry');
+        }
+
+        $this->endpointService->otpRequest($request);
+
+        return response()->json([
+            'message' => 'OTP code has been sent to your endpoint',
         ]);
     }
-
-    public function ConfirmOTPCode(Request $request) {}
 
     public function Update(Request $request, $id)
     {
