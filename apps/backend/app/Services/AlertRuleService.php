@@ -16,6 +16,8 @@ use App\Models\HealthCheck;
 use App\Models\PrometheusCheck;
 use App\Models\SkylogsInstance;
 use App\Models\User;
+use App\Models\ZabbixCheck;
+use App\Models\ZabbixWebhookAlert;
 use Cache;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -38,7 +40,16 @@ class AlertRuleService
                 $check = PrometheusCheck::where('alertRuleId', $alertRuleId)->first();
 
                 return $check ? ($check->alerts ?? []) : [];
+
+            case AlertRuleType::ZABBIX:
+                $check = ZabbixCheck::where('alertRuleId', $alertRuleId)->first();
+                if ($check && ! empty($check->fireEvents)) {
+                    return ZabbixWebhookAlert::whereIn('event_id', $check->fireEvents)->get();
+                }
+                break;
         }
+
+        return [];
 
     }
 
@@ -127,405 +138,397 @@ class AlertRuleService
 
         $alerts = $request->has('alerts') ? $request->get('alerts') : [];
 
-        if ($request->ajax()) {
+        $filterCreatedAtArray = [];
 
-            $filterCreatedAtArray = [];
+        $showElastic = false;
+        $showPrometheus = false;
+        $showSentry = false;
+        $showMetabase = false;
+        $showApi = false;
+        $showHealth = false;
+        $showZabbix = false;
 
-            $showElastic = false;
-            $showPrometheus = false;
-            $showSentry = false;
-            $showMetabase = false;
-            $showApi = false;
-            $showHealth = false;
-            $showZabbix = false;
+        if ($request->has(Constants::ELASTIC) && ! empty($request->get(Constants::ELASTIC))) {
+            $showElastic = true;
+        }
+        if ($request->has(Constants::PROMETHEUS) && ! empty($request->get(Constants::PROMETHEUS))) {
+            $showPrometheus = true;
+        }
+        if ($request->has(Constants::SENTRY) && ! empty($request->get(Constants::SENTRY))) {
+            $showSentry = true;
+        }
+        if ($request->has(Constants::METABASE) && ! empty($request->get(Constants::METABASE))) {
+            $showMetabase = true;
+        }
+        if ($request->has(Constants::API) && ! empty($request->get(Constants::API))) {
+            $showApi = true;
+        }
 
-            if ($request->has(Constants::ELASTIC) && ! empty($request->get(Constants::ELASTIC))) {
-                $showElastic = true;
+        if ($request->has(Constants::ZABBIX) && ! empty($request->get(Constants::ZABBIX))) {
+            $showZabbix = true;
+        }
+
+        if ($request->has(Constants::HEALTH) && ! empty($request->get(Constants::HEALTH))) {
+            $showHealth = true;
+        }
+
+        if ($request->has('from') && ! empty($request->from)) {
+            $date = Carbon::createFromFormat('Y-m-d H:i', $request->from);
+            $filterCreatedAtArray['$gte'] = new UTCDateTime($date->getTimestamp() * 1000);
+        }
+
+        if ($request->has('to') && ! empty($request->to)) {
+            $date = Carbon::createFromFormat('Y-m-d H:i', $request->to);
+            $filterCreatedAtArray['$lte'] = new UTCDateTime($date->getTimestamp() * 1000);
+        }
+        $page = $request->page ?? 1;
+
+        $query = ApiAlertHistory::raw(function ($collection) use ($filterCreatedAtArray, $alerts, $page, $perPage, $showHealth, $showZabbix, $showApi, $showPrometheus, $showSentry, $showMetabase, $showElastic) {
+
+            $aggregationArray = [];
+
+            /*       $aggregationArray[] = [
+                       '$sort' => [
+                           'createdAt' => -1,
+                       ]
+                   ];
+
+
+                   $aggregationArray[] = [
+                       '$facet' => [
+                           'metadata' => [['$count' => 'totalCount']],
+                           "data" => [['$skip' => ($page - 1) * $perPage], ['$limit' => $perPage]],
+                       ]
+                   ];*/
+
+            if (! empty($alerts) || ! empty($filterCreatedAtArray)) {
+                $matchAggregationArray = [];
+                if (! empty($alerts)) {
+                    $matchAggregationArray['alertRule_id'] = ['$in' => $alerts];
+
+                }
+                if (! empty($filterCreatedAtArray)) {
+                    $matchAggregationArray['createdAt'] = $filterCreatedAtArray;
+                }
+                $aggregationArray[] = [
+                    '$match' => $matchAggregationArray,
+                ];
+
             }
-            if ($request->has(Constants::PROMETHEUS) && ! empty($request->get(Constants::PROMETHEUS))) {
-                $showPrometheus = true;
-            }
-            if ($request->has(Constants::SENTRY) && ! empty($request->get(Constants::SENTRY))) {
-                $showSentry = true;
-            }
-            if ($request->has(Constants::METABASE) && ! empty($request->get(Constants::METABASE))) {
-                $showMetabase = true;
-            }
-            if ($request->has(Constants::API) && ! empty($request->get(Constants::API))) {
-                $showApi = true;
-            }
 
-            if ($request->has(Constants::ZABBIX) && ! empty($request->get(Constants::ZABBIX))) {
-                $showZabbix = true;
-            }
+            $aggregationArray[] = [
+                '$sort' => [
+                    'createdAt' => -1,
+                ],
+            ];
+            $aggregationArray[] = [
+                '$limit' => ($page + 1) * $perPage,
+            ];
 
-            if ($request->has(Constants::HEALTH) && ! empty($request->get(Constants::HEALTH))) {
-                $showHealth = true;
-            }
+            $aggregationArray[] = [
+                '$addFields' => [
+                    'alert_type' => Constants::API,
+                ],
+            ];
 
-            if ($request->has('from') && ! empty($request->from)) {
-                $date = Carbon::createFromFormat('Y-m-d H:i', $request->from);
-                $filterCreatedAtArray['$gte'] = new UTCDateTime($date->getTimestamp() * 1000);
-            }
-
-            if ($request->has('to') && ! empty($request->to)) {
-                $date = Carbon::createFromFormat('Y-m-d H:i', $request->to);
-                $filterCreatedAtArray['$lte'] = new UTCDateTime($date->getTimestamp() * 1000);
-            }
-            $page = $request->page ?? 1;
-
-            $query = ApiAlertHistory::raw(function ($collection) use ($filterCreatedAtArray, $alerts, $page, $perPage, $showHealth, $showZabbix, $showApi, $showPrometheus, $showSentry, $showMetabase, $showElastic) {
-
-                $aggregationArray = [];
-
-                /*       $aggregationArray[] = [
-                           '$sort' => [
-                               'createdAt' => -1,
-                           ]
-                       ];
-
-
-                       $aggregationArray[] = [
-                           '$facet' => [
-                               'metadata' => [['$count' => 'totalCount']],
-                               "data" => [['$skip' => ($page - 1) * $perPage], ['$limit' => $perPage]],
-                           ]
-                       ];*/
+            if ($showSentry) {
+                $pipelineArray = [];
 
                 if (! empty($alerts) || ! empty($filterCreatedAtArray)) {
                     $matchAggregationArray = [];
                     if (! empty($alerts)) {
-                        $matchAggregationArray['alertRule_id'] = ['$in' => $alerts];
+                        $matchAggregationArray['alertRuleId'] = ['$in' => $alerts];
 
                     }
                     if (! empty($filterCreatedAtArray)) {
                         $matchAggregationArray['createdAt'] = $filterCreatedAtArray;
                     }
-                    $aggregationArray[] = [
+                    $pipelineArray[] = [
                         '$match' => $matchAggregationArray,
                     ];
 
                 }
 
-                $aggregationArray[] = [
+                $pipelineArray[] = [
                     '$sort' => [
                         'createdAt' => -1,
                     ],
                 ];
-                $aggregationArray[] = [
+                $pipelineArray[] = [
                     '$limit' => ($page + 1) * $perPage,
                 ];
 
-                $aggregationArray[] = [
+                $pipelineArray[] = [
                     '$addFields' => [
-                        'alert_type' => Constants::API,
+                        'alert_type' => Constants::SENTRY,
                     ],
                 ];
 
-                if ($showSentry) {
-                    $pipelineArray = [];
-
-                    if (! empty($alerts) || ! empty($filterCreatedAtArray)) {
-                        $matchAggregationArray = [];
-                        if (! empty($alerts)) {
-                            $matchAggregationArray['alertRuleId'] = ['$in' => $alerts];
-
-                        }
-                        if (! empty($filterCreatedAtArray)) {
-                            $matchAggregationArray['createdAt'] = $filterCreatedAtArray;
-                        }
-                        $pipelineArray[] = [
-                            '$match' => $matchAggregationArray,
-                        ];
-
-                    }
-
-                    $pipelineArray[] = [
-                        '$sort' => [
-                            'createdAt' => -1,
-                        ],
-                    ];
-                    $pipelineArray[] = [
-                        '$limit' => ($page + 1) * $perPage,
-                    ];
-
-                    $pipelineArray[] = [
-                        '$addFields' => [
-                            'alert_type' => Constants::SENTRY,
-                        ],
-                    ];
-
-                    $aggregationArray[] = [
-                        '$unionWith' => [
-                            'coll' => 'sentry_webhook_alerts',
-                            'pipeline' => $pipelineArray,
-                        ],
-                    ];
-                }
-                if ($showMetabase) {
-                    $pipelineArray = [];
-
-                    if (! empty($alerts) || ! empty($filterCreatedAtArray)) {
-                        $matchAggregationArray = [];
-                        if (! empty($alerts)) {
-                            $matchAggregationArray['alertRuleId'] = ['$in' => $alerts];
-
-                        }
-                        if (! empty($filterCreatedAtArray)) {
-                            $matchAggregationArray['createdAt'] = $filterCreatedAtArray;
-                        }
-                        $pipelineArray[] = [
-                            '$match' => $matchAggregationArray,
-                        ];
-
-                    }
-
-                    $pipelineArray[] = [
-                        '$sort' => [
-                            'createdAt' => -1,
-                        ],
-                    ];
-                    $pipelineArray[] = [
-                        '$limit' => ($page + 1) * $perPage,
-                    ];
-
-                    $pipelineArray[] = [
-                        '$addFields' => [
-                            'alert_type' => Constants::METABASE,
-                        ],
-                    ];
-
-                    $aggregationArray[] = [
-                        '$unionWith' => [
-                            'coll' => 'metabase_webhook_alerts',
-                            'pipeline' => $pipelineArray,
-                        ],
-                    ];
-                }
-                if ($showPrometheus) {
-                    $pipelineArray = [];
-
-                    if (! empty($alerts) || ! empty($filterCreatedAtArray)) {
-                        $matchAggregationArray = [];
-                        if (! empty($alerts)) {
-                            $matchAggregationArray['alertRuleId'] = ['$in' => $alerts];
-
-                        }
-                        if (! empty($filterCreatedAtArray)) {
-                            $matchAggregationArray['createdAt'] = $filterCreatedAtArray;
-                        }
-                        $pipelineArray[] = [
-                            '$match' => $matchAggregationArray,
-                        ];
-
-                    }
-
-                    $pipelineArray[] = [
-                        '$sort' => [
-                            'createdAt' => -1,
-                        ],
-                    ];
-                    $pipelineArray[] = [
-                        '$limit' => ($page + 1) * $perPage,
-                    ];
-
-                    $pipelineArray[] = [
-                        '$addFields' => [
-                            'alert_type' => Constants::PROMETHEUS,
-                        ],
-                    ];
-
-                    $aggregationArray[] = [
-                        '$unionWith' => [
-                            'coll' => 'prometheus_histories',
-                            'pipeline' => $pipelineArray,
-                        ],
-                    ];
-
-                }
-
-                if ($showHealth) {
-                    $pipelineArray = [];
-
-                    if (! empty($alerts) || ! empty($filterCreatedAtArray)) {
-                        $matchAggregationArray = [];
-                        if (! empty($alerts)) {
-                            $matchAggregationArray['alertRuleId'] = ['$in' => $alerts];
-
-                        }
-                        if (! empty($filterCreatedAtArray)) {
-                            $matchAggregationArray['createdAt'] = $filterCreatedAtArray;
-                        }
-                        $pipelineArray[] = [
-                            '$match' => $matchAggregationArray,
-                        ];
-
-                    }
-
-                    $pipelineArray[] = [
-                        '$sort' => [
-                            'createdAt' => -1,
-                        ],
-                    ];
-                    $pipelineArray[] = [
-                        '$limit' => ($page + 1) * $perPage,
-                    ];
-
-                    $pipelineArray[] = [
-                        '$addFields' => [
-                            'alert_type' => Constants::HEALTH,
-                        ],
-                    ];
-
-                    $aggregationArray[] = [
-                        '$unionWith' => [
-                            'coll' => 'health_histories',
-                            'pipeline' => $pipelineArray,
-                        ],
-                    ];
-
-                }
-                if ($showElastic) {
-
-                    $pipelineArray = [];
-
-                    if (! empty($alerts) || ! empty($filterCreatedAtArray)) {
-                        $matchAggregationArray = [];
-                        if (! empty($alerts)) {
-                            $matchAggregationArray['alertRuleId'] = ['$in' => $alerts];
-
-                        }
-                        if (! empty($filterCreatedAtArray)) {
-                            $matchAggregationArray['createdAt'] = $filterCreatedAtArray;
-                        }
-                        $pipelineArray[] = [
-                            '$match' => $matchAggregationArray,
-                        ];
-
-                    }
-
-                    $pipelineArray[] = [
-                        '$sort' => [
-                            'createdAt' => -1,
-                        ],
-                    ];
-                    $pipelineArray[] = [
-                        '$limit' => ($page + 1) * $perPage,
-                    ];
-
-                    $pipelineArray[] = [
-                        '$addFields' => [
-                            'alert_type' => Constants::ELASTIC,
-                        ],
-                    ];
-
-                    $aggregationArray[] = [
-                        '$unionWith' => [
-                            'coll' => 'elastic_histories',
-                            'pipeline' => $pipelineArray,
-                        ],
-                    ];
-
-                }
-
-                if ($showZabbix) {
-
-                    $pipelineArray = [];
-
-                    if (! empty($alerts) || ! empty($filterCreatedAtArray)) {
-                        $matchAggregationArray = [];
-                        if (! empty($alerts)) {
-                            $matchAggregationArray['alertRuleId'] = ['$in' => $alerts];
-
-                        }
-                        if (! empty($filterCreatedAtArray)) {
-                            $matchAggregationArray['createdAt'] = $filterCreatedAtArray;
-                        }
-                        $pipelineArray[] = [
-                            '$match' => $matchAggregationArray,
-                        ];
-
-                    }
-
-                    $pipelineArray[] = [
-                        '$sort' => [
-                            'createdAt' => -1,
-                        ],
-                    ];
-                    $pipelineArray[] = [
-                        '$limit' => ($page + 1) * $perPage,
-                    ];
-
-                    $pipelineArray[] = [
-                        '$addFields' => [
-                            'alert_type' => Constants::ZABBIX,
-                        ],
-                    ];
-
-                    $aggregationArray[] = [
-                        '$unionWith' => [
-                            'coll' => 'zabbix_webhook_alerts',
-                            'pipeline' => $pipelineArray,
-                        ],
-                    ];
-
-                }
-                //                $aggregationArray[] = [
-                //                    '$unionWith' => [
-                //                        'coll' => 'grafana_webhook_alerts',
-                //                        "pipeline" => [
-                //                            [
-                //                                '$addFields' => [
-                //                                    'alert_type' => Constants::GRAFANA,
-                //                                ]
-                //                            ]
-                //                        ]
-                //                    ]
-                //                ];
-
-                if (! $showApi) {
-                    $aggregationArray[] = [
-                        '$match' => [
-                            'alert_type' => ['$not' => ['$eq' => Constants::API]],
-                        ],
-                    ];
-                }
-
                 $aggregationArray[] = [
+                    '$unionWith' => [
+                        'coll' => 'sentry_webhook_alerts',
+                        'pipeline' => $pipelineArray,
+                    ],
+                ];
+            }
+            if ($showMetabase) {
+                $pipelineArray = [];
+
+                if (! empty($alerts) || ! empty($filterCreatedAtArray)) {
+                    $matchAggregationArray = [];
+                    if (! empty($alerts)) {
+                        $matchAggregationArray['alertRuleId'] = ['$in' => $alerts];
+
+                    }
+                    if (! empty($filterCreatedAtArray)) {
+                        $matchAggregationArray['createdAt'] = $filterCreatedAtArray;
+                    }
+                    $pipelineArray[] = [
+                        '$match' => $matchAggregationArray,
+                    ];
+
+                }
+
+                $pipelineArray[] = [
                     '$sort' => [
                         'createdAt' => -1,
                     ],
                 ];
+                $pipelineArray[] = [
+                    '$limit' => ($page + 1) * $perPage,
+                ];
 
-                $aggregationArray[] = [
-                    '$facet' => [
-                        'metadata' => [['$count' => 'totalCount']],
-                        'data' => [['$skip' => ($page - 1) * $perPage], ['$limit' => $perPage]],
+                $pipelineArray[] = [
+                    '$addFields' => [
+                        'alert_type' => Constants::METABASE,
                     ],
                 ];
 
-                return $collection->aggregate($aggregationArray);
-            });
-            $result = collect($query)->toArray()[0];
-            $data = json_decode(json_encode(iterator_to_array($result['data'])), true);
-            if (! empty($data)) {
-                $isEnd = json_decode(json_encode(iterator_to_array($result['metadata'])), true)[0]['totalCount'] <= $perPage * $page;
-                $data = collect($data)->map(function ($array) {
-                    $array['id'] = $array['_id']['$oid'];
-                    $array['createdAt'] = Carbon::createFromTimestampMs($array['createdAt']['$date']['$numberLong'])->format('Y-m-d H:i:s');
-
-                    return $array;
-                });
-
-                return view('content.pages.alerts.all_history_ajax', compact('data', 'isEnd', 'page'));
-            } else {
-                return '';
+                $aggregationArray[] = [
+                    '$unionWith' => [
+                        'coll' => 'metabase_webhook_alerts',
+                        'pipeline' => $pipelineArray,
+                    ],
+                ];
             }
-        } else {
-            $from = $request->from ? Carbon::createFromTimestamp($request->from)->format('Y-m-d H:i') : '';
-            $to = $request->to ? Carbon::createFromTimestamp($request->to)->format('Y-m-d H:i') : '';
+            if ($showPrometheus) {
+                $pipelineArray = [];
 
-            return view('content.pages.alerts.all_history', compact('alerts', 'from', 'to'));
+                if (! empty($alerts) || ! empty($filterCreatedAtArray)) {
+                    $matchAggregationArray = [];
+                    if (! empty($alerts)) {
+                        $matchAggregationArray['alertRuleId'] = ['$in' => $alerts];
+
+                    }
+                    if (! empty($filterCreatedAtArray)) {
+                        $matchAggregationArray['createdAt'] = $filterCreatedAtArray;
+                    }
+                    $pipelineArray[] = [
+                        '$match' => $matchAggregationArray,
+                    ];
+
+                }
+
+                $pipelineArray[] = [
+                    '$sort' => [
+                        'createdAt' => -1,
+                    ],
+                ];
+                $pipelineArray[] = [
+                    '$limit' => ($page + 1) * $perPage,
+                ];
+
+                $pipelineArray[] = [
+                    '$addFields' => [
+                        'alert_type' => Constants::PROMETHEUS,
+                    ],
+                ];
+
+                $aggregationArray[] = [
+                    '$unionWith' => [
+                        'coll' => 'prometheus_histories',
+                        'pipeline' => $pipelineArray,
+                    ],
+                ];
+
+            }
+
+            if ($showHealth) {
+                $pipelineArray = [];
+
+                if (! empty($alerts) || ! empty($filterCreatedAtArray)) {
+                    $matchAggregationArray = [];
+                    if (! empty($alerts)) {
+                        $matchAggregationArray['alertRuleId'] = ['$in' => $alerts];
+
+                    }
+                    if (! empty($filterCreatedAtArray)) {
+                        $matchAggregationArray['createdAt'] = $filterCreatedAtArray;
+                    }
+                    $pipelineArray[] = [
+                        '$match' => $matchAggregationArray,
+                    ];
+
+                }
+
+                $pipelineArray[] = [
+                    '$sort' => [
+                        'createdAt' => -1,
+                    ],
+                ];
+                $pipelineArray[] = [
+                    '$limit' => ($page + 1) * $perPage,
+                ];
+
+                $pipelineArray[] = [
+                    '$addFields' => [
+                        'alert_type' => Constants::HEALTH,
+                    ],
+                ];
+
+                $aggregationArray[] = [
+                    '$unionWith' => [
+                        'coll' => 'health_histories',
+                        'pipeline' => $pipelineArray,
+                    ],
+                ];
+
+            }
+            if ($showElastic) {
+
+                $pipelineArray = [];
+
+                if (! empty($alerts) || ! empty($filterCreatedAtArray)) {
+                    $matchAggregationArray = [];
+                    if (! empty($alerts)) {
+                        $matchAggregationArray['alertRuleId'] = ['$in' => $alerts];
+
+                    }
+                    if (! empty($filterCreatedAtArray)) {
+                        $matchAggregationArray['createdAt'] = $filterCreatedAtArray;
+                    }
+                    $pipelineArray[] = [
+                        '$match' => $matchAggregationArray,
+                    ];
+
+                }
+
+                $pipelineArray[] = [
+                    '$sort' => [
+                        'createdAt' => -1,
+                    ],
+                ];
+                $pipelineArray[] = [
+                    '$limit' => ($page + 1) * $perPage,
+                ];
+
+                $pipelineArray[] = [
+                    '$addFields' => [
+                        'alert_type' => Constants::ELASTIC,
+                    ],
+                ];
+
+                $aggregationArray[] = [
+                    '$unionWith' => [
+                        'coll' => 'elastic_histories',
+                        'pipeline' => $pipelineArray,
+                    ],
+                ];
+
+            }
+
+            if ($showZabbix) {
+
+                $pipelineArray = [];
+
+                if (! empty($alerts) || ! empty($filterCreatedAtArray)) {
+                    $matchAggregationArray = [];
+                    if (! empty($alerts)) {
+                        $matchAggregationArray['alertRuleId'] = ['$in' => $alerts];
+
+                    }
+                    if (! empty($filterCreatedAtArray)) {
+                        $matchAggregationArray['createdAt'] = $filterCreatedAtArray;
+                    }
+                    $pipelineArray[] = [
+                        '$match' => $matchAggregationArray,
+                    ];
+
+                }
+
+                $pipelineArray[] = [
+                    '$sort' => [
+                        'createdAt' => -1,
+                    ],
+                ];
+                $pipelineArray[] = [
+                    '$limit' => ($page + 1) * $perPage,
+                ];
+
+                $pipelineArray[] = [
+                    '$addFields' => [
+                        'alert_type' => Constants::ZABBIX,
+                    ],
+                ];
+
+                $aggregationArray[] = [
+                    '$unionWith' => [
+                        'coll' => 'zabbix_webhook_alerts',
+                        'pipeline' => $pipelineArray,
+                    ],
+                ];
+
+            }
+            //                $aggregationArray[] = [
+            //                    '$unionWith' => [
+            //                        'coll' => 'grafana_webhook_alerts',
+            //                        "pipeline" => [
+            //                            [
+            //                                '$addFields' => [
+            //                                    'alert_type' => Constants::GRAFANA,
+            //                                ]
+            //                            ]
+            //                        ]
+            //                    ]
+            //                ];
+
+            if (! $showApi) {
+                $aggregationArray[] = [
+                    '$match' => [
+                        'alert_type' => ['$not' => ['$eq' => Constants::API]],
+                    ],
+                ];
+            }
+
+            $aggregationArray[] = [
+                '$sort' => [
+                    'createdAt' => -1,
+                ],
+            ];
+
+            $aggregationArray[] = [
+                '$facet' => [
+                    'metadata' => [['$count' => 'totalCount']],
+                    'data' => [['$skip' => ($page - 1) * $perPage], ['$limit' => $perPage]],
+                ],
+            ];
+
+            return $collection->aggregate($aggregationArray);
+        });
+        $result = collect($query)->toArray()[0];
+        $data = json_decode(json_encode(iterator_to_array($result['data'])), true);
+        if (! empty($data)) {
+            $isEnd = json_decode(json_encode(iterator_to_array($result['metadata'])), true)[0]['totalCount'] <= $perPage * $page;
+            $data = collect($data)->map(function ($array) {
+                $array['id'] = $array['_id']['$oid'];
+                $array['createdAt'] = Carbon::createFromTimestampMs($array['createdAt']['$date']['$numberLong'])->format('Y-m-d H:i:s');
+
+                return $array;
+            });
+
+            return compact('data', 'isEnd', 'page');
+        } else {
+            return '';
         }
 
     }
