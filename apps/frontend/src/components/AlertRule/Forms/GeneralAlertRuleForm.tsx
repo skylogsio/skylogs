@@ -223,7 +223,7 @@ export default function GeneralAlertRuleForm({
           />
         </Grid>
         <AlertRuleGeneralFields<GeneralAlertRuleType>
-          methods={{ control, getValues, setValue, watch }}
+          methods={{ control, getValues, setValue }}
           errors={errors}
         >
           <Grid size={12} display="flex" justifyContent="center">

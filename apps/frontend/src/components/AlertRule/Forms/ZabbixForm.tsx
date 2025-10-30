@@ -217,7 +217,7 @@ export default function ZabbixAlertRuleForm({
           />
         </Grid>
         <AlertRuleGeneralFields<ZabbixFromType>
-          methods={{ control, getValues, setValue, watch }}
+          methods={{ control, getValues, setValue }}
           errors={errors}
         >
           <Grid size={6}>

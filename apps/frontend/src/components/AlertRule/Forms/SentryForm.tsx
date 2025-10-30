@@ -186,7 +186,7 @@ export default function SentryAlertRuleForm({
           />
         </Grid>
         <AlertRuleGeneralFields<SentryFromType>
-          methods={{ control, getValues, setValue, watch }}
+          methods={{ control, getValues, setValue }}
           errors={errors}
         >
           <Grid size={6}>
