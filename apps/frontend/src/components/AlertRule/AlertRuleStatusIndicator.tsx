@@ -17,7 +17,7 @@ import { toast } from "react-toastify";
 import { type AlertRuleStatus, IAlertRule } from "@/@types/alertRule";
 import { acknowledgeFiredAlertRule, resolveFiredAlertRule } from "@/api/alertRule";
 
-interface AlertRuleStatusProps extends Pick<ChipProps, "size"> {
+interface AlertRuleStatusIndicatorProps extends Pick<ChipProps, "size"> {
   status: AlertRuleStatus;
   id?: IAlertRule["id"];
   onAfterResolve?: () => void;
@@ -25,14 +25,14 @@ interface AlertRuleStatusProps extends Pick<ChipProps, "size"> {
   showAcknowledge?: boolean;
 }
 
-export default function AlertRuleStatus({
+export default function AlertRuleStatusIndicator({
   status,
   onAfterResolve,
   id,
   statusTitle,
   size = "medium",
   showAcknowledge
-}: AlertRuleStatusProps) {
+}: AlertRuleStatusIndicatorProps) {
   const { palette } = useTheme();
 
   const { mutate: resolveAlertRule, isPending: isPendingResolve } = useMutation({

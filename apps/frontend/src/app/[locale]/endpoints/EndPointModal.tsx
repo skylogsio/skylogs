@@ -20,7 +20,15 @@ import { createEndpoint, updateEndpoint } from "@/api/endpoint";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
-const ENDPOINTS_TYPE = ["sms", "telegram", "teams", "call", "email", "matter-most"] as const;
+const ENDPOINTS_TYPE = [
+  "sms",
+  "telegram",
+  "teams",
+  "call",
+  "email",
+  "matter-most",
+  "discord"
+] as const;
 
 const createEndpointSchema = z.object({
   name: z
@@ -113,7 +121,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
     >
       <Grid
         component="form"
-        onSubmit={handleSubmit(handleSubmitForm, (error) => console.log(error))}
+        onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
         width="100%"

@@ -26,7 +26,7 @@ import type { IZabbixAlertRule, IAlertRule } from "@/@types/alertRule";
 import { getAlertRuleById, silenceAlertRule, testAlertRule } from "@/api/alertRule";
 import AlertRuleModal from "@/app/[locale]/alert-rule/AlertRuleModal";
 import DeleteAlertRuleModal from "@/app/[locale]/alert-rule/DeleteAlertRuleModal";
-import AlertRuleStatus from "@/components/AlertRule/AlertRuleStatus";
+import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndicator";
 import AlertRuleFiredInstances from "@/components/AlertRule/FiredInstances/AlertRuleFiredInstances";
 import AlertRuleHistory from "@/components/AlertRule/History/AlertRuleHistory";
 import AlertRuleNotifyManager from "@/components/AlertRule/Notify/AlertRuleNotifyManager";
@@ -172,7 +172,7 @@ export default function ViewAlertRule() {
                 <Typography variant="h6" fontWeight="bold">
                   {data.name}
                 </Typography>
-                <AlertRuleStatus
+                <AlertRuleStatusIndicator
                   status={data.status_label}
                   id={alertId}
                   onAfterResolve={handleRefreshData}

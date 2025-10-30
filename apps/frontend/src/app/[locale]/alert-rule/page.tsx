@@ -11,7 +11,7 @@ import type { IAlertRule } from "@/@types/alertRule";
 import type { CreateUpdateModal } from "@/@types/global";
 import AlertRuleActionColumn from "@/app/[locale]/alert-rule/AlertRuleActionColumn";
 import TagsCell from "@/app/[locale]/alert-rule/TagsCell";
-import AlertRuleStatus from "@/components/AlertRule/AlertRuleStatus";
+import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndicator";
 import AlertRuleType from "@/components/AlertRule/AlertRuleType";
 import GroupActionModal from "@/components/AlertRule/GroupActionModal";
 import AlertRuleNotifyModal from "@/components/AlertRule/Notify/AlertRuleNotifyModal";
@@ -111,7 +111,7 @@ export default function AlertRule() {
           {
             header: "Status",
             cell: ({ row }) => (
-              <AlertRuleStatus
+              <AlertRuleStatusIndicator
                 id={row.original.id}
                 status={row.original.status_label}
                 onAfterResolve={handleRefreshData}

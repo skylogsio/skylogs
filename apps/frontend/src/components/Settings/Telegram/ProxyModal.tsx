@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Grid2 as Grid, TextField } from "@mui/material";
+import { Button, Grid2 as Grid, IconButton, MenuItem, TextField, useTheme } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
+import { HiEye, HiEyeOff } from "react-icons/hi";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
@@ -13,6 +14,7 @@ import { createTelegramProxy, updateTelegramProxy } from "@/api/setttings/telegr
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
+const PROXY_TYPES = ["http", "socks5"] as const;
 
 const proxySchema = z.object({
   name: z
@@ -20,11 +22,11 @@ const proxySchema = z.object({
     .refine((data) => data.trim() !== "", {
       message: "This field is Required."
     }),
-  url: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    })
+  type: z.enum(PROXY_TYPES).default("http"),
+  host: z.string().trim().nonempty("This field is Required."),
+  port: z.number().int().min(0).max(65535).default(1080),
+  username: z.string().optional(),
+  password: z.string().optional()
 });
 
 type ProxyFormType = z.infer<typeof proxySchema>;
@@ -35,8 +37,12 @@ type ProxyModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
 };
 
 const defaultValues: ProxyFormType = {
-  url: "",
-  name: ""
+  name: "",
+  type: "http",
+  host: "",
+  port: 1080,
+  username: "",
+  password: ""
 };
 
 export default function ProxyModal({ data, open, onClose, onSubmit }: ProxyModalProps) {
@@ -44,11 +50,14 @@ export default function ProxyModal({ data, open, onClose, onSubmit }: ProxyModal
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors }
   } = useForm<ProxyFormType>({
     resolver: zodResolver(proxySchema),
     defaultValues
   });
+  const { palette } = useTheme();
+  const [showPassword, setShowPassword] = useState(false);
 
   const { mutate: createTelegramProxyMutation, isPending: isCreating } = useMutation({
     mutationFn: (body: ProxyFormType) => createTelegramProxy(body),
@@ -80,7 +89,7 @@ export default function ProxyModal({ data, open, onClose, onSubmit }: ProxyModal
     if (data === "NEW") {
       reset(defaultValues);
     } else {
-      reset(data as ProxyFormType);
+      // reset(data as ProxyFormType);
     }
   }, [data, reset]);
 
@@ -111,11 +120,69 @@ export default function ProxyModal({ data, open, onClose, onSubmit }: ProxyModal
         </Grid>
         <Grid size={6}>
           <TextField
-            label="Url"
+            label="Type"
             variant="filled"
-            error={!!errors.url}
-            helperText={errors.url?.message}
-            {...register("url")}
+            error={!!errors.type}
+            helperText={errors.type?.message}
+            {...register("type")}
+            value={watch("type") ?? ""}
+            select
+          >
+            {PROXY_TYPES.map((item) => (
+              <MenuItem key={item} value={item} sx={{ textTransform: "capitalize" }}>
+                {item.replace("-", " ")}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Grid>
+        <Grid size={6}>
+          <TextField
+            label="Host"
+            variant="filled"
+            error={!!errors.host}
+            helperText={errors.host?.message}
+            {...register("host")}
+          />
+        </Grid>
+        <Grid size={6}>
+          <TextField
+            label="Port"
+            variant="filled"
+            error={!!errors.port}
+            helperText={errors.port?.message}
+            {...register("port", { valueAsNumber: true })}
+          />
+        </Grid>
+        <Grid size={6}>
+          <TextField
+            label="Username"
+            variant="filled"
+            error={!!errors.username}
+            helperText={errors.username?.message}
+            {...register("username")}
+          />
+        </Grid>
+        <Grid size={6}>
+          <TextField
+            label="Password"
+            variant="filled"
+            type={showPassword ? "text" : "password"}
+            error={!!errors.password}
+            helperText={errors.password?.message}
+            {...register("password")}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <IconButton disableRipple onClick={() => setShowPassword((prev) => !prev)}>
+                    {showPassword ? (
+                      <HiEyeOff color={palette.secondary.main} size="1.2rem" />
+                    ) : (
+                      <HiEye color={palette.secondary.main} size="1.2rem" />
+                    )}
+                  </IconButton>
+                )
+              }
+            }}
           />
         </Grid>
         <Grid size={12} marginTop="1rem">

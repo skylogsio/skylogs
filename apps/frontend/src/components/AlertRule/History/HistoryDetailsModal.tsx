@@ -4,15 +4,17 @@ import { Stack, Typography, useTheme } from "@mui/material";
 import JsonView from "@uiw/react-json-view";
 import { githubLightTheme } from "@uiw/react-json-view/githubLight";
 
-import type { IAlertRuleHistoryInstance } from "@/@types/alertRule";
-import AlertRuleStatus from "@/components/AlertRule/AlertRuleStatus";
+import type { IAlertRuleHistoryInstance, AlertRuleStatus } from "@/@types/alertRule";
+import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndicator";
 import ModalContainer from "@/components/Modal";
 import { ModalContainerProps } from "@/components/Modal/types";
 
-export default function HistoryDetailsModal({
-  alerts,
-  onClose
-}: { alerts: IAlertRuleHistoryInstance[] | undefined } & Pick<ModalContainerProps, "onClose">) {
+interface HistoryDetailsModalProps extends Pick<ModalContainerProps, "onClose"> {
+  alerts: IAlertRuleHistoryInstance[] | undefined;
+  status?: AlertRuleStatus;
+}
+
+export default function HistoryDetailsModal({ alerts, status, onClose }: HistoryDetailsModalProps) {
   const { palette } = useTheme();
 
   if (!alerts) return null;
@@ -41,9 +43,9 @@ export default function HistoryDetailsModal({
               <Typography variant="body1" fontWeight="bold">
                 {alert.alertRuleName}
               </Typography>
-              <AlertRuleStatus
+              <AlertRuleStatusIndicator
                 size="small"
-                status={alert.skylogsStatus === 2 ? "critical" : "resolved"}
+                status={status ?? (alert.skylogsStatus === 2 ? "critical" : "resolved")}
               />
             </Stack>
             <Stack direction="row" width="100%" spacing={2}>

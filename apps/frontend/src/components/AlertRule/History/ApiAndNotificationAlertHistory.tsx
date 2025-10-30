@@ -8,7 +8,7 @@ import { HiChevronDoubleDown } from "react-icons/hi";
 
 import { IAlertRule, IApiAndNotificationAlertRuleHistory } from "@/@types/alertRule";
 import { getAlertRuleHistory } from "@/api/alertRule";
-import AlertRuleStatus from "@/components/AlertRule/AlertRuleStatus";
+import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndicator";
 import EmptyList from "@/components/EmptyList";
 import DataTable from "@/components/Table/DataTable";
 
@@ -56,7 +56,7 @@ export default function ApiAndNotificationAlertHistory({ alertId }: { alertId: I
           { header: "Instance", accessorKey: "instance" },
           {
             header: "Status",
-            cell: ({ row }) => <AlertRuleStatus status={row.original.status} />
+            cell: ({ row }) => <AlertRuleStatusIndicator status={row.original.status} />
           },
           { header: "Description", accessorKey: "description" },
           { header: "Date", accessorKey: "createdAt" }

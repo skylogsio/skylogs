@@ -164,7 +164,7 @@ export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModa
           />
         </Grid>
         <AlertRuleGeneralFields<ClientAPIFormType>
-          methods={{ control, getValues, setValue, watch }}
+          methods={{ control, getValues, setValue}}
           errors={errors}
         >
           <Grid size={6}>

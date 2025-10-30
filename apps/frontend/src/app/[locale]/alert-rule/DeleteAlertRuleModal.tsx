@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 
 import type { IAlertRule } from "@/@types/alertRule";
 import { deleteAlertRule } from "@/api/alertRule";
-import AlertRuleStatus from "@/components/AlertRule/AlertRuleStatus";
+import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndicator";
 import AlertRuleType from "@/components/AlertRule/AlertRuleType";
 import DeleteModalContainer from "@/components/DeleteModal/DeleteModalContainer";
 import type { DeleteModalProps } from "@/components/DeleteModal/DeleteModalTypes";
@@ -49,7 +49,7 @@ export default function DeleteAlertRuleModal({
           <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
             Status:
           </Typography>
-          <AlertRuleStatus status={status_label} size="small" />
+          <AlertRuleStatusIndicator status={status_label} size="small" />
         </Stack>
         <Stack direction="row" spacing={1}>
           <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
