@@ -142,6 +142,7 @@ class EndpointDocs
                         example: 'sms'
                     ),
                     new OA\Property(property: 'value', type: 'string', example: '09000000000'),
+
                 ]
             )
         ),
@@ -152,11 +153,9 @@ class EndpointDocs
                 description: 'OTP code has been sent successfully.',
                 content: new OA\JsonContent(
                     properties: [
-                        new OA\Property(property: 'status', type: 'boolean', example: true),
-                        new OA\Property(
-                            property: 'data',
-                            ref: '#/components/schemas/Endpoint'
-                        ),
+                        new OA\Property(property: 'message', type: 'string', example: "OTP code has been sent to your endpoint"),
+                        new OA\Property(property: 'expiredAt', type: 'integer', example: 1762022993 ),
+                        new OA\Property(property: 'timeLeft', type: 'integer', example: 180),
                     ]
                 )
             ),

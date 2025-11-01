@@ -242,8 +242,8 @@ class EndpointService
         $endpointOtp = EndpointOTP::where('type', $request->type)->where('value', $request->value)->first();
 
         if ($endpointOtp) {
-            if ($endpointOtp->expiredAt < time()) {
-                $seconds = Carbon::now()->diffInSeconds($endpointOtp->expiredAt);
+            if (Carbon::now()->lessThan($endpointOtp->expiredAt)) {
+                $seconds = intval(Carbon::now()->diffInSeconds($endpointOtp->expiredAt));
                 abort(422, "You have to wait $seconds seconds before otp request.");
             }
         } else {
@@ -271,5 +271,6 @@ class EndpointService
         }
 
         $endpointOtp->save();
+        return $endpointOtp;
     }
 }

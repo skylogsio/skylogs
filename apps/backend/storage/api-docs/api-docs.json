@@ -1110,12 +1110,17 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "status": {
-                                            "type": "boolean",
-                                            "example": true
+                                        "message": {
+                                            "type": "string",
+                                            "example": "OTP code has been sent to your endpoint"
                                         },
-                                        "data": {
-                                            "$ref": "#/components/schemas/Endpoint"
+                                        "expiredAt": {
+                                            "type": "integer",
+                                            "example": 1762022993
+                                        },
+                                        "timeLeft": {
+                                            "type": "integer",
+                                            "example": 180
                                         }
                                     },
                                     "type": "object"

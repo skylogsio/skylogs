@@ -14,6 +14,8 @@ class EndpointOTP extends BaseModel
 
     public const STATUS_SENT = 'sent';
 
+    protected $table = "endpoint_otp";
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

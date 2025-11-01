@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Endpoint;
 use App\Models\User;
 use App\Services\EndpointService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
@@ -144,10 +145,12 @@ class EndpointController extends Controller
             abort(Response::HTTP_UNPROCESSABLE_ENTITY, 'Invalid Entry');
         }
 
-        $this->endpointService->otpRequest($request);
+        $endpointOtp = $this->endpointService->otpRequest($request);
 
         return response()->json([
             'message' => 'OTP code has been sent to your endpoint',
+            "expiredAt" => $endpointOtp->expiredAt->getTimestamp(),
+            "timeLeft" => intval(Carbon::now()->diffInSeconds($endpointOtp->expiredAt)),
         ]);
     }
 
