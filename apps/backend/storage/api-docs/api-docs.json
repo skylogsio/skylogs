@@ -685,6 +685,11 @@
                                         "type": "string",
                                         "example": "09000000000"
                                     },
+                                    "otpCode": {
+                                        "description": "For sms, call, email type the otp verification is required",
+                                        "type": "string",
+                                        "example": "12345"
+                                    },
                                     "chatId": {
                                         "description": "For Telegram type",
                                         "type": "string"
@@ -930,6 +935,11 @@
                                         "type": "string",
                                         "example": "09000000000"
                                     },
+                                    "otpCode": {
+                                        "description": "For sms, call, email type the otp verification is required if the value updated in process",
+                                        "type": "string",
+                                        "example": "12345"
+                                    },
                                     "chatId": {
                                         "description": "For Telegram type",
                                         "type": "string"
@@ -1048,6 +1058,73 @@
                     },
                     "404": {
                         "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/endpoint/sendOTP": {
+            "post": {
+                "tags": [
+                    "Endpoints"
+                ],
+                "summary": "send OTP code",
+                "operationId": "sendOTP",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "type",
+                                    "value"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "sms",
+                                            "call",
+                                            "email"
+                                        ],
+                                        "example": "sms"
+                                    },
+                                    "value": {
+                                        "type": "string",
+                                        "example": "09000000000"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "OTP code has been sent successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Endpoint"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
                     }
                 },
                 "security": [
