@@ -9,10 +9,6 @@ class Service extends BaseModel
 {
     public $timestamps = true;
 
-    public static $title = 'ZabbixService';
-
-    public static $KEY = 'service';
-
     public const TYPE_PROMETHEUS = 'prometheus';
 
     public const TYPE_SENTRY = 'sentry';

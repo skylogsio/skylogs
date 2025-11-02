@@ -10,10 +10,6 @@ class AlertInstance extends BaseModel implements Messageable
 {
     public $timestamps = true;
 
-    public static $title = 'Alert Instance';
-
-    public static $KEY = 'alerts';
-
     protected $guarded = ['id', '_id'];
 
     public const RESOLVED = 1;

@@ -10,10 +10,6 @@ class SentryWebhookAlert extends BaseModel implements Messageable
 {
     public $timestamps = true;
 
-    public static $title = 'Sentry Alert Webhook';
-
-    public static $KEY = 'sentry_alert_webhook';
-
     protected $guarded = ['id', '_id'];
 
     public function alertRule()

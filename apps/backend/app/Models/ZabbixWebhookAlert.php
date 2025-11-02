@@ -9,10 +9,6 @@ class ZabbixWebhookAlert extends BaseModel implements Messageable
 {
     public $timestamps = true;
 
-    public static $title = 'Zabbix Alert Webhook';
-
-    public static $KEY = 'zabbix_alert_webhook';
-
     protected $guarded = ['id', '_id'];
 
     public const RESOLVED = 'RESOLVED';

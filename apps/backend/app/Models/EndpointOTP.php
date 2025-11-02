@@ -8,10 +8,6 @@ class EndpointOTP extends BaseModel
 {
     public $timestamps = true;
 
-    public static $title = 'Endpoint';
-
-    public static $KEY = 'endpoint';
-
     private $collection = 'endpoint_otp';
 
     public const EMAIL = 'email';
