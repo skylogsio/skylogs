@@ -1,7 +1,7 @@
 # Skylogs 
 
 <div align="center">
-  <img src="https://github.com/skylogsio/skylogs/raw/main/public/images/skylogLogo1000x300.svg" alt="Skylogs Logo" width="1000">
+  <img src="https://github.com/skylogsio/skylogs/raw/main/public/images/skylogLogo1000x300.svg" >
   
   <h3>A unified platform for alert and incident management that integrates seamlessly with your observability solutions</h3>
   
