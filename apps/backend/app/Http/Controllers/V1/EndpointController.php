@@ -149,8 +149,8 @@ class EndpointController extends Controller
 
         return response()->json([
             'message' => 'OTP code has been sent to your endpoint',
-            "expiredAt" => $endpointOtp->expiredAt->getTimestamp(),
-            "timeLeft" => intval(Carbon::now()->diffInSeconds($endpointOtp->expiredAt)),
+            'expiredAt' => $endpointOtp->expiredAt->getTimestamp(),
+            'timeLeft' => intval(Carbon::now()->diffInSeconds($endpointOtp->expiredAt)),
         ]);
     }
 

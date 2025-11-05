@@ -244,7 +244,13 @@ class EndpointService
         if ($endpointOtp) {
             if (Carbon::now()->lessThan($endpointOtp->expiredAt)) {
                 $seconds = intval(Carbon::now()->diffInSeconds($endpointOtp->expiredAt));
-                abort(422, "You have to wait $seconds seconds before otp request.");
+
+                return response()->json([
+                    'message' => "You have to wait $seconds seconds before otp request.",
+                    'expiredAt' => $endpointOtp->expiredAt->getTimestamp(),
+                    'timeLeft' => intval(Carbon::now()->diffInSeconds($endpointOtp->expiredAt)),
+                ]);
+                //                abort(422, "You have to wait $seconds seconds before otp request.");
             }
         } else {
             $endpointOtp = new EndpointOTP;
@@ -271,6 +277,7 @@ class EndpointService
         }
 
         $endpointOtp->save();
+
         return $endpointOtp;
     }
 }
