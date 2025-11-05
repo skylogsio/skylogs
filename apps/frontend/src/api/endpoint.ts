@@ -1,5 +1,6 @@
 "use server";
 
+import type { IOTPResponse } from "@/@types/endpoint";
 import type { ServerResponse } from "@/@types/global";
 import axios from "@/lib/axios";
 
@@ -32,6 +33,15 @@ export async function updateEndpoint(
 export async function deleteEndpoint(endpointId: string): Promise<ServerResponse<unknown>> {
   try {
     const response = await axios.delete<ServerResponse<unknown>>(`${ENDPOINT_URL}/${endpointId}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function sendOTP(body: unknown): Promise<IOTPResponse> {
+  try {
+    const response = await axios.post<IOTPResponse>(`${ENDPOINT_URL}/sendOTP`, body);
     return response.data;
   } catch (error) {
     throw error;
