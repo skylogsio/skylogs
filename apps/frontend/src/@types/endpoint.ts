@@ -10,3 +10,9 @@ export interface IEndpoint {
   id: string;
   isPublic: boolean;
 }
+
+export interface IOTPResponse {
+  message: string;
+  expiredAt: number;
+  timeLeft: number;
+}

@@ -104,14 +104,14 @@ export default function ProxyCard({
             </Grow>
           </Stack>
           <Typography variant="subtitle2" color="textSecondary">
-            {data.url}
+            {data.type}://{data.host}:{data.port}
           </Typography>
         </Stack>
         <Switch
           checked={checked}
           disabled={disabled}
           onChange={onChange}
-          inputProps={{ "aria-label": `proxy-${data.id}-activation-button` }}
+          slotProps={{ input: { "aria-label": `proxy-${data.id}-activation-button` } }}
         />
       </Stack>
     </Grid2>

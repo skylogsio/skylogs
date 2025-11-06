@@ -129,3 +129,63 @@ export interface IGrafanaAndPmmAlertHistory {
   createdAt: string;
   id: string;
 }
+export interface IZabbixAlertHistory {
+  dataSourceId: string;
+  dataSourceName: string;
+  alert_message: string;
+  alert_subject: string;
+  event_date: string;
+  event_id: string;
+  event_name: string;
+  event_nseverity: string;
+  event_opdata: string;
+  event_recovery_date: string;
+  event_recovery_time: string;
+  event_severity: string;
+  event_source: string;
+  event_tags: string;
+  event_time: string;
+  event_update_action: string;
+  event_update_date: string;
+  event_update_message: string;
+  event_update_status: string;
+  event_update_time: string;
+  event_update_user: string;
+  event_value: string;
+  host_ip: string;
+  host_name: string;
+  trigger_description: string;
+  trigger_id: string;
+  use_default_message: string;
+  zabbix_url: string;
+  skylogs_endpoint: string;
+  host_host: string;
+  action_name: string;
+  timestamp: string;
+  event_duration: string;
+  trigger_name: string;
+  host_id: string;
+  trigger_url: string | null;
+  event_status: "PROBLEM" | "RESOLVE";
+  event: string;
+
+  generatedFields: {
+    color: number;
+    url: string;
+    title: string;
+    footer: {
+      text: string;
+    };
+    fields: {
+      name: string;
+      value: string;
+      inline?: string;
+    }[];
+  };
+
+  alertRuleId: string;
+  alertRuleName: string;
+  updatedAt: string;
+  createdAt: string;
+  id: string;
+}
