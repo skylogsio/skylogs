@@ -11,10 +11,6 @@ class Endpoint extends BaseModel
 {
     public $timestamps = true;
 
-    public static $title = 'Endpoint';
-
-    public static $KEY = 'endpoint';
-
     public const EMAIL = 'email';
 
     public const SMS = 'sms';

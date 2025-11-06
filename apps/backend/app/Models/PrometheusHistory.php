@@ -10,10 +10,6 @@ class PrometheusHistory extends BaseModel
 {
     public $timestamps = true;
 
-    public static $title = 'Prometheus History';
-
-    public static $KEY = 'prometheus_history';
-
     protected $guarded = ['id', '_id'];
 
     protected $casts = [];

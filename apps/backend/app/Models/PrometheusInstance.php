@@ -8,10 +8,6 @@ class PrometheusInstance extends BaseModel
 {
     public $timestamps = true;
 
-    public static $title = 'Prometheus Instance';
-
-    public static $KEY = 'prometheus_instance';
-
     public const STATE_FIRING = 'firing';
 
     public const DOWN = 1;

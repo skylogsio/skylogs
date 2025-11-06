@@ -10,10 +10,6 @@ class ServiceCheck extends BaseModel implements Messageable
 {
     public $timestamps = true;
 
-    public static $title = 'ZabbixService Check';
-
-    public static $KEY = 'service_check';
-
     protected $guarded = ['id', '_id'];
 
     public const DOWN = 1;

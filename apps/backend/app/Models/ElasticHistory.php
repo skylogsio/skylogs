@@ -8,10 +8,6 @@ class ElasticHistory extends BaseModel
 {
     public $timestamps = true;
 
-    public static $title = 'Elastic Check';
-
-    public static $KEY = 'elastic_check';
-
     protected $guarded = ['id', '_id'];
 
     public const RESOLVED = 1;

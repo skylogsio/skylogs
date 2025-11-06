@@ -8,10 +8,6 @@ class ApiAlertHistory extends BaseModel
 {
     public $timestamps = true;
 
-    public static $title = 'Api Alert History';
-
-    public static $KEY = 'history';
-
     protected $guarded = ['id', '_id'];
 
     public const RESOLVED = 1;

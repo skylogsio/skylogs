@@ -8,10 +8,6 @@ class PostMortem extends BaseModel
 {
     public $timestamps = true;
 
-    public static $title = 'Post Mortem';
-
-    public static $KEY = 'post-portem';
-
     protected $guarded = ['id', '_id'];
 
     public function user(): BelongsTo

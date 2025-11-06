@@ -34,10 +34,6 @@ class AlertRule extends BaseModel implements Messageable
 
     public $timestamps = true;
 
-    public static $title = 'Alert Rule';
-
-    public static $KEY = 'alerts';
-
     protected $guarded = ['id', '_id'];
 
     public function user(): BelongsTo
