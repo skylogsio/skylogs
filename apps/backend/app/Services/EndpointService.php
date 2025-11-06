@@ -4,9 +4,14 @@ namespace App\Services;
 
 use App\Enums\EndpointType;
 use App\Enums\FlowEndpointStepType;
+use App\Helpers\Call;
+use App\Helpers\Email;
+use App\Helpers\SMS;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
+use App\Models\EndpointOTP;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 class EndpointService
@@ -100,6 +105,29 @@ class EndpointService
                     'isPublic' => $isPublic,
                 ]);
                 break;
+
+            case EndpointType::CALL->value:
+            case EndpointType::SMS->value:
+            case EndpointType::EMAIL->value:
+                $otp = EndpointOTP::where('value', $request->value)->first();
+
+                if (! $otp || $otp->expiredAt < Carbon::now()) {
+                    abort(422, 'otp code expired try again');
+                }
+
+                if ($otp->otpCode != $request->otpCode) {
+                    abort(422, 'otp code invalid');
+                }
+                $model = Endpoint::create([
+                    'user_id' => \Auth::id(),
+                    'userId' => \Auth::id(),
+                    'name' => $request->name,
+                    'type' => $request->type,
+                    'value' => $value,
+                    'isPublic' => $isPublic,
+                ]);
+
+                break;
             default:
                 $model = Endpoint::create([
                     'user_id' => \Auth::id(),
@@ -143,6 +171,31 @@ class EndpointService
                     'isPublic' => $isPublic,
                 ]);
                 break;
+
+            case EndpointType::CALL->value:
+            case EndpointType::SMS->value:
+            case EndpointType::EMAIL->value:
+
+                if ($endpoint->value != $request->value) {
+                    $otp = EndpointOTP::where('value', $request->value)->first();
+
+                    if (! $otp || $otp->expiredAt < Carbon::now()) {
+                        abort(422, 'otp code expired try again');
+                    }
+
+                    if ($otp->otpCode != $request->otpCode) {
+                        abort(422, 'otp code invalid');
+                    }
+                }
+
+                $model = $endpoint->update([
+                    'name' => $request->name,
+                    'type' => $request->type,
+                    'value' => $value,
+                    'isPublic' => $isPublic,
+                ]);
+                break;
+
             default:
                 $model = $endpoint->update([
                     'name' => $request->name,
@@ -182,5 +235,49 @@ class EndpointService
             }
         }
 
+    }
+
+    public function otpRequest($request)
+    {
+        $endpointOtp = EndpointOTP::where('type', $request->type)->where('value', $request->value)->first();
+
+        if ($endpointOtp) {
+            if (Carbon::now()->lessThan($endpointOtp->expiredAt)) {
+                $seconds = intval(Carbon::now()->diffInSeconds($endpointOtp->expiredAt));
+
+                return response()->json([
+                    'message' => "You have to wait $seconds seconds before otp request.",
+                    'expiredAt' => $endpointOtp->expiredAt->getTimestamp(),
+                    'timeLeft' => intval(Carbon::now()->diffInSeconds($endpointOtp->expiredAt)),
+                ]);
+                //                abort(422, "You have to wait $seconds seconds before otp request.");
+            }
+        } else {
+            $endpointOtp = new EndpointOTP;
+            $endpointOtp->type = $request->type;
+            $endpointOtp->value = $request->value;
+        }
+
+        $endpointOtp->status = EndpointOTP::STATUS_PENDING;
+        $endpointOtp->expiredAt = Carbon::now()->addMinutes(3);
+        $endpointOtp->generateOtpCode();
+        $endpointOtp->save();
+
+        switch ($request->type) {
+            case EndpointType::SMS->value:
+                $endpointOtp->result = SMS::sendOTP($endpointOtp);
+                break;
+            case EndpointType::CALL->value:
+                $endpointOtp->result = Call::sendOTP($endpointOtp);
+                break;
+
+            case EndpointType::EMAIL->value:
+                Email::sendOTP($endpointOtp);
+                break;
+        }
+
+        $endpointOtp->save();
+
+        return $endpointOtp;
     }
 }
