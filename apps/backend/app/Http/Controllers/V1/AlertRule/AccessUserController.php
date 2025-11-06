@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V1\AlertRule;
 
 use App\Http\Controllers\Controller;
 use App\Models\AlertRule;
+use App\Models\Team;
 use App\Models\User;
 use App\Services\AlertRuleService;
 use Illuminate\Http\Request;
@@ -30,7 +31,14 @@ class AccessUserController extends Controller
             $alertUsers = User::whereIn('_id', $alert->userIds)->get();
         }
 
-        return response()->json(compact('alertUsers', 'selectableUsers'));
+        $selectableTeams = Team::get();
+
+        $alertTeams = [];
+        if (! empty($alert->teamIds)) {
+            $alertTeams = Team::whereIn('_id', $alert->teamIds)->get();
+        }
+
+        return response()->json(compact('alertUsers', 'selectableUsers', 'alertTeams', 'selectableTeams'));
     }
 
     public function Store(Request $request, $id)
@@ -51,6 +59,14 @@ class AccessUserController extends Controller
             $alert->save();
         }
 
+        if ($request->has('teamIds') && ! empty($request->post('teamIds'))) {
+
+            foreach ($request->teamIds as $teamId) {
+                $alert->push('teamIds', $teamId, true);
+            }
+            $alert->save();
+        }
+
         return response()->json(['status' => true]);
     }
 
@@ -62,6 +78,7 @@ class AccessUserController extends Controller
             abort(403);
         }
 
+        $alert->pull('teamIds', $userId);
         $alert->pull('userIds', $userId);
         if (! empty($alert->user_ids)) {
             $alert->pull('user_ids', $userId);

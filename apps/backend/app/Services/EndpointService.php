@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Cache;
 
 class EndpointService
 {
+    public function __construct(protected TeamService $teamService) {}
+
     public function selectableUserEndpoint(User $user, ?AlertRule $alert = null)
     {
 
@@ -19,17 +21,17 @@ class EndpointService
                 ->rememberForever('endpoint:admin', fn () => Endpoint::get());
         }
 
-        if ($alert) {
-            $alertUserIds = $alert->userIds ?? [];
-        } else {
+        if (! $alert || $alert->userId == $user->_id) {
             return Cache::tags(['endpoint', $user->id])
-                ->rememberForever("endpoint:global:$user->id", fn () => Endpoint::where('userId', $user->_id)->orWhere('isPublic', true)->get());
-        }
+                ->rememberForever("endpoint:global:$user->id", function () use ($user) {
+                    $teamIds = $this->teamService->userTeams($user)->pluck('id')->toArray();
 
-        if ($alert->userId == $user->_id) {
-            return Cache::tags(['endpoint', $user->id])
-                ->rememberForever("endpoint:global:$user->id", fn () => Endpoint::where('userId', $user->_id)->orWhere('isPublic', true)->get());
-        } elseif (in_array($user->_id, $alertUserIds)) {
+                    return Endpoint::where('userId', $user->_id)
+                        ->orWhereIn('accessUserIds', [$user->id])
+                        ->orWhereIn('accessTeamIds', $teamIds)
+                        ->get();
+                });
+        } elseif (in_array($user->_id, $alert->userIds)) {
             return Cache::tags(['endpoint', $user->id])
                 ->rememberForever("endpoint:user:$user->id", fn () => Endpoint::where('userId', $user->_id)->get());
         }
@@ -72,6 +74,8 @@ class EndpointService
     {
         $value = trim($request->value);
         $isPublic = $request->boolean('isPublic', false);
+        $accessUserIds = $request->accessUserIds ?? [];
+        $accessTeamIds = $request->accessTeamIds ?? [];
 
         switch ($request->type) {
             case EndpointType::TELEGRAM->value:
@@ -81,6 +85,8 @@ class EndpointService
                     'userId' => \Auth::id(),
                     'name' => $request->name,
                     'type' => $request->type,
+                    'accessUserIds' => $accessUserIds,
+                    'accessTeamIds' => $accessTeamIds,
                     'chatId' => $value,
                     'threadId' => $request->threadId,
                     'botToken' => $request->botToken,
@@ -96,6 +102,8 @@ class EndpointService
                     'userId' => \Auth::id(),
                     'name' => $request->name,
                     'type' => $request->type,
+                    'accessUserIds' => $accessUserIds,
+                    'accessTeamIds' => $accessTeamIds,
                     'steps' => $request->steps,
                     'isPublic' => $isPublic,
                 ]);
@@ -106,6 +114,8 @@ class EndpointService
                     'userId' => \Auth::id(),
                     'name' => $request->name,
                     'type' => $request->type,
+                    'accessUserIds' => $accessUserIds,
+                    'accessTeamIds' => $accessTeamIds,
                     'value' => $value,
                     'isPublic' => $isPublic,
                 ]);
@@ -119,6 +129,8 @@ class EndpointService
     {
         $value = trim($request->value);
         $isPublic = $request->boolean('isPublic', false);
+        $accessUserIds = $request->accessUserIds ?? [];
+        $accessTeamIds = $request->accessTeamIds ?? [];
 
         switch ($request->type) {
             case EndpointType::TELEGRAM->value:
@@ -126,6 +138,8 @@ class EndpointService
                 $model = $endpoint->update([
                     'name' => $request->name,
                     'type' => $request->type,
+                    'accessUserIds' => $accessUserIds,
+                    'accessTeamIds' => $accessTeamIds,
                     'chatId' => $value,
                     'threadId' => $request->threadId,
                     'botToken' => $request->botToken,
@@ -139,6 +153,8 @@ class EndpointService
                 $model = $endpoint->update([
                     'name' => $request->name,
                     'type' => $request->type,
+                    'accessUserIds' => $accessUserIds,
+                    'accessTeamIds' => $accessTeamIds,
                     'steps' => $request->steps,
                     'isPublic' => $isPublic,
                 ]);
@@ -147,6 +163,8 @@ class EndpointService
                 $model = $endpoint->update([
                     'name' => $request->name,
                     'type' => $request->type,
+                    'accessUserIds' => $accessUserIds,
+                    'accessTeamIds' => $accessTeamIds,
                     'value' => $value,
                     'isPublic' => $isPublic,
                 ]);
