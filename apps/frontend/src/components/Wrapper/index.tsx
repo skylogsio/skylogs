@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { type PropsWithChildren } from "react";
 
 import { Box } from "@mui/material";
+import { signOut, useSession } from "next-auth/react";
 
 import SideBar from "@/components/Wrapper/SideBar";
 import { useRole } from "@/hooks";
@@ -14,6 +15,11 @@ export default function Wrapper({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const router = useRouter();
   const { userInfo, hasRole } = useRole();
+  const session = useSession();
+
+  if (session.data?.error === "RefreshTokenError") {
+    signOut();
+  }
 
   if (pathname.includes("/auth")) return children;
 

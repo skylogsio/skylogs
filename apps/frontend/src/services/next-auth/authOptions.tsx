@@ -41,18 +41,19 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   callbacks: {
     async session({ session, token }) {
-      session.user.token = token.access_token;
+      session.user.token = token.accessToken;
       session.error = token.error;
       return session;
     },
     async jwt({ token, user }) {
+      delete token.error;
       if (user) {
         token.id = user.id;
-        token.access_token = user.access_token;
+        token.accessToken = user.accessToken;
         token.refresh_token = user.refresh_token;
-        token.expires_at = Date.now() + user.expires_at * 1000;
+        token.expiresIn = Date.now() + user.expiresIn * 1000;
         return token;
-      } else if (Date.now() < token.expires_at) {
+      } else if (Date.now() < token.expiresIn) {
         return token;
       } else {
         if (!token.refresh_token) throw new TypeError("Missing refresh_token");
@@ -60,19 +61,19 @@ export const authOptions: NextAuthOptions = {
         try {
           const response = await handleRefreshToken(token.refresh_token);
           const newTokens = response.data as {
-            access_token: string;
+            accessToken: string;
             expires_in: number;
             refresh_token?: string;
           };
 
           return {
             ...token,
-            access_token: newTokens.access_token,
-            expires_at: Math.floor(Date.now() + newTokens.expires_in * 1000),
+            accessToken: newTokens.accessToken,
+            expiresIn: Math.floor(Date.now() + newTokens.expires_in * 1000),
             refresh_token: newTokens.refresh_token ? newTokens.refresh_token : token.refresh_token
           };
         } catch (error) {
-          console.error("Error refreshing access_token", error);
+          console.error("Error refreshing accessToken", error);
           token.error = "RefreshTokenError";
           return token;
         }
