@@ -8,12 +8,13 @@ use App\Models\Endpoint;
 use App\Models\EndpointOTP;
 use App\Models\User;
 use App\Services\EndpointService;
+use App\Services\TeamService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class EndpointController extends Controller
 {
-    public function __construct(protected EndpointService $endpointService) {}
+    public function __construct(protected EndpointService $endpointService, protected TeamService $teamService) {}
 
     public function EndpointsToCreateFlow()
     {
@@ -28,10 +29,18 @@ class EndpointController extends Controller
         $perPage = $request->perPage ?? 25;
 
         $data = Endpoint::query()->whereNot('type', EndpointType::FLOW->value);
-        $isAdmin = auth()->user()->isAdmin();
-        if (! $isAdmin) {
-            $data = $data->where('userId', auth()->id());
+        $user = auth()->user();
+
+        if (! $user->isAdmin()) {
+            $data = $data->where(function ($query) use ($user) {
+                $teamIds = $this->teamService->userTeams($user)->pluck('id')->toArray();
+
+                return $query->where('userId', $user->id)
+                    ->orWhereIn('accessUserIds', [$user->id])
+                    ->orWhereIn('accessTeamIds', $teamIds);
+            });
         }
+
         if ($request->filled('name')) {
             $data->where('name', 'like', '%'.$request->name.'%');
         }
@@ -46,9 +55,16 @@ class EndpointController extends Controller
         $perPage = $request->perPage ?? 25;
 
         $data = Endpoint::query()->where('type', EndpointType::FLOW->value);
-        $isAdmin = auth()->user()->isAdmin();
-        if (! $isAdmin) {
-            $data = $data->where('userId', auth()->id());
+        $user = auth()->user();
+
+        if (! $user->isAdmin()) {
+            $data = $data->where(function ($query) use ($user) {
+                $teamIds = $this->teamService->userTeams($user)->pluck('id')->toArray();
+
+                return $query->where('userId', $user->id)
+                    ->orWhereIn('accessUserIds', [$user->id])
+                    ->orWhereIn('accessTeamIds', $teamIds);
+            });
         }
         if ($request->filled('name')) {
             $data->where('name', 'like', '%'.$request->name.'%');

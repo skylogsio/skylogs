@@ -50,9 +50,7 @@ class TeamDocs
             ),
         ]
     )]
-    public function index()
-    {
-    }
+    public function index() {}
 
     #[OA\Get(
         path: '/api/v1/team/{id}',
@@ -77,9 +75,7 @@ class TeamDocs
             new OA\Response(response: 404, description: 'Not found'),
         ]
     )]
-    public function show()
-    {
-    }
+    public function show() {}
 
     #[OA\Post(
         path: '/api/v1/team',
@@ -92,7 +88,7 @@ class TeamDocs
                 required: ['name', 'type', 'url'],
                 properties: [
                     new OA\Property(property: 'name', type: 'string', example: 'Customer Service'),
-                    new OA\Property(property: 'ownerId', type: 'string',),
+                    new OA\Property(property: 'ownerId', type: 'string'),
                     new OA\Property(property: 'userIds', type: 'array'),
                 ]
             )
@@ -112,9 +108,7 @@ class TeamDocs
             new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
-    public function create()
-    {
-    }
+    public function create() {}
 
     #[OA\Put(
         path: '/api/v1/team/{id}',
@@ -139,9 +133,7 @@ class TeamDocs
             new OA\Response(response: 404, description: 'Not found'),
         ]
     )]
-    public function update()
-    {
-    }
+    public function update() {}
 
     #[OA\Delete(
         path: '/api/v1/team/{id}',
@@ -162,9 +154,7 @@ class TeamDocs
             new OA\Response(response: 404, description: 'Not found'),
         ]
     )]
-    public function delete()
-    {
-    }
+    public function delete() {}
 }
 
 #[OA\Schema(
@@ -178,9 +168,7 @@ class TeamDocs
         new OA\Property(property: 'updatedAt', type: 'string', format: 'date-time'),
     ]
 )]
-class TeamSchema
-{
-}
+class TeamSchema {}
 
 #[OA\Schema(
     schema: 'TeamInput',
@@ -191,6 +179,4 @@ class TeamSchema
         new OA\Property(property: 'userIds', type: 'array'),
     ]
 )]
-class TeamInputSchema
-{
-}
+class TeamInputSchema {}
