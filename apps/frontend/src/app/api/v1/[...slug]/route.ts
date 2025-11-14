@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
         headers[key] = value;
       }
     });
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ;
+    const baseUrl = process.env.BASE_URL ;
     const fullPath = isTokenRoute ? `${baseRoute}/${token}` : `${baseRoute}`;
     const targetUrl = `${baseUrl}${fullPath}`;
     const response = await axios.post(targetUrl, body, { headers });

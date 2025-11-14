@@ -80,7 +80,7 @@ services:
         environment:
             - NEXTAUTH_SECRET=GK/IKHJ55WUBSIDAFLT3vcQmud1t5PIZHsclw40JtVs=
             - NEXTAUTH_URL=http://localhost:8000
-            - NEXT_PUBLIC_BASE_URL=http://nginx:80/api/v1/
+            - BASE_URL=http://nginx:80/api/v1/
         networks:
             - skylogs_net
         depends_on:

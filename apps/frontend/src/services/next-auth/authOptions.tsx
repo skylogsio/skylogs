@@ -3,7 +3,7 @@ import { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 async function handleRefreshToken(refreshToken: string) {
-  return await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}auth/refresh`, null, {
+  return await axios.post(`${process.env.BASE_URL}auth/refresh`, null, {
     headers: {
       Authorization: `Bearer ${refreshToken}`
     }
@@ -24,7 +24,7 @@ export const authOptions: NextAuthOptions = {
           password: credentials?.password
         };
         try {
-          const user = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}auth/login`, body, {
+          const user = await axios.post(`${process.env.BASE_URL}auth/login`, body, {
             headers: { "Content-Type": "application/json" }
           });
           return user.data;

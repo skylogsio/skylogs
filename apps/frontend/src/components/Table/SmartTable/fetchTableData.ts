@@ -19,7 +19,7 @@ export async function fetchTableData<T>({
       [searchKey]: searchValue
     } as Record<string, string>);
     const urlSearchParams = searchParams.toString();
-    const endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}${url}?${urlSearchParams}&sortBy=_id&sortType=asc&${filterSearchParams}`;
+    const endpoint = `${process.env.BASE_URL}${url}?${urlSearchParams}&sortBy=_id&sortType=asc&${filterSearchParams}`;
     const response = await axios.get<IServerResponseTabularData<T>>(endpoint);
     return response.data;
   } catch (error) {
