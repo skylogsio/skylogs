@@ -50,27 +50,27 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.accessToken = user.accessToken;
-        token.refresh_token = user.refresh_token;
+        token.refreshToken = user.refreshToken;
         token.expiresIn = Date.now() + user.expiresIn * 1000;
         return token;
       } else if (Date.now() < token.expiresIn) {
         return token;
       } else {
-        if (!token.refresh_token) throw new TypeError("Missing refresh_token");
+        if (!token.refreshToken) throw new TypeError("Missing refreshToken");
 
         try {
-          const response = await handleRefreshToken(token.refresh_token);
+          const response = await handleRefreshToken(token.refreshToken);
           const newTokens = response.data as {
             accessToken: string;
-            expires_in: number;
-            refresh_token?: string;
+            expiresIn: number;
+            refreshToken?: string;
           };
-
           return {
             ...token,
             accessToken: newTokens.accessToken,
-            expiresIn: Math.floor(Date.now() + newTokens.expires_in * 1000),
-            refresh_token: newTokens.refresh_token ? newTokens.refresh_token : token.refresh_token
+            expiresIn: Date.now() + newTokens.expiresIn * 1000,
+            refreshToken: newTokens.refreshToken,
+            error: undefined
           };
         } catch (error) {
           console.error("Error refreshing accessToken", error);
