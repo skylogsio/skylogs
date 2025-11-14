@@ -72,4 +72,4 @@ options:              # Optional type-specific fields
 ## datasource health check
 Datasources is the source of all alerts so if skylogs fail to fethch alerts we are blinded to a part of important of system so it is crutial to maintain connectivity to datasources and got alerts. 
 
-![Skylogs datasource](images/skylogs-datasource.png)
+![Skylogs datasource](../images/skylogs-datasource.png)
