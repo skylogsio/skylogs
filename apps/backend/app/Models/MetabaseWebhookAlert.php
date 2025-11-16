@@ -10,10 +10,6 @@ class MetabaseWebhookAlert extends BaseModel implements Messageable
 {
     public $timestamps = true;
 
-    public static $title = 'Metabase Alert Webhook';
-
-    public static $KEY = 'metabase_alert_webhook';
-
     protected $guarded = ['id', '_id'];
 
     public function alertRule()

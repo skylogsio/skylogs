@@ -9,10 +9,6 @@ class Notify extends BaseModel implements Messageable
 {
     public $timestamps = true;
 
-    public static $title = 'Notify';
-
-    public static $KEY = 'notify';
-
     protected $guarded = ['id', '_id'];
 
     protected $casts = [];

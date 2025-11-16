@@ -9,10 +9,6 @@ class StatusChart extends BaseModel
 {
     public $timestamps = true;
 
-    public static $title = 'Status Chart';
-
-    public static $KEY = 'status_chart';
-
     protected $guarded = ['id', '_id'];
 
     public const CRITICAL = 1;

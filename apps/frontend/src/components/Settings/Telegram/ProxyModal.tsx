@@ -17,14 +17,10 @@ import type { ModalContainerProps } from "@/components/Modal/types";
 const PROXY_TYPES = ["http", "socks5"] as const;
 
 const proxySchema = z.object({
-  name: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
+  name: z.string().trim().nonempty("This field is Required."),
   type: z.enum(PROXY_TYPES).default("http"),
   host: z.string().trim().nonempty("This field is Required."),
-  port: z.number().int().min(0).max(65535).default(1080),
+  port: z.number({ message: "This field is Required." }).int().min(0).max(65535).default(1080),
   username: z.string().optional(),
   password: z.string().optional()
 });
@@ -89,7 +85,7 @@ export default function ProxyModal({ data, open, onClose, onSubmit }: ProxyModal
     if (data === "NEW") {
       reset(defaultValues);
     } else {
-      // reset(data as ProxyFormType);
+      reset(data as ProxyFormType);
     }
   }, [data, reset]);
 
@@ -102,7 +98,7 @@ export default function ProxyModal({ data, open, onClose, onSubmit }: ProxyModal
     >
       <Grid
         component="form"
-        onSubmit={handleSubmit(handleSubmitForm, (error) => console.log(error))}
+        onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
         width="100%"
@@ -150,6 +146,7 @@ export default function ProxyModal({ data, open, onClose, onSubmit }: ProxyModal
             variant="filled"
             error={!!errors.port}
             helperText={errors.port?.message}
+            type="number"
             {...register("port", { valueAsNumber: true })}
           />
         </Grid>

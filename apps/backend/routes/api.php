@@ -17,6 +17,7 @@ use App\Http\Controllers\V1\EndpointController;
 use App\Http\Controllers\V1\Profile\AssetController;
 use App\Http\Controllers\V1\SkylogsInstanceController;
 use App\Http\Controllers\V1\StatusController;
+use App\Http\Controllers\V1\TeamController;
 use App\Http\Controllers\V1\UserController;
 use App\Http\Controllers\V1\Webhooks\ApiAlertController;
 use App\Http\Controllers\V1\Webhooks\WebhookAlertsController;
@@ -88,6 +89,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/createFlowEndpoints', 'EndpointsToCreateFlow');
                 Route::get('/{id}', 'Show');
                 Route::post('/', 'Create');
+                Route::post('/sendOTP', 'SendOTPCode');
                 Route::put('/{id}', 'Update');
                 Route::post('/changeOwner/{id}', 'ChangeOwner');
                 Route::delete('/{id}', 'Delete');
@@ -111,6 +113,17 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', 'Index');
                 Route::get('/types', 'GetTypes');
                 Route::get('/status/{id}', 'IsConnected');
+                Route::get('/{id}', 'Show');
+                Route::post('/', 'Create');
+                Route::put('/{id}', 'Update');
+                Route::delete('/{id}', 'Delete');
+            });
+
+        Route::prefix('/team')
+            ->controller(TeamController::class)
+            ->middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)
+            ->group(function () {
+                Route::get('/', 'Index');
                 Route::get('/{id}', 'Show');
                 Route::post('/', 'Create');
                 Route::put('/{id}', 'Update');

@@ -685,6 +685,22 @@
                                         "type": "string",
                                         "example": "09000000000"
                                     },
+                                    "accessUserIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "accessTeamIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    "otpCode": {
+                                        "description": "For sms, call, email type the otp verification is required",
+                                        "type": "string",
+                                        "example": "12345"
+                                    },
                                     "chatId": {
                                         "description": "For Telegram type",
                                         "type": "string"
@@ -696,10 +712,6 @@
                                     "botToken": {
                                         "description": "For Telegram type",
                                         "type": "string"
-                                    },
-                                    "isPublic": {
-                                        "type": "boolean",
-                                        "default": false
                                     },
                                     "steps": {
                                         "description": "For flow type - array of steps with wait and endpoint types",
@@ -930,6 +942,22 @@
                                         "type": "string",
                                         "example": "09000000000"
                                     },
+                                    "accessUserIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "accessTeamIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    "otpCode": {
+                                        "description": "For sms, call, email type the otp verification is required if the value updated in process",
+                                        "type": "string",
+                                        "example": "12345"
+                                    },
                                     "chatId": {
                                         "description": "For Telegram type",
                                         "type": "string"
@@ -941,10 +969,6 @@
                                     "botToken": {
                                         "description": "For Telegram type",
                                         "type": "string"
-                                    },
-                                    "isPublic": {
-                                        "type": "boolean",
-                                        "default": false
                                     },
                                     "steps": {
                                         "description": "For flow type - array of steps with wait and endpoint types",
@@ -1057,6 +1081,78 @@
                 ]
             }
         },
+        "/api/v1/endpoint/sendOTP": {
+            "post": {
+                "tags": [
+                    "Endpoints"
+                ],
+                "summary": "send OTP code",
+                "operationId": "sendOTP",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "type",
+                                    "value"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "sms",
+                                            "call",
+                                            "email"
+                                        ],
+                                        "example": "sms"
+                                    },
+                                    "value": {
+                                        "type": "string",
+                                        "example": "09000000000"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "OTP code has been sent successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "OTP code has been sent to your endpoint"
+                                        },
+                                        "expiredAt": {
+                                            "type": "integer",
+                                            "example": 1762022993
+                                        },
+                                        "timeLeft": {
+                                            "type": "integer",
+                                            "example": 180
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/endpoint/changeOwner/{id}": {
             "post": {
                 "tags": [
@@ -1113,6 +1209,243 @@
                                 }
                             }
                         }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/team": {
+            "get": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Get list of teams",
+                "operationId": "getTeams",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of teams",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Team"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Create new team",
+                "operationId": "createTeam",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "type",
+                                    "url"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Customer Service"
+                                    },
+                                    "ownerId": {
+                                        "type": "string"
+                                    },
+                                    "userIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Team created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Team"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/team/{id}": {
+            "get": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Get team by ID",
+                "operationId": "getTeam",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Team details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Team"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Update team",
+                "operationId": "updateTeam",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TeamInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Team updated"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Delete team",
+                "operationId": "deleteTeam",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Team deleted"
                     },
                     "404": {
                         "description": "Not found"
@@ -1216,6 +1549,18 @@
                         "description": "Primary value (phone number, email address, etc.) - used for most types except telegram and flow",
                         "type": "string"
                     },
+                    "accessUserIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "accessTeamIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
                     "chatId": {
                         "description": "Chat ID for telegram type endpoints",
                         "type": "string"
@@ -1269,10 +1614,6 @@
                         "description": "User ID who owns this endpoint",
                         "type": "string"
                     },
-                    "isPublic": {
-                        "description": "Whether this endpoint is publicly available",
-                        "type": "boolean"
-                    },
                     "createdAt": {
                         "description": "Creation timestamp",
                         "type": "string",
@@ -1289,9 +1630,10 @@
                     "id": "680d668e20f7ecb5bc026722",
                     "name": "My SMS Endpoint",
                     "type": "sms",
+                    "accessTeamIds": [],
+                    "accessUserIds": [],
                     "value": "09000000000",
                     "userId": "userId",
-                    "isPublic": false,
                     "createdAt": "2024-01-01T10:00:00Z",
                     "updatedAt": "2024-01-01T10:00:00Z"
                 }
@@ -1324,6 +1666,18 @@
                         "description": "Primary value (phone number, email address, etc.) - required for most types",
                         "type": "string"
                     },
+                    "accessUserIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "accessTeamIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
                     "chatId": {
                         "description": "Chat ID for telegram type endpoints",
                         "type": "string"
@@ -1335,10 +1689,6 @@
                     "botToken": {
                         "description": "Bot token for telegram type endpoints",
                         "type": "string"
-                    },
-                    "isPublic": {
-                        "description": "Whether this endpoint is publicly available",
-                        "type": "boolean"
                     },
                     "steps": {
                         "description": "Steps array for flow type endpoints",
@@ -1379,6 +1729,62 @@
                     }
                 },
                 "type": "object"
+            },
+            "Team": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "ownerId": {
+                        "type": "string"
+                    },
+                    "userIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "TeamInput": {
+                "required": [
+                    "name",
+                    "type",
+                    "url"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "ownerId": {
+                        "type": "string"
+                    },
+                    "userIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "description": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -1402,6 +1808,10 @@
         {
             "name": "Endpoints",
             "description": "Manage notification endpoints (SMS, Email, Telegram, Teams, etc.)"
+        },
+        {
+            "name": "Teams",
+            "description": "Manage Teams"
         }
     ]
 }

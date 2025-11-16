@@ -10,10 +10,6 @@ class GrafanaWebhookAlert extends BaseModel implements Messageable
 {
     public $timestamps = true;
 
-    public static $title = 'Grafana Alert Webhook';
-
-    public static $KEY = 'grafana_alert_webhook';
-
     protected $guarded = ['id', '_id'];
 
     public const FIRING = 'firing';

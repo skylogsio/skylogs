@@ -11,10 +11,6 @@ class ZabbixCheck extends BaseModel implements Messageable
 {
     public $timestamps = true;
 
-    public static $title = 'Zabbix Check';
-
-    public static $KEY = 'zabbix_check';
-
     protected $guarded = ['id', '_id'];
 
     public const RESOLVED = 'RESOLVED';

@@ -126,6 +126,45 @@ class EndpointDocs
     public function show() {}
 
     #[OA\Post(
+        path: '/api/v1/endpoint/sendOTP',
+        operationId: 'sendOTP',
+        summary: 'send OTP code',
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['type', 'value'],
+                properties: [
+                    new OA\Property(
+                        property: 'type',
+                        type: 'string',
+                        enum: ['sms', 'call', 'email'],
+                        example: 'sms'
+                    ),
+                    new OA\Property(property: 'value', type: 'string', example: '09000000000'),
+
+                ]
+            )
+        ),
+        tags: ['Endpoints'],
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'OTP code has been sent successfully.',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'message', type: 'string', example: 'OTP code has been sent to your endpoint'),
+                        new OA\Property(property: 'expiredAt', type: 'integer', example: 1762022993),
+                        new OA\Property(property: 'timeLeft', type: 'integer', example: 180),
+                    ]
+                )
+            ),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
+    public function SendOTPCode() {}
+
+    #[OA\Post(
         path: '/api/v1/endpoint',
         operationId: 'createEndpoint',
         summary: 'Create new endpoint',
@@ -143,10 +182,17 @@ class EndpointDocs
                         example: 'sms'
                     ),
                     new OA\Property(property: 'value', type: 'string', example: '09000000000'),
+                    new OA\Property(property: 'accessUserIds', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(property: 'accessTeamIds', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(
+                        property: 'otpCode',
+                        description: 'For sms, call, email type the otp verification is required',
+                        type: 'string',
+                        example: '12345'
+                    ),
                     new OA\Property(property: 'chatId', description: 'For Telegram type', type: 'string'),
                     new OA\Property(property: 'threadId', description: 'For Telegram type', type: 'string'),
                     new OA\Property(property: 'botToken', description: 'For Telegram type', type: 'string'),
-                    new OA\Property(property: 'isPublic', type: 'boolean', default: false),
                     new OA\Property(
                         property: 'steps',
                         description: 'For flow type - array of steps with wait and endpoint types',
@@ -220,10 +266,17 @@ class EndpointDocs
                         example: 'telegram'
                     ),
                     new OA\Property(property: 'value', type: 'string', example: '09000000000'),
+                    new OA\Property(property: 'accessUserIds', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(property: 'accessTeamIds', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(
+                        property: 'otpCode',
+                        description: 'For sms, call, email type the otp verification is required if the value updated in process',
+                        type: 'string',
+                        example: '12345'
+                    ),
                     new OA\Property(property: 'chatId', description: 'For Telegram type', type: 'string'),
                     new OA\Property(property: 'threadId', description: 'For Telegram type', type: 'string'),
                     new OA\Property(property: 'botToken', description: 'For Telegram type', type: 'string'),
-                    new OA\Property(property: 'isPublic', type: 'boolean', default: false),
                     new OA\Property(
                         property: 'steps',
                         description: 'For flow type - array of steps with wait and endpoint types',
@@ -365,6 +418,8 @@ class EndpointDocs
             enum: ['sms', 'call', 'email', 'telegram', 'teams', 'matter-most', 'flow']
         ),
         new OA\Property(property: 'value', description: 'Primary value (phone number, email address, etc.) - used for most types except telegram and flow', type: 'string'),
+        new OA\Property(property: 'accessUserIds', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'accessTeamIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'chatId', description: 'Chat ID for telegram type endpoints', type: 'string'),
         new OA\Property(property: 'threadId', description: 'Thread ID for telegram type endpoints', type: 'string'),
         new OA\Property(property: 'botToken', description: 'Bot token for telegram type endpoints', type: 'string'),
@@ -401,7 +456,6 @@ class EndpointDocs
             )
         ),
         new OA\Property(property: 'userId', description: 'User ID who owns this endpoint', type: 'string'),
-        new OA\Property(property: 'isPublic', description: 'Whether this endpoint is publicly available', type: 'boolean'),
         new OA\Property(property: 'createdAt', description: 'Creation timestamp', type: 'string', format: 'date-time'),
         new OA\Property(property: 'updatedAt', description: 'Last update timestamp', type: 'string', format: 'date-time'),
     ],
@@ -409,9 +463,10 @@ class EndpointDocs
         'id' => '680d668e20f7ecb5bc026722',
         'name' => 'My SMS Endpoint',
         'type' => 'sms',
+        'accessTeamIds' => [],
+        'accessUserIds' => [],
         'value' => '09000000000',
         'userId' => 'userId',
-        'isPublic' => false,
         'createdAt' => '2024-01-01T10:00:00Z',
         'updatedAt' => '2024-01-01T10:00:00Z',
     ]
@@ -431,10 +486,11 @@ class EndpointSchema {}
             enum: ['sms', 'call', 'email', 'telegram', 'teams', 'matter-most', 'flow']
         ),
         new OA\Property(property: 'value', description: 'Primary value (phone number, email address, etc.) - required for most types', type: 'string'),
+        new OA\Property(property: 'accessUserIds', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'accessTeamIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'chatId', description: 'Chat ID for telegram type endpoints', type: 'string'),
         new OA\Property(property: 'threadId', description: 'Thread ID for telegram type endpoints', type: 'string'),
         new OA\Property(property: 'botToken', description: 'Bot token for telegram type endpoints', type: 'string'),
-        new OA\Property(property: 'isPublic', description: 'Whether this endpoint is publicly available', type: 'boolean'),
         new OA\Property(
             property: 'steps',
             description: 'Steps array for flow type endpoints',

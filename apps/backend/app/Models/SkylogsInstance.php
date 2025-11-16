@@ -6,10 +6,6 @@ class SkylogsInstance extends BaseModel
 {
     public $timestamps = true;
 
-    public static $title = 'Skylogs Instance';
-
-    public static $KEY = 'skylogs_instance';
-
     public const STATE_FIRING = 'firing';
 
     public const DOWN = 1;

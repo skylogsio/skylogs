@@ -10,7 +10,7 @@ use OpenApi\Attributes as OA;
     title: 'Skylogs API'
 )]
 #[OA\Server(
-    url: 'http://localhost:9000',
+    url: swaggerHost,
     description: 'Skylogs local server'
 )]
 #[OA\Components(

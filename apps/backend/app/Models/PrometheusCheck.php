@@ -11,10 +11,6 @@ class PrometheusCheck extends BaseModel implements Messageable
 {
     public $timestamps = true;
 
-    public static $title = 'Prometheus Check';
-
-    public static $KEY = 'prometheus_check';
-
     protected $guarded = ['id', '_id'];
 
     public const RESOLVED = 1;

@@ -22,10 +22,6 @@ class SilentRule extends BaseModel
 
     public $timestamps = true;
 
-    public static $title = 'Silent Rule';
-
-    public static $KEY = 'silents';
-
     protected $guarded = ['id', '_id'];
 
     public function user(): BelongsTo

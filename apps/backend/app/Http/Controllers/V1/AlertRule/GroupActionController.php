@@ -23,12 +23,18 @@ class GroupActionController extends Controller
         $isAdmin = $user->isAdmin();
 
         foreach ($alertRules as $alert) {
-            if ($request->has('userIds') && ! empty($request->post('userIds'))) {
+            if ($this->alertRuleService->hasAdminAccessAlert($user, $alert)) {
 
-                if ($this->alertRuleService->hasAdminAccessAlert($user, $alert)) {
-
+                if ($request->has('userIds') && ! empty($request->post('userIds'))) {
                     foreach ($request->userIds as $userId) {
                         $alert->push('userIds', $userId, true);
+                    }
+                    $alert->save();
+                }
+
+                if ($request->has('teamIds') && ! empty($request->post('teamIds'))) {
+                    foreach ($request->teamIds as $teamId) {
+                        $alert->push('teamIds', $teamId, true);
                     }
                     $alert->save();
                 }

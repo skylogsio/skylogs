@@ -8,10 +8,6 @@ class HealthHistory extends BaseModel
 {
     public $timestamps = true;
 
-    public static $title = 'Health History';
-
-    public static $KEY = 'health_history';
-
     protected $guarded = ['id', '_id'];
 
     public const DOWN = 1;

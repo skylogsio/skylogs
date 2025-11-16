@@ -10,10 +10,6 @@ class ElasticCheck extends BaseModel implements Messageable
 {
     public $timestamps = true;
 
-    public static $title = 'Elastic Check';
-
-    public static $KEY = 'elastic_check';
-
     protected $guarded = ['id', '_id'];
 
     public const CONDITION_TYPE_GREATER_OR_EQUAL = 'greaterOrEqual';

@@ -10,10 +10,6 @@ class HealthCheck extends BaseModel implements Messageable
 {
     public $timestamps = true;
 
-    public static $title = 'Health Check';
-
-    public static $KEY = 'health_check';
-
     protected $guarded = ['id', '_id'];
 
     public const DOWN = 1;
