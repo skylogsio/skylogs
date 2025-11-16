@@ -696,6 +696,7 @@
                                         "items": {
                                             "type": "string"
                                         }
+                                    },
                                     "otpCode": {
                                         "description": "For sms, call, email type the otp verification is required",
                                         "type": "string",
@@ -953,6 +954,7 @@
                                         "items": {
                                             "type": "string"
                                         }
+                                    },
                                     "otpCode": {
                                         "description": "For sms, call, email type the otp verification is required if the value updated in process",
                                         "type": "string",
@@ -1340,6 +1342,40 @@
                     },
                     "422": {
                         "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/team/all": {
+            "get": {
+                "tags": [
+                    "Teams"
+                ],
+                "summary": "Get all of teams",
+                "operationId": "getAllTeams",
+                "responses": {
+                    "200": {
+                        "description": "List of teams",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Team"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [

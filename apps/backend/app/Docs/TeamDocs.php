@@ -51,6 +51,29 @@ class TeamDocs
         ]
     )]
     public function index() {}
+    #[OA\Get(
+        path: '/api/v1/team/all',
+        operationId: 'getAllTeams',
+        summary: 'Get all of teams',
+        security: [['bearerAuth' => []]],
+        tags: ['Teams'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'List of teams',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/Team')
+                        ),
+                    ]
+                )
+            ),
+        ]
+    )]
+    public function all() {}
 
     #[OA\Get(
         path: '/api/v1/team/{id}',
