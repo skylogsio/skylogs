@@ -4,7 +4,6 @@ namespace App\Http\Controllers\V1;
 
 use App\Enums\EndpointType;
 use App\Http\Controllers\Controller;
-use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\EndpointOTP;
 use App\Models\User;
@@ -48,9 +47,8 @@ class EndpointController extends Controller
 
         $data = $data->paginate($perPage);
 
-
         foreach ($data as &$endpoint) {
-            $endpoint->hasAdminAccess = $this->endpointService->hasActionAccess($user, $endpoint);
+            $endpoint->hasActionAccess = $this->endpointService->hasActionAccess($user, $endpoint);
         }
 
         return response()->json($data);

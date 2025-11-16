@@ -9,19 +9,19 @@ use MongoDB\Laravel\Relations\HasMany;
 #[ObservedBy(TeamObserver::class)]
 class Team extends BaseModel
 {
+
     public $timestamps = true;
 
     protected $guarded = ['id', '_id'];
-
 
     public function owner()
     {
         return $this->belongsTo(User::class, 'ownerId', '_id');
     }
 
-    public function members() :HasMany
+    public function members()
     {
-        return $this->hasMany(User::class,'id', 'userIds');
+        return $this->belongsToMany(User::class, null, 'userIds', '_id');
     }
 
 }

@@ -17,11 +17,10 @@ class TeamController extends Controller
         $data = Team::query()->with(['owner',]);
 
         if ($request->filled('name')) {
-            $data->where('name', 'like', '%' . $request->name . '%');
+            $data->where('name', 'like', '%'.$request->name.'%');
         }
 
         $data = $data->paginate($perPage);
-
 
         return response()->json($data);
 
@@ -71,7 +70,7 @@ class TeamController extends Controller
             [
                 'name' => [
                     'required',
-                    Rule::unique('teams')->ignore($id, '_id')
+                    Rule::unique('teams')->ignore($id, '_id'),
                 ],
                 'ownerId' => 'required',
                 'userIds' => 'required|array',
