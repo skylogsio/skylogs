@@ -2,6 +2,7 @@ import { useCallback } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import Locale from "intl-locale-textinfo-polyfill";
+import { useSession } from "next-auth/react";
 
 import { getMyInfo } from "@/api/profile";
 import { useCurrentLocale } from "@/locales/client";
@@ -14,9 +15,11 @@ export function useCurrentDirection() {
 }
 
 export function useRole() {
+  const { data } = useSession();
   const { data: userInfo } = useQuery({
     queryKey: ["profile"],
-    queryFn: () => getMyInfo()
+    queryFn: () => getMyInfo(),
+    enabled: Boolean(data)
   });
 
   const hasRole = useCallback(

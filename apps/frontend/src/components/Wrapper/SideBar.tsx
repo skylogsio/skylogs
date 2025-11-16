@@ -1,7 +1,16 @@
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Box, List, ListItem as MUIListItem, ListItemButton, Stack } from "@mui/material";
+import {
+  Box,
+  List,
+  ListItem as MUIListItem,
+  ListItemButton,
+  Stack,
+  Typography,
+  useTheme
+} from "@mui/material";
 import {
   AiOutlineApi,
   AiOutlineUser,
@@ -10,7 +19,8 @@ import {
   AiOutlineAlert,
   AiOutlineCloud,
   AiOutlineSetting,
-  AiOutlineFundProjectionScreen
+  AiOutlineFundProjectionScreen,
+  AiOutlineTeam
 } from "react-icons/ai";
 
 import { useRole } from "@/hooks";
@@ -29,6 +39,7 @@ const URLS: Array<URLType> = [
   { pathname: "/status", label: "Status", icon: AiOutlineFundProjectionScreen },
   { pathname: "/endpoints", label: "Endpoints", icon: AiOutlineApi },
   { pathname: "/users", label: "Users", role: ["owner", "manager"], icon: AiOutlineUser },
+  { pathname: "/teams", label: "Teams", icon: AiOutlineTeam },
   {
     pathname: "/data-source",
     label: "Data Sources",
@@ -41,6 +52,7 @@ const URLS: Array<URLType> = [
 ];
 
 function ListItem(url: URLType) {
+  const { palette } = useTheme();
   const pathname = usePathname();
   const { hasRole } = useRole();
 
@@ -71,7 +83,7 @@ function ListItem(url: URLType) {
               display: "inline-block",
               height: "100%",
               width: 5,
-              backgroundColor: ({ palette }) => `${palette.primary.main}!important`,
+              backgroundColor: `${palette.primary.main}!important`,
               position: "absolute",
               top: 0,
               left: 0,
@@ -85,9 +97,8 @@ function ListItem(url: URLType) {
           sx={{
             paddingY: 2,
             borderRadius: "0.6rem",
-            backgroundColor: ({ palette }) =>
-              isActive ? `${palette.primary.main}!important` : "transparent",
-            color: ({ palette }) => (isActive ? palette.common.white : "inherit"),
+            backgroundColor: isActive ? `${palette.primary.main}!important` : "transparent",
+            color: isActive ? palette.common.white : "inherit",
             display: "flex",
             alignItems: "center",
             gap: 1.5
@@ -102,9 +113,24 @@ function ListItem(url: URLType) {
 }
 
 export default function SideBar() {
+  const { palette } = useTheme();
   return (
-    <Stack>
+    <Stack height="100%">
+      <Box paddingX={7} paddingBottom={3} paddingTop={5}>
+        <Image
+          src="/static/images/logo.png"
+          alt="Skylogs Logo"
+          width="400"
+          height="120"
+          style={{ filter: `drop-shadow(0px 0px 16px ${palette.primary.light})` }}
+        />
+      </Box>
       <List>{URLS.map((url) => ListItem(url))}</List>
+      <Stack alignItems="center" marginTop="auto">
+        <Typography variant="caption" color="text.secondary" fontSize={10}>
+          version 1.2.4
+        </Typography>
+      </Stack>
     </Stack>
   );
 }

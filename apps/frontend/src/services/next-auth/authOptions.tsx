@@ -3,7 +3,7 @@ import { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 async function handleRefreshToken(refreshToken: string) {
-  return await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}auth/refresh`, null, {
+  return await axios.post(`${process.env.BASE_URL}auth/refresh`, null, {
     headers: {
       Authorization: `Bearer ${refreshToken}`
     }
@@ -24,7 +24,7 @@ export const authOptions: NextAuthOptions = {
           password: credentials?.password
         };
         try {
-          const user = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}auth/login`, body, {
+          const user = await axios.post(`${process.env.BASE_URL}auth/login`, body, {
             headers: { "Content-Type": "application/json" }
           });
           return user.data;
@@ -41,38 +41,39 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   callbacks: {
     async session({ session, token }) {
-      session.user.token = token.access_token;
+      session.user.token = token.accessToken;
       session.error = token.error;
       return session;
     },
     async jwt({ token, user }) {
+      delete token.error;
       if (user) {
         token.id = user.id;
-        token.access_token = user.access_token;
-        token.refresh_token = user.refresh_token;
-        token.expires_at = Date.now() + user.expires_at * 1000;
+        token.accessToken = user.accessToken;
+        token.refreshToken = user.refreshToken;
+        token.expiresIn = Date.now() + user.expiresIn * 1000;
         return token;
-      } else if (Date.now() < token.expires_at) {
+      } else if (Date.now() < token.expiresIn) {
         return token;
       } else {
-        if (!token.refresh_token) throw new TypeError("Missing refresh_token");
+        if (!token.refreshToken) throw new TypeError("Missing refreshToken");
 
         try {
-          const response = await handleRefreshToken(token.refresh_token);
+          const response = await handleRefreshToken(token.refreshToken);
           const newTokens = response.data as {
-            access_token: string;
-            expires_in: number;
-            refresh_token?: string;
+            accessToken: string;
+            expiresIn: number;
+            refreshToken?: string;
           };
-
           return {
             ...token,
-            access_token: newTokens.access_token,
-            expires_at: Math.floor(Date.now() + newTokens.expires_in * 1000),
-            refresh_token: newTokens.refresh_token ? newTokens.refresh_token : token.refresh_token
+            accessToken: newTokens.accessToken,
+            expiresIn: Date.now() + newTokens.expiresIn * 1000,
+            refreshToken: newTokens.refreshToken,
+            error: undefined
           };
         } catch (error) {
-          console.error("Error refreshing access_token", error);
+          console.error("Error refreshing accessToken", error);
           token.error = "RefreshTokenError";
           return token;
         }
