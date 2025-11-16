@@ -14,7 +14,7 @@ class TeamController extends Controller
 
         $perPage = $request->perPage ?? 25;
 
-        $data = Team::query()->with(['owner',]);
+        $data = Team::query()->with(['owner']);
 
         if ($request->filled('name')) {
             $data->where('name', 'like', '%'.$request->name.'%');

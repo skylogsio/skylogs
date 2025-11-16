@@ -4,12 +4,10 @@ namespace App\Models;
 
 use App\Observers\TeamObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
-use MongoDB\Laravel\Relations\HasMany;
 
 #[ObservedBy(TeamObserver::class)]
 class Team extends BaseModel
 {
-
     public $timestamps = true;
 
     protected $guarded = ['id', '_id'];
@@ -21,7 +19,6 @@ class Team extends BaseModel
 
     public function members()
     {
-        return $this->belongsToMany(User::class, null, 'userIds', '_id');
+        return $this->hasMany(User::class, 'userIds', '_id');
     }
-
 }
