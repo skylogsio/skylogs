@@ -19,7 +19,8 @@ import {
   AiOutlineAlert,
   AiOutlineCloud,
   AiOutlineSetting,
-  AiOutlineFundProjectionScreen
+  AiOutlineFundProjectionScreen,
+  AiOutlineTeam
 } from "react-icons/ai";
 
 import { useRole } from "@/hooks";
@@ -38,6 +39,7 @@ const URLS: Array<URLType> = [
   { pathname: "/status", label: "Status", icon: AiOutlineFundProjectionScreen },
   { pathname: "/endpoints", label: "Endpoints", icon: AiOutlineApi },
   { pathname: "/users", label: "Users", role: ["owner", "manager"], icon: AiOutlineUser },
+  { pathname: "/teams", label: "Teams", icon: AiOutlineTeam },
   {
     pathname: "/data-source",
     label: "Data Sources",
