@@ -143,8 +143,8 @@ class EndpointDocs
                         example: 'sms'
                     ),
                     new OA\Property(property: 'value', type: 'string', example: '09000000000'),
-                    new OA\Property(property: 'accessUserIds', type: 'array'),
-                    new OA\Property(property: 'accessTeamIds', type: 'array'),
+                    new OA\Property(property: 'accessUserIds', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(property: 'accessTeamIds', type: 'array', items: new OA\Items(type: 'string')),
                     new OA\Property(property: 'chatId', description: 'For Telegram type', type: 'string'),
                     new OA\Property(property: 'threadId', description: 'For Telegram type', type: 'string'),
                     new OA\Property(property: 'botToken', description: 'For Telegram type', type: 'string'),
@@ -221,8 +221,8 @@ class EndpointDocs
                         example: 'telegram'
                     ),
                     new OA\Property(property: 'value', type: 'string', example: '09000000000'),
-                    new OA\Property(property: 'accessUserIds', type: 'array'),
-                    new OA\Property(property: 'accessTeamIds', type: 'array'),
+                    new OA\Property(property: 'accessUserIds', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(property: 'accessTeamIds', type: 'array', items: new OA\Items(type: 'string')),
                     new OA\Property(property: 'chatId', description: 'For Telegram type', type: 'string'),
                     new OA\Property(property: 'threadId', description: 'For Telegram type', type: 'string'),
                     new OA\Property(property: 'botToken', description: 'For Telegram type', type: 'string'),
@@ -367,8 +367,8 @@ class EndpointDocs
             enum: ['sms', 'call', 'email', 'telegram', 'teams', 'matter-most', 'flow']
         ),
         new OA\Property(property: 'value', description: 'Primary value (phone number, email address, etc.) - used for most types except telegram and flow', type: 'string'),
-        new OA\Property(property: 'accessUserIds', type: 'array'),
-        new OA\Property(property: 'accessTeamIds', type: 'array'),
+        new OA\Property(property: 'accessUserIds', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'accessTeamIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'chatId', description: 'Chat ID for telegram type endpoints', type: 'string'),
         new OA\Property(property: 'threadId', description: 'Thread ID for telegram type endpoints', type: 'string'),
         new OA\Property(property: 'botToken', description: 'Bot token for telegram type endpoints', type: 'string'),
@@ -435,8 +435,8 @@ class EndpointSchema {}
             enum: ['sms', 'call', 'email', 'telegram', 'teams', 'matter-most', 'flow']
         ),
         new OA\Property(property: 'value', description: 'Primary value (phone number, email address, etc.) - required for most types', type: 'string'),
-        new OA\Property(property: 'accessUserIds', type: 'array'),
-        new OA\Property(property: 'accessTeamIds', type: 'array'),
+        new OA\Property(property: 'accessUserIds', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'accessTeamIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'chatId', description: 'Chat ID for telegram type endpoints', type: 'string'),
         new OA\Property(property: 'threadId', description: 'Thread ID for telegram type endpoints', type: 'string'),
         new OA\Property(property: 'botToken', description: 'Bot token for telegram type endpoints', type: 'string'),

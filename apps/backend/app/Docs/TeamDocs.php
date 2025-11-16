@@ -89,7 +89,7 @@ class TeamDocs
                 properties: [
                     new OA\Property(property: 'name', type: 'string', example: 'Customer Service'),
                     new OA\Property(property: 'ownerId', type: 'string'),
-                    new OA\Property(property: 'userIds', type: 'array'),
+                    new OA\Property(property: 'userIds', type: 'array', items: new OA\Items(type: 'string')),
                 ]
             )
         ),
@@ -163,7 +163,7 @@ class TeamDocs
         new OA\Property(property: 'id', type: 'string'),
         new OA\Property(property: 'name', type: 'string'),
         new OA\Property(property: 'ownerId', type: 'string'),
-        new OA\Property(property: 'userIds', type: 'array'),
+        new OA\Property(property: 'userIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'createdAt', type: 'string', format: 'date-time'),
         new OA\Property(property: 'updatedAt', type: 'string', format: 'date-time'),
     ]
@@ -176,7 +176,7 @@ class TeamSchema {}
     properties: [
         new OA\Property(property: 'name', type: 'string'),
         new OA\Property(property: 'ownerId', type: 'string'),
-        new OA\Property(property: 'userIds', type: 'array'),
+        new OA\Property(property: 'userIds', type: 'array', items: new OA\Items(type: 'string')),
     ]
 )]
 class TeamInputSchema {}
