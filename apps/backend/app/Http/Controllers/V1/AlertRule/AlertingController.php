@@ -106,8 +106,7 @@ class AlertingController extends Controller
         foreach ($paginatedData as &$alert) {
             //            $alert =new AlertRule($alert);
             /** @var $alert AlertRule */
-            $alert->hasAdminAccess = $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert);
-            $alert->has_admin_access = $alert->hasAdminAccess;
+            $alert->hasActionAccess = $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert);
             [$alertStatus, $alertStatusCount] = $alert->getStatus();
             $alert->statusLabel = $alertStatus;
             $alert->statusCount = $alertStatusCount;
@@ -229,6 +228,7 @@ class AlertingController extends Controller
                 'userId' => \Auth::id(),
                 'endpointIds' => [],
                 'userIds' => [],
+                'teamIds' => [],
             ];
             switch ($alertType) {
                 case AlertRuleType::GRAFANA:
@@ -342,6 +342,12 @@ class AlertingController extends Controller
                 }
             }
 
+            if ($request->has('teamIds') && ! empty($request->teamIds)) {
+                foreach ($request->teamIds as $teamId) {
+                    $alert->push('teamIds', $teamId, true);
+                }
+            }
+
             return ['status' => true];
         } else {
             return ['status' => false, 'message' => $va->messages()[0] ?? 'Error'];
@@ -376,9 +382,9 @@ class AlertingController extends Controller
         }
         $alert->extraField = $extraField;
         $alert->description = $alert->description ?? '';
+        $alert->teamIds = $alert->teamIds ?? [];
         $alert->showAcknowledgeBtn = $alert->showAcknowledgeBtn ?? false;
-        $alert->hasAdminAccess = $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert);
-        $alert->has_admin_access = $alert->hasAdminAccess;
+        $alert->hasActionAccess = $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert);
         [$alertStatus, $alertStatusCount] = $alert->getStatus();
         $alert->statusLabel = $alertStatus;
         $alert->status_label = $alertStatus;
@@ -529,6 +535,19 @@ class AlertingController extends Controller
         foreach ($userIds as $userId) {
             $model->push('user_ids', $userId, true);
             $model->push('userIds', $userId, true);
+        }
+
+        $alertTeamIds = collect($model->teamIds);
+        $teamIds = collect($request->array('teamIds'));
+
+        foreach ($alertTeamIds as $alertTeamId) {
+            if ($teamIds->doesntContain($alertTeamId)) {
+                $model->pull('teamIds', $alertTeamId);
+            }
+        }
+
+        foreach ($teamIds as $teamId) {
+            $model->push('teamIds', $teamId, true);
         }
 
         $model->tags = collect($request->tags ?? [])->map(fn ($item) => trim($item))->unique()->toArray();
