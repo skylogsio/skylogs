@@ -379,7 +379,6 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
             selectedUserIds={watch("accessUserIds")}
             onTeamIdsChange={(teamIds) => setValue("accessTeamIds", teamIds)}
             onUserIdsChange={(userIds) => setValue("accessUserIds", userIds)}
-            label="Select Access"
           />
         </Grid>
         <FormControlLabel

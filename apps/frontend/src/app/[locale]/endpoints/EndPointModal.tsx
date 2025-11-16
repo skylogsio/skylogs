@@ -237,7 +237,6 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
             selectedUserIds={watch("accessUserIds")}
             onTeamIdsChange={(teamIds) => setValue("accessTeamIds", teamIds)}
             onUserIdsChange={(userIds) => setValue("accessUserIds", userIds)}
-            label="Select Access"
           />
         </Grid>
         <Grid size={12}>
