@@ -20,6 +20,7 @@ import { z } from "zod";
 import type { IEndpoint } from "@/@types/endpoint";
 import { type CreateUpdateModal } from "@/@types/global";
 import { createEndpoint, sendOTP, updateEndpoint } from "@/api/endpoint";
+import AccessUsersAndTeams from "@/components/AccessUsersAndTeams";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 import OTP from "@/components/OTP";
@@ -46,7 +47,9 @@ const endpointSchema = z.object({
   otpCode: z.string().optional(),
   isPublic: z.optional(z.boolean()).default(false),
   threadId: z.optional(z.string()).nullable(),
-  botToken: z.optional(z.string()).nullable()
+  botToken: z.optional(z.string()).nullable(),
+  accessTeamIds: z.array(z.string()).optional().default([]),
+  accessUserIds: z.array(z.string()).optional().default([])
 });
 
 type EndpointFormType = z.infer<typeof endpointSchema> & { chatId?: string };
@@ -58,7 +61,9 @@ type EndpointModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
 const defaultValues = {
   name: "",
   type: undefined,
-  value: ""
+  value: "",
+  accessTeamIds: [],
+  accessUserIds: []
 };
 
 export default function EndPointModal({ open, onClose, data, onSubmit }: EndpointModalProps) {
@@ -158,7 +163,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
     >
       <Grid
         component="form"
-        onSubmit={handleSubmit(handleSubmitForm, (error) => console.log(error))}
+        onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
         width="100%"
@@ -226,6 +231,15 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
             />
           </Grid>
         )}
+        <Grid size={12}>
+          <AccessUsersAndTeams
+            selectedTeamIds={watch("accessTeamIds")}
+            selectedUserIds={watch("accessUserIds")}
+            onTeamIdsChange={(teamIds) => setValue("accessTeamIds", teamIds)}
+            onUserIdsChange={(userIds) => setValue("accessUserIds", userIds)}
+            label="Select Access"
+          />
+        </Grid>
         <Grid size={12}>
           <FormControlLabel
             sx={{ margin: 0 }}
