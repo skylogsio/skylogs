@@ -79,7 +79,7 @@ class EndpointController extends Controller
         $data = $data->paginate($perPage);
 
         foreach ($data as &$endpoint) {
-            $endpoint->hasAdminAccess = $this->endpointService->hasActionAccess($user, $endpoint);
+            $endpoint->hasActionAccess = $this->endpointService->hasActionAccess($user, $endpoint);
         }
 
         return response()->json($data);
