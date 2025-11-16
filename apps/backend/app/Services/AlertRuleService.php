@@ -25,6 +25,8 @@ use MongoDB\BSON\UTCDateTime;
 
 class AlertRuleService
 {
+    public function __construct(protected TeamService $teamService) {}
+
     public function firedAlerts(string $alertRuleId)
     {
         $alertRule = AlertRule::where('id', $alertRuleId)->firstOrFail();
@@ -80,6 +82,11 @@ class AlertRuleService
                 ['userId' => $user->id],
                 ['userIds' => $user->id],
             ];
+            $userTeams = $this->teamService->userTeams($user)->pluck('id')->toArray();
+            if (! empty($userTeams)) {
+                $match['$or'][] = ['teamIds' => ['$in' => $userTeams]];
+            }
+
         }
 
         if ($request->filled('alertname')) {
@@ -94,6 +101,10 @@ class AlertRuleService
                 ['userId' => $request->userId],
                 ['userIds' => $request->userId],
             ];
+            $userTeams = $this->teamService->userTeams($user)->pluck('id')->toArray();
+            if (! empty($userTeams)) {
+                $match['$or'][] = ['teamIds' => ['$in' => $userTeams]];
+            }
         }
 
         if ($request->filled('types')) {
@@ -590,6 +601,11 @@ class AlertRuleService
         }
         $userIds = $alert->userIds ?? [];
         if (in_array($user->_id, $userIds)) {
+            return true;
+        }
+
+        $teamIds = $this->teamService->userTeams($user)->pluck('id')->toArray();
+        if (! empty($teamIds) && ! empty($user->teamIds) && collect($user->teamIds)->intersect($teamIds)->isNotEmpty()) {
             return true;
         }
 
