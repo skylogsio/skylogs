@@ -3,7 +3,7 @@
 namespace App\Helpers;
 
 use App\interfaces\Messageable;
-use App\Models\Endpoint;
+use App\Models\EndpointOTP;
 use Illuminate\Mail\Message;
 use Mail;
 
@@ -26,7 +26,7 @@ class Email
 
     }
 
-    public static function sendOTP(Endpoint $endpoint)
+    public static function sendOTP(EndpointOTP $endpoint)
     {
         Mail::raw($endpoint->generateOTPMessage(), function (Message $message) use ($endpoint) {
             $message->to($endpoint->value)

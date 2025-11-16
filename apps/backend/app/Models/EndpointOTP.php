@@ -8,33 +8,17 @@ class EndpointOTP extends BaseModel
 {
     public $timestamps = true;
 
-    private $collection = 'endpoint_otp';
-
-    public const EMAIL = 'email';
-
-    public const SMS = 'sms';
-
-    public const CALL = 'call';
-
-    public const TELEGRAM = 'telegram';
-
-    public const TEAMS = 'teams';
-
     protected $guarded = ['id', '_id'];
+
+    public const STATUS_PENDING = 'pending';
+
+    public const STATUS_SENT = 'sent';
+
+    protected $table = 'endpoint_otp';
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function alertRules()
-    {
-        return $this->belongsToMany(AlertRule::class);
-    }
-
-    public function isVerifiedRequired()
-    {
-        return in_array($this->type, [self::SMS, self::CALL, self::EMAIL]);
     }
 
     public function generateOTPMessage()
@@ -47,16 +31,7 @@ class EndpointOTP extends BaseModel
     public function generateOtpCode()
     {
         $this->verfied = false;
-        $this->otpCode = rand(1000, 9999);
+        $this->otpCode = rand(10000, 99999);
         $this->otpSentAt = time();
-
     }
-
-    public static array $types = [
-        'sms' => 'SMS',
-        'email' => 'Email',
-        'call' => 'Call',
-        'telegram' => 'Telegram',
-        'teams' => 'Teams',
-    ];
 }

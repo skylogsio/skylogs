@@ -89,6 +89,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/createFlowEndpoints', 'EndpointsToCreateFlow');
                 Route::get('/{id}', 'Show');
                 Route::post('/', 'Create');
+                Route::post('/sendOTP', 'SendOTPCode');
                 Route::put('/{id}', 'Update');
                 Route::post('/changeOwner/{id}', 'ChangeOwner');
                 Route::delete('/{id}', 'Delete');
