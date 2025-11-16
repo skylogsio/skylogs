@@ -8,6 +8,7 @@ import {
   Checkbox,
   Chip,
   FormControlLabel,
+  Grid2 as Grid,
   IconButton,
   MenuItem,
   Stack,
@@ -25,6 +26,7 @@ import type { IFlow } from "@/@types/flow";
 import { type CreateUpdateModal } from "@/@types/global";
 import { createEndpoint, updateEndpoint } from "@/api/endpoint";
 import { getAllEndpoints } from "@/api/flow";
+import AccessUsersAndTeams from "@/components/AccessUsersAndTeams";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
@@ -53,7 +55,9 @@ const createFlowSchema = z.object({
       message: "This field is Required."
     }),
   steps: z.array(flowStepSchema).min(1, "At least one step is required"),
-  isPublic: z.boolean().default(false)
+  isPublic: z.boolean().default(false),
+  accessTeamIds: z.array(z.string()).optional().default([]),
+  accessUserIds: z.array(z.string()).optional().default([])
 });
 
 type FlowFormType = z.infer<typeof createFlowSchema>;
@@ -65,7 +69,9 @@ type FlowModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
 const defaultValues: FlowFormType = {
   name: "",
   steps: [{ type: "wait" as const, duration: 0, timeUnit: "s" as const }],
-  isPublic: false
+  isPublic: false,
+  accessTeamIds: [],
+  accessUserIds: []
 };
 
 export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalProps) {
@@ -367,7 +373,15 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
             ADD ENDPOINTS
           </Button>
         </Box>
-
+        <Grid size={12}>
+          <AccessUsersAndTeams
+            selectedTeamIds={watch("accessTeamIds")}
+            selectedUserIds={watch("accessUserIds")}
+            onTeamIdsChange={(teamIds) => setValue("accessTeamIds", teamIds)}
+            onUserIdsChange={(userIds) => setValue("accessUserIds", userIds)}
+            label="Select Access"
+          />
+        </Grid>
         <FormControlLabel
           sx={{ mb: 3 }}
           label="Is Public"
@@ -378,7 +392,6 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
             />
           }
         />
-
         <Button
           disabled={isCreating || isUpdating}
           type="submit"
