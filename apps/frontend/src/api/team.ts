@@ -6,6 +6,15 @@ import axios from "@/lib/axios";
 
 const TEAM_URL = "team";
 
+export async function getAllTeams(): Promise<ITeam[]> {
+  try {
+    const response = await axios.get<ITeam[]>(`${TEAM_URL}/all`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
 export async function createTeam(body: ITeamCreateRequest): Promise<ServerResponse<ITeam>> {
   try {
     const response = await axios.post<ServerResponse<ITeam>>(TEAM_URL, body);
