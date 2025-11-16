@@ -12,13 +12,20 @@ class Team extends BaseModel
 
     protected $guarded = ['id', '_id'];
 
+
+    protected $appends = ['members'];
+
+    public function getMembersAttribute()
+    {
+        if (!empty($this->userIds))
+            return User::whereIn('id', $this->userIds)->get()->pluck('name');
+        return [];
+    }
+
     public function owner()
     {
         return $this->belongsTo(User::class, 'ownerId', '_id');
     }
 
-    public function members()
-    {
-        return $this->hasMany(User::class, 'userIds', '_id');
-    }
+
 }
