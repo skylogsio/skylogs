@@ -26,6 +26,11 @@ class TeamController extends Controller
 
     }
 
+    public function All()
+    {
+        return response()->json(Team::all());
+    }
+
     public function Show($id)
     {
 
