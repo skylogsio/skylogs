@@ -38,6 +38,7 @@ const sentryAlertRuleSchema = z.object({
   type: z.literal("sentry"),
   endpointIds: z.array(z.string()).optional().default([]),
   userIds: z.array(z.string()).optional().default([]),
+  teamIds: z.array(z.string()).optional().default([]),
   tags: z.array(z.string()).optional().default([]),
   dataSourceIds: z.array(z.string()).min(1, "This field is Required."),
   dataSourceAlertName: z
@@ -59,6 +60,7 @@ const defaultValues: SentryFromType = {
   name: "",
   type: "sentry",
   userIds: [],
+  teamIds: [],
   endpointIds: [],
   tags: [],
   dataSourceIds: [],
@@ -186,7 +188,7 @@ export default function SentryAlertRuleForm({
           />
         </Grid>
         <AlertRuleGeneralFields<SentryFromType>
-          methods={{ control, getValues, setValue }}
+          methods={{ control, getValues, setValue, watch }}
           errors={errors}
         >
           <Grid size={6}>

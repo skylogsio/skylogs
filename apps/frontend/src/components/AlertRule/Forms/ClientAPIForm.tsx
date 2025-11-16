@@ -37,6 +37,7 @@ const clientApiSchema = z
     }),
     endpointIds: z.array(z.string()).optional().default([]),
     userIds: z.array(z.string()).optional().default([]),
+    teamIds: z.array(z.string()).optional().default([]),
     description: z.string().optional().default(""),
     tags: z.array(z.string()).optional().default([]),
     showAcknowledgeBtn: z.boolean().optional().default(false)
@@ -69,6 +70,7 @@ const defaultValues: ClientAPIFormType = {
   name: "",
   type: "api",
   userIds: [],
+  teamIds: [],
   endpointIds: [],
   enableAutoResolve: false,
   autoResolveMinutes: 0,
@@ -164,7 +166,7 @@ export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModa
           />
         </Grid>
         <AlertRuleGeneralFields<ClientAPIFormType>
-          methods={{ control, getValues, setValue}}
+          methods={{ control, getValues, setValue, watch }}
           errors={errors}
         >
           <Grid size={6}>

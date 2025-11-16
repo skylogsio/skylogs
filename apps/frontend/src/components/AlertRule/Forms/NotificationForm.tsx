@@ -30,6 +30,7 @@ const clientApiSchema = z.object({
   type: z.literal("notification").default("notification"),
   endpointIds: z.array(z.string()).optional().default([]),
   userIds: z.array(z.string()).optional().default([]),
+  teamIds: z.array(z.string()).optional().default([]),
   tags: z.array(z.string()).optional().default([]),
   description: z.string().optional().default(""),
   showAcknowledgeBtn: z.boolean().optional().default(false)
@@ -45,6 +46,7 @@ const defaultValues: NotificationFormType = {
   name: "",
   type: "notification",
   userIds: [],
+  teamIds: [],
   endpointIds: [],
   tags: [],
   description: "",
@@ -135,7 +137,7 @@ export default function NotificationForm({ onClose, onSubmit, data }: Notificati
           />
         </Grid>
         <AlertRuleGeneralFields<NotificationFormType>
-          methods={{ control, getValues, setValue }}
+          methods={{ control, getValues, setValue, watch }}
           errors={errors}
         >
           <Grid size={12}>
