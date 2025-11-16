@@ -127,6 +127,7 @@ export default function AlertRule() {
             header: "Action",
             cell: ({ row }) => (
               <AlertRuleActionColumn
+                hasActionAccess={row.original.hasActionAccess}
                 refreshData={handleRefreshData}
                 isSilent={row.original.is_silent}
                 rowId={row.original.id}

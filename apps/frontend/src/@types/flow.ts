@@ -11,6 +11,7 @@ export interface IFlow {
   id: string;
   user_id: string;
   name: string;
+  hasActionAccess: boolean;
   type: "flow";
   steps: IFlowStep[];
   isPublic: boolean;

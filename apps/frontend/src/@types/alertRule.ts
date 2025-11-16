@@ -29,7 +29,7 @@ export interface IAlertRule {
   user_ids: string[];
   id: string;
   ownerName: string;
-  hasAdminAccess: boolean;
+  hasActionAccess: boolean;
   status_label: AlertRuleStatus;
   is_silent: boolean;
   isPinned: boolean;

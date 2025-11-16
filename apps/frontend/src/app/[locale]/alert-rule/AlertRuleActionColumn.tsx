@@ -7,11 +7,14 @@ import { HiDotsHorizontal } from "react-icons/hi";
 import { IoNotifications, IoNotificationsOff } from "react-icons/io5";
 import { RiTestTubeFill } from "react-icons/ri";
 
+import { IAlertRule } from "@/@types/alertRule";
 import { pinAlertRule, silenceAlertRule, testAlertRule } from "@/api/alertRule";
 import ActionColumn, { ActionColumnProps } from "@/components/ActionColumn";
 import AlertRuleUserModal from "@/components/AlertRule/Users/AlertRuleUserModal";
 
-interface AlertRuleActionColumnProps extends ActionColumnProps {
+interface AlertRuleActionColumnProps
+  extends ActionColumnProps,
+    Pick<IAlertRule, "hasActionAccess"> {
   rowId: string;
   isSilent: boolean;
   isPinned: boolean;
@@ -24,7 +27,8 @@ export default function AlertRuleActionColumn({
   isPinned,
   onEdit,
   onDelete,
-  refreshData
+  refreshData,
+  hasActionAccess
 }: AlertRuleActionColumnProps) {
   const [testConfirmationAnchorEl, setTestConfirmationAnchorEl] =
     useState<HTMLButtonElement | null>(null);
@@ -137,7 +141,7 @@ export default function AlertRuleActionColumn({
         }}
       >
         <Stack padding={1} direction="row" gap={1} flexWrap="wrap" maxWidth={300}>
-          <ActionColumn onEdit={onEdit} onDelete={onDelete} />
+          {hasActionAccess && <ActionColumn onEdit={onEdit} onDelete={onDelete} />}
           <AlertRuleUserModal alertId={rowId} />
           <IconButton
             sx={{ backgroundColor: ({ palette }) => alpha(palette.secondary.light, 0.2) }}

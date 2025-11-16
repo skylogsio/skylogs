@@ -3,6 +3,7 @@ export interface IEndpoint {
   name: string;
   type: "sms" | "telegram" | "teams" | "call";
   value: string;
+  hasActionAccess: boolean;
   updated_at: Date;
   created_at: Date;
   threadId?: string;

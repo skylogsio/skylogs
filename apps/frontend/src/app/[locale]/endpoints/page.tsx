@@ -132,12 +132,13 @@ export default function EndPoints() {
             },
             {
               header: "Action",
-              cell: ({ row }) => (
-                <ActionColumn
-                  onEdit={() => handleEdit(row.original)}
-                  onDelete={() => setDeleteModalData(row.original)}
-                />
-              )
+              cell: ({ row }) =>
+                row.original.hasActionAccess ? (
+                  <ActionColumn
+                    onEdit={() => handleEdit(row.original)}
+                    onDelete={() => setDeleteModalData(row.original)}
+                  />
+                ) : null
             }
           ]}
           onCreate={() => setModalData("NEW")}
