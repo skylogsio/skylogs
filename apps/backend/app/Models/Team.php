@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Observers\TeamObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use MongoDB\Laravel\Relations\HasMany;
 
 #[ObservedBy(TeamObserver::class)]
 class Team extends BaseModel
@@ -18,9 +19,9 @@ class Team extends BaseModel
         return $this->belongsTo(User::class, 'ownerId', '_id');
     }
 
-    public function members()
+    public function members() :HasMany
     {
-        return $this->hasMany(User::class, '_id', 'userIds');
+        return $this->hasMany(User::class,'id', 'userIds');
     }
 
 }

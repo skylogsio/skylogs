@@ -106,8 +106,7 @@ class AlertingController extends Controller
         foreach ($paginatedData as &$alert) {
             //            $alert =new AlertRule($alert);
             /** @var $alert AlertRule */
-            $alert->hasAdminAccess = $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert);
-            $alert->has_admin_access = $alert->hasAdminAccess;
+            $alert->hasActionAccess = $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert);
             [$alertStatus, $alertStatusCount] = $alert->getStatus();
             $alert->statusLabel = $alertStatus;
             $alert->statusCount = $alertStatusCount;
@@ -385,8 +384,7 @@ class AlertingController extends Controller
         $alert->description = $alert->description ?? '';
         $alert->teamIds = $alert->teamIds ?? [];
         $alert->showAcknowledgeBtn = $alert->showAcknowledgeBtn ?? false;
-        $alert->hasAdminAccess = $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert);
-        $alert->has_admin_access = $alert->hasAdminAccess;
+        $alert->hasActionAccess = $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert);
         [$alertStatus, $alertStatusCount] = $alert->getStatus();
         $alert->statusLabel = $alertStatus;
         $alert->status_label = $alertStatus;

@@ -1202,7 +1202,7 @@
             },
             "post": {
                 "tags": [
-                    "Data Sources"
+                    "Teams"
                 ],
                 "summary": "Create new team",
                 "operationId": "createTeam",
@@ -1229,6 +1229,9 @@
                                         "items": {
                                             "type": "string"
                                         }
+                                    },
+                                    "description": {
+                                        "type": "string"
                                     }
                                 },
                                 "type": "object"
@@ -1269,7 +1272,7 @@
         "/api/v1/team/{id}": {
             "get": {
                 "tags": [
-                    "Data Sources"
+                    "Teams"
                 ],
                 "summary": "Get team by ID",
                 "operationId": "getTeam",
@@ -1306,7 +1309,7 @@
             },
             "put": {
                 "tags": [
-                    "Data Sources"
+                    "Teams"
                 ],
                 "summary": "Update team",
                 "operationId": "updateTeam",
@@ -1346,7 +1349,7 @@
             },
             "delete": {
                 "tags": [
-                    "Data Sources"
+                    "Teams"
                 ],
                 "summary": "Delete team",
                 "operationId": "deleteTeam",
@@ -1664,6 +1667,9 @@
                             "type": "string"
                         }
                     },
+                    "description": {
+                        "type": "string"
+                    },
                     "createdAt": {
                         "type": "string",
                         "format": "date-time"
@@ -1693,6 +1699,9 @@
                         "items": {
                             "type": "string"
                         }
+                    },
+                    "description": {
+                        "type": "string"
                     }
                 },
                 "type": "object"

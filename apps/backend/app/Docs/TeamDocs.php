@@ -57,7 +57,7 @@ class TeamDocs
         operationId: 'getTeam',
         summary: 'Get team by ID',
         security: [['bearerAuth' => []]],
-        tags: ['Data Sources'],
+        tags: ['Teams'],
         parameters: [
             new OA\Parameter(
                 name: 'id',
@@ -94,7 +94,7 @@ class TeamDocs
                 ]
             )
         ),
-        tags: ['Data Sources'],
+        tags: ['Teams'],
         responses: [
             new OA\Response(
                 response: 201,
@@ -120,7 +120,7 @@ class TeamDocs
             required: true,
             content: new OA\JsonContent(ref: '#/components/schemas/TeamInput')
         ),
-        tags: ['Data Sources'],
+        tags: ['Teams'],
         parameters: [
             new OA\Parameter(
                 name: 'id',
@@ -141,7 +141,7 @@ class TeamDocs
         operationId: 'deleteTeam',
         summary: 'Delete team',
         security: [['bearerAuth' => []]],
-        tags: ['Data Sources'],
+        tags: ['Teams'],
         parameters: [
             new OA\Parameter(
                 name: 'id',
