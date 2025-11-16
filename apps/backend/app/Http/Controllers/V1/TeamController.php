@@ -5,6 +5,7 @@ namespace App\Http\Controllers\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Team;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class TeamController extends Controller
 {
@@ -16,10 +17,11 @@ class TeamController extends Controller
         $data = Team::query();
 
         if ($request->filled('name')) {
-            $data->where('name', 'like', '%'.$request->name.'%');
+            $data->where('name', 'like', '%' . $request->name . '%');
         }
 
         $data = $data->paginate($perPage);
+
 
         return response()->json($data);
 
@@ -67,7 +69,10 @@ class TeamController extends Controller
         $va = \Validator::make(
             $request->all(),
             [
-                'name' => 'required|unique:teams',
+                'name' => [
+                    'required',
+                    Rule::unique('teams')->ignore($id, '_id')
+                ],
                 'ownerId' => 'required',
                 'userIds' => 'required|array',
             ],

@@ -40,6 +40,19 @@ class EndpointService
 
     }
 
+    public function hasActionAccess(User $user, Endpoint $endpoint)
+    {
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        if ($user->_id == $endpoint->userId) {
+            return true;
+        }
+
+        return false;
+    }
+
     public function countUserEndpointAlert(User $user, ?AlertRule $alert = null)
     {
         $selectableEndpoints = $this->selectableUserEndpoint($user, $alert);
