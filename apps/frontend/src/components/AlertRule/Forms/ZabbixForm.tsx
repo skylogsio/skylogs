@@ -40,6 +40,7 @@ const zabbixAlertRuleSchema = z.object({
   type: z.literal("zabbix"),
   endpointIds: z.array(z.string()).optional().default([]),
   userIds: z.array(z.string()).optional().default([]),
+  teamIds: z.array(z.string()).optional().default([]),
   tags: z.array(z.string()).optional().default([]),
   actions: z.array(z.string()).optional().default([]),
   hosts: z.array(z.string()).optional().default([]),
@@ -59,6 +60,7 @@ const defaultValues: ZabbixFromType = {
   name: "",
   type: "zabbix",
   userIds: [],
+  teamIds: [],
   endpointIds: [],
   tags: [],
   actions: [],
@@ -217,7 +219,7 @@ export default function ZabbixAlertRuleForm({
           />
         </Grid>
         <AlertRuleGeneralFields<ZabbixFromType>
-          methods={{ control, getValues, setValue }}
+          methods={{ control, getValues, setValue, watch }}
           errors={errors}
         >
           <Grid size={6}>

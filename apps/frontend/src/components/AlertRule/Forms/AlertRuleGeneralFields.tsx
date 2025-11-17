@@ -22,16 +22,18 @@ import {
 import { MdInfoOutline } from "react-icons/md";
 
 import { getAlertRuleCreateData } from "@/api/alertRule";
+import AccessUsersAndTeams from "@/components/AccessUsersAndTeams";
 
 type MustHaveFields = {
   endpointIds: string[];
   userIds: string[];
+  teamIds: string[];
   description: string;
-  showAcknowledgeBtn?: boolean; // New field
+  showAcknowledgeBtn?: boolean;
 };
 
 type AlertRuleEndpointUserSelectorProps<T extends MustHaveFields> = {
-  methods: Pick<UseFormReturn<T>, "control" | "setValue" | "getValues">;
+  methods: Pick<UseFormReturn<T>, "control" | "watch" | "setValue" | "getValues">;
   errors: FormState<T>["errors"];
   children?: ReactNode;
 };
@@ -41,7 +43,7 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
   errors,
   children
 }: AlertRuleEndpointUserSelectorProps<T>) {
-  const { control, setValue, getValues } = methods;
+  const { control, setValue, getValues, watch } = methods;
 
   const { data } = useQuery({
     queryKey: ["alert-rule-create-data"],
@@ -80,92 +82,50 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
     );
   };
 
-  const handleRemoveUserChip = (userId: string) => {
-    const selected = getValues("userIds" as Path<T>) as string[];
-    setValue("userIds" as Path<T>, selected.filter((id) => id !== userId) as PathValue<T, Path<T>>);
-  };
-
-  const renderUserChips = (selectedIds: unknown) => {
-    const selected =
-      data?.users.filter((user) => (selectedIds as string[]).includes(user.id)) ?? [];
-    return (
-      <Stack
-        gap={1}
-        direction="row"
-        flexWrap="wrap"
-        justifyContent="flex-start"
-        sx={{ float: "left" }}
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        {selected.map((user) => (
-          <Chip
-            key={user.id}
-            label={user.name}
-            size="small"
-            onDelete={() => handleRemoveUserChip(user.id)}
-          />
-        ))}
-      </Stack>
-    );
-  };
-
   return (
     <>
       <Stack direction="row" spacing={2} width="100%">
-        <Controller
-          control={control}
-          name={"endpointIds" as Path<T>}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              select
-              label="Endpoints"
-              variant="filled"
-              error={!!errors.endpointIds}
-              helperText={errors.endpointIds?.message as string}
-              value={field.value ?? []}
-              slotProps={{
-                select: {
-                  multiple: true,
-                  renderValue: renderEndpointChips
-                }
-              }}
-            >
-              {data?.endpoints.map((endpoint) => (
-                <MenuItem key={endpoint.id} value={endpoint.id}>
-                  {endpoint.name}
-                </MenuItem>
-              ))}
-            </TextField>
-          )}
-        />
-        <Controller
-          control={control}
-          name={"userIds" as Path<T>}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              select
-              label="Users"
-              variant="filled"
-              error={!!errors.userIds}
-              helperText={errors.userIds?.message as string}
-              value={field.value ?? []}
-              slotProps={{
-                select: {
-                  multiple: true,
-                  renderValue: renderUserChips
-                }
-              }}
-            >
-              {data?.users.map((user) => (
-                <MenuItem key={user.id} value={user.id}>
-                  {user.name}
-                </MenuItem>
-              ))}
-            </TextField>
-          )}
-        />
+        <Box width="50%">
+          <Controller
+            control={control}
+            name={"endpointIds" as Path<T>}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                select
+                label="Endpoints"
+                variant="filled"
+                error={!!errors.endpointIds}
+                helperText={errors.endpointIds?.message as string}
+                value={field.value ?? []}
+                slotProps={{
+                  select: {
+                    multiple: true,
+                    renderValue: renderEndpointChips
+                  }
+                }}
+              >
+                {data?.endpoints.map((endpoint) => (
+                  <MenuItem key={endpoint.id} value={endpoint.id}>
+                    {endpoint.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
+        </Box>
+        <Box width="50%">
+          <AccessUsersAndTeams
+            selectedTeamIds={watch("teamIds" as Path<T>) as string[]}
+            selectedUserIds={watch("userIds" as Path<T>) as string[]}
+            onTeamIdsChange={(teamIds) =>
+              setValue("teamIds" as Path<T>, teamIds as PathValue<T, Path<T>>)
+            }
+            onUserIdsChange={(userIds) =>
+              setValue("userIds" as Path<T>, userIds as PathValue<T, Path<T>>)
+            }
+          />
+        </Box>
       </Stack>
       {children}
       <Controller
