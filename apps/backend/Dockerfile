@@ -1,34 +1,47 @@
-FROM php:8.2-fpm
+FROM php:8.3-fpm-alpine
+#FROM php:8.1.14-fpm-alpine3.16
+# Set tehran timezone
+RUN rm -rf /etc/localtime && ln -s /usr/share/zoneinfo/Asia/Tehran /etc/localtime
 
-RUN apt-get update && apt-get install -y \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    zip \
-    unzip \
-    curl \
-    cron \
-    supervisor \
-    git \
-    libzip-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo pdo_mysql bcmath zip pcntl
+#RUN apk update -y
+# Install usabel applications
+RUN apk add busybox-extras iputils traceroute mtr curl tmux htop redis git dcron 
 
-RUN pecl install mongodb && docker-php-ext-enable mongodb
+# Install php extensions
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /root
+RUN chmod +x /root/install-php-extensions && /root/install-php-extensions curl \
+                           fileinfo \
+                           gd \
+                           intl \
+                           json \
+                           mbstring \
+                           bcmath \
+                           mysqli \
+#                          opcache \
+                           openssl \
+                           pcntl \
+                           pdo_mysql \
+                           redis \
+                           soap \
+                           mongodb \
+                           sockets \
+                           xml \
+                           zip
+RUN rm /root/install-php-extensions
 
-RUN pecl install redis && docker-php-ext-enable redis
+# Install composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN rm -rf /tmp/* /var/cache/apk/*
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-WORKDIR /opt/skylogs
-
-COPY . .
-
-#RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+USER root
+COPY . /opt/skylogs-api
+WORKDIR /opt/skylogs-api
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+RUN chmod 777 -R /opt/skylogs-api/storage && chmod 777 -R /opt/skylogs-api/bootstrap
+COPY ./crontab /etc/cron.d/horizon-cron
+RUN chmod 0644 /etc/cron.d/horizon-cron && crontab /etc/cron.d/horizon-cron
 
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-CMD ["/usr/local/bin/docker-entrypoint.sh"]
+EXPOSE 9000
+CMD ["/bin/sh", "/opt/skylogs-api/docker-entrypoint.sh"]
