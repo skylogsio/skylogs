@@ -1,7 +1,7 @@
 services:
   skylogs-back:
     container_name: skylogs-back
-    image: "${IMAGE_TAG_BACK}"
+    image: skylogs/skylogs:api-v0.15.0
     restart: unless-stopped
     environment:
      - DEPLOY_TYPE=web
@@ -9,6 +9,7 @@ services:
      - 9001:9000
     volumes:
       - skylogs_back:/var/www/html:rw
+      - ./apps/backend/.env:/opt/skylogs-api/.env
     networks:
       - skylogs
     depends_on:
@@ -17,36 +18,45 @@ services:
 
   skylogs-front:
     container_name: skylogs-front
-    image: "${IMAGE_TAG_FRONT}"
+    image: skylogs/skylogs:front-v0.15.0
     restart: unless-stopped
     ports:
      - 8080:3000
     networks:
       - skylogs
+    environment:
+      - NEXTAUTH_SECRET=VZsY4Uq5kHyk5U5hm8IgGVD9PG9KaxujU85qk8UjTg8=
+      - BASE_URL=http://nginx_back:80/api/v1/
+      - NEXTAUTH_URL=https://app2.skylogs.io
+
     depends_on:
       - nginx_back
       
   horizon:
     container_name: skylogs_horizon
-    image: "${IMAGE_TAG_BACK}"
+    image: skylogs/skylogs:api-v0.15.0
     environment:
      - DEPLOY_TYPE=horizon
     restart: unless-stopped
     depends_on:
       - mongodb
       - redis
+    volumes:
+      - ./apps/backend/.env:/opt/skylogs-api/.env
     networks:
       - skylogs
 
   crontab:
     container_name: skylogs_crontab
-    image: "${IMAGE_TAG_BACK}"
+    image: skylogs/skylogs:api-v0.15.0
     environment:
      - DEPLOY_TYPE=crontab
     restart: unless-stopped
     depends_on:
       - mongodb
       - redis
+    volumes:
+      - ./apps/backend/.env:/opt/skylogs-api/.env
     networks:
       - skylogs
 
@@ -103,4 +113,3 @@ volumes:
     driver: local
   mongo_data:
     driver: local
-
