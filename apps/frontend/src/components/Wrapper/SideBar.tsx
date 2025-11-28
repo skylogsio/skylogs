@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import {
+  alpha,
   Box,
   List,
   ListItem as MUIListItem,
@@ -25,6 +26,8 @@ import {
 
 import { useRole } from "@/hooks";
 import { RoleType } from "@/utils/userUtils";
+
+const SKYLOGS_VERSION = "0.15.0";
 
 type URLType = {
   pathname: string;
@@ -97,8 +100,10 @@ function ListItem(url: URLType) {
           sx={{
             paddingY: 2,
             borderRadius: "0.6rem",
-            backgroundColor: isActive ? `${palette.primary.main}!important` : "transparent",
-            color: isActive ? palette.common.white : "inherit",
+            backgroundColor: isActive
+              ? `${alpha(palette.primary.main, 0.15)}!important`
+              : "transparent",
+            color: "inherit",
             display: "flex",
             alignItems: "center",
             gap: 1.5
@@ -115,22 +120,24 @@ function ListItem(url: URLType) {
 export default function SideBar() {
   const { palette } = useTheme();
   return (
-    <Stack height="100%">
-      <Box paddingX={7} paddingBottom={3} paddingTop={5}>
-        <Image
-          src="/static/images/logo.png"
-          alt="Skylogs Logo"
-          width="400"
-          height="120"
-          style={{ filter: `drop-shadow(0px 0px 16px ${palette.primary.light})` }}
-        />
-      </Box>
-      <List>{URLS.map((url) => ListItem(url))}</List>
-      <Stack alignItems="center" marginTop="auto">
-        <Typography variant="caption" color="text.secondary" fontSize={10}>
-          version 1.2.4
-        </Typography>
+    <Box height="100%" overflow="auto" sx={{ direction: "rtl" }}>
+      <Stack width="100%" height="100%" sx={{ direction: "ltr" }}>
+        <Box paddingX={7} marginY="-10%">
+          <Image
+            src="/static/images/logo.png"
+            alt="Skylogs Logo"
+            width="400"
+            height="120"
+            style={{ filter: `drop-shadow(0px 0px 16px ${palette.primary.light})` }}
+          />
+        </Box>
+        <List>{URLS.map((url) => ListItem(url))}</List>
+        <Stack alignItems="center" marginTop="auto">
+          <Typography variant="caption" color="text.secondary" fontSize={10}>
+            version {SKYLOGS_VERSION}
+          </Typography>
+        </Stack>
       </Stack>
-    </Stack>
+    </Box>
   );
 }
