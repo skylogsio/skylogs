@@ -48,8 +48,10 @@ Use this page as the main index to navigate all documentation sections.
 -    [discord Integration](contact-points/email.md)  
 
 
+## Alerts Guide
 
-
+- 👉 [Kubernetes Alerts ](alerts-guide/kubernetes_alerts_guide.md)
+- 👉 [Blackbox Alerts ](alerts-guide/blackbox_alerts_guids.md)
 ---
 
 ## 👤 User & Access Management
