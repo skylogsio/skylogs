@@ -1,5 +1,4 @@
 # 📘 Standard Blackbox Exporter Alerts  
-### _Complete Documentation in Markdown_
 
 This document describes all common and recommended alerts for **Prometheus Blackbox Exporter** including:  
 - HTTP probes  

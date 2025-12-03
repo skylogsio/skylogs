@@ -1,5 +1,4 @@
 # 📘 Standard Kubernetes & Prometheus Alerts  
-### _Complete Documentation in Markdown_
 
 This document explains all standard alerts used in **kube-prometheus**, **kube-prometheus-stack**, and **Prometheus Operator**, grouped by category with meanings, causes, and resolutions.
 
