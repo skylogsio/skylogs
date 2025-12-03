@@ -1,11 +1,11 @@
 services:
-    app:
+    skylogs-back:
         build: apps/backend
         container_name: skylogs_app
         restart: unless-stopped
-        working_dir: /var/www
+        working_dir: /var/www/html
         volumes:
-            - app_data:/var/www
+            - app_data:/var/www/html
         networks:
             - skylogs_net
         depends_on:
@@ -29,12 +29,12 @@ services:
         ports:
             - "8000:80"
         volumes:
-            - app_data:/var/www
+            - app_data:/var/www/html
             - ./apps/backend/nginx.conf:/etc/nginx/conf.d/default.conf
         networks:
             - skylogs_net
         depends_on:
-            - app
+            - skylogs-back
 
     mongo:
         image: mongo:latest
@@ -62,11 +62,11 @@ services:
             dockerfile: HorizonDockerfile
         container_name: skylogs_horizon
         restart: unless-stopped
-        working_dir: /var/www
+        working_dir: /var/www/html
         volumes:
-            - app_data:/var/www
+            - app_data:/var/www/html
         depends_on:
-            - app
+            - skylogs-back
             - mongo
             - redis
         networks:
@@ -80,7 +80,7 @@ services:
         environment:
             - NEXTAUTH_SECRET=GK/IKHJ55WUBSIDAFLT3vcQmud1t5PIZHsclw40JtVs=
             - NEXTAUTH_URL=http://localhost:8000
-            - NEXT_PUBLIC_BASE_URL=http://nginx:80/api/v1/
+            - BASE_URL=http://nginx:80/api/v1/
         networks:
             - skylogs_net
         depends_on:
