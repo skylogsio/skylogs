@@ -1,4 +1,4 @@
-x-dev-env: &dev-env
+x-back-env: &back-env
   environment:
   - APP_ENV=local
   - APP_DEBUG=true
@@ -7,19 +7,16 @@ x-dev-env: &dev-env
   - KAVENEGAR_TOKEN=
   - KAVENEGAR_SENDER_NUMBER=
   - TELEGRAM_BOT_TOKEN=
+#  Change the secret
   - JWT_SECRET=mysecret
 
-
-x-prod-env: &prod-env
+x-front-env: &front-env
   environment:
-  - APP_ENV=production
-  - APP_DEBUG=false
-  - APP_URL=http://my-app:8000
-  - FRONTEND_URL=http://localhost:8080
-  - KAVENEGAR_TOKEN=
-  - KAVENEGAR_SENDER_NUMBER=
-  - TELEGRAM_BOT_TOKEN=
-  - JWT_SECRET=mysecret
+#   Change the secret (at least 32 characters)
+    - NEXTAUTH_SECRET=GK/IKHJ55WUBSIDAFLT3vcQmud1t5PIZHsclw40JtVs=
+    - NEXTAUTH_URL=http://localhost:8000
+    - BASE_URL=http://nginx:80/api/v1/
+
 
 services:
     skylogs-back:
@@ -34,7 +31,7 @@ services:
         depends_on:
             - mongo
             - redis
-        <<: *dev-env
+        <<: *back-env
 
     nginx:
         image: nginx:latest
@@ -85,7 +82,7 @@ services:
             - redis
         networks:
             - skylogs_net
-        <<: *dev-env
+        <<: *back-env
 
 
     front:
@@ -93,14 +90,12 @@ services:
         restart: unless-stopped
         ports:
             - 8080:3000
-        environment:
-            - NEXTAUTH_SECRET=GK/IKHJ55WUBSIDAFLT3vcQmud1t5PIZHsclw40JtVs=
-            - NEXTAUTH_URL=http://localhost:8000
-            - BASE_URL=http://nginx:80/api/v1/
         networks:
             - skylogs_net
         depends_on:
             - nginx
+        <<: *front-env
+
 
 networks:
     skylogs_net:
