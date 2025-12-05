@@ -1,3 +1,26 @@
+x-dev-env: &dev-env
+  environment:
+  - APP_ENV=local
+  - APP_DEBUG=true
+  - APP_URL=http://localhost:8000
+  - FRONTEND_URL=http://localhost:8080
+  - KAVENEGAR_TOKEN=
+  - KAVENEGAR_SENDER_NUMBER=
+  - TELEGRAM_BOT_TOKEN=
+  - JWT_SECRET=mysecret
+
+
+x-prod-env: &prod-env
+  environment:
+  - APP_ENV=production
+  - APP_DEBUG=false
+  - APP_URL=http://my-app:8000
+  - FRONTEND_URL=http://localhost:8080
+  - KAVENEGAR_TOKEN=
+  - KAVENEGAR_SENDER_NUMBER=
+  - TELEGRAM_BOT_TOKEN=
+  - JWT_SECRET=mysecret
+
 services:
     skylogs-back:
         build: apps/backend
@@ -11,16 +34,7 @@ services:
         depends_on:
             - mongo
             - redis
-        environment:
-            - APP_ENV=local
-            - APP_DEBUG=true
-            - DB_CONNECTION=mongodb
-            - DB_HOST=mongo
-            - DB_PORT=27017
-            - CACHE_DRIVER=redis
-            - QUEUE_CONNECTION=redis
-            - REDIS_HOST=redis
-            - REDIS_PORT=6379
+        <<: *dev-env
 
     nginx:
         image: nginx:latest
@@ -71,6 +85,8 @@ services:
             - redis
         networks:
             - skylogs_net
+        <<: *dev-env
+
 
     front:
         build: apps/frontend
