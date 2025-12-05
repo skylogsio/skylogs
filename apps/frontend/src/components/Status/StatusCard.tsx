@@ -21,6 +21,7 @@ import { HiPencil, HiTrash } from "react-icons/hi";
 import { TbCircleCheck, TbAlertTriangle, TbExclamationCircle } from "react-icons/tb";
 
 import type { IStatusCard, StateType } from "@/@types/status";
+import { useRole } from "@/hooks";
 import { formatTimeAgo } from "@/utils/general";
 
 const pulse = keyframes`
@@ -147,6 +148,8 @@ const StatusMonitoringCards = ({
   const [showThreeDots, setShowThreeDots] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const { hasRole } = useRole();
+  const isOwner = hasRole("owner");
 
   function handleMenuClick(event: React.MouseEvent<HTMLElement>) {
     event.stopPropagation();
@@ -171,6 +174,7 @@ const StatusMonitoringCards = ({
   }
 
   function handleCardClick(tags: IStatusCard["tags"], state: IStatusCard["state"]) {
+    if (!isOwner) return;
     const filters: Record<string, unknown> = {};
 
     if (tags && tags.length > 0) {
@@ -212,6 +216,7 @@ const StatusMonitoringCards = ({
         onClick={() => handleCardClick(info.tags, info.state)}
         onMouseEnter={() => setShowThreeDots(true)}
         onMouseLeave={() => setShowThreeDots(false)}
+        sx={{ cursor: isOwner ? "pointer" : "default" }}
       >
         <CardContent
           sx={{ padding: "16px !important", height: "100%", position: "relative", zIndex: 1 }}
@@ -231,7 +236,7 @@ const StatusMonitoringCards = ({
               {info.name}
             </Typography>
             <StateIcon state={info.state}>{getStatusIcon(info.state)}</StateIcon>
-            <Collapse orientation="horizontal" in={showThreeDots}>
+            <Collapse orientation="horizontal" in={showThreeDots && isOwner}>
               <IconButton
                 sx={{
                   ml: ({ spacing }) => `${spacing(2)}!important`,
