@@ -56,6 +56,7 @@ const generalAlertRuleSchema = z.object({
   type: z.enum(ALERT_RULE_TYPES),
   endpointIds: z.array(z.string()).optional().default([]),
   userIds: z.array(z.string()).optional().default([]),
+  teamIds: z.array(z.string()).optional().default([]),
   extraField: z.array(extraFieldSchema).optional().default([]),
   tags: z.array(z.string()).optional().default([]),
   dataSourceIds: z.array(z.string()).min(1, "Select at least one Data Source."),
@@ -78,6 +79,7 @@ const defaultValues: GeneralAlertRuleType = {
   name: "",
   type: "prometheus",
   userIds: [],
+  teamIds: [],
   endpointIds: [],
   extraField: [],
   tags: [],
@@ -223,7 +225,7 @@ export default function GeneralAlertRuleForm({
           />
         </Grid>
         <AlertRuleGeneralFields<GeneralAlertRuleType>
-          methods={{ control, getValues, setValue }}
+          methods={{ control, getValues, setValue, watch }}
           errors={errors}
         >
           <Grid size={12} display="flex" justifyContent="center">

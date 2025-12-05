@@ -38,6 +38,7 @@ const splunkAlertRuleSchema = z.object({
   type: z.literal("splunk"),
   endpointIds: z.array(z.string()).optional().default([]),
   userIds: z.array(z.string()).optional().default([]),
+  teamIds: z.array(z.string()).optional().default([]),
   tags: z.array(z.string()).optional().default([]),
   dataSourceIds: z.array(z.string()).min(1, "This field is Required."),
   dataSourceAlertName: z
@@ -59,6 +60,7 @@ const defaultValues: SplunkFromType = {
   name: "",
   type: "splunk",
   userIds: [],
+  teamIds: [],
   endpointIds: [],
   tags: [],
   dataSourceIds: [],
@@ -186,7 +188,7 @@ export default function SplunkAlertRuleForm({
           />
         </Grid>
         <AlertRuleGeneralFields<SplunkFromType>
-          methods={{ control, getValues, setValue }}
+          methods={{ control, getValues, setValue, watch }}
           errors={errors}
         >
           <Grid size={6}>

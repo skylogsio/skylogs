@@ -4,6 +4,8 @@ export interface IEndpoint {
   type: "sms" | "telegram" | "teams" | "call";
   value: string;
   hasActionAccess: boolean;
+  accessTeamIds: string[];
+  accessUserIds: string[];
   updated_at: Date;
   created_at: Date;
   threadId?: string;
