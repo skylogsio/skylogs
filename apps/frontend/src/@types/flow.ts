@@ -13,15 +13,10 @@ export interface IFlow {
   name: string;
   hasActionAccess: boolean;
   type: "flow";
+  accessTeamIds: string[];
+  accessUserIds: string[];
   steps: IFlowStep[];
   isPublic: boolean;
   updatedAt: Date;
   createdAt: Date;
-}
-
-export interface ICreateFlowRequest {
-  name: string;
-  type: "flow";
-  steps: IFlowStep[];
-  isPublic: boolean;
 }
