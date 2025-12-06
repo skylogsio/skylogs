@@ -116,6 +116,9 @@ class AlertingController extends Controller
             $alert->is_silent = $isSilent;
             $alert->countEndpoints = $this->endpointService->countUserEndpointAlert($currentUser, $alert);
             $alert->count_endpoints = $alert->countEndpoints;
+            $alert->showAcknowledgeBtn = $alert->showAcknowledgeBtn ?? false;
+            $alert->teamIds = $alert->teamIds ?? [];
+            $alert->description = $alert->description ?? '';
 
             $extraField = [];
             if (! empty($alert->extraField)) {
