@@ -69,16 +69,18 @@ Route::prefix('v1')->group(function () {
 
         Route::prefix('/user')
             ->controller(UserController::class)
-            ->middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)
             ->group(function () {
-                Route::get('/', 'Index');
-                Route::get('/all', 'All');
-                Route::get('/{id}', 'Show');
-                Route::post('/', 'Create');
+                Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->group(function () {
+                    Route::get('/', 'Index');
+                    Route::get('/{id}', 'Show');
+                    Route::post('/', 'Create');
+                    Route::put('/pass/{id}', 'ChangePassword');
+                    Route::put('/{id}', 'Update');
+                    Route::delete('/{id}', 'Delete');
+                });
                 Route::middleware('role:'.Constants::ROLE_OWNER->value)->post('/changeOwner', 'ChangeOwnerShipOfData');
-                Route::put('/pass/{id}', 'ChangePassword');
-                Route::put('/{id}', 'Update');
-                Route::delete('/{id}', 'Delete');
+                Route::get('/all', 'All');
+
             });
 
         Route::prefix('/endpoint')
