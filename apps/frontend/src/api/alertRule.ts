@@ -4,7 +4,7 @@ import type {
   IAlertRule,
   IAlertRuleCreateData,
   IAlertRuleEndpoints,
-  IAlertRuleUsers,
+  IAlertRuleAccess,
   IZabbixCreateData
 } from "@/@types/alertRule";
 import type { IEndpoint } from "@/@types/endpoint";
@@ -13,6 +13,8 @@ import type {
   ServerResponse,
   ServerSelectableDataType
 } from "@/@types/global";
+import type { ITeam } from "@/@types/team";
+import type { IUser } from "@/@types/user";
 import axios from "@/lib/axios";
 import { DataSourceType } from "@/utils/dataSourceUtils";
 
@@ -176,25 +178,28 @@ export async function removeEndpointFromAlertRule(
   }
 }
 
-export async function getAlertRuleUsersList(
+export async function getAlertRuleAccessList(
   alertRuleId: IAlertRule["id"]
-): Promise<IAlertRuleUsers> {
+): Promise<IAlertRuleAccess> {
   try {
-    const response = await axios.get<IAlertRuleUsers>(`${ALERT_RULE_USER_URL}/${alertRuleId}`);
+    const response = await axios.get<IAlertRuleAccess>(`${ALERT_RULE_USER_URL}/${alertRuleId}`);
     return response.data;
   } catch (error) {
     throw error;
   }
 }
 
-export async function addUsersToAlertRule(
+export async function addAccessToAlertRule(
   alertRuleId: IAlertRule["id"],
-  userIds: string[]
+  body: {
+    userIds: Array<IUser["id"]>;
+    teamIds: Array<ITeam["id"]>;
+  }
 ): Promise<ServerResponse<unknown>> {
   try {
     const response = await axios.put<ServerResponse<unknown>>(
       `${ALERT_RULE_USER_URL}/${alertRuleId}`,
-      { user_ids: userIds }
+      body
     );
     return response.data;
   } catch (error) {
@@ -202,13 +207,13 @@ export async function addUsersToAlertRule(
   }
 }
 
-export async function removeUserFromAlertRule(
+export async function removeAccessFromAlertRule(
   alertRuleId: IAlertRule["id"],
-  userId: string
+  accessId: IUser["id"] | ITeam["id"]
 ): Promise<ServerResponse<unknown>> {
   try {
     const response = await axios.delete<ServerResponse<unknown>>(
-      `${ALERT_RULE_USER_URL}/${alertRuleId}/${userId}`
+      `${ALERT_RULE_USER_URL}/${alertRuleId}/${accessId}`
     );
     return response.data;
   } catch (error) {
