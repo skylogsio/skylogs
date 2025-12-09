@@ -1,4 +1,4 @@
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Box, Button, Stack, Typography, useTheme, alpha } from "@mui/material";
 import { motion } from "framer-motion";
 import { BsTelegram } from "react-icons/bs";
 import { HiOutlinePlusSm } from "react-icons/hi";
@@ -8,6 +8,7 @@ interface EmptyProxyListProps {
 }
 
 export default function EmptyProxyList({ onCreate }: EmptyProxyListProps) {
+  const { palette } = useTheme();
   return (
     <Box
       component={motion.div}
@@ -62,7 +63,7 @@ export default function EmptyProxyList({ onCreate }: EmptyProxyListProps) {
               width: "140px",
               height: "140px",
               borderRadius: "50%",
-              border: "3px solid rgba(72, 128, 255, 0.4)",
+              border: `3px solid ${alpha(palette.primary.dark, 0.4)}`,
               pointerEvents: "none"
             }}
           />
@@ -71,13 +72,13 @@ export default function EmptyProxyList({ onCreate }: EmptyProxyListProps) {
               width: "140px",
               height: "140px",
               borderRadius: "50%",
-              background: "linear-gradient(135deg, #4880FF 0%, #6F9BFF 100%)",
+              background: `linear-gradient(135deg, ${palette.primary.main} 0%, ${palette.primary.light} 100%)`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               position: "relative",
               marginY: "2rem",
-              boxShadow: "0 10px 40px rgba(72, 128, 255, 0.3)"
+              boxShadow: `0 10px 40px ${alpha(palette.primary.dark, 0.4)}`
             }}
           >
             <motion.div
@@ -91,7 +92,7 @@ export default function EmptyProxyList({ onCreate }: EmptyProxyListProps) {
                 repeat: Infinity
               }}
             >
-              <BsTelegram size="70px" color="#FFFFFF" />
+              <BsTelegram size="70px" color={palette.common.white} />
             </motion.div>
           </Box>
         </Box>
@@ -111,13 +112,7 @@ export default function EmptyProxyList({ onCreate }: EmptyProxyListProps) {
             variant="h4"
             fontWeight="700"
             textAlign="center"
-            sx={{
-              background: "linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 100%)",
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              letterSpacing: "-0.5px"
-            }}
+            sx={{ letterSpacing: "-0.5px" }}
           >
             No Proxies Configured
           </Typography>
@@ -148,12 +143,10 @@ export default function EmptyProxyList({ onCreate }: EmptyProxyListProps) {
           <Button
             component={motion.button}
             whileHover={{
-              y: -3,
-              boxShadow: "0 12px 32px rgba(72, 128, 255, 0.45)"
+              y: -3
             }}
             whileTap={{
-              y: -1,
-              boxShadow: "0 6px 20px rgba(72, 128, 255, 0.35)"
+              y: -1
             }}
             transition={{
               type: "spring",
@@ -171,10 +164,10 @@ export default function EmptyProxyList({ onCreate }: EmptyProxyListProps) {
               fontWeight: 600,
               borderRadius: "12px",
               textTransform: "none",
-              background: "linear-gradient(135deg, #4880FF 0%, #6F9BFF 100%)",
-              boxShadow: "0 8px 24px rgba(72, 128, 255, 0.35)",
+              background: `linear-gradient(135deg, ${palette.primary.main} 0%, ${palette.primary.light} 100%)`,
+              boxShadow: `0 8px 24px ${alpha(palette.primary.dark, 0.4)}`,
               "&:hover": {
-                background: "linear-gradient(135deg, #3D6FDF 0%, #4880FF 100%)"
+                background: `linear-gradient(135deg, ${palette.primary.dark} 0%, ${palette.primary.main} 100%)`
               }
             }}
           >
