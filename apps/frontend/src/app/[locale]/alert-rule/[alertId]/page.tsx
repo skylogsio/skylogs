@@ -176,6 +176,7 @@ export default function ViewAlertRule() {
                   status={data.status_label}
                   id={alertId}
                   onAfterResolve={handleRefreshData}
+                  showAcknowledge={!data.acknowledgedBy}
                 />
               </Stack>
             </Stack>
