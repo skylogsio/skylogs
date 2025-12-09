@@ -13,6 +13,7 @@ import {
   deactivateTelegramProxy,
   getAllTelegramProxies
 } from "@/api/setttings/telegram";
+import EmptyProxyList from "@/components/Settings/Telegram/EmptyProxyList";
 import ProxyCard from "@/components/Settings/Telegram/ProxyCard";
 import ProxyModal from "@/components/Settings/Telegram/ProxyModal";
 
@@ -64,37 +65,43 @@ export default function TelegramSettings() {
   return (
     <>
       <Stack spacing={2}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-end">
-          <Typography variant="h5" fontSize="1.8rem" fontWeight="700" component="div">
-            Telegram Proxies
-          </Typography>
-          <Button
-            startIcon={<HiOutlinePlusSm size="1.3rem" />}
-            onClick={() => setModalData("NEW")}
-            size="small"
-            variant="contained"
-            sx={{ paddingRight: "1rem" }}
-          >
-            Create
-          </Button>
-        </Stack>
-        <Grid
-          container
-          spacing={2}
-          sx={{ backgroundColor: palette.background.paper, padding: 3, borderRadius: "1rem" }}
-        >
-          {data?.map((item) => (
-            <ProxyCard
-              key={item.id}
-              data={item}
-              onEdit={() => setModalData(item)}
-              onAfterDelete={handleRefreshData}
-              checked={activeProxy === item.id}
-              disabled={isActivating || isDeactivating}
-              onChange={(_, checked) => handleChangeProxyActivation(checked, item.id)}
-            />
-          ))}
-        </Grid>
+        {data && data?.length > 0 ? (
+          <>
+            <Stack direction="row" justifyContent="space-between" alignItems="flex-end">
+              <Typography variant="h5" fontSize="1.8rem" fontWeight="700" component="div">
+                Telegram Proxies
+              </Typography>
+              <Button
+                startIcon={<HiOutlinePlusSm size="1.3rem" />}
+                onClick={() => setModalData("NEW")}
+                size="small"
+                variant="contained"
+                sx={{ paddingRight: "1rem" }}
+              >
+                Create
+              </Button>
+            </Stack>
+            <Grid
+              container
+              spacing={2}
+              sx={{ backgroundColor: palette.background.paper, padding: 3, borderRadius: "1rem" }}
+            >
+              {data?.map((item) => (
+                <ProxyCard
+                  key={item.id}
+                  data={item}
+                  onEdit={() => setModalData(item)}
+                  onAfterDelete={handleRefreshData}
+                  checked={activeProxy === item.id}
+                  disabled={isActivating || isDeactivating}
+                  onChange={(_, checked) => handleChangeProxyActivation(checked, item.id)}
+                />
+              ))}
+            </Grid>
+          </>
+        ) : (
+          <EmptyProxyList onCreate={() => setModalData("NEW")} />
+        )}
       </Stack>
       {modalData && (
         <ProxyModal
