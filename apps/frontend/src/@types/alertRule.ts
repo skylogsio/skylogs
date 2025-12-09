@@ -198,3 +198,5 @@ export interface IZabbixAlertHistory {
   createdAt: string;
   id: string;
 }
+
+export interface IZabbixHistoryInstance extends IZabbixAlertHistory {}

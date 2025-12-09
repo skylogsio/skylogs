@@ -1,7 +1,9 @@
 import type { IAlertRule } from "@/@types/alertRule";
-import ApiFiredInstances from "@/components/AlertRule/FiredInstances/ApiFiredInstances";
-import PrometheusFiredInstance from "@/components/AlertRule/FiredInstances/PrometheusFiredInstance";
 import type { AlertRuleType } from "@/utils/alertRuleUtils";
+
+import ApiFiredInstances from "./ApiFiredInstances";
+import PrometheusFiredInstance from "./PrometheusFiredInstance";
+import ZabbixFiredInstance from "./ZabbixFiredInstance";
 
 export default function AlertRuleFiredInstances({
   alertId,
@@ -15,6 +17,8 @@ export default function AlertRuleFiredInstances({
       return <ApiFiredInstances alertId={alertId} />;
     case "prometheus":
       return <PrometheusFiredInstance alertId={alertId} />;
+    case "zabbix":
+      return <ZabbixFiredInstance alertId={alertId} />;
     default:
       return null;
   }
