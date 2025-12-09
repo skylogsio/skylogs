@@ -84,7 +84,7 @@ export default function AlertRuleStatusIndicator({
       />
       {status === "critical" && id && (
         <Stack direction="row" spacing={1}>
-          <Tooltip title="Resolve" placement="top" arrow>
+          <Tooltip title="Resolve" placement="bottom" arrow>
             <IconButton
               disabled={isPending}
               size="small"
@@ -99,7 +99,7 @@ export default function AlertRuleStatusIndicator({
             </IconButton>
           </Tooltip>
           {showAcknowledge && (
-            <Tooltip title="Acknowledge" placement="top" arrow>
+            <Tooltip title="Acknowledge" placement="bottom" arrow>
               <IconButton
                 disabled={isPending}
                 size="small"
