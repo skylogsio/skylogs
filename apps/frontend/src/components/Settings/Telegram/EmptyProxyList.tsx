@@ -1,7 +1,7 @@
 import { Box, Button, Stack, Typography, useTheme, alpha } from "@mui/material";
 import { motion } from "framer-motion";
-import { BsTelegram } from "react-icons/bs";
 import { HiOutlinePlusSm } from "react-icons/hi";
+import { RiTelegram2Fill } from "react-icons/ri";
 
 interface EmptyProxyListProps {
   onCreate: () => void;
@@ -72,7 +72,7 @@ export default function EmptyProxyList({ onCreate }: EmptyProxyListProps) {
               width: "140px",
               height: "140px",
               borderRadius: "50%",
-              background: `linear-gradient(135deg, ${palette.primary.main} 0%, ${palette.primary.light} 100%)`,
+              background: "linear-gradient(135deg, #2AABEE 0%, #229ED9 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -92,7 +92,7 @@ export default function EmptyProxyList({ onCreate }: EmptyProxyListProps) {
                 repeat: Infinity
               }}
             >
-              <BsTelegram size="70px" color={palette.common.white} />
+              <RiTelegram2Fill size="5.5rem" color={palette.common.white} />
             </motion.div>
           </Box>
         </Box>
