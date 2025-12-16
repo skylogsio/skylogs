@@ -51,9 +51,9 @@ class AccessUserController extends Controller
             abort(403);
         }
 
-        if ($request->has('user_ids') && ! empty($request->post('user_ids'))) {
+        if ($request->has('userIds') && ! empty($request->post('userIds'))) {
 
-            foreach ($request->user_ids as $userId) {
+            foreach ($request->userIds as $userId) {
                 $alert->push('userIds', $userId, true);
             }
             $alert->save();

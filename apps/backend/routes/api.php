@@ -70,6 +70,8 @@ Route::prefix('v1')->group(function () {
         Route::prefix('/user')
             ->controller(UserController::class)
             ->group(function () {
+                Route::get('/all', 'All');
+                Route::middleware('role:'.Constants::ROLE_OWNER->value)->post('/changeOwner', 'ChangeOwnerShipOfData');
                 Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->group(function () {
                     Route::get('/', 'Index');
                     Route::get('/{id}', 'Show');
@@ -78,8 +80,6 @@ Route::prefix('v1')->group(function () {
                     Route::put('/{id}', 'Update');
                     Route::delete('/{id}', 'Delete');
                 });
-                Route::middleware('role:'.Constants::ROLE_OWNER->value)->post('/changeOwner', 'ChangeOwnerShipOfData');
-                Route::get('/all', 'All');
 
             });
 

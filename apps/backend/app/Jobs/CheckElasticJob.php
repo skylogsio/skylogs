@@ -14,7 +14,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class CheckElasticJob implements ShouldBeUnique, ShouldQueue
+class CheckElasticJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -79,7 +79,7 @@ class CheckElasticJob implements ShouldBeUnique, ShouldQueue
                     'state' => ElasticCheck::FIRE,
                 ]);
 
-                SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check, $this->alert->_id);
+                SendNotifyService::CreateNotify(SendNotifyJob::ELASTIC_CHECK, $check, $this->alert->_id);
             }
 
         } else {
@@ -106,15 +106,11 @@ class CheckElasticJob implements ShouldBeUnique, ShouldQueue
                     'state' => ElasticCheck::RESOLVED,
                 ]);
 
-                SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check, $this->alert->_id);
+                SendNotifyService::CreateNotify(SendNotifyJob::ELASTIC_CHECK, $check, $this->alert->_id);
 
             }
         }
 
     }
 
-    public function uniqueId()
-    {
-        return $this->alert->_id;
-    }
 }

@@ -87,6 +87,159 @@ class AlertingDoc
     {
     }
 
+/*
+    // ----------------------------
+    // POST /api/v1/alert-rule
+    // ----------------------------
+    #[OA\Post(
+        path: "/api/v1/alert-rule",
+        operationId: "createAlertRuleApi",
+        summary: "Create Api alert rule",
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "name", type: "string", example: "High CPU usage"),
+                    new OA\Property(property: "type", type: "string", example: "api"),
+                    new OA\Property(property: "description", type: "string", example: "Alert when CPU > 80%"),
+                    new OA\Property(property: "enableAutoResolve", type: "boolean", example: true),
+                    new OA\Property(property: "autoResolveMinutes", type: "integer", example: 30),
+                    new OA\Property(property: "userIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "teamIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "endpointIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "tags", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "minutes", type: "integer", example: 5),
+                ],
+                type: "object"
+            )
+        ),
+        tags: ["AlertRule"],
+        responses: [
+            new OA\Response(response: 201, description: "Created"),
+            new OA\Response(response: 422, description: "Validation error"),
+        ]
+    )]
+    public function storeApi()
+    {
+    }
+
+    // ----------------------------
+    // POST /api/v1/alert-rule
+    // ----------------------------
+    #[OA\Post(
+        path: "/api/v1/alert-rule",
+        operationId: "createAlertRulePrometheus",
+        summary: "Create Prometheus alert rule",
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "name", type: "string", example: "High CPU usage"),
+                    new OA\Property(property: "type", type: "string", example: "prometheus"),
+                    new OA\Property(property: "description", type: "string", example: "Alert when CPU > 80%"),
+                    new OA\Property(property: "dataSourceIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "dataSourceAlertName", type: "string", example: "CPU Alert"),
+                    new OA\Property(property: "expression", type: "string", example: "avg(rate(cpu_usage[5m])) > 80"),
+                    new OA\Property(property: "queryString", type: "string", example: "error_count > 5"),
+                    new OA\Property(property: "userIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "teamIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "endpointIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "tags", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "queryType", type: "string", example: "lucene"),
+                    new OA\Property(property: "minutes", type: "integer", example: 5),
+                ],
+            )
+        ),
+        tags: ["AlertRule"],
+        responses: [
+            new OA\Response(response: 201, description: "Created"),
+            new OA\Response(response: 422, description: "Validation error"),
+        ]
+    )]
+    public function storePrometheusGrafana()
+    {
+    }
+
+    // ----------------------------
+    // POST /api/v1/alert-rule
+    // ----------------------------
+    #[OA\Post(
+        path: "/api/v1/alert-rule",
+        operationId: "createAlertRuleZabbix",
+        summary: "Create zabbix alert rule",
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "name", type: "string", example: "High CPU usage"),
+                    new OA\Property(property: "type", type: "string", example: "zabbix"),
+                    new OA\Property(property: "description", type: "string", example: "Alert when CPU > 80%"),
+                    new OA\Property(property: "dataSourceIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "hosts", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "actions", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "severities", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "userIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "teamIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "endpointIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "tags", type: "array", items: new OA\Items(type: "string")),
+                ],
+                type: "object"
+            )
+        ),
+        tags: ["AlertRule"],
+        responses: [
+            new OA\Response(response: 201, description: "Created"),
+            new OA\Response(response: 422, description: "Validation error"),
+        ]
+    )]
+    public function storeZabbix()
+    {
+    }*/
+
+
+    // ----------------------------
+    // POST /api/v1/alert-rule
+    // ----------------------------
+    #[OA\Post(
+        path: "/api/v1/alert-rule",
+        operationId: "createAlertRuleElastic",
+        summary: "Create elastic alert rule",
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "name", type: "string", example: "High CPU usage"),
+                    new OA\Property(property: "type", type: "string", example: "elastic"),
+                    new OA\Property(property: "description", type: "string", example: "Alert when CPU > 80%"),
+                    new OA\Property(property: "dataSourceId", type: "string", example: "1"),
+                    new OA\Property(property: "queryString", type: "string", example: "OriginStatus:>=400 name:myName"),
+                    new OA\Property(property: "userIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "teamIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "endpointIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "tags", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "dataviewName", type: "string", example: "My dataview"),
+                    new OA\Property(property: "dataviewTitle", type: "string", example: "responses*"),
+                    new OA\Property(property: "conditionType", type: "string", enum: ['greaterOrEqual','lessOrEqual'], example: "greaterOrEqual"),
+                    new OA\Property(property: "countDocument", type: "integer", example: 5),
+                    new OA\Property(property: "minutes", type: "integer", example: 5),
+                ],
+                type: "object"
+            )
+        ),
+        tags: ["AlertRule"],
+        responses: [
+            new OA\Response(response: 201, description: "Created"),
+            new OA\Response(response: 422, description: "Validation error"),
+        ]
+    )]
+    public function storeElastic()
+    {
+    }
+/*
 
     // ----------------------------
     // POST /api/v1/alert-rule
@@ -138,8 +291,7 @@ class AlertingDoc
     )]
     public function store()
     {
-    }
-
+    }*/
 
     // ----------------------------
     // PUT /api/v1/alert-rule/{id}
