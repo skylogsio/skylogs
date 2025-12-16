@@ -30,7 +30,7 @@ import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndi
 import AlertRuleFiredInstances from "@/components/AlertRule/FiredInstances/AlertRuleFiredInstances";
 import AlertRuleHistory from "@/components/AlertRule/History/AlertRuleHistory";
 import AlertRuleNotifyManager from "@/components/AlertRule/Notify/AlertRuleNotifyManager";
-import AlertRuleUserManager from "@/components/AlertRule/Users/AlertRuleUserManager";
+import AlertRuleAccessManager from "@/components/AlertRule/Users/AlertRuleAccessManager";
 import { ALERT_RULE_VARIANTS } from "@/utils/alertRuleUtils";
 
 const TABS = ["fire", "users", "history", "notify"];
@@ -139,7 +139,7 @@ export default function ViewAlertRule() {
   function renderSections() {
     switch (currentTab) {
       case "users":
-        return <AlertRuleUserManager alertId={alertId} />;
+        return <AlertRuleAccessManager alertId={alertId} />;
       case "history":
         return <AlertRuleHistory alertId={alertId} type={data!.type} />;
       case "notify":
@@ -176,6 +176,7 @@ export default function ViewAlertRule() {
                   status={data.status_label}
                   id={alertId}
                   onAfterResolve={handleRefreshData}
+                  showAcknowledge={!data.acknowledgedBy}
                 />
               </Stack>
             </Stack>

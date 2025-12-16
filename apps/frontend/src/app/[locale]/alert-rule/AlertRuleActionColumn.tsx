@@ -10,7 +10,7 @@ import { RiTestTubeFill } from "react-icons/ri";
 import { IAlertRule } from "@/@types/alertRule";
 import { pinAlertRule, silenceAlertRule, testAlertRule } from "@/api/alertRule";
 import ActionColumn, { ActionColumnProps } from "@/components/ActionColumn";
-import AlertRuleUserModal from "@/components/AlertRule/Users/AlertRuleUserModal";
+import AlertRuleAccessModal from "@/components/AlertRule/Users/AlertRuleAccessModal";
 
 interface AlertRuleActionColumnProps
   extends ActionColumnProps,
@@ -142,7 +142,7 @@ export default function AlertRuleActionColumn({
       >
         <Stack padding={1} direction="row" gap={1} flexWrap="wrap" maxWidth={300}>
           {hasActionAccess && <ActionColumn onEdit={onEdit} onDelete={onDelete} />}
-          <AlertRuleUserModal alertId={rowId} />
+          <AlertRuleAccessModal alertId={rowId} />
           <IconButton
             sx={{ backgroundColor: ({ palette }) => alpha(palette.secondary.light, 0.2) }}
             onClick={() => pinAlertRuleMutation()}

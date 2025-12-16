@@ -12,14 +12,9 @@ import {
 import { useQueries } from "@tanstack/react-query";
 import { FaUsers, FaUser } from "react-icons/fa";
 
+import type { IAccessOption } from "@/@types/alertRule";
 import { getAllTeams } from "@/api/team";
 import { getAllUsers } from "@/api/user";
-
-interface AccessOption {
-  type: "team" | "user";
-  id: string;
-  label: string;
-}
 
 interface AccessUsersAndTeamsProps {
   selectedTeamIds: string[];
@@ -58,7 +53,7 @@ export default function AccessUsersAndTeams({
     ]
   });
 
-  const accessOptions: AccessOption[] = React.useMemo(
+  const accessOptions: IAccessOption[] = React.useMemo(
     () => [
       ...(teamsData?.map((team) => ({
         type: "team" as const,
@@ -74,7 +69,7 @@ export default function AccessUsersAndTeams({
     [teamsData, usersData]
   );
 
-  const selectedValues: AccessOption[] = React.useMemo(() => {
+  const selectedValues: IAccessOption[] = React.useMemo(() => {
     return [
       ...selectedTeamIds.map((id) => ({
         type: "team" as const,
@@ -89,7 +84,7 @@ export default function AccessUsersAndTeams({
     ];
   }, [selectedTeamIds, selectedUserIds, teamsData, usersData]);
 
-  const handleChange = (_: React.SyntheticEvent, newValue: AccessOption[]) => {
+  const handleChange = (_: React.SyntheticEvent, newValue: IAccessOption[]) => {
     const teamIds = newValue.filter((item) => item.type === "team").map((item) => item.id);
     const userIds = newValue.filter((item) => item.type === "user").map((item) => item.id);
 
@@ -157,7 +152,7 @@ export default function AccessUsersAndTeams({
               sx={{
                 "& .MuiChip-icon": {
                   color: ({ palette }) =>
-                    option.type === "team" ? palette.primary.main : palette.success.dark
+                    option.type === "team" ? palette.primary.main : palette.success.main
                 }
               }}
               {...tagProps}

@@ -1,4 +1,5 @@
 import type { IEndpoint } from "@/@types/endpoint";
+import type { ITeam } from "@/@types/team";
 import type { IUser } from "@/@types/user";
 import { type AlertRuleType } from "@/utils/alertRuleUtils";
 
@@ -51,9 +52,17 @@ export interface IAlertRuleEndpoints {
   selectableEndpoints: Array<IEndpoint>;
 }
 
-export interface IAlertRuleUsers {
+export interface IAlertRuleAccess {
   alertUsers: Array<IUser>;
   selectableUsers: Array<IUser>;
+  alertTeams: Array<ITeam>;
+  selectableTeams: Array<ITeam>;
+}
+
+export interface IAccessOption {
+  type: "team" | "user";
+  id: string;
+  label: string;
 }
 
 export interface IApiAndNotificationAlertRuleHistory {
@@ -189,3 +198,5 @@ export interface IZabbixAlertHistory {
   createdAt: string;
   id: string;
 }
+
+export interface IZabbixHistoryInstance extends IZabbixAlertHistory {}

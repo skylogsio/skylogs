@@ -1,5 +1,6 @@
 import { alpha, Chip } from "@mui/material";
-import { BsChatDotsFill, BsMicrosoftTeams, BsTelegram, BsTelephoneFill } from "react-icons/bs";
+import { BsMicrosoftTeams, BsTelegram, BsTelephoneFill } from "react-icons/bs";
+import { FaSms } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 import { SiDiscord, SiMattermost } from "react-icons/si";
 import { TiFlowChildren } from "react-icons/ti";
@@ -7,13 +8,13 @@ import { TiFlowChildren } from "react-icons/ti";
 export const ENDPOINT_TYPE_CHIP = {
   sms: {
     title: "SMS",
-    color: "#11AC26",
-    icon: <BsChatDotsFill style={{ padding: "0.2rem" }} color="#11AC26" />
+    color: "#4880FF",
+    icon: <FaSms style={{ padding: "0.2rem" }} color="#4880FF" />
   },
   telegram: {
     title: "Telegram",
-    color: "#4880FF",
-    icon: <BsTelegram style={{ padding: "0.2rem" }} color="#4880FF" />
+    color: "#2AABEE",
+    icon: <BsTelegram style={{ padding: "0.2rem" }} color="#2AABEE" />
   },
   teams: {
     title: "Teams",
@@ -22,13 +23,13 @@ export const ENDPOINT_TYPE_CHIP = {
   },
   call: {
     title: "Call",
-    color: "#B65DFE",
-    icon: <BsTelephoneFill style={{ padding: "0.2rem" }} color="#B65DFE" />
+    color: "#11AC26",
+    icon: <BsTelephoneFill style={{ padding: "0.2rem" }} color="#11AC26" />
   },
   email: {
     title: "Email",
-    color: "#C54040",
-    icon: <MdEmail style={{ padding: "0.2rem" }} color="#C54040" />
+    color: "#F05A28",
+    icon: <MdEmail style={{ padding: "0.2rem" }} color="#F05A28" />
   },
   flow: {
     title: "Flow",

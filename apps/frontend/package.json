@@ -23,6 +23,7 @@
     "@tanstack/react-table": "^8.20.5",
     "@uiw/react-json-view": "^2.0.0-alpha.32",
     "axios": "^1.7.9",
+    "framer-motion": "^12.23.25",
     "glob": "^11.0.0",
     "intl-locale-textinfo-polyfill": "^2.1.1",
     "lru-cache": "^11.0.1",
