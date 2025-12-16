@@ -14,7 +14,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class CheckElasticJob implements ShouldBeUnique, ShouldQueue
+class CheckElasticJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -113,8 +113,4 @@ class CheckElasticJob implements ShouldBeUnique, ShouldQueue
 
     }
 
-    public function uniqueId()
-    {
-        return $this->alert->_id;
-    }
 }

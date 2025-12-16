@@ -206,6 +206,47 @@ class AlertingDoc
     // ----------------------------
     #[OA\Post(
         path: "/api/v1/alert-rule",
+        operationId: "createAlertRuleElastic",
+        summary: "Create elastic alert rule",
+        security: [["bearerAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: "name", type: "string", example: "High CPU usage"),
+                    new OA\Property(property: "type", type: "string", example: "elastic"),
+                    new OA\Property(property: "description", type: "string", example: "Alert when CPU > 80%"),
+                    new OA\Property(property: "dataSourceId", type: "string", example: "1"),
+                    new OA\Property(property: "queryString", type: "string", example: "OriginStatus:>=400 name:myName"),
+                    new OA\Property(property: "userIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "teamIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "endpointIds", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "tags", type: "array", items: new OA\Items(type: "string")),
+                    new OA\Property(property: "dataviewName", type: "string", example: "My dataview"),
+                    new OA\Property(property: "dataviewTitle", type: "string", example: "responses*"),
+                    new OA\Property(property: "conditionType", type: "string", enum: ['greaterOrEqual','lessOrEqual'], example: "greaterOrEqual"),
+                    new OA\Property(property: "countDocument", type: "integer", example: 5),
+                    new OA\Property(property: "minutes", type: "integer", example: 5),
+                ],
+                type: "object"
+            )
+        ),
+        tags: ["AlertRule"],
+        responses: [
+            new OA\Response(response: 201, description: "Created"),
+            new OA\Response(response: 422, description: "Validation error"),
+        ]
+    )]
+    public function storeElastic()
+    {
+    }
+
+
+    // ----------------------------
+    // POST /api/v1/alert-rule
+    // ----------------------------
+    #[OA\Post(
+        path: "/api/v1/alert-rule",
         operationId: "createAlertRule",
         summary: "Create alert rule",
         security: [["bearerAuth" => []]],
