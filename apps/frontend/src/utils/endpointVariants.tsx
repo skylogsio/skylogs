@@ -1,66 +1,90 @@
 import { alpha, Chip } from "@mui/material";
-import { BsMicrosoftTeams, BsTelegram, BsTelephoneFill } from "react-icons/bs";
-import { FaSms } from "react-icons/fa";
+import { BsChatDotsFill, BsMicrosoftTeams, BsTelegram, BsTelephoneFill } from "react-icons/bs";
 import { MdEmail } from "react-icons/md";
 import { SiDiscord, SiMattermost } from "react-icons/si";
 import { TiFlowChildren } from "react-icons/ti";
 
-export const ENDPOINT_TYPE_CHIP = {
+import { ENDPOINT_COLORS } from "@/provider/MuiProvider";
+
+export type EndpointType =
+  | "sms"
+  | "telegram"
+  | "teams"
+  | "call"
+  | "email"
+  | "flow"
+  | "discord"
+  | "matter-most";
+
+interface EndpointTypeConfig {
+  title: string;
+  icon: React.ComponentType<{ style?: React.CSSProperties; color?: string }>;
+}
+
+const ENDPOINT_CONFIG: Record<EndpointType, EndpointTypeConfig> = {
   sms: {
     title: "SMS",
-    color: "#4880FF",
-    icon: <FaSms style={{ padding: "0.2rem" }} color="#4880FF" />
+    icon: BsChatDotsFill
   },
   telegram: {
     title: "Telegram",
-    color: "#2AABEE",
-    icon: <BsTelegram style={{ padding: "0.2rem" }} color="#2AABEE" />
+    icon: BsTelegram
   },
   teams: {
     title: "Teams",
-    color: "#454DB3",
-    icon: <BsMicrosoftTeams style={{ padding: "0.2rem" }} color="#454DB3" />
+    icon: BsMicrosoftTeams
   },
   call: {
     title: "Call",
-    color: "#11AC26",
-    icon: <BsTelephoneFill style={{ padding: "0.2rem" }} color="#11AC26" />
+    icon: BsTelephoneFill
   },
   email: {
     title: "Email",
-    color: "#F05A28",
-    icon: <MdEmail style={{ padding: "0.2rem" }} color="#F05A28" />
+    icon: MdEmail
   },
   flow: {
     title: "Flow",
-    color: "#FF00FF",
-    icon: <TiFlowChildren style={{ padding: "0.2rem" }} color="#FF00FF" />
+    icon: TiFlowChildren
   },
   discord: {
     title: "Discord",
-    color: "#5865F2",
-    icon: <SiDiscord style={{ padding: "0.2rem" }} color="#5865F2" />
+    icon: SiDiscord
   },
   "matter-most": {
     title: "Matter Most",
-    color: "#284077",
-    icon: <SiMattermost style={{ padding: "0.2rem" }} color="#284077" />
+    icon: SiMattermost
   }
 };
 
-export function renderEndPointChip(type: unknown, size: "small" | "medium" = "medium") {
-  const variant = type as keyof typeof ENDPOINT_TYPE_CHIP;
-  const Avatar = ENDPOINT_TYPE_CHIP[variant].icon;
-  const color = ENDPOINT_TYPE_CHIP[variant].color;
+export function RenderEndPointChip({
+  type,
+  size = "medium"
+}: {
+  type: unknown;
+  size?: "small" | "medium";
+}) {
+  const variant = type as EndpointType;
+  const config = ENDPOINT_CONFIG[variant];
+  const color = ENDPOINT_COLORS[variant];
+  const IconComponent = config.icon;
+
   return (
     <Chip
       size={size}
-      avatar={Avatar}
+      avatar={<IconComponent style={{ padding: "0.2rem" }} color={color} />}
       sx={{
-        backgroundColor: alpha(color, 0.07),
+        backgroundColor: alpha(color, 0.1),
         color
       }}
-      label={ENDPOINT_TYPE_CHIP[variant].title}
+      label={config.title}
     />
   );
+}
+
+export function renderEndPointChip(type: unknown, size: "small" | "medium" = "medium") {
+  return <RenderEndPointChip type={type} size={size} />;
+}
+
+export function getEndpointConfig(type: EndpointType): EndpointTypeConfig {
+  return ENDPOINT_CONFIG[type];
 }

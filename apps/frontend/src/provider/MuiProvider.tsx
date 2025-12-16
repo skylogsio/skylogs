@@ -6,11 +6,22 @@ import { alpha, inputBaseClasses, menuItemClasses } from "@mui/material";
 import { grey } from "@mui/material/colors";
 import { extendTheme, ThemeProvider } from "@mui/material/styles";
 
+export const ENDPOINT_COLORS = {
+  sms: "#4880FF",
+  telegram: "#2AABEE",
+  teams: "#454DB3",
+  call: "#11AC26",
+  email: "#F05A28",
+  flow: "#ff00ff",
+  discord: "#5865F2",
+  "matter-most": "#284077"
+} as const;
+
 export default function MuiProvider({ children }: PropsWithChildren<object>) {
   /*
-                    info: Read the below document to create new theme
-                    @link: https://mui.com/material-ui/experimental-api/css-theme-variables/customization/
-                  */
+    info: Read the below document to create new theme
+    @link: https://mui.com/material-ui/experimental-api/css-theme-variables/customization/
+  */
   const theme = useMemo(
     () =>
       extendTheme({
@@ -22,7 +33,8 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
               success: { light: "#7BEA85", main: "#13C82B", dark: "#0E8F1F" },
               warning: { light: "#FABF7A", main: "#F28D22", dark: "#B86419" },
               error: { light: "#FF7D76", main: "#E64940", dark: "#A8322C" },
-              background: { default: "#F5F6FA", paper: "#FFFFFF" }
+              background: { default: "#F5F6FA", paper: "#FFFFFF" },
+              endpoint: ENDPOINT_COLORS
             }
           }
         },
