@@ -13,8 +13,8 @@ import {
   removeEndpointFromAlertRule
 } from "@/api/alertRule";
 import EmptyList from "@/components/EmptyList";
+import EndPointTypeChip from "@/components/EndpointTypeChip";
 import DataTable from "@/components/Table/DataTable";
-import { renderEndPointChip } from "@/utils/endpointVariants";
 
 export default function AlertRuleNotifyManager({ alertId }: { alertId: IAlertRule["id"] }) {
   const { palette } = useTheme();
@@ -96,7 +96,7 @@ export default function AlertRuleNotifyManager({ alertId }: { alertId: IAlertRul
             {
               header: "Type",
               accessorKey: "type",
-              cell: ({ cell }) => renderEndPointChip(cell.getValue())
+              cell: ({ cell }) => <EndPointTypeChip type={cell.getValue()} />
             },
             {
               header: "Actions",

@@ -6,7 +6,7 @@ import type { IEndpoint } from "@/@types/endpoint";
 import { deleteEndpoint } from "@/api/endpoint";
 import DeleteModalContainer from "@/components/DeleteModal/DeleteModalContainer";
 import type { DeleteModalProps } from "@/components/DeleteModal/DeleteModalTypes";
-import { renderEndPointChip } from "@/utils/endpointVariants";
+import EndPointTypeChip from "@/components/EndpointTypeChip";
 
 export default function DeleteEndPointModal({
   data,
@@ -39,7 +39,7 @@ export default function DeleteEndPointModal({
             Type:
           </Typography>
           <Typography variant="subtitle2" color="text.secondary">
-            {renderEndPointChip(type, "small")}
+            <EndPointTypeChip type={type} size="small" />
           </Typography>
         </Stack>
         <Stack direction="row" spacing={1}>
