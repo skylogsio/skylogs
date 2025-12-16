@@ -12,6 +12,600 @@
         }
     ],
     "paths": {
+        "/api/v1/alert-rule": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "List alert rules",
+                "operationId": "getAlertRules",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "alertname",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "userId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "types",
+                        "in": "query",
+                        "description": "separate types that you want to filter via , ",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "api,prometheus"
+                    },
+                    {
+                        "name": "tags",
+                        "in": "query",
+                        "description": "separate types that you want to filter via , ",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "api,prometheus"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Create elastic alert rule",
+                "operationId": "createAlertRuleElastic",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "High CPU usage"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "elastic"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Alert when CPU > 80%"
+                                    },
+                                    "dataSourceId": {
+                                        "type": "string",
+                                        "example": "1"
+                                    },
+                                    "queryString": {
+                                        "type": "string",
+                                        "example": "OriginStatus:>=400 name:myName"
+                                    },
+                                    "userIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "teamIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "endpointIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "tags": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "dataviewName": {
+                                        "type": "string",
+                                        "example": "My dataview"
+                                    },
+                                    "dataviewTitle": {
+                                        "type": "string",
+                                        "example": "responses*"
+                                    },
+                                    "conditionType": {
+                                        "type": "string",
+                                        "enum": [
+                                            "greaterOrEqual",
+                                            "lessOrEqual"
+                                        ],
+                                        "example": "greaterOrEqual"
+                                    },
+                                    "countDocument": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "minutes": {
+                                        "type": "integer",
+                                        "example": 5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/{id}": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get alert rule by id",
+                "operationId": "getAlertRule",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "64b59f1a..."
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Update alert rule",
+                "operationId": "updateAlertRule",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "64b59f1a..."
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "High CPU usage"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Alert when CPU > 80%"
+                                    },
+                                    "dataSourceIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "dataSourceAlertName": {
+                                        "type": "string",
+                                        "example": "CPU Alert"
+                                    },
+                                    "expression": {
+                                        "type": "string",
+                                        "example": "avg(rate(cpu_usage[5m])) > 80"
+                                    },
+                                    "enableAutoResolve": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "autoResolveMinutes": {
+                                        "type": "integer",
+                                        "example": 30
+                                    },
+                                    "userIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "teamIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Delete alert rule",
+                "operationId": "deleteAlertRule",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "64b59f1a..."
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/pin/{id}": {
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Toggle pin on alert rule",
+                "operationId": "pinAlertRule",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/acknowledge/{id}": {
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Acknowledge an alert (current user)",
+                "operationId": "acknowledgeAlertRule",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/acknowledgeL/{id}": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Acknowledge alert using login link (system user)",
+                "operationId": "acknowledgeLoginLink",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/api/v1/alert-rule/resolve/{id}": {
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Resolve alert",
+                "operationId": "resolveAlertRule",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/silent": {
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Mark alert as silent (accepts userIds / minutes)",
+                "operationId": "silentAlertRule",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "alertId": {
+                                        "type": "string"
+                                    },
+                                    "userIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "minutes": {
+                                        "type": "integer",
+                                        "example": 60
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/unsilent": {
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Remove silence",
+                "operationId": "unsilentAlertRule",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/filter-endpoints": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get selectable endpoints for alert rules",
+                "operationId": "filterEndpoints",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/types": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "List available alert rule types",
+                "operationId": "getAlertRuleTypes",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/api/v1/alert-rule/history/{id}": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get history for an alert rule",
+                "operationId": "getAlertHistory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/triggered/{id}": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get triggered/fired alerts for an alert rule",
+                "operationId": "getTriggeredAlerts",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/auth/login": {
             "post": {
                 "tags": [
@@ -1833,6 +2427,10 @@
         }
     },
     "tags": [
+        {
+            "name": "AlertRule",
+            "description": "Manage alert rules"
+        },
         {
             "name": "Authentication",
             "description": "JWT-based authentication endpoints for Skylogs API"

@@ -79,7 +79,7 @@ class CheckElasticJob implements ShouldQueue
                     'state' => ElasticCheck::FIRE,
                 ]);
 
-                SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check, $this->alert->_id);
+                SendNotifyService::CreateNotify(SendNotifyJob::ELASTIC_CHECK, $check, $this->alert->_id);
             }
 
         } else {
@@ -106,7 +106,7 @@ class CheckElasticJob implements ShouldQueue
                     'state' => ElasticCheck::RESOLVED,
                 ]);
 
-                SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check, $this->alert->_id);
+                SendNotifyService::CreateNotify(SendNotifyJob::ELASTIC_CHECK, $check, $this->alert->_id);
 
             }
         }

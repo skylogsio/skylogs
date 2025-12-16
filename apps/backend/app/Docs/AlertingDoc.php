@@ -87,13 +87,13 @@ class AlertingDoc
     {
     }
 
-
+/*
     // ----------------------------
     // POST /api/v1/alert-rule
     // ----------------------------
     #[OA\Post(
         path: "/api/v1/alert-rule",
-        operationId: "createAlertRule",
+        operationId: "createAlertRuleApi",
         summary: "Create Api alert rule",
         security: [["bearerAuth" => []]],
         requestBody: new OA\RequestBody(
@@ -129,7 +129,7 @@ class AlertingDoc
     // ----------------------------
     #[OA\Post(
         path: "/api/v1/alert-rule",
-        operationId: "createAlertRule",
+        operationId: "createAlertRulePrometheus",
         summary: "Create Prometheus alert rule",
         security: [["bearerAuth" => []]],
         requestBody: new OA\RequestBody(
@@ -150,7 +150,6 @@ class AlertingDoc
                     new OA\Property(property: "queryType", type: "string", example: "lucene"),
                     new OA\Property(property: "minutes", type: "integer", example: 5),
                 ],
-                type: "object"
             )
         ),
         tags: ["AlertRule"],
@@ -168,7 +167,7 @@ class AlertingDoc
     // ----------------------------
     #[OA\Post(
         path: "/api/v1/alert-rule",
-        operationId: "createAlertRule",
+        operationId: "createAlertRuleZabbix",
         summary: "Create zabbix alert rule",
         security: [["bearerAuth" => []]],
         requestBody: new OA\RequestBody(
@@ -198,7 +197,7 @@ class AlertingDoc
     )]
     public function storeZabbix()
     {
-    }
+    }*/
 
 
     // ----------------------------
@@ -240,7 +239,7 @@ class AlertingDoc
     public function storeElastic()
     {
     }
-
+/*
 
     // ----------------------------
     // POST /api/v1/alert-rule
@@ -292,7 +291,7 @@ class AlertingDoc
     )]
     public function store()
     {
-    }
+    }*/
 
     // ----------------------------
     // PUT /api/v1/alert-rule/{id}
