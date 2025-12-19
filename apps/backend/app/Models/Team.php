@@ -12,13 +12,14 @@ class Team extends BaseModel
 
     protected $guarded = ['id', '_id'];
 
-
     protected $appends = ['members'];
 
     public function getMembersAttribute()
     {
-        if (!empty($this->userIds))
+        if (! empty($this->userIds)) {
             return User::whereIn('id', $this->userIds)->get()->pluck('name');
+        }
+
         return [];
     }
 
@@ -26,6 +27,4 @@ class Team extends BaseModel
     {
         return $this->belongsTo(User::class, 'ownerId', '_id');
     }
-
-
 }

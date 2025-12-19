@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\AlertRuleType;
 use App\Models\AlertRule;
+use App\Models\ElasticCheck;
 use App\Models\Profile\ProfileAsset;
 
 class ProfileService
@@ -27,6 +28,11 @@ class ProfileService
                             $alerts = $this->generateGrafanaPrometheusPmmAlert($serviceType, $userId, $profileAsset->name, $env, $dataSourceToken, $dataSourceConfig);
                             $createdAlerts = $createdAlerts->concat($alerts);
                             break;
+                        case AlertRuleType::ELASTIC:
+                            $alerts = $this->generateElasticAlert($userId, $profileAsset->name, $env, $dataSourceToken, $dataSourceConfig);
+                            $createdAlerts = $createdAlerts->concat($alerts);
+                            break;
+
                     }
 
                 }
@@ -65,7 +71,13 @@ class ProfileService
             'endpointIds' => [],
             'userIds' => [],
         ];
-        $commonLabels = collect($config['labels']);
+        $commonLabels = collect($config['labels'])->map(function ($item) {
+            if (is_array($item)) {
+                return implode(' | ', $item);
+            } else {
+                return $item;
+            }
+        });
         if (! empty($config['alertnames'])) {
 
             foreach ($config['alertnames'] as $alertConfig) {
@@ -124,6 +136,57 @@ class ProfileService
                 $alertRule->save();
             }
             $resultAlerts[] = $alertRule;
+        }
+
+        return $resultAlerts;
+
+    }
+
+    private function generateElasticAlert($userId, $service, $env, $dataSourceToken, $config)
+    {
+        $dataSource = $this->dataSourceService->byToken($dataSourceToken);
+        $tags = collect($config['tags'])->push($service, $env);
+        $resultAlerts = [];
+        $commonFields = [
+            'type' => AlertRuleType::ELASTIC->value,
+            'dataSourceId' => $dataSource->id,
+            'tags' => $tags->toArray(),
+            'userId' => $userId,
+            'silentUserIds' => [],
+            'endpointIds' => [],
+            'userIds' => [],
+        ];
+
+        if (! empty($config['alerts'])) {
+
+            foreach ($config['alerts'] as $alertConfig) {
+                $alertRuleName = 'http-5xx-ArvanCDN-'.$service.'-'.$env;
+
+                $createData = [
+                    ...$commonFields,
+                    'dataviewName' => $alertConfig['dataviewName'],
+                    'dataviewTitle' => $alertConfig['dataviewTitle'],
+                    'queryString' => $alertConfig['queryString'],
+                    'minutes' => $alertConfig['minutes'],
+                    'conditionType' => $alertConfig['conditionType'] == ElasticCheck::CONDITION_TYPE_GREATER_OR_EQUAL ? ElasticCheck::CONDITION_TYPE_GREATER_OR_EQUAL : ElasticCheck::CONDITION_TYPE_LESS_OR_EQUAL,
+                    'countDocument' => $alertConfig['countDocument'],
+                ];
+
+                $alertRule = AlertRule::firstOrNew([
+                    'name' => $alertRuleName,
+                ], $createData);
+
+                if ($alertRule->exists) {
+                    unset($createData['endpointIds']);
+                    unset($createData['userIds']);
+                    $alertRule->update($createData);
+                } else {
+                    $alertRule->save();
+                }
+                $resultAlerts[] = $alertRule;
+
+            }
+
         }
 
         return $resultAlerts;

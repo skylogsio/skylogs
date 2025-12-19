@@ -8,7 +8,6 @@ use App\Models\ElasticHistory;
 use App\Services\ElasticService;
 use App\Services\SendNotifyService;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -112,5 +111,4 @@ class CheckElasticJob implements ShouldQueue
         }
 
     }
-
 }
