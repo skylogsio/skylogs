@@ -9,7 +9,10 @@ import { signOut, useSession } from "next-auth/react";
 import SideBar from "@/components/Wrapper/SideBar";
 import { useRole } from "@/hooks";
 
+import AdminSideBar from "./AdminSideBar";
 import TopBar from "./TopBar";
+
+const SKYLOGS_VERSION = "0.15.0";
 
 export default function Wrapper({ children }: PropsWithChildren) {
   const pathname = usePathname();
@@ -40,6 +43,8 @@ export default function Wrapper({ children }: PropsWithChildren) {
     return null;
   }
 
+  const isAdminArea = pathname.includes("admin-area");
+
   return (
     <Box
       width="100%"
@@ -62,7 +67,11 @@ export default function Wrapper({ children }: PropsWithChildren) {
         maxWidth="300px"
         sx={{ backgroundColor: ({ palette }) => palette.background.paper }}
       >
-        <SideBar />
+        {isAdminArea ? (
+          <AdminSideBar version={SKYLOGS_VERSION} />
+        ) : (
+          <SideBar version={SKYLOGS_VERSION} />
+        )}
       </Box>
       <Box display="flex" flexDirection="column" flex={1} height="100%">
         <TopBar />
