@@ -2,13 +2,20 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 import { Box, List, Stack, Typography, useTheme } from "@mui/material";
-import { AiOutlineAppstore } from "react-icons/ai";
+import { AiOutlineAppstore, AiOutlineSetting } from "react-icons/ai";
+import { PiPlugsConnected } from "react-icons/pi";
 
 import { SideBarItem } from "./SideBarItem";
 import type { URLType } from "./types";
 
 const URLS: Array<URLType> = [
-  { pathname: "/admin-area", label: "Overview", icon: AiOutlineAppstore }
+  { pathname: "/admin-area", label: "Overview", icon: AiOutlineAppstore },
+  { pathname: "/admin-area/core-setting", label: "Core Setting", icon: AiOutlineSetting },
+  {
+    pathname: "/admin-area/connectivity-setting",
+    label: "Connectivity Setting",
+    icon: PiPlugsConnected
+  }
 ];
 
 export default function AdminSideBar({ version }: { version: string }) {
