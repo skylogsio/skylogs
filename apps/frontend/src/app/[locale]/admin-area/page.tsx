@@ -105,15 +105,6 @@ export default function OverviewPage() {
               }}
             >
               <Card
-                component={motion.div}
-                whileHover={{
-                  scale: 1.02
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 17
-                }}
                 onClick={() => router.push(`admin-area${item.pathname}`)}
                 sx={{
                   borderRadius: 3,
@@ -123,6 +114,7 @@ export default function OverviewPage() {
                   height: "100%",
                   transition: "all 0.2s ease-out",
                   "&:hover": {
+                    transform: "scale(1.02)",
                     boxShadow: `0 12px 24px ${alpha(grey[400], 0.2)}`,
                     borderLeftWidth: "8px",
                     "& .overview-card-icon": {
