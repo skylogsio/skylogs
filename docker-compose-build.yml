@@ -110,6 +110,8 @@ services:
           - HEARTBEAT_TIMEOUT=3s
           - FAIL_THRESHOLD=3
           - ALERT_WEBHOOK_URL=http://skylogs-core:8080/internal/alerts/sentinel
+        volumes:
+          - ./skylogs-sentinel/config.yaml:/app/config.yaml:ro
         networks:
           - skylogs_net
 networks:
