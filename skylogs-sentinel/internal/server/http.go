@@ -3,7 +3,7 @@ package server
 import (
 	"net/http"
 
-	"skylogs-sentinel/internal/heartbeat"
+	"github.com/skylogsio/skylogs/skylogs-sentinel/internal/heartbeat"
 )
 
 func New(receiver *heartbeat.Receiver, state *heartbeat.State) http.Handler {

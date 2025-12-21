@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"skylogs-sentinel/pkg/model"
+	"github.com/skylogsio/skylogs/skylogs-sentinel/pkg/model"
 )
 
 type Receiver struct {

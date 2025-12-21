@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"skylogs-sentinel/pkg/model"
+	"github.com/skylogsio/skylogs/skylogs-sentinel/pkg/model"
 )
 
 type Sender struct {

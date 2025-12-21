@@ -14,7 +14,6 @@ COPY . .
 # Build static binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -o skylogs-sentinel ./cmd/sentinel
-
 # ---------- Runtime stage ----------
 FROM gcr.io/distroless/base-debian12
 

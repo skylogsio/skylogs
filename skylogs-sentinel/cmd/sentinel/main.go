@@ -6,11 +6,10 @@ import (
 	"net/http"
 	"os"
 	"time"
-
-	"skylogs-sentinel/internal/alert"
-	"skylogs-sentinel/internal/config"
-	"skylogs-sentinel/internal/heartbeat"
-	"skylogs-sentinel/internal/server"
+	"github.com/skylogsio/skylogs/skylogs-sentinel/internal/alert"
+	"github.com/skylogsio/skylogs/skylogs-sentinel/internal/config"
+	"github.com/skylogsio/skylogs/skylogs-sentinel/internal/heartbeat"
+	"github.com/skylogsio/skylogs/skylogs-sentinel/internal/server"
 )
 
 func main() {
