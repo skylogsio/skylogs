@@ -2,10 +2,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { Button, Grid2 as Grid, Stack, Typography, useTheme } from "@mui/material";
+import { Button, Grid2 as Grid, Stack, Typography, useTheme, alpha } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { HiOutlinePlusSm } from "react-icons/hi";
-import { RiTelegram2Fill } from "react-icons/ri";
 import { toast } from "react-toastify";
 
 import type { CreateUpdateModal } from "@/@types/global";
@@ -18,6 +17,7 @@ import {
 import ProxyCard from "@/components/admin-area/ConnectivitySetting/Telegram/ProxyCard";
 import ProxyModal from "@/components/admin-area/ConnectivitySetting/Telegram/ProxyModal";
 import EmptyList from "@/components/EmptyList";
+import { ENDPOINT_CONFIG } from "@/utils/endpointVariants";
 
 export default function TelegramSettings() {
   const router = useRouter();
@@ -65,6 +65,8 @@ export default function TelegramSettings() {
     }
   }, [data]);
 
+  const TelegramIcon = ENDPOINT_CONFIG["telegram"].icon;
+
   return (
     <>
       <Stack spacing={2}>
@@ -104,13 +106,13 @@ export default function TelegramSettings() {
           </>
         ) : (
           <EmptyList
-            icon={<RiTelegram2Fill size="5.5rem" color={palette.common.white} />}
+            icon={<TelegramIcon size="5.5rem" color={palette.common.white} />}
             title="No Proxies Configured"
             description="Set up your first Telegram proxy to enable secure and reliable message delivery. Proxies help ensure your notifications reach users even in restricted networks."
             actionLabel="Create First Proxy"
             onAction={() => setModalData("NEW")}
             onBack={router.back}
-            gradientColors={["#2AABEE", "#229ED9"]}
+            gradientColors={[palette.endpoint.telegram, alpha(palette.endpoint.telegram, 0.7)]}
           />
         )}
       </Stack>
