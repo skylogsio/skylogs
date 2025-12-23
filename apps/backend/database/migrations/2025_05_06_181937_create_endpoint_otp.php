@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('endpoint_otp', function (Blueprint $table) {
-            $table->unique('value');
+            $table->index('value');
         });
     }
 
