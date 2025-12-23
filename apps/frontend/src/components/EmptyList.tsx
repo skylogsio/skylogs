@@ -1,9 +1,9 @@
 import { ReactNode } from "react";
 
-import { Box, Button, Stack, Typography, useTheme, alpha, IconButton } from "@mui/material";
+import { Box, Button, Stack, Typography, useTheme, alpha } from "@mui/material";
 import { motion } from "framer-motion";
 import { HiOutlinePlusSm } from "react-icons/hi";
-import { IoArrowBack } from "react-icons/io5";
+import { IoIosArrowBack } from "react-icons/io";
 
 interface EmptyListProps {
   icon: ReactNode;
@@ -57,29 +57,6 @@ export default function EmptyList({
           }}
           sx={{ position: "relative" }}
         >
-          <motion.div
-            animate={{
-              scale: [1, 1, 1.3],
-              opacity: [0, 1, 0]
-            }}
-            transition={{
-              duration: 2,
-              ease: "easeOut",
-              repeat: Infinity
-            }}
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              translateX: "-50%",
-              translateY: "-50%",
-              width: "90px",
-              height: "90px",
-              borderRadius: "50%",
-              border: `2px solid ${alpha(palette.primary.dark, 0.3)}`,
-              pointerEvents: "none"
-            }}
-          />
           <Box
             sx={{
               width: "90px",
@@ -150,6 +127,7 @@ export default function EmptyList({
       </Stack>
     );
   }
+
   return (
     <Box
       component={motion.div}
@@ -178,20 +156,20 @@ export default function EmptyList({
             zIndex: 2
           }}
         >
-          <IconButton
-            component={motion.button}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <Button
             onClick={onBack}
             sx={{
-              backgroundColor: alpha(palette.primary.main, 0.1),
+              paddingX: 2,
+              textTransform: "none",
+              backgroundColor: alpha(palette.primary.light, 0.08),
               "&:hover": {
-                backgroundColor: alpha(palette.primary.main, 0.2)
+                backgroundColor: alpha(palette.primary.light, 0.15)
               }
             }}
+            startIcon={<IoIosArrowBack size="20px" />}
           >
-            <IoArrowBack size="20px" />
-          </IconButton>
+            Back
+          </Button>
         </Box>
       )}
 
@@ -211,29 +189,6 @@ export default function EmptyList({
           }}
           sx={{ position: "relative" }}
         >
-          <motion.div
-            animate={{
-              scale: [1, 1, 1.3],
-              opacity: [0, 1, 0]
-            }}
-            transition={{
-              duration: 2,
-              ease: "easeOut",
-              repeat: Infinity
-            }}
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              translateX: "-50%",
-              translateY: "-50%",
-              width: "140px",
-              height: "140px",
-              borderRadius: "50%",
-              border: `3px solid ${alpha(palette.primary.dark, 0.4)}`,
-              pointerEvents: "none"
-            }}
-          />
           <Box
             sx={{
               width: "140px",
@@ -245,7 +200,7 @@ export default function EmptyList({
               justifyContent: "center",
               position: "relative",
               marginY: "2rem",
-              boxShadow: `0 10px 40px ${alpha(palette.primary.dark, 0.4)}`
+              boxShadow: `0 8px 20px ${alpha(palette.primary.dark, 0.4)}`
             }}
           >
             <motion.div
@@ -280,12 +235,7 @@ export default function EmptyList({
           spacing={2}
           alignItems="center"
         >
-          <Typography
-            variant="h4"
-            fontWeight="700"
-            textAlign="center"
-            // sx={{ letterSpacing: "-0.5px" }}
-          >
+          <Typography variant="h4" fontWeight="700" textAlign="center">
             {title}
           </Typography>
           <Typography
