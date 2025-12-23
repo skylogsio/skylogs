@@ -15,8 +15,8 @@ import {
   deactivateTelegramProxy,
   getAllTelegramProxies
 } from "@/api/setttings/telegram";
-import ProxyCard from "@/components/admin-area/Telegram/ProxyCard";
-import ProxyModal from "@/components/admin-area/Telegram/ProxyModal";
+import ProxyCard from "@/components/admin-area/ConnectivitySetting/Telegram/ProxyCard";
+import ProxyModal from "@/components/admin-area/ConnectivitySetting/Telegram/ProxyModal";
 import EmptyList from "@/components/EmptyList";
 
 export default function TelegramSettings() {
