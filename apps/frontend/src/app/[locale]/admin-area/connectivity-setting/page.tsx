@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { Box, Typography, Grid2 as Grid, Card, alpha } from "@mui/material";
 import { grey } from "@mui/material/colors";
@@ -10,11 +11,10 @@ import { RiTelegram2Fill } from "react-icons/ri";
 
 import { ENDPOINT_COLORS } from "@/provider/MuiProvider";
 import { ENDPOINT_CONFIG } from "@/utils/endpointVariants";
-import { usePathname } from "next/navigation";
 
 const connectivityCards = [
   {
-    href: "/telegram",
+    href: "/telegram-proxies",
     icon: RiTelegram2Fill,
     iconSize: "2.9rem",
     color: ENDPOINT_COLORS["telegram"],

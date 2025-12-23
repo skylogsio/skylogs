@@ -13,7 +13,7 @@ import {
   alpha,
   Chip
 } from "@mui/material";
-import { HiServer, HiCube, HiChevronRight } from "react-icons/hi";
+import { HiCube, HiChevronRight } from "react-icons/hi";
 
 interface SettingOption {
   title: string;
@@ -39,15 +39,6 @@ export default function SettingsPage() {
       path: "/settings/cluster-config",
       color: "#4caf50",
       category: "Core",
-      isAvailable: true
-    },
-    {
-      title: "Telegram Proxies",
-      description: "Manage proxy configurations for Telegram connectivity and routing",
-      icon: <HiServer size="2.2rem" />,
-      path: "/settings/telegram",
-      color: "#2196f3",
-      category: "Connectivity",
       isAvailable: true
     }
     // {
@@ -113,13 +104,13 @@ export default function SettingsPage() {
   ];
 
   const categories = [
-    "Core",
-    "Connectivity"
+    "Core"
+    // "Connectivity"
     //  "Security", "System"
   ] as const;
   const categoryColors = {
-    Core: "#4caf50",
-    Connectivity: "#2196f3"
+    Core: "#4caf50"
+    // Connectivity: "#2196f3"
     // Security: "#e91e63",
     // System: "#ff9800"
   };

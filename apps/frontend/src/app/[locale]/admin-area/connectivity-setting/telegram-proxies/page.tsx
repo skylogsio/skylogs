@@ -1,9 +1,11 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Button, Grid2 as Grid, Stack, Typography, useTheme } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { HiOutlinePlusSm } from "react-icons/hi";
+import { RiTelegram2Fill } from "react-icons/ri";
 import { toast } from "react-toastify";
 
 import type { CreateUpdateModal } from "@/@types/global";
@@ -13,11 +15,12 @@ import {
   deactivateTelegramProxy,
   getAllTelegramProxies
 } from "@/api/setttings/telegram";
-import EmptyProxyList from "@/components/Settings/Telegram/EmptyProxyList";
-import ProxyCard from "@/components/Settings/Telegram/ProxyCard";
-import ProxyModal from "@/components/Settings/Telegram/ProxyModal";
+import ProxyCard from "@/components/admin-area/Telegram/ProxyCard";
+import ProxyModal from "@/components/admin-area/Telegram/ProxyModal";
+import EmptyList from "@/components/EmptyList";
 
 export default function TelegramSettings() {
+  const router = useRouter();
   const { palette } = useTheme();
   const [modalData, setModalData] = useState<CreateUpdateModal<ITelegramProxy>>(null);
   const [activeProxy, setActiveProxy] = useState<ITelegramProxy["id"] | null>(null);
@@ -100,7 +103,15 @@ export default function TelegramSettings() {
             </Grid>
           </>
         ) : (
-          <EmptyProxyList onCreate={() => setModalData("NEW")} />
+          <EmptyList
+            icon={<RiTelegram2Fill size="5.5rem" color={palette.common.white} />}
+            title="No Proxies Configured"
+            description="Set up your first Telegram proxy to enable secure and reliable message delivery. Proxies help ensure your notifications reach users even in restricted networks."
+            actionLabel="Create First Proxy"
+            onAction={() => setModalData("NEW")}
+            onBack={router.back}
+            gradientColors={["#2AABEE", "#229ED9"]}
+          />
         )}
       </Stack>
       {modalData && (
