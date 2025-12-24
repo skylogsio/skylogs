@@ -112,6 +112,8 @@ services:
           - ALERT_WEBHOOK_URL=http://skylogs-core:8080/internal/alerts/sentinel
         volumes:
           - ./skylogs-sentinel/config.yaml:/app/config.yaml:ro
+        ports:
+          - "9191:9191"
         networks:
           - skylogs_net
 networks:

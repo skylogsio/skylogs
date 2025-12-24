@@ -24,5 +24,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 USER nonroot:nonroot
 
+EXPOSE 9191
+
 ENTRYPOINT ["/app/skylogs-sentinel"]
 
