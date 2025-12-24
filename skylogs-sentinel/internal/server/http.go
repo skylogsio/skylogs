@@ -1,24 +1,30 @@
 package server
 
 import (
+	"log"
 	"net/http"
-
-	"github.com/skylogsio/skylogs/skylogs-sentinel/internal/heartbeat"
 )
 
-func New(receiver *heartbeat.Receiver, state *heartbeat.State) http.Handler {
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/heartbeat", receiver.Handle)
-
-	mux.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
-		if state.IsAlive(0) {
-			w.Write([]byte("UP"))
-		} else {
-			w.Write([]byte("DOWN"))
-		}
-	})
-
-	return mux
+type Server struct {
+	addr string
 }
 
+func New(addr string) *Server {
+	return &Server{addr: addr}
+}
+
+func (s *Server) Start() {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
+	mux.HandleFunc("/heartbeat", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	log.Printf("Sentinel listening on %s\n", s.addr)
+	log.Fatal(http.ListenAndServe(s.addr, mux))
+}

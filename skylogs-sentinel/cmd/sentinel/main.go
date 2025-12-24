@@ -5,68 +5,134 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
-	"github.com/skylogsio/skylogs/skylogs-sentinel/internal/alert"
-	"github.com/skylogsio/skylogs/skylogs-sentinel/internal/config"
-	"github.com/skylogsio/skylogs/skylogs-sentinel/internal/heartbeat"
-	"github.com/skylogsio/skylogs/skylogs-sentinel/internal/server"
+
+	"github.com/skylogs/skylogs-sentinel/internal/config"
+	"github.com/skylogs/skylogs-sentinel/internal/heartbeat"
 )
 
 func main() {
+	// ------------------------------------------------
+	// Load config
+	// ------------------------------------------------
 	cfg, err := config.Load("config.yaml")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to load config: %v", err)
 	}
 
+	log.Printf("SkyLogs Sentinel starting (id=%s)", cfg.Sentinel.ID)
+
+	// ------------------------------------------------
+	// Runtime state
+	// ------------------------------------------------
+	state := heartbeat.NewState(cfg.Runtime.MinUptime)
+
+	// ------------------------------------------------
+	// Context & shutdown handling
+	// ------------------------------------------------
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	wg := &sync.WaitGroup{}
 
-	state := heartbeat.NewState()
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 
-	receiver := &heartbeat.Receiver{State: state}
-
-	sender := &heartbeat.Sender{
-		PeerURL: cfg.Peer.URL,
-		DC:      cfg.DC,
-		Node:    hostname(),
-		Client:  &http.Client{Timeout: 2 * time.Second},
-	}
-
-	go sender.Run(ctx, cfg.Heartbeat.Interval)
-
+	// ------------------------------------------------
+	// Start HTTP server (port 9191)
+	// ------------------------------------------------
+	wg.Add(1)
 	go func() {
-		ticker := time.NewTicker(cfg.Heartbeat.Interval)
-		defer ticker.Stop()
-
-		downSince := time.Time{}
-
-		for range ticker.C {
-			if !state.IsAlive(cfg.Heartbeat.Timeout) {
-				if downSince.IsZero() {
-					downSince = time.Now()
-					alert.Send(cfg.Alert.Webhook, alert.Payload{
-						Type:     "dc_peer_down",
-						Peer:     cfg.Peer.Name,
-						Since:    downSince,
-						Severity: "critical",
-					})
-				}
-			} else {
-				downSince = time.Time{}
-			}
-		}
+		defer wg.Done()
+		startHTTPServer(cfg, state)
 	}()
 
-	httpServer := &http.Server{
-		Addr:    cfg.Server.Listen,
-		Handler: server.New(receiver, state),
+	// ------------------------------------------------
+	// Start heartbeat loop
+	// ------------------------------------------------
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		runHeartbeatLoop(ctx, cfg, state)
+	}()
+
+	// ------------------------------------------------
+	// Wait for shutdown signal
+	// ------------------------------------------------
+	<-sigCh
+	log.Println("shutdown signal received")
+
+	cancel()
+	wg.Wait()
+
+	log.Println("SkyLogs Sentinel stopped cleanly")
+}
+
+// ==================================================
+// Heartbeat loop
+// ==================================================
+
+func runHeartbeatLoop(
+	ctx context.Context,
+	cfg *config.Config,
+	state *heartbeat.State,
+) {
+	ticker := time.NewTicker(cfg.Heartbeat.Interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case <-ticker.C:
+			err := heartbeat.Ping(
+				cfg.Heartbeat.TargetURL,
+				cfg.Heartbeat.Timeout,
+			)
+
+			if err != nil {
+				heartbeat.OnFailure(cfg, state)
+				continue
+			}
+
+			heartbeat.OnSuccess(state)
+		}
+	}
+}
+
+// ==================================================
+// HTTP server
+// ==================================================
+
+func startHTTPServer(
+	cfg *config.Config,
+	state *heartbeat.State,
+) {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok\n"))
+	})
+
+	mux.HandleFunc("/state", func(w http.ResponseWriter, _ *http.Request) {
+		s := state.Snapshot()
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(s)
+	})
+
+	server := &http.Server{
+		Addr:         ":9191",
+		Handler:      mux,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
 	}
 
-	log.Fatal(httpServer.ListenAndServe())
-}
+	log.Println("HTTP server listening on :9191")
 
-func hostname() string {
-	h, _ := os.Hostname()
-	return h
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("http server failed: %v", err)
+	}
 }
-
