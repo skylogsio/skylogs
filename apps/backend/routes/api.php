@@ -11,6 +11,7 @@ use App\Http\Controllers\V1\AlertRule\PrometheusController;
 use App\Http\Controllers\V1\AlertRule\TagsController;
 use App\Http\Controllers\V1\AuthController;
 use App\Http\Controllers\V1\Config\SkylogsController;
+use App\Http\Controllers\V1\Config\SmsController;
 use App\Http\Controllers\V1\Config\TelegramController;
 use App\Http\Controllers\V1\DataSourceController;
 use App\Http\Controllers\V1\EndpointController;
@@ -255,6 +256,20 @@ Route::prefix('v1')->group(function () {
                         Route::post('/', 'Create');
                         Route::post('/deactivate', 'Deactivate');
                         Route::post('/activate/{id}', 'Activate');
+                        Route::put('/{id}', 'Update');
+                        Route::delete('/{id}', 'Delete');
+                    });
+
+                Route::prefix('/sms')
+                    ->controller(SmsController::class)
+                    ->group(function () {
+                        Route::get('/', 'Index');
+
+                        Route::get('/{id}', 'Show');
+                        Route::post('/', 'Create');
+                        Route::get('/providers', 'providers');
+                        Route::post('/makeDefault/{id}', 'makeDefault');
+                        Route::post('/makeBackUp/{id}', 'makeBackup');
                         Route::put('/{id}', 'Update');
                         Route::delete('/{id}', 'Delete');
                     });

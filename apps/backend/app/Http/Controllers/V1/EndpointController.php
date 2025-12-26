@@ -8,7 +8,6 @@ use App\Models\Endpoint;
 use App\Models\User;
 use App\Services\EndpointService;
 use App\Services\TeamService;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;

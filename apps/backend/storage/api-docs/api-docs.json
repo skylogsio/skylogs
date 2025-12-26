@@ -847,6 +847,242 @@
                 ]
             }
         },
+        "/api/v1/config/sms": {
+            "get": {
+                "tags": [
+                    "ConfigSms"
+                ],
+                "summary": "List sms configuration",
+                "operationId": "getConfigSmsList",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "ConfigSms"
+                ],
+                "summary": "Create sms config",
+                "operationId": "createConfigSms",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "discriminator": {
+                                    "propertyName": "provider",
+                                    "mapping": {
+                                        "kaveNegar": "#/components/schemas/KaveNegarConfig"
+                                    }
+                                },
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/components/schemas/KaveNegarConfig"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/config/sms/{id}": {
+            "get": {
+                "tags": [
+                    "ConfigSms"
+                ],
+                "summary": "Get config by id",
+                "operationId": "getConfigSms",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "64b59f1a..."
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "ConfigSms"
+                ],
+                "summary": "Update sms config",
+                "operationId": "updateConfigSms",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "64b59f1a..."
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "discriminator": {
+                                    "propertyName": "provider",
+                                    "mapping": {
+                                        "kaveNegar": "#/components/schemas/KaveNegarConfig"
+                                    }
+                                },
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/components/schemas/KaveNegarConfig"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "ConfigSms"
+                ],
+                "summary": "Delete sms config",
+                "operationId": "deleteConfigSms",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "64b59f1a..."
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/config/sms/resolve/{id}": {
+            "post": {
+                "tags": [
+                    "ConfigSms"
+                ],
+                "summary": "make default config sms",
+                "operationId": "makeDefaultConfigSms",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/config/sms/providers": {
+            "get": {
+                "tags": [
+                    "ConfigSms"
+                ],
+                "summary": "List available sms config providers",
+                "operationId": "getConfigSmsProviders",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/api/v1/data-source": {
             "get": {
                 "tags": [
@@ -2091,6 +2327,37 @@
     },
     "components": {
         "schemas": {
+            "KaveNegarConfig": {
+                "title": "Kave Negar SMS Config",
+                "required": [
+                    "name",
+                    "provider",
+                    "apiToken",
+                    "senderNumber"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Primary SMS"
+                    },
+                    "provider": {
+                        "type": "string",
+                        "enum": [
+                            "kaveNegar"
+                        ],
+                        "example": "kaveNegar"
+                    },
+                    "apiToken": {
+                        "type": "string",
+                        "example": "your-api-token-here"
+                    },
+                    "senderNumber": {
+                        "type": "string",
+                        "example": "10008000800"
+                    }
+                },
+                "type": "object"
+            },
             "DataSource": {
                 "properties": {
                     "id": {
@@ -2434,6 +2701,10 @@
         {
             "name": "Authentication",
             "description": "JWT-based authentication endpoints for Skylogs API"
+        },
+        {
+            "name": "ConfigSms",
+            "description": "Manage sms configuration"
         },
         {
             "name": "Data Sources",
