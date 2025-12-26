@@ -5,20 +5,20 @@ namespace App\Docs\Config;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(
-    name: 'ConfigSms',
-    description: 'Manage sms configuration',
+    name: 'ConfigEmail',
+    description: 'Manage email configuration',
 )]
-class ConfigSmsDoc
+class ConfigEmailDoc
 {
     // ----------------------------
-    // GET /api/v1/config/sms
+    // GET /api/v1/config/email
     // ----------------------------
     #[OA\Get(
-        path: '/api/v1/config/sms',
-        operationId: 'getConfigSmsList',
-        summary: 'List sms configuration',
+        path: '/api/v1/config/email',
+        operationId: 'getConfigEmailList',
+        summary: 'List email configuration',
         security: [['bearerAuth' => []]],
-        tags: ['ConfigSms'],
+        tags: ['ConfigEmail'],
         parameters: [
             new OA\Parameter(
                 name: 'page',
@@ -40,14 +40,14 @@ class ConfigSmsDoc
     public function index() {}
 
     // ----------------------------
-    // GET /api/v1/config/sms/{id}
+    // GET /api/v1/config/email/{id}
     // ----------------------------
     #[OA\Get(
-        path: '/api/v1/config/sms/{id}',
-        operationId: 'getConfigSms',
+        path: '/api/v1/config/email/{id}',
+        operationId: 'getConfigEmail',
         summary: 'Get config by id',
         security: [['bearerAuth' => []]],
-        tags: ['ConfigSms'],
+        tags: ['ConfigEmail'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', example: '64b59f1a...')),
         ],
@@ -59,28 +59,28 @@ class ConfigSmsDoc
     public function show() {}
 
     // ----------------------------
-    // POST /api/v1/config/sms
+    // POST /api/v1/config/email
     // ----------------------------
     #[OA\Post(
-        path: '/api/v1/config/sms',
-        operationId: 'createConfigSms',
-        summary: 'Create sms config',
+        path: '/api/v1/config/email',
+        operationId: 'createConfigEmail',
+        summary: 'Create email config',
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                discriminator: new OA\Discriminator(
-                    propertyName: 'provider',
-                    mapping: [
-                        'kaveNegar' => '#/components/schemas/KaveNegarConfigSMS',
-                    ]
-                ),
-                oneOf: [
-                    new OA\Schema(ref: '#/components/schemas/KaveNegarConfigSMS'),
-                ]
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', example: 'Primary Email'),
+                    new OA\Property(property: 'host', type: 'string', example: 'email.skylogs.io'),
+                    new OA\Property(property: 'port', type: 'string', example: '80'),
+                    new OA\Property(property: 'username', type: 'string', example: 'admin'),
+                    new OA\Property(property: 'password', type: 'string', example: '123456789'),
+                    new OA\Property(property: 'fromAddress', type: 'string', example: 'Info@skylogs.io'),
+                ],
+                type: 'object'
             )
         ),
-        tags: ['ConfigSms'],
+        tags: ['ConfigEmail'],
         responses: [
             new OA\Response(response: 201, description: 'Created'),
             new OA\Response(response: 422, description: 'Validation error'),
@@ -89,28 +89,28 @@ class ConfigSmsDoc
     public function store() {}
 
     // ----------------------------
-    // PUT /api/v1/config/sms/{id}
+    // PUT /api/v1/config/email/{id}
     // ----------------------------
     #[OA\Put(
-        path: '/api/v1/config/sms/{id}',
-        operationId: 'updateConfigSms',
-        summary: 'Update sms config',
+        path: '/api/v1/config/email/{id}',
+        operationId: 'updateConfigEmail',
+        summary: 'Update email config',
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                discriminator: new OA\Discriminator(
-                    propertyName: 'provider',
-                    mapping: [
-                        'kaveNegar' => '#/components/schemas/KaveNegarConfigSMS',
-                    ]
-                ),
-                oneOf: [
-                    new OA\Schema(ref: '#/components/schemas/KaveNegarConfigSMS'),
-                ]
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', example: 'Primary Email'),
+                    new OA\Property(property: 'host', type: 'string', example: 'email.skylogs.io'),
+                    new OA\Property(property: 'port', type: 'string', example: '80'),
+                    new OA\Property(property: 'username', type: 'string', example: 'admin'),
+                    new OA\Property(property: 'password', type: 'string', example: '123456789'),
+                    new OA\Property(property: 'fromAddress', type: 'string', example: 'Info@skylogs.io'),
+                ],
+                type: 'object'
             )
         ),
-        tags: ['ConfigSms'],
+        tags: ['ConfigEmail'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', example: '64b59f1a...')),
         ],
@@ -122,14 +122,14 @@ class ConfigSmsDoc
     public function update() {}
 
     // ----------------------------
-    // DELETE /api/v1/config/sms/{id}
+    // DELETE /api/v1/config/email/{id}
     // ----------------------------
     #[OA\Delete(
-        path: '/api/v1/config/sms/{id}',
-        operationId: 'deleteConfigSms',
-        summary: 'Delete sms config',
+        path: '/api/v1/config/email/{id}',
+        operationId: 'deleteConfigEmail',
+        summary: 'Delete email config',
         security: [['bearerAuth' => []]],
-        tags: ['ConfigSms'],
+        tags: ['ConfigEmail'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', example: '64b59f1a...')),
         ],
@@ -141,41 +141,28 @@ class ConfigSmsDoc
     public function destroy() {}
 
     // ----------------------------
-    // POST /api/v1/config/sms/resolve/{id}
+    // POST /api/v1/config/email/resolve/{id}
     // ----------------------------
     #[OA\Post(
-        path: '/api/v1/config/sms/resolve/{id}',
-        operationId: 'makeDefaultConfigSms',
-        summary: 'make default config sms',
+        path: '/api/v1/config/email/resolve/{id}',
+        operationId: 'makeDefaultConfigEmail',
+        summary: 'make default config email',
         security: [['bearerAuth' => []]],
-        tags: ['ConfigSms'],
+        tags: ['ConfigEmail'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
         responses: [new OA\Response(response: 200, description: 'OK')]
     )]
     public function makeDefault() {}
 
     // ----------------------------
-    // GET /api/v1/config/sms/types
+    // GET /api/v1/config/email/types
     // ----------------------------
     #[OA\Get(
-        path: '/api/v1/config/sms/providers',
-        operationId: 'getConfigSmsProviders',
-        summary: 'List available sms config providers',
-        tags: ['ConfigSms'],
+        path: '/api/v1/config/email/providers',
+        operationId: 'getConfigEmailProviders',
+        summary: 'List available email config providers',
+        tags: ['ConfigEmail'],
         responses: [new OA\Response(response: 200, description: 'OK')]
     )]
     public function getTypes() {}
 }
-
-#[OA\Schema(
-    schema: 'KaveNegarConfigSMS',
-    title: 'Kave Negar SMS Config',
-    required: ['name', 'provider', 'apiToken', 'senderNumber'],
-    properties: [
-        new OA\Property(property: 'name', type: 'string', example: 'Primary SMS'),
-        new OA\Property(property: 'provider', type: 'string', enum: ['kaveNegar'], example: 'kaveNegar'),
-        new OA\Property(property: 'apiToken', type: 'string', example: 'your-api-token-here'),
-        new OA\Property(property: 'senderNumber', type: 'string', example: '10008000800'),
-    ]
-)]
-class SmsConfigSchemas {}

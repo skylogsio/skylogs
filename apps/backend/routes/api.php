@@ -10,6 +10,8 @@ use App\Http\Controllers\V1\AlertRule\NotifyController;
 use App\Http\Controllers\V1\AlertRule\PrometheusController;
 use App\Http\Controllers\V1\AlertRule\TagsController;
 use App\Http\Controllers\V1\AuthController;
+use App\Http\Controllers\V1\Config\CallController;
+use App\Http\Controllers\V1\Config\EmailController;
 use App\Http\Controllers\V1\Config\SkylogsController;
 use App\Http\Controllers\V1\Config\SmsController;
 use App\Http\Controllers\V1\Config\TelegramController;
@@ -268,6 +270,32 @@ Route::prefix('v1')->group(function () {
                         Route::get('/{id}', 'Show');
                         Route::post('/', 'Create');
                         Route::get('/providers', 'providers');
+                        Route::post('/makeDefault/{id}', 'makeDefault');
+                        Route::post('/makeBackUp/{id}', 'makeBackup');
+                        Route::put('/{id}', 'Update');
+                        Route::delete('/{id}', 'Delete');
+                    });
+                Route::prefix('/call')
+                    ->controller(CallController::class)
+                    ->group(function () {
+                        Route::get('/', 'Index');
+
+                        Route::get('/{id}', 'Show');
+                        Route::post('/', 'Create');
+                        Route::get('/providers', 'providers');
+                        Route::post('/makeDefault/{id}', 'makeDefault');
+                        Route::post('/makeBackUp/{id}', 'makeBackup');
+                        Route::put('/{id}', 'Update');
+                        Route::delete('/{id}', 'Delete');
+                    });
+
+                Route::prefix('/email')
+                    ->controller(EmailController::class)
+                    ->group(function () {
+                        Route::get('/', 'Index');
+
+                        Route::get('/{id}', 'Show');
+                        Route::post('/', 'Create');
                         Route::post('/makeDefault/{id}', 'makeDefault');
                         Route::post('/makeBackUp/{id}', 'makeBackup');
                         Route::put('/{id}', 'Update');

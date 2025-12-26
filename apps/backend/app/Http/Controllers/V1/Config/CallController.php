@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers\V1\Config;
 
-use App\Enums\SmsProviderType;
+use App\Enums\CallProviderType;
 use App\Http\Controllers\Controller;
-use App\Models\Config\ConfigSms;
-use App\Services\ConfigSmsService;
+use App\Models\Config\ConfigCall;
+use App\Services\ConfigCallService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
-class SmsController extends Controller
+class CallController extends Controller
 {
-    public function __construct(protected ConfigSmsService $configService) {}
+    public function __construct(protected ConfigCallService $configService) {}
 
     public function providers()
     {
 
-        $providers = SmsProviderType::GetList();
+        $providers = CallProviderType::GetList();
         $result = [];
         foreach ($providers as $key => $provider) {
             $result[] = [
@@ -31,7 +31,7 @@ class SmsController extends Controller
     public function Index(Request $request)
     {
 
-        $data = ConfigSms::query()->orderByDesc('isDefault')->orderByDesc('isBackup')->latest();
+        $data = ConfigCall::query()->orderByDesc('isDefault')->orderByDesc('isBackup')->latest();
         if ($request->filled('name')) {
             $data->where('name', 'like', '%'.$request->name.'%');
         }
@@ -43,7 +43,7 @@ class SmsController extends Controller
 
     public function Show(Request $request, $id)
     {
-        $model = ConfigSms::where('_id', $id);
+        $model = ConfigCall::where('_id', $id);
         $model = $model->firstOrFail();
 
         return response()->json($model);
@@ -51,7 +51,7 @@ class SmsController extends Controller
 
     public function Delete(Request $request, $id)
     {
-        $model = ConfigSms::where('_id', $id);
+        $model = ConfigCall::where('_id', $id);
         $model = $model->firstOrFail();
         $model->delete();
 
@@ -64,17 +64,16 @@ class SmsController extends Controller
             $request->all(),
             [
                 'name' => 'required',
-                'provider' => ['required', Rule::enum(SmsProviderType::class)],
-                'apiToken' => 'required_if:provider,'.SmsProviderType::KAVE_NEGAR->value,
-                'senderNumber' => 'required_if:provider,'.SmsProviderType::KAVE_NEGAR->value,
+                'provider' => ['required', Rule::enum(CallProviderType::class)],
+                'apiToken' => 'required_if:provider,'.CallProviderType::KAVE_NEGAR->value,
             ],
         );
         if ($va->passes()) {
 
-            if ($request->provider == SmsProviderType::KAVE_NEGAR->value) {
+            if ($request->provider == CallProviderType::KAVE_NEGAR->value) {
 
                 $isDefault = false;
-                if (ConfigSms::where('isDefault', true)->count() == 0) {
+                if (ConfigCall::where('isDefault', true)->count() == 0) {
                     $isDefault = true;
                 }
 
@@ -82,12 +81,11 @@ class SmsController extends Controller
                     'name' => $request->name,
                     'provider' => $request->provider,
                     'apiToken' => $request->apiToken,
-                    'senderNumber' => $request->senderNumber,
                     'isDefault' => $isDefault,
                     'isBackUp' => false,
                 ];
 
-                $model = ConfigSms::create($modelArray);
+                $model = ConfigCall::create($modelArray);
 
                 return response()->json([
                     'status' => true,
@@ -104,27 +102,25 @@ class SmsController extends Controller
 
     public function Update(Request $request, $id)
     {
-        $model = ConfigSms::where('_id', $id);
+        $model = ConfigCall::where('_id', $id);
         $model = $model->firstOrFail();
 
         $va = \Validator::make(
             $request->all(),
             [
                 'name' => 'required',
-                'provider' => ['required', Rule::enum(SmsProviderType::class)],
-                'apiToken' => 'required_if:provider,'.SmsProviderType::KAVE_NEGAR->value,
-                'senderNumber' => 'required_if:provider,'.SmsProviderType::KAVE_NEGAR->value,
+                'provider' => ['required', Rule::enum(CallProviderType::class)],
+                'apiToken' => 'required_if:provider,'.CallProviderType::KAVE_NEGAR->value,
             ],
         );
 
         if ($va->passes()) {
-            if ($request->provider == SmsProviderType::KAVE_NEGAR->value) {
+            if ($request->provider == CallProviderType::KAVE_NEGAR->value) {
 
                 $modelArray = [
                     'name' => $request->name,
                     'provider' => $request->provider,
                     'apiToken' => $request->apiToken,
-                    'senderNumber' => $request->senderNumber,
                 ];
 
                 $model->update($modelArray);
@@ -144,7 +140,7 @@ class SmsController extends Controller
 
     public function makeDefault($id)
     {
-        $model = ConfigSms::where('id', $id)->firstOrFail();
+        $model = ConfigCall::where('id', $id)->firstOrFail();
         $this->configService->makeDefault($model);
 
         return response()->json([
@@ -155,7 +151,7 @@ class SmsController extends Controller
 
     public function makeBackup($id)
     {
-        $model = ConfigSms::where('id', $id)->firstOrFail();
+        $model = ConfigCall::where('id', $id)->firstOrFail();
         try {
             $this->configService->makeBackUp($model);
         } catch (\Exception $exception) {
