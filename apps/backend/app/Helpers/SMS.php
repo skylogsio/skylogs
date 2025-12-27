@@ -47,6 +47,10 @@ class SMS
             return "$config->provider is not providing";
         }
 
+        if (empty(self::Token()))
+            return "Sms is not configured";
+
+
         $result = Http::pool(function (Pool $pool) use ($nums, $alert) {
 
             if ($nums instanceof Collection) {
@@ -92,6 +96,9 @@ class SMS
 
             return "$config->provider is not providing";
         }
+
+        if (empty(self::Token()))
+            return "Sms is not configured";
 
         $response = Http::post(self::Url(), [
             'sender' => self::SenderNumber(),
