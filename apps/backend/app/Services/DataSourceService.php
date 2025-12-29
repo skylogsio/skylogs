@@ -18,12 +18,14 @@ class DataSourceService
             switch ($ds->type) {
                 case DataSourceType::GRAFANA:
                 case DataSourceType::PROMETHEUS:
-                case DataSourceType::ELASTIC:
                 case DataSourceType::SENTRY:
                 case DataSourceType::PMM:
                 case DataSourceType::SPLUNK:
                 case DataSourceType::ZABBIX:
                     $response = $request->get($ds->url);
+                    break;
+                case DataSourceType::ELASTIC:
+                    $response = $request->withBasicAuth($ds->username,$ds->password)->get($ds->url."/_search?size=0");
                     break;
             }
 
