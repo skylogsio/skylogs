@@ -6,29 +6,45 @@ import (
 )
 
 type State struct {
-	mu           sync.RWMutex
-	lastSeen     time.Time
-	currentAlive bool
+	mu sync.Mutex
+
+	LastSeen  time.Time
+	Unhealthy bool
+	StartTime time.Time
 }
 
 func NewState() *State {
-	return &State{}
+	return &State{
+		LastSeen:  time.Now(),
+		StartTime: time.Now(),
+	}
 }
 
-func (s *State) Update(t time.Time) {
+func (s *State) MarkSeen() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.lastSeen = t
-	s.currentAlive = true
+
+	s.LastSeen = time.Now()
+	s.Unhealthy = false
 }
 
-func (s *State) IsAlive(timeout time.Duration) bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+func (s *State) MarkUnhealthy() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	if s.lastSeen.IsZero() {
-		return false
-	}
-	return time.Since(s.lastSeen) <= timeout
+	s.Unhealthy = true
 }
 
+func (s *State) IsUnhealthy() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.Unhealthy
+}
+
+func (s *State) TimeSinceLastSeen() time.Duration {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return time.Since(s.LastSeen)
+}

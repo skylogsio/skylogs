@@ -1,25 +1,13 @@
 package heartbeat
 
 import (
-	"encoding/json"
 	"net/http"
-
-	"github.com/skylogsio/skylogs/skylogs-sentinel/pkg/model"
 )
 
-type Receiver struct {
-	State *State
-}
-
-func (r *Receiver) Handle(w http.ResponseWriter, req *http.Request) {
-	var hb model.Heartbeat
-
-	if err := json.NewDecoder(req.Body).Decode(&hb); err != nil {
-		http.Error(w, "invalid payload", http.StatusBadRequest)
-		return
+func Receiver(state *State) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		state.MarkSeen()
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
 	}
-
-	r.State.Update(hb.Timestamp)
-	w.WriteHeader(http.StatusNoContent)
 }
-

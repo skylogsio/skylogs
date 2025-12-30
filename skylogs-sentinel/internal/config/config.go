@@ -1,28 +1,19 @@
 package config
 
 import (
+	"os"
 	"time"
 
 	"gopkg.in/yaml.v3"
-	"os"
 )
 
 type Config struct {
-	DC string `yaml:"dc"`
-
-	Peer struct {
-		Name string `yaml:"name"`
-		URL  string `yaml:"url"`
-	} `yaml:"peer"`
-
 	Heartbeat struct {
-		Interval time.Duration `yaml:"interval"`
-		Timeout  time.Duration `yaml:"timeout"`
+		TargetURL string        `yaml:"target_url"`
+		Interval  time.Duration `yaml:"interval"`
+		Timeout   time.Duration `yaml:"timeout"`
+		FailAfter time.Duration `yaml:"fail_after"`
 	} `yaml:"heartbeat"`
-
-	Alert struct {
-		Webhook string `yaml:"webhook"`
-	} `yaml:"alert"`
 
 	Server struct {
 		Listen string `yaml:"listen"`
@@ -42,4 +33,3 @@ func Load(path string) (*Config, error) {
 
 	return &cfg, nil
 }
-

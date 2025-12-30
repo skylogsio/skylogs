@@ -1,52 +1,37 @@
 package heartbeat
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"net/http"
 	"time"
-
-	"github.com/skylogsio/skylogs/skylogs-sentinel/pkg/model"
 )
 
 type Sender struct {
-	PeerURL string
-	DC      string
-	Node    string
-	Client  *http.Client
+	Client *http.Client
+	Target string
+	State  *State
 }
 
-func (s *Sender) Run(ctx context.Context, interval time.Duration) {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			s.send()
-		case <-ctx.Done():
-			return
-		}
+func NewSender(target string, state *State, timeout time.Duration) *Sender {
+	return &Sender{
+		Target: target,
+		State:  state,
+		Client: &http.Client{Timeout: timeout},
 	}
 }
 
-func (s *Sender) send() {
-	hb := model.Heartbeat{
-		DC:        s.DC,
-		Node:      s.Node,
-		Timestamp: time.Now().UTC(),
+func (s *Sender) Send(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.Target, nil)
+	if err != nil {
+		return err
 	}
 
-	data, _ := json.Marshal(hb)
+	resp, err := s.Client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 
-	req, _ := http.NewRequest(
-		http.MethodPost,
-		s.PeerURL,
-		bytes.NewBuffer(data),
-	)
-
-	req.Header.Set("Content-Type", "application/json")
-	s.Client.Do(req) // errors tolerated
+	s.State.MarkSeen()
+	return nil
 }
-
