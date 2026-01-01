@@ -1,0 +1,130 @@
+import { useEffect } from "react";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, Grid2 as Grid, TextField } from "@mui/material";
+import { useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
+import { z } from "zod";
+
+import type { CreateUpdateModal } from "@/@types/global";
+import type { ICallConfig } from "@/@types/settings/call";
+// import { createCallConfig, updateCallConfig } from "@/api/setttings/call";
+import ModalContainer from "@/components/Modal";
+import type { ModalContainerProps } from "@/components/Modal/types";
+
+const callConfigSchema = z.object({
+  provider: z.string().trim().nonempty("This field is Required."),
+  token: z.string().trim().nonempty("This field is Required.")
+});
+
+type CallConfigFormType = z.infer<typeof callConfigSchema>;
+
+type CallConfigModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
+  data: CreateUpdateModal<ICallConfig>;
+  onSubmit: () => void;
+};
+
+const defaultValues: CallConfigFormType = {
+  provider: "",
+  token: ""
+};
+
+export default function CallConfigModal({ data, open, onClose, onSubmit }: CallConfigModalProps) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors }
+  } = useForm<CallConfigFormType>({
+    resolver: zodResolver(callConfigSchema),
+    defaultValues
+  });
+
+  // const { mutate: createCallConfigMutation, isPending: isCreating } = useMutation({
+  //   mutationFn: (body: CallConfigFormType) => createCallConfig(body),
+  //   onSuccess: () => {
+  //     toast.success("Call Config Created Successfully.");
+  //     onSubmit();
+  //     onClose?.();
+  //   }
+  // });
+
+  // const { mutate: updateCallConfigMutation, isPending: isUpdating } = useMutation({
+  //   mutationFn: ({ id, body }: { id: string; body: CallConfigFormType }) =>
+  //     updateCallConfig(id, body),
+  //   onSuccess: () => {
+  //     toast.success("Call Config Updated Successfully.");
+  //     onSubmit();
+  //     onClose?.();
+  //   }
+  // });
+
+  function handleSubmitForm(body: CallConfigFormType) {
+    console.log(body);
+    // if (data === "NEW") {
+    //   createCallConfigMutation(body);
+    // } else if (data) {
+    //   updateCallConfigMutation({ id: data.id, body });
+    // }
+  }
+
+  useEffect(() => {
+    if (data === "NEW") {
+      reset(defaultValues);
+    } else {
+      reset(data as CallConfigFormType);
+    }
+  }, [data, reset]);
+
+  return (
+    <ModalContainer
+      title="Create New Call Config"
+      open={open}
+      onClose={onClose}
+      disableEscapeKeyDown
+    >
+      <Grid
+        component="form"
+        onSubmit={handleSubmit(handleSubmitForm)}
+        container
+        spacing={2}
+        width="100%"
+        display="flex"
+        marginTop="1rem"
+      >
+        <Grid size={12}>
+          <TextField
+            label="Provider"
+            variant="filled"
+            fullWidth
+            error={!!errors.provider}
+            helperText={errors.provider?.message}
+            {...register("provider")}
+          />
+        </Grid>
+        <Grid size={12}>
+          <TextField
+            label="Token"
+            variant="filled"
+            fullWidth
+            error={!!errors.token}
+            helperText={errors.token?.message}
+            {...register("token")}
+          />
+        </Grid>
+        <Grid size={12} marginTop="0.5rem">
+          <Button
+            // disabled={isCreating || isUpdating}
+            type="submit"
+            variant="contained"
+            size="large"
+            fullWidth
+          >
+            CREATE
+          </Button>
+        </Grid>
+      </Grid>
+    </ModalContainer>
+  );
+}
