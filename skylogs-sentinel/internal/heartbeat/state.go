@@ -6,11 +6,11 @@ import (
 )
 
 type State struct {
-	mu sync.Mutex
-
-	LastSeen  time.Time
-	Unhealthy bool
-	StartTime time.Time
+	mu           sync.Mutex
+	FailureCount int
+	LastSeen     time.Time
+	Unhealthy    bool
+	StartTime    time.Time
 }
 
 func NewState() *State {
@@ -47,4 +47,20 @@ func (s *State) TimeSinceLastSeen() time.Duration {
 	defer s.mu.Unlock()
 
 	return time.Since(s.LastSeen)
+}
+func (s *State) Snapshot() Snapshot {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	status := "healthy"
+	if time.Since(s.LastSeen) > 10*time.Second {
+		status = "unhealthy"
+	}
+
+	return Snapshot{
+		Status:       status,
+		LastSeen:     s.LastSeen,
+		FailureCount: s.FailureCount,
+		Uptime:       time.Since(s.StartTime),
+	}
 }

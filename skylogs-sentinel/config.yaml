@@ -1,13 +1,14 @@
 # ----------------------------------------
 # SkyLogs Sentinel Configuration
 # ----------------------------------------
-
+server:
+  listen: ":9192"
 sentinel:
   id: arvan-bamdad-sentinel       # Unique identifier for this Sentinel instance
   role: secondary        # Role: primary / secondary (informational)
 
 heartbeat:
-  target_url: "http://serverip:9191/heartbeat"  # Main SkyLogs heartbeat endpoint
+  target_url: "http://localhost:9191/heartbeat"  # Main SkyLogs heartbeat endpoint
   interval: 5s            # How often to send heartbeat
   timeout: 3s             # Timeout per heartbeat request
   fail_after: 15s         # Mark main SkyLogs as down if unreachable for this period

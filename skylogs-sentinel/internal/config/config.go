@@ -18,6 +18,11 @@ type Config struct {
 	Server struct {
 		Listen string `yaml:"listen"`
 	} `yaml:"server"`
+
+	Sentinel struct {
+		Id   string `yaml:"id"`
+		Role string `yaml:"role"`
+	} `yaml:"sentinel"`
 }
 
 func Load(path string) (*Config, error) {

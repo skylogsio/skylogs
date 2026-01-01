@@ -37,7 +37,8 @@ func main() {
 
 	httpServer := server.New(cfg.Server.Listen, mux)
 	httpServer.Start()
-
+	// status endpoint
+	mux.Handle("/status", heartbeat.StatusHandler(state, cfg.Sentinel.Id))
 	// ------------------------------------------------
 	// Heartbeat sender loop
 	// ------------------------------------------------
@@ -56,7 +57,6 @@ func main() {
 
 		ticker := time.NewTicker(cfg.Heartbeat.Interval)
 		defer ticker.Stop()
-
 		for {
 			select {
 			case <-ticker.C:
