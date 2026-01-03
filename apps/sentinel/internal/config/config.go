@@ -23,6 +23,11 @@ type Config struct {
 		Id   string `yaml:"id"`
 		Role string `yaml:"role"`
 	} `yaml:"sentinel"`
+
+	Security struct {
+		Shared_secret string        `yaml:"shared_secret"`
+		Allowed_drift time.Duration `yaml:"allowed_drift"`
+	} `yaml:"security"`
 }
 
 func Load(path string) (*Config, error) {

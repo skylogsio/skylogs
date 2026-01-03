@@ -1,4 +1,4 @@
-module github.com/skylogsio/skylogs/skylogs-sentinel
+module github.com/skylogsio/skylogs/apps/sentinel
 
 go 1.20
 

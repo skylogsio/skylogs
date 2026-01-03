@@ -24,4 +24,6 @@ runtime:
 logging:
   level: "info"           # Logging level: debug / info / warn / error
   file: "/var/log/skylogs-sentinel.log" # Optional log file path
-
+security:
+  shared_secret: "maivupei6azifae3uju1cahneewahiT3hia4ahY4ki2ieWee8p"
+  allowed_drift: 10s

@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/skylogsio/skylogs/skylogs-sentinel/internal/config"
-	"github.com/skylogsio/skylogs/skylogs-sentinel/internal/heartbeat"
-	"github.com/skylogsio/skylogs/skylogs-sentinel/internal/server"
+	"github.com/skylogsio/skylogs/apps/sentinel/internal/config"
+	"github.com/skylogsio/skylogs/apps/sentinel/internal/heartbeat"
+	"github.com/skylogsio/skylogs/apps/sentinel/internal/server"
 )
 
 func main() {
@@ -33,7 +33,7 @@ func main() {
 	// HTTP server (receiver)
 	// ------------------------------------------------
 	mux := http.NewServeMux()
-	mux.Handle("/heartbeat", heartbeat.Receiver(state))
+	mux.Handle("/heartbeat", heartbeat.Receiver(state, cfg.Security.Shared_secret))
 
 	httpServer := server.New(cfg.Server.Listen, mux)
 	httpServer.Start()
@@ -48,6 +48,7 @@ func main() {
 	sender := heartbeat.NewSender(
 		cfg.Heartbeat.TargetURL,
 		state,
+		cfg.Security.Shared_secret,
 		cfg.Heartbeat.Timeout,
 	)
 
