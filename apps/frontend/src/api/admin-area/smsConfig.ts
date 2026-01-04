@@ -2,7 +2,6 @@
 
 import type { ISmsConfig } from "@/@types/admin-area/smsConfig";
 import type { ServerResponse } from "@/@types/global";
-import type { ITelegramProxy } from "@/@types/settings/telegram";
 import axios from "@/lib/axios";
 
 const SMS_CONFIG_URL = "config/sms";
@@ -26,7 +25,7 @@ export async function createSmsConfig(body: unknown): Promise<ServerResponse<unk
 }
 
 export async function updateSmsConfig(
-  proxyId: ITelegramProxy["id"],
+  proxyId: ISmsConfig["id"],
   body: unknown
 ): Promise<ServerResponse<unknown>> {
   try {
