@@ -25,8 +25,8 @@ type Config struct {
 	} `yaml:"sentinel"`
 
 	Security struct {
-		Shared_secret string        `yaml:"shared_secret"`
-		Allowed_drift time.Duration `yaml:"allowed_drift"`
+		SharedSecret string        `yaml:"shared_secret"`
+		AllowedDrift time.Duration `yaml:"allowed_drift"`
 	} `yaml:"security"`
 }
 

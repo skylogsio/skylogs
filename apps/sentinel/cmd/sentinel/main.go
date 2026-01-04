@@ -33,7 +33,7 @@ func main() {
 	// HTTP server (receiver)
 	// ------------------------------------------------
 	mux := http.NewServeMux()
-	mux.Handle("/heartbeat", heartbeat.Receiver(state, cfg.Security.Shared_secret))
+	mux.Handle("/heartbeat", heartbeat.Receiver(state, cfg.Security.SharedSecret))
 
 	httpServer := server.New(cfg.Server.Listen, mux)
 	httpServer.Start()
@@ -48,7 +48,7 @@ func main() {
 	sender := heartbeat.NewSender(
 		cfg.Heartbeat.TargetURL,
 		state,
-		cfg.Security.Shared_secret,
+		cfg.Security.SharedSecret,
 		cfg.Heartbeat.Timeout,
 	)
 

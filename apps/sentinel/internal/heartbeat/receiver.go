@@ -47,6 +47,6 @@ func Receiver(state *State, secret string) http.HandlerFunc {
 
 		state.MarkSeen()
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		_, _ = w.Write([]byte("ok"))
 	}
 }

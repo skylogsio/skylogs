@@ -29,7 +29,7 @@ func NewSender(target string, state *State, secret string, timeout time.Duration
 func (s *Sender) Send(ctx context.Context) error {
 	ts := strconv.FormatInt(time.Now().Unix(), 10)
 
-	message := fmt.Sprintf("POST|/heartbeat|%s", ts)
+	message := fmt.Sprintf("GET|/heartbeat|%s", ts)
 	signature := security.Sign(s.Secret, message)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.Target, nil)
 	if err != nil {
@@ -44,9 +44,9 @@ func (s *Sender) Send(ctx context.Context) error {
 	}
 	defer resp.Body.Close()
 
-	s.State.MarkSeen()
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("heartbeat failed: %s", resp.Status)
 	}
+	s.State.MarkSeen()
 	return nil
 }
