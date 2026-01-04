@@ -7,16 +7,17 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
+import type { ISmsConfig } from "@/@types/admin-area/smsConfig";
 import type { CreateUpdateModal } from "@/@types/global";
-import type { ISmsConfig } from "@/@types/settings/sms";
-// import { createSmsConfig, updateSmsConfig } from "@/api/setttings/sms";
+import { createSmsConfig, updateSmsConfig } from "@/api/admin-area/smsConfig";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
 const smsConfigSchema = z.object({
-  provider: z.string().trim().nonempty("This field is Required."),
-  token: z.string().trim().nonempty("This field is Required."),
-  senderNumPattern: z.string().trim().nonempty("This field is Required.")
+  name: z.string().trim().nonempty("This field is Required."),
+  provider: z.literal("kaveNegar"),
+  apiToken: z.string().trim().nonempty("This field is Required."),
+  senderNumber: z.string().trim().nonempty("This field is Required.")
 });
 
 type SmsConfigFormType = z.infer<typeof smsConfigSchema>;
@@ -27,9 +28,10 @@ type SmsConfigModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
 };
 
 const defaultValues: SmsConfigFormType = {
-  provider: "",
-  token: "",
-  senderNumPattern: ""
+  name: "",
+  provider: "kaveNegar",
+  apiToken: "",
+  senderNumber: ""
 };
 
 export default function SmsConfigModal({ data, open, onClose, onSubmit }: SmsConfigModalProps) {
@@ -43,45 +45,44 @@ export default function SmsConfigModal({ data, open, onClose, onSubmit }: SmsCon
     defaultValues
   });
 
-  // const { mutate: createSmsConfigMutation, isPending: isCreating } = useMutation({
-  //   mutationFn: (body: SmsConfigFormType) => createSmsConfig(body),
-  //   onSuccess: () => {
-  //     toast.success("SMS Config Created Successfully.");
-  //     onSubmit();
-  //     onClose?.();
-  //   }
-  // });
+  const { mutate: createSmsConfigMutation, isPending: isCreating } = useMutation({
+    mutationFn: (body: SmsConfigFormType) => createSmsConfig(body),
+    onSuccess: () => {
+      toast.success("SMS Config Created Successfully.");
+      onSubmit();
+      onClose?.();
+    }
+  });
 
-  // const { mutate: updateSmsConfigMutation, isPending: isUpdating } = useMutation({
-  //   mutationFn: ({ id, body }: { id: string; body: SmsConfigFormType }) =>
-  //     updateSmsConfig(id, body),
-  //   onSuccess: () => {
-  //     toast.success("SMS Config Updated Successfully.");
-  //     onSubmit();
-  //     onClose?.();
-  //   }
-  // });
+  const { mutate: updateSmsConfigMutation, isPending: isUpdating } = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: SmsConfigFormType }) =>
+      updateSmsConfig(id, body),
+    onSuccess: () => {
+      toast.success("SMS Config Updated Successfully.");
+      onSubmit();
+      onClose?.();
+    }
+  });
 
   function handleSubmitForm(body: SmsConfigFormType) {
-    console.log(body);
-    // if (data === "NEW") {
-    //   createSmsConfigMutation(body);
-    // } else if (data) {
-    //   updateSmsConfigMutation({ id: data.id, body });
-    // }
+    if (data === "NEW") {
+      createSmsConfigMutation(body);
+    } else if (data) {
+      updateSmsConfigMutation({ id: data.id, body });
+    }
   }
 
   useEffect(() => {
     if (data === "NEW") {
       reset(defaultValues);
     } else {
-      reset(data as SmsConfigFormType);
+      reset(data as unknown as SmsConfigFormType);
     }
   }, [data, reset]);
 
   return (
     <ModalContainer
-      title="Create New Sms Config"
+      title={`${data ? "Update" : "Create"} New Sms Config`}
       open={open}
       onClose={onClose}
       disableEscapeKeyDown
@@ -97,12 +98,12 @@ export default function SmsConfigModal({ data, open, onClose, onSubmit }: SmsCon
       >
         <Grid size={12}>
           <TextField
-            label="Provider"
+            label="Name"
             variant="filled"
             fullWidth
-            error={!!errors.provider}
-            helperText={errors.provider?.message}
-            {...register("provider")}
+            error={!!errors.name}
+            helperText={errors.name?.message}
+            {...register("name")}
           />
         </Grid>
         <Grid size={12}>
@@ -110,9 +111,9 @@ export default function SmsConfigModal({ data, open, onClose, onSubmit }: SmsCon
             label="Token"
             variant="filled"
             fullWidth
-            error={!!errors.token}
-            helperText={errors.token?.message}
-            {...register("token")}
+            error={!!errors.apiToken}
+            helperText={errors.apiToken?.message}
+            {...register("apiToken")}
           />
         </Grid>
         <Grid size={12}>
@@ -120,20 +121,20 @@ export default function SmsConfigModal({ data, open, onClose, onSubmit }: SmsCon
             label="Sender Num Pattern"
             variant="filled"
             fullWidth
-            error={!!errors.senderNumPattern}
-            helperText={errors.senderNumPattern?.message}
-            {...register("senderNumPattern")}
+            error={!!errors.senderNumber}
+            helperText={errors.senderNumber?.message}
+            {...register("senderNumber")}
           />
         </Grid>
         <Grid size={12} marginTop="0.5rem">
           <Button
-            // disabled={isCreating || isUpdating}
+            disabled={isCreating || isUpdating}
             type="submit"
             variant="contained"
             size="large"
             fullWidth
           >
-            CREATE
+            {data ? "Update" : "Create"}
           </Button>
         </Grid>
       </Grid>
