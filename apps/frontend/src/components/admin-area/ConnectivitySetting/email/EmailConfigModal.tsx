@@ -8,16 +8,16 @@ import { HiEye, HiEyeOff } from "react-icons/hi";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
+import type { IEmailConfig } from "@/@types/admin-area/emailConfig";
 import type { CreateUpdateModal } from "@/@types/global";
-import type { IEmailConfig } from "@/@types/settings/email";
-// import { createEmailConfig, updateEmailConfig } from "@/api/setttings/email";
+import { createEmailConfig, updateEmailConfig } from "@/api/admin-area/emailConfig";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
 const emailConfigSchema = z.object({
-  provider: z.string().trim().nonempty("This field is Required."),
-  mailHost: z.string().trim().nonempty("This field is Required."),
-  mailPort: z.number({ message: "This field is Required." }).int().min(0).max(65535),
+  name: z.string().trim().nonempty("This field is Required."),
+  host: z.string().trim().nonempty("This field is Required."),
+  port: z.number({ message: "This field is Required." }).int().min(0).max(65535),
   username: z.string().trim().nonempty("This field is Required."),
   password: z.string().trim().nonempty("This field is Required."),
   fromAddress: z.string().trim().email("Invalid email address").nonempty("This field is Required.")
@@ -31,9 +31,9 @@ type EmailConfigModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
 };
 
 const defaultValues: EmailConfigFormType = {
-  provider: "",
-  mailHost: "",
-  mailPort: 587,
+  name: "",
+  host: "",
+  port: 587,
   username: "",
   password: "",
   fromAddress: ""
@@ -52,39 +52,38 @@ export default function EmailConfigModal({ data, open, onClose, onSubmit }: Emai
   const { palette } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
 
-  // const { mutate: createEmailConfigMutation, isPending: isCreating } = useMutation({
-  //   mutationFn: (body: EmailConfigFormType) => createEmailConfig(body),
-  //   onSuccess: () => {
-  //     toast.success("Email Config Created Successfully.");
-  //     onSubmit();
-  //     onClose?.();
-  //   }
-  // });
+  const { mutate: createEmailConfigMutation, isPending: isCreating } = useMutation({
+    mutationFn: (body: EmailConfigFormType) => createEmailConfig(body),
+    onSuccess: () => {
+      toast.success("Email Config Created Successfully.");
+      onSubmit();
+      onClose?.();
+    }
+  });
 
-  // const { mutate: updateEmailConfigMutation, isPending: isUpdating } = useMutation({
-  //   mutationFn: ({ id, body }: { id: string; body: EmailConfigFormType }) =>
-  //     updateEmailConfig(id, body),
-  //   onSuccess: () => {
-  //     toast.success("Email Config Updated Successfully.");
-  //     onSubmit();
-  //     onClose?.();
-  //   }
-  // });
+  const { mutate: updateEmailConfigMutation, isPending: isUpdating } = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: EmailConfigFormType }) =>
+      updateEmailConfig(id, body),
+    onSuccess: () => {
+      toast.success("Email Config Updated Successfully.");
+      onSubmit();
+      onClose?.();
+    }
+  });
 
   function handleSubmitForm(body: EmailConfigFormType) {
-    console.log(body);
-    // if (data === "NEW") {
-    //   createEmailConfigMutation(body);
-    // } else if (data) {
-    //   updateEmailConfigMutation({ id: data.id, body });
-    // }
+    if (data === "NEW") {
+      createEmailConfigMutation(body);
+    } else if (data) {
+      updateEmailConfigMutation({ id: data.id, body });
+    }
   }
 
   useEffect(() => {
     if (data === "NEW") {
       reset(defaultValues);
     } else {
-      reset(data as EmailConfigFormType);
+      reset(data as unknown as EmailConfigFormType);
     }
   }, [data, reset]);
 
@@ -106,33 +105,33 @@ export default function EmailConfigModal({ data, open, onClose, onSubmit }: Emai
       >
         <Grid size={12}>
           <TextField
-            label="Provider"
+            label="Name"
             variant="filled"
             fullWidth
-            error={!!errors.provider}
-            helperText={errors.provider?.message}
-            {...register("provider")}
+            error={!!errors.name}
+            helperText={errors.name?.message}
+            {...register("name")}
           />
         </Grid>
         <Grid size={6}>
           <TextField
-            label="Mail Host"
+            label="Host"
             variant="filled"
             fullWidth
-            error={!!errors.mailHost}
-            helperText={errors.mailHost?.message}
-            {...register("mailHost")}
+            error={!!errors.host}
+            helperText={errors.host?.message}
+            {...register("host")}
           />
         </Grid>
         <Grid size={6}>
           <TextField
-            label="Mail Port"
+            label="Port"
             variant="filled"
             fullWidth
             type="number"
-            error={!!errors.mailPort}
-            helperText={errors.mailPort?.message}
-            {...register("mailPort", { valueAsNumber: true })}
+            error={!!errors.port}
+            helperText={errors.port?.message}
+            {...register("port", { valueAsNumber: true })}
           />
         </Grid>
         <Grid size={6}>
@@ -182,7 +181,7 @@ export default function EmailConfigModal({ data, open, onClose, onSubmit }: Emai
         </Grid>
         <Grid size={12} marginTop="0.5rem">
           <Button
-            // disabled={isCreating || isUpdating}
+            disabled={isCreating || isUpdating}
             type="submit"
             variant="contained"
             size="large"
