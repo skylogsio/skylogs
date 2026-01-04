@@ -100,7 +100,7 @@ class SMS
         if (empty(self::Token()))
             return "Sms is not configured";
 
-        $response = Http::post(self::Url(), [
+        $response = Http::get(self::Url(), [
             'sender' => self::SenderNumber(),
             'receptor' => $endpoint->value,
             'message' => $endpoint->generateOTPMessage(),
