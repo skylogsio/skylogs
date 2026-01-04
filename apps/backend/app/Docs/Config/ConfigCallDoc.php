@@ -19,20 +19,6 @@ class ConfigCallDoc
         summary: 'List call configuration',
         security: [['bearerAuth' => []]],
         tags: ['ConfigCall'],
-        parameters: [
-            new OA\Parameter(
-                name: 'page',
-                description: 'Page number',
-                in: 'query',
-                schema: new OA\Schema(type: 'integer', default: 1)
-            ),
-            new OA\Parameter(
-                name: 'perPage',
-                in: 'query',
-                schema: new OA\Schema(type: 'integer', default: 25)
-            ),
-
-        ],
         responses: [
             new OA\Response(response: 200, description: 'OK'),
         ]
