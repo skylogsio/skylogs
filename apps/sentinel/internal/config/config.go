@@ -24,6 +24,13 @@ type Config struct {
 		Role string `yaml:"role"`
 	} `yaml:"sentinel"`
 
+	Alert struct {
+		WebhookUrl    string        `yaml:"webhook_url"`
+		Token         string        `yaml:"token"`
+		Instance      string        `yaml:"instance"`
+		RetryInterval time.Duration `yaml:"retry_interval"`
+	} `yaml:"alert"`
+
 	Security struct {
 		SharedSecret string        `yaml:"shared_secret"`
 		AllowedDrift time.Duration `yaml:"allowed_drift"`

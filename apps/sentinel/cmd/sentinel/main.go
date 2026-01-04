@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/skylogsio/skylogs/apps/sentinel/internal/alert"
 	"github.com/skylogsio/skylogs/apps/sentinel/internal/config"
 	"github.com/skylogsio/skylogs/apps/sentinel/internal/heartbeat"
 	"github.com/skylogsio/skylogs/apps/sentinel/internal/server"
@@ -63,8 +65,28 @@ func main() {
 			case <-ticker.C:
 				if err := sender.Send(ctx); err != nil {
 					if state.TimeSinceLastSeen() > cfg.Heartbeat.FailAfter {
-						state.MarkUnhealthy()
 						log.Println("Main SkyLogs unreachable")
+						if state.MarkUnhealthyIfNeeded() {
+							log.Println("Sending Alert")
+
+							payload := alert.WebhookPayload{
+								Instance: cfg.Alert.Instance,
+								Description: fmt.Sprintf(
+									"No heartbeat received for more than %s",
+									cfg.Heartbeat.FailAfter,
+								),
+							}
+
+							if err := alert.SendWebhook(
+								ctx,
+								cfg.Alert.WebhookUrl,
+								cfg.Alert.Token,
+								payload,
+							); err != nil {
+								log.Println("failed to send webhook:", err)
+							}
+						}
+						//state.MarkUnhealthy()
 					}
 				}
 			case <-ctx.Done():
