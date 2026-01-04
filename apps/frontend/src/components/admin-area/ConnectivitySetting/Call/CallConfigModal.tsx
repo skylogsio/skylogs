@@ -7,15 +7,16 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
+import type { ICallConfig } from "@/@types/admin-area/callConfig";
 import type { CreateUpdateModal } from "@/@types/global";
-import type { ICallConfig } from "@/@types/settings/call";
-// import { createCallConfig, updateCallConfig } from "@/api/setttings/call";
+import { createCallConfig, updateCallConfig } from "@/api/admin-area/callConfig";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
 const callConfigSchema = z.object({
-  provider: z.string().trim().nonempty("This field is Required."),
-  token: z.string().trim().nonempty("This field is Required.")
+  name: z.string().trim().nonempty("This field is Required."),
+  provider: z.literal("kaveNegar"),
+  apiToken: z.string().trim().nonempty("This field is Required.")
 });
 
 type CallConfigFormType = z.infer<typeof callConfigSchema>;
@@ -26,8 +27,9 @@ type CallConfigModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
 };
 
 const defaultValues: CallConfigFormType = {
-  provider: "",
-  token: ""
+  name: "",
+  provider: "kaveNegar",
+  apiToken: ""
 };
 
 export default function CallConfigModal({ data, open, onClose, onSubmit }: CallConfigModalProps) {
@@ -41,32 +43,31 @@ export default function CallConfigModal({ data, open, onClose, onSubmit }: CallC
     defaultValues
   });
 
-  // const { mutate: createCallConfigMutation, isPending: isCreating } = useMutation({
-  //   mutationFn: (body: CallConfigFormType) => createCallConfig(body),
-  //   onSuccess: () => {
-  //     toast.success("Call Config Created Successfully.");
-  //     onSubmit();
-  //     onClose?.();
-  //   }
-  // });
+  const { mutate: createCallConfigMutation, isPending: isCreating } = useMutation({
+    mutationFn: (body: CallConfigFormType) => createCallConfig(body),
+    onSuccess: () => {
+      toast.success("Call Config Created Successfully.");
+      onSubmit();
+      onClose?.();
+    }
+  });
 
-  // const { mutate: updateCallConfigMutation, isPending: isUpdating } = useMutation({
-  //   mutationFn: ({ id, body }: { id: string; body: CallConfigFormType }) =>
-  //     updateCallConfig(id, body),
-  //   onSuccess: () => {
-  //     toast.success("Call Config Updated Successfully.");
-  //     onSubmit();
-  //     onClose?.();
-  //   }
-  // });
+  const { mutate: updateCallConfigMutation, isPending: isUpdating } = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: CallConfigFormType }) =>
+      updateCallConfig(id, body),
+    onSuccess: () => {
+      toast.success("Call Config Updated Successfully.");
+      onSubmit();
+      onClose?.();
+    }
+  });
 
   function handleSubmitForm(body: CallConfigFormType) {
-    console.log(body);
-    // if (data === "NEW") {
-    //   createCallConfigMutation(body);
-    // } else if (data) {
-    //   updateCallConfigMutation({ id: data.id, body });
-    // }
+    if (data === "NEW") {
+      createCallConfigMutation(body);
+    } else if (data) {
+      updateCallConfigMutation({ id: data.id, body });
+    }
   }
 
   useEffect(() => {
@@ -95,27 +96,27 @@ export default function CallConfigModal({ data, open, onClose, onSubmit }: CallC
       >
         <Grid size={12}>
           <TextField
-            label="Provider"
+            label="Name"
             variant="filled"
             fullWidth
-            error={!!errors.provider}
-            helperText={errors.provider?.message}
-            {...register("provider")}
+            error={!!errors.name}
+            helperText={errors.name?.message}
+            {...register("name")}
           />
         </Grid>
         <Grid size={12}>
           <TextField
-            label="Token"
+            label="Api Token"
             variant="filled"
             fullWidth
-            error={!!errors.token}
-            helperText={errors.token?.message}
-            {...register("token")}
+            error={!!errors.apiToken}
+            helperText={errors.apiToken?.message}
+            {...register("apiToken")}
           />
         </Grid>
         <Grid size={12} marginTop="0.5rem">
           <Button
-            // disabled={isCreating || isUpdating}
+            disabled={isCreating || isUpdating}
             type="submit"
             variant="contained"
             size="large"

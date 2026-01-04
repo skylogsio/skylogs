@@ -3,9 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { useTheme, alpha } from "@mui/material";
+import { useTheme, alpha, Grid2 as Grid, Typography, Button, Stack } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { HiOutlinePlusSm } from "react-icons/hi";
 
+import { ICallConfig } from "@/@types/admin-area/callConfig";
 import type { CreateUpdateModal } from "@/@types/global";
+import { getAllCallConfigs } from "@/api/admin-area/callConfig";
+import { CallConfigCard } from "@/components/admin-area/ConnectivitySetting/Call/CallConfigCard";
 import CallConfigModal from "@/components/admin-area/ConnectivitySetting/Call/CallConfigModal";
 import EmptyList from "@/components/EmptyList";
 import { ENDPOINT_CONFIG } from "@/utils/endpointVariants";
@@ -13,22 +18,60 @@ import { ENDPOINT_CONFIG } from "@/utils/endpointVariants";
 export default function CallPage() {
   const { palette } = useTheme();
   const router = useRouter();
-  const [modalData, setModalData] = useState<CreateUpdateModal<{}>>(null);
+  const [modalData, setModalData] = useState<CreateUpdateModal<ICallConfig>>(null);
 
-  function handleRefreshData() {}
+  const { data, refetch } = useQuery({
+    queryKey: ["call-configs"],
+    queryFn: () => getAllCallConfigs()
+  });
+
+  function handleRefreshData() {
+    refetch();
+  }
 
   const CallIcon = ENDPOINT_CONFIG["call"].icon;
   return (
     <>
-      <EmptyList
-        icon={<CallIcon size="4.5rem" color={palette.common.white} />}
-        title="No Call Configuration Found"
-        description="Set up your first call configuration to enable reliable voice call delivery. Call settings ensure automated calls reach users without interruption."
-        actionLabel="Create First Call Config"
-        onAction={() => setModalData("NEW")}
-        onBack={router.back}
-        gradientColors={[palette.endpoint.call, alpha(palette.endpoint.call, 0.7)]}
-      />
+      {data && data.length > 0 ? (
+        <>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="flex-end"
+            marginBottom={5}
+          >
+            <Typography variant="h5" fontSize="1.8rem" fontWeight="700" component="div">
+              Call Configurations
+            </Typography>
+            <Button
+              startIcon={<HiOutlinePlusSm size="1.3rem" />}
+              onClick={() => setModalData("NEW")}
+              size="small"
+              variant="contained"
+              sx={{ paddingRight: "1rem" }}
+            >
+              Create
+            </Button>
+          </Stack>
+          <Grid container spacing={3}>
+            {data.map((item) => (
+              <Grid key={item.id} size={3}>
+                <CallConfigCard config={item} onEdit={() => setModalData(item)} />
+              </Grid>
+            ))}
+          </Grid>
+        </>
+      ) : (
+        <EmptyList
+          icon={<CallIcon size="4.5rem" color={palette.common.white} />}
+          title="No Call Configuration Found"
+          description="Set up your first call configuration to enable reliable voice call delivery. Call settings ensure automated calls reach users without interruption."
+          actionLabel="Create First Call Config"
+          onAction={() => setModalData("NEW")}
+          onBack={router.back}
+          gradientColors={[palette.endpoint.call, alpha(palette.endpoint.call, 0.7)]}
+        />
+      )}
       {modalData && (
         <CallConfigModal
           open={!!modalData}

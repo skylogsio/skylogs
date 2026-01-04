@@ -24,7 +24,6 @@ export default function SmsPage() {
     queryKey: ["sms-configs"],
     queryFn: () => getAllSmsConfigs()
   });
-  console.log("🚀 ~ SmsPage ~ data: ", data);
 
   function handleRefreshData() {
     refetch();
