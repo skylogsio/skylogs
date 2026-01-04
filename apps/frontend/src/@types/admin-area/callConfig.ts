@@ -3,7 +3,6 @@ export interface ICallConfig {
   name: string;
   provider: string;
   apiToken: string;
-  senderNumber: string;
   isDefault: boolean;
   isBackUp: boolean;
   updatedAt: string;
