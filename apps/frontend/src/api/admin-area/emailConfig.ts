@@ -38,3 +38,12 @@ export async function updateEmailConfig(
     throw error;
   }
 }
+
+export async function deleteEmailConfig(id: IEmailConfig["id"]): Promise<ServerResponse<unknown>> {
+  try {
+    const response = await axios.delete<ServerResponse<unknown>>(`${EMAIL_CONFIG_URL}/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}

@@ -10,6 +10,7 @@ import { HiOutlinePlusSm } from "react-icons/hi";
 import type { IEmailConfig } from "@/@types/admin-area/emailConfig";
 import type { CreateUpdateModal } from "@/@types/global";
 import { getAllEmailConfigs } from "@/api/admin-area/emailConfig";
+import DeleteEmailConfigModal from "@/components/admin-area/ConnectivitySetting/email/DeleteEmailConfigModal";
 import { EmailConfigCard } from "@/components/admin-area/ConnectivitySetting/email/EmailConfigCard";
 import EmailConfigModal from "@/components/admin-area/ConnectivitySetting/email/EmailConfigModal";
 import EmptyList from "@/components/EmptyList";
@@ -19,6 +20,7 @@ export default function EmailPage() {
   const { palette } = useTheme();
   const router = useRouter();
   const [modalData, setModalData] = useState<CreateUpdateModal<IEmailConfig>>(null);
+  const [deleteModalData, setDeleteModalData] = useState<IEmailConfig | null>(null);
 
   const { data, refetch } = useQuery({
     queryKey: ["email-configs"],
@@ -27,6 +29,11 @@ export default function EmailPage() {
 
   function handleRefreshData() {
     refetch();
+  }
+
+  function handleDeleteModalClose() {
+    setDeleteModalData(null);
+    handleRefreshData();
   }
 
   const EmailIcon = ENDPOINT_CONFIG["email"].icon;
@@ -56,8 +63,12 @@ export default function EmailPage() {
           </Stack>
           <Grid container spacing={3}>
             {data.map((item) => (
-              <Grid key={item.id} size={3}>
-                <EmailConfigCard config={item} onEdit={() => setModalData(item)} />
+              <Grid key={item.id} size={{ xs: 6, lg: 4, xl: 3 }}>
+                <EmailConfigCard
+                  config={item}
+                  onEdit={() => setModalData(item)}
+                  onDelete={() => setDeleteModalData(item)}
+                />
               </Grid>
             ))}
           </Grid>
@@ -66,7 +77,7 @@ export default function EmailPage() {
         <EmptyList
           icon={<EmailIcon size="4.5rem" color={palette.common.white} />}
           title="No Email Configuration Found"
-          description="Set up your first email configuration to enable secure and reliable email delivery. Email settings ensure notifications are delivered to users’ inboxes."
+          description="Set up your first email configuration to enable secure and reliable email delivery. Email settings ensure notifications are delivered to users' inboxes."
           actionLabel="Create First Email Config"
           onAction={() => setModalData("NEW")}
           onBack={router.back}
@@ -79,6 +90,14 @@ export default function EmailPage() {
           onClose={() => setModalData(null)}
           data={modalData}
           onSubmit={handleRefreshData}
+        />
+      )}
+      {deleteModalData && (
+        <DeleteEmailConfigModal
+          open={!!deleteModalData}
+          onClose={() => setDeleteModalData(null)}
+          data={deleteModalData}
+          onAfterDelete={handleDeleteModalClose}
         />
       )}
     </>
