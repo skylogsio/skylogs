@@ -108,7 +108,7 @@ export default function SmsConfigModal({ data, open, onClose, onSubmit }: SmsCon
         </Grid>
         <Grid size={12}>
           <TextField
-            label="Token"
+            label="API Token"
             variant="filled"
             fullWidth
             error={!!errors.apiToken}
