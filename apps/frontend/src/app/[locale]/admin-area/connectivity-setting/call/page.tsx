@@ -12,6 +12,7 @@ import type { CreateUpdateModal } from "@/@types/global";
 import { getAllCallConfigs } from "@/api/admin-area/callConfig";
 import { CallConfigCard } from "@/components/admin-area/ConnectivitySetting/Call/CallConfigCard";
 import CallConfigModal from "@/components/admin-area/ConnectivitySetting/Call/CallConfigModal";
+import DeleteCallConfigModal from "@/components/admin-area/ConnectivitySetting/Call/DeleteCallConfigModal";
 import EmptyList from "@/components/EmptyList";
 import { ENDPOINT_CONFIG } from "@/utils/endpointVariants";
 
@@ -19,6 +20,7 @@ export default function CallPage() {
   const { palette } = useTheme();
   const router = useRouter();
   const [modalData, setModalData] = useState<CreateUpdateModal<ICallConfig>>(null);
+  const [deleteModalData, setDeleteModalData] = useState<ICallConfig | null>(null);
 
   const { data, refetch } = useQuery({
     queryKey: ["call-configs"],
@@ -29,7 +31,13 @@ export default function CallPage() {
     refetch();
   }
 
+  function handleDeleteModalClose() {
+    setDeleteModalData(null);
+    handleRefreshData();
+  }
+
   const CallIcon = ENDPOINT_CONFIG["call"].icon;
+
   return (
     <>
       {data && data.length > 0 ? (
@@ -55,8 +63,12 @@ export default function CallPage() {
           </Stack>
           <Grid container spacing={3}>
             {data.map((item) => (
-              <Grid key={item.id} size={3}>
-                <CallConfigCard config={item} onEdit={() => setModalData(item)} />
+              <Grid key={item.id} size={{ xs: 6, lg: 4, xl: 3 }}>
+                <CallConfigCard
+                  config={item}
+                  onEdit={() => setModalData(item)}
+                  onDelete={() => setDeleteModalData(item)}
+                />
               </Grid>
             ))}
           </Grid>
@@ -78,6 +90,14 @@ export default function CallPage() {
           onClose={() => setModalData(null)}
           data={modalData}
           onSubmit={handleRefreshData}
+        />
+      )}
+      {deleteModalData && (
+        <DeleteCallConfigModal
+          open={!!deleteModalData}
+          onClose={() => setDeleteModalData(null)}
+          data={deleteModalData}
+          onAfterDelete={handleDeleteModalClose}
         />
       )}
     </>

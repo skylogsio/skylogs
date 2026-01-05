@@ -38,3 +38,12 @@ export async function updateCallConfig(
     throw error;
   }
 }
+
+export async function deleteCallConfig(id: ICallConfig["id"]): Promise<ServerResponse<unknown>> {
+  try {
+    const response = await axios.delete<ServerResponse<unknown>>(`${CALL_CONFIG_URL}/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}

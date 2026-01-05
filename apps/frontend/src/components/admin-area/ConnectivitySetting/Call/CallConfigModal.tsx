@@ -80,7 +80,7 @@ export default function CallConfigModal({ data, open, onClose, onSubmit }: CallC
 
   return (
     <ModalContainer
-      title="Create New Call Config"
+      title={`${data === "NEW" ? "Create" : "Update"} New Call Config`}
       open={open}
       onClose={onClose}
       disableEscapeKeyDown
@@ -106,7 +106,7 @@ export default function CallConfigModal({ data, open, onClose, onSubmit }: CallC
         </Grid>
         <Grid size={12}>
           <TextField
-            label="Api Token"
+            label="API Token"
             variant="filled"
             fullWidth
             error={!!errors.apiToken}
@@ -122,7 +122,7 @@ export default function CallConfigModal({ data, open, onClose, onSubmit }: CallC
             size="large"
             fullWidth
           >
-            CREATE
+            {data === "NEW" ? "Create" : "Update"}
           </Button>
         </Grid>
       </Grid>
