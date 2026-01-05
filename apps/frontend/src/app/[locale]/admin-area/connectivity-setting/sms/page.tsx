@@ -10,6 +10,7 @@ import { HiOutlinePlusSm } from "react-icons/hi";
 import type { ISmsConfig } from "@/@types/admin-area/smsConfig";
 import type { CreateUpdateModal } from "@/@types/global";
 import { getAllSmsConfigs } from "@/api/admin-area/smsConfig";
+import DeleteSmsConfigModal from "@/components/admin-area/ConnectivitySetting/Sms/DeleteSmsConfigModal";
 import { SmsConfigCard } from "@/components/admin-area/ConnectivitySetting/Sms/SmsConfigCard";
 import SmsConfigModal from "@/components/admin-area/ConnectivitySetting/Sms/SmsConfigModal";
 import EmptyList from "@/components/EmptyList";
@@ -19,6 +20,7 @@ export default function SmsPage() {
   const { palette } = useTheme();
   const router = useRouter();
   const [modalData, setModalData] = useState<CreateUpdateModal<ISmsConfig>>(null);
+  const [deleteModalData, setDeleteModalData] = useState<ISmsConfig | null>(null);
 
   const { data, refetch } = useQuery({
     queryKey: ["sms-configs"],
@@ -27,6 +29,11 @@ export default function SmsPage() {
 
   function handleRefreshData() {
     refetch();
+  }
+
+  function handleDeleteModalClose() {
+    setDeleteModalData(null);
+    handleRefreshData();
   }
 
   const SmsIcon = ENDPOINT_CONFIG["sms"].icon;
@@ -55,8 +62,12 @@ export default function SmsPage() {
           </Stack>
           <Grid container spacing={3}>
             {data.map((item) => (
-              <Grid key={item.id} size={3}>
-                <SmsConfigCard config={item} onEdit={() => setModalData(item)} />
+              <Grid key={item.id} size={{ xs: 6, lg: 4, xl: 3 }}>
+                <SmsConfigCard
+                  config={item}
+                  onEdit={() => setModalData(item)}
+                  onDelete={() => setDeleteModalData(item)}
+                />
               </Grid>
             ))}
           </Grid>
@@ -65,7 +76,7 @@ export default function SmsPage() {
         <EmptyList
           icon={<SmsIcon size="4.5rem" color={palette.common.white} />}
           title="No SMS Configuration Found"
-          description="Set up your first SMS configuration to enable reliable text message delivery. SMS settings ensure notifications are sent successfully to users’ phones."
+          description="Set up your first SMS configuration to enable reliable text message delivery. SMS settings ensure notifications are sent successfully to users' phones."
           actionLabel="Create First SMS Config"
           onAction={() => setModalData("NEW")}
           onBack={router.back}
@@ -78,6 +89,14 @@ export default function SmsPage() {
           onClose={() => setModalData(null)}
           data={modalData}
           onSubmit={handleRefreshData}
+        />
+      )}
+      {deleteModalData && (
+        <DeleteSmsConfigModal
+          open={!!deleteModalData}
+          onClose={() => setDeleteModalData(null)}
+          data={deleteModalData}
+          onAfterDelete={handleDeleteModalClose}
         />
       )}
     </>

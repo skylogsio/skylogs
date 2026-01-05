@@ -35,3 +35,12 @@ export async function updateSmsConfig(
     throw error;
   }
 }
+
+export async function deleteSmsConfig(id: ISmsConfig["id"]): Promise<ServerResponse<unknown>> {
+  try {
+    const response = await axios.delete<ServerResponse<unknown>>(`${SMS_CONFIG_URL}/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}

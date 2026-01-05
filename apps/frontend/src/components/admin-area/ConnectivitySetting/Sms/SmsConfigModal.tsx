@@ -82,7 +82,7 @@ export default function SmsConfigModal({ data, open, onClose, onSubmit }: SmsCon
 
   return (
     <ModalContainer
-      title={`${data ? "Update" : "Create"} New Sms Config`}
+      title={`${data === "NEW" ? "Create" : "Update"} New Sms Config`}
       open={open}
       onClose={onClose}
       disableEscapeKeyDown
@@ -118,7 +118,7 @@ export default function SmsConfigModal({ data, open, onClose, onSubmit }: SmsCon
         </Grid>
         <Grid size={12}>
           <TextField
-            label="Sender Num Pattern"
+            label="Sender Number"
             variant="filled"
             fullWidth
             error={!!errors.senderNumber}
@@ -134,7 +134,7 @@ export default function SmsConfigModal({ data, open, onClose, onSubmit }: SmsCon
             size="large"
             fullWidth
           >
-            {data ? "Update" : "Create"}
+            {data === "NEW" ? "Create" : "Update"}
           </Button>
         </Grid>
       </Grid>
