@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useTheme, alpha, Grid2 as Grid, Stack, Typography, Button } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { HiOutlinePlusSm } from "react-icons/hi";
+import { IoIosArrowBack } from "react-icons/io";
 
 import type { IEmailConfig } from "@/@types/admin-area/emailConfig";
 import type { CreateUpdateModal } from "@/@types/global";
@@ -45,12 +46,27 @@ export default function EmailPage() {
           <Stack
             direction="row"
             justifyContent="space-between"
-            alignItems="flex-end"
-            marginBottom={5}
+            alignItems="center"
+            marginBottom={3}
           >
-            <Typography variant="h5" fontSize="1.8rem" fontWeight="700" component="div">
-              Email Configurations
-            </Typography>
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <Button
+                onClick={() => router.back()}
+                sx={{
+                  minWidth: "auto",
+                  padding: "0.5rem",
+                  backgroundColor: alpha(palette.primary.light, 0.08),
+                  "&:hover": {
+                    backgroundColor: alpha(palette.primary.light, 0.15)
+                  }
+                }}
+              >
+                <IoIosArrowBack size="1.5rem" />
+              </Button>
+              <Typography variant="h5" fontSize="1.8rem" fontWeight="700" component="div">
+                Email Configurations
+              </Typography>
+            </Stack>
             <Button
               startIcon={<HiOutlinePlusSm size="1.3rem" />}
               onClick={() => setModalData("NEW")}
