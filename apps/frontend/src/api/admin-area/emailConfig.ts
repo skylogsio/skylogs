@@ -47,3 +47,16 @@ export async function deleteEmailConfig(id: IEmailConfig["id"]): Promise<ServerR
     throw error;
   }
 }
+
+export async function setDefaultEmailConfig(
+  id: IEmailConfig["id"]
+): Promise<ServerResponse<unknown>> {
+  try {
+    const response = await axios.post<ServerResponse<unknown>>(
+      `${EMAIL_CONFIG_URL}/make-default/${id}`
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
