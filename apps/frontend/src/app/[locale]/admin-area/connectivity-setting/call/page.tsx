@@ -84,6 +84,7 @@ export default function CallPage() {
                   config={item}
                   onEdit={() => setModalData(item)}
                   onDelete={() => setDeleteModalData(item)}
+                  onSetAsDefault={handleRefreshData}
                 />
               </Grid>
             ))}
