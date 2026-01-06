@@ -83,6 +83,7 @@ export default function SmsPage() {
                   config={item}
                   onEdit={() => setModalData(item)}
                   onDelete={() => setDeleteModalData(item)}
+                  onSetAsDefault={handleRefreshData}
                 />
               </Grid>
             ))}

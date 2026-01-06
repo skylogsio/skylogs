@@ -44,3 +44,14 @@ export async function deleteSmsConfig(id: ISmsConfig["id"]): Promise<ServerRespo
     throw error;
   }
 }
+
+export async function setDefaultSmsConfig(id: ISmsConfig["id"]): Promise<ServerResponse<unknown>> {
+  try {
+    const response = await axios.post<ServerResponse<unknown>>(
+      `${SMS_CONFIG_URL}/make-default/${id}`
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}

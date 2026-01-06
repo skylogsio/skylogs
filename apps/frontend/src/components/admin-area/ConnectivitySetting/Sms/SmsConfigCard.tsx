@@ -13,11 +13,15 @@ import {
   Typography,
   useTheme,
   alpha,
-  Stack
+  Stack,
+  CircularProgress
 } from "@mui/material";
+import { useMutation } from "@tanstack/react-query";
 import { HiDotsHorizontal } from "react-icons/hi";
+import { toast } from "react-toastify";
 
 import type { ISmsConfig } from "@/@types/admin-area/smsConfig";
+import { setDefaultSmsConfig } from "@/api/admin-area/smsConfig";
 import { ENDPOINT_CONFIG } from "@/utils/endpointVariants";
 
 export interface SmsConfigCardProps {
@@ -40,6 +44,15 @@ export function SmsConfigCard({ config, onEdit, onDelete, onSetAsDefault }: SmsC
     setAnchorEl(null);
   };
 
+  const { mutate: setDefaultSmsConfigMutation, isPending: isSettingDefault } = useMutation({
+    mutationFn: () => setDefaultSmsConfig(config.id),
+    onSuccess: () => {
+      toast.success(`The ${config.name} set as default SMS config.`);
+      onSetAsDefault?.();
+      handleMenuClose();
+    }
+  });
+
   const handleEdit = () => {
     onEdit?.();
     handleMenuClose();
@@ -47,11 +60,6 @@ export function SmsConfigCard({ config, onEdit, onDelete, onSetAsDefault }: SmsC
 
   const handleDelete = () => {
     onDelete?.();
-    handleMenuClose();
-  };
-
-  const handleSetAsDefault = () => {
-    onSetAsDefault?.();
     handleMenuClose();
   };
 
@@ -174,7 +182,12 @@ export function SmsConfigCard({ config, onEdit, onDelete, onSetAsDefault }: SmsC
         <MenuItem onClick={handleDelete} sx={{ color: palette.error.main }}>
           Delete
         </MenuItem>
-        {!config.isDefault && <MenuItem onClick={handleSetAsDefault}>Set As Default</MenuItem>}
+        {!config.isDefault && (
+          <MenuItem onClick={() => setDefaultSmsConfigMutation()} disabled={isSettingDefault}>
+            Set As Default
+            {isSettingDefault && <CircularProgress size={16} sx={{ marginLeft: 2 }} />}
+          </MenuItem>
+        )}
       </Menu>
     </Card>
   );
