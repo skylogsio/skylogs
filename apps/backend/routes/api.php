@@ -272,8 +272,8 @@ Route::prefix('v1')->group(function () {
                         Route::get('/{id}', 'Show');
                         Route::post('/', 'Create');
                         Route::get('/providers', 'providers');
-                        Route::post('/makeDefault/{id}', 'makeDefault');
-                        Route::post('/makeBackUp/{id}', 'makeBackup');
+                        Route::post('/make-default/{id}', 'makeDefault');
+                        Route::post('/make-backup/{id}', 'makeBackup');
                         Route::put('/{id}', 'Update');
                         Route::delete('/{id}', 'Delete');
                     });
@@ -285,8 +285,8 @@ Route::prefix('v1')->group(function () {
                         Route::get('/{id}', 'Show');
                         Route::post('/', 'Create');
                         Route::get('/providers', 'providers');
-                        Route::post('/makeDefault/{id}', 'makeDefault');
-                        Route::post('/makeBackUp/{id}', 'makeBackup');
+                        Route::post('/make-default/{id}', 'makeDefault');
+                        Route::post('/make-backup/{id}', 'makeBackup');
                         Route::put('/{id}', 'Update');
                         Route::delete('/{id}', 'Delete');
                     });
@@ -298,8 +298,8 @@ Route::prefix('v1')->group(function () {
 
                         Route::get('/{id}', 'Show');
                         Route::post('/', 'Create');
-                        Route::post('/makeDefault/{id}', 'makeDefault');
-                        Route::post('/makeBackUp/{id}', 'makeBackup');
+                        Route::post('/make-default/{id}', 'makeDefault');
+                        Route::post('/make-backup/{id}', 'makeBackup');
                         Route::put('/{id}', 'Update');
                         Route::delete('/{id}', 'Delete');
                     });
