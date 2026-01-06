@@ -854,25 +854,6 @@
                 ],
                 "summary": "List call configuration",
                 "operationId": "getConfigCallList",
-                "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number",
-                        "schema": {
-                            "type": "integer",
-                            "default": 1
-                        }
-                    },
-                    {
-                        "name": "perPage",
-                        "in": "query",
-                        "schema": {
-                            "type": "integer",
-                            "default": 25
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -1090,25 +1071,6 @@
                 ],
                 "summary": "List email configuration",
                 "operationId": "getConfigEmailList",
-                "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number",
-                        "schema": {
-                            "type": "integer",
-                            "default": 1
-                        }
-                    },
-                    {
-                        "name": "perPage",
-                        "in": "query",
-                        "schema": {
-                            "type": "integer",
-                            "default": 25
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -1358,25 +1320,6 @@
                 ],
                 "summary": "List sms configuration",
                 "operationId": "getConfigSmsList",
-                "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number",
-                        "schema": {
-                            "type": "integer",
-                            "default": 1
-                        }
-                    },
-                    {
-                        "name": "perPage",
-                        "in": "query",
-                        "schema": {
-                            "type": "integer",
-                            "default": 25
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK"

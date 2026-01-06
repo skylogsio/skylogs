@@ -31,11 +31,11 @@ class CallController extends Controller
     public function Index(Request $request)
     {
 
-        $data = ConfigCall::query()->orderByDesc('isDefault')->orderByDesc('isBackup')->latest();
-        if ($request->filled('name')) {
-            $data->where('name', 'like', '%'.$request->name.'%');
-        }
-        $data = $data->get();
+        $data = ConfigCall::query()
+            ->orderByDesc('isDefault')
+            ->orderByDesc('isBackup')
+            ->latest()
+            ->get();
 
         return response()->json($data);
 
@@ -53,6 +53,19 @@ class CallController extends Controller
     {
         $model = ConfigCall::where('_id', $id);
         $model = $model->firstOrFail();
+        $isDefault = $model->isDefault;
+
+        if ($isDefault){
+            $count = ConfigCall::all()->count();
+            if ($count != 1){
+                return response()->json([
+                    "status" => false,
+                    "message" => "Default can not be deleted"
+                ],422);
+            }
+        }
+
+
         $model->delete();
 
         return response()->json($model);
@@ -94,9 +107,11 @@ class CallController extends Controller
             }
         }
 
+
         return response()->json([
             'status' => false,
-        ]);
+            'message' => implode(' ', $va->errors()->all()),
+        ],422);
 
     }
 
@@ -133,9 +148,11 @@ class CallController extends Controller
 
         }
 
+
         return response()->json([
             'status' => false,
-        ]);
+            'message' => implode(' ', $va->errors()->all()),
+        ],422);
     }
 
     public function makeDefault($id)
@@ -159,7 +176,7 @@ class CallController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => $exception->getMessage(),
-            ]);
+            ],422);
         }
 
         return response()->json([
