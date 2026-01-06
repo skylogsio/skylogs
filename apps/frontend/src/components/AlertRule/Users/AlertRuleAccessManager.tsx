@@ -265,10 +265,11 @@ export default function AlertRuleAccessManager({ alertId }: AlertRuleAccessManag
         />
       ) : (
         <EmptyList
-          icon={<FaUsers size="3rem" style={{ color: palette.primary.light, marginBottom: 5 }} />}
+          minimal
+          icon={<FaUsers size="2rem" color={palette.common.white} />}
           title="No Teams Or Users Assigned"
-          description="This alert rule doesn&#39;t have any teams or users assigned yet. Use the form above to add users or teams
-            who should receive notifications for this alert."
+          description="This alert rule doesn't have any teams or users assigned yet. Use the form above to add users or teams who should receive notifications for this alert."
+          gradientColors={[palette.primary.dark, palette.primary.light]}
         />
       )}
     </Stack>

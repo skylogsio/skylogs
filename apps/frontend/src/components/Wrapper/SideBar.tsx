@@ -1,17 +1,7 @@
 import Image from "next/image";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import {
-  alpha,
-  Box,
-  List,
-  ListItem as MUIListItem,
-  ListItemButton,
-  Stack,
-  Typography,
-  useTheme
-} from "@mui/material";
+import { Box, List, Stack, Typography, useTheme } from "@mui/material";
 import {
   AiOutlineApi,
   AiOutlineUser,
@@ -24,17 +14,8 @@ import {
   AiOutlineTeam
 } from "react-icons/ai";
 
-import { useRole } from "@/hooks";
-import { RoleType } from "@/utils/userUtils";
-
-const SKYLOGS_VERSION = "0.15.0";
-
-type URLType = {
-  pathname: string;
-  label: string;
-  role?: RoleType | RoleType[];
-  icon: React.ComponentType<{ size?: number | string; className?: string }>;
-};
+import { SideBarItem } from "./SideBarItem";
+import { URLType } from "./types";
 
 const URLS: Array<URLType> = [
   // { pathname: "/", label: "Home", icon: AiOutlineHome },
@@ -54,70 +35,8 @@ const URLS: Array<URLType> = [
   { pathname: "/settings", label: "Settings", role: "owner", icon: AiOutlineSetting }
 ];
 
-function ListItem(url: URLType) {
-  const { palette } = useTheme();
+export default function SideBar({ version }: { version: string }) {
   const pathname = usePathname();
-  const { hasRole } = useRole();
-
-  if (url.role) {
-    if (!hasRole(url.role)) return;
-  }
-
-  const isActive =
-    url.pathname === "/" ? pathname === url.pathname : pathname.includes(url.pathname);
-
-  const IconComponent = url.icon;
-
-  return (
-    <MUIListItem
-      key={url.pathname}
-      sx={{
-        position: "relative",
-        paddingY: 0,
-        paddingRight: 2,
-        paddingLeft: isActive ? 0 : 2
-      }}
-    >
-      <Stack direction="row" spacing={2} width="100%">
-        {isActive && (
-          <Box
-            sx={{
-              content: "''",
-              display: "inline-block",
-              height: "100%",
-              width: 5,
-              backgroundColor: `${palette.primary.main}!important`,
-              position: "absolute",
-              top: 0,
-              left: 0,
-              borderRadius: "0 0.6rem 0.6rem 0"
-            }}
-          ></Box>
-        )}
-        <ListItemButton
-          component={Link}
-          href={url.pathname}
-          sx={{
-            paddingY: 2,
-            borderRadius: "0.6rem",
-            backgroundColor: isActive
-              ? `${alpha(palette.primary.main, 0.15)}!important`
-              : "transparent",
-            color: "inherit",
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5
-          }}
-        >
-          <IconComponent size="1.4rem" />
-          {url.label}
-        </ListItemButton>
-      </Stack>
-    </MUIListItem>
-  );
-}
-
-export default function SideBar() {
   const { palette } = useTheme();
   return (
     <Box height="100%" overflow="auto" sx={{ direction: "rtl" }}>
@@ -131,10 +50,16 @@ export default function SideBar() {
             style={{ filter: `drop-shadow(0px 0px 16px ${palette.primary.light})` }}
           />
         </Box>
-        <List>{URLS.map((url) => ListItem(url))}</List>
+        <List>
+          {URLS.map((url) => {
+            const isActive =
+              url.pathname === "/" ? pathname === url.pathname : pathname.includes(url.pathname);
+            return <SideBarItem key={url.pathname} url={url} isActive={isActive} />;
+          })}
+        </List>
         <Stack alignItems="center" marginTop="auto">
           <Typography variant="caption" color="text.secondary" fontSize={10}>
-            version {SKYLOGS_VERSION}
+            version {version}
           </Typography>
         </Stack>
       </Stack>

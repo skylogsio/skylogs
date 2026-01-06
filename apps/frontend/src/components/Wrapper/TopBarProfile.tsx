@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Fragment, useState } from "react";
 
 import {
@@ -23,16 +25,8 @@ import { FaAngleDown } from "react-icons/fa6";
 import { useRole } from "@/hooks";
 import { useScopedI18n } from "@/locales/client";
 
-import type { ProfileListType } from "./types";
-
-const ListContents: Array<ProfileListType> = [
-  // { title: "list.manageAccount", iconSRC: "/static/icons/profile-manage-account.svg" },
-  // { title: "list.changePassword", iconSRC: "/static/icons/profile-change-password.svg" },
-  // { title: "list.activityLog", iconSRC: "/static/icons/profile-activity-log.svg" },
-  { title: "list.logout", iconSRC: "/static/icons/profile-log-out.svg" }
-];
-
 export default function TopBarProfile() {
+  const pathname = usePathname();
   const t = useScopedI18n("wrapper.profile");
   const { userInfo } = useRole();
 
@@ -46,6 +40,9 @@ export default function TopBarProfile() {
 
   const open = Boolean(anchorEl);
   const id = open ? "top-bar-profile-popover" : undefined;
+
+  const isAdminArea = pathname.includes("admin-area");
+  const adminButtonHREF = isAdminArea ? "/alert-rule" : "admin-area";
 
   return (
     <>
@@ -119,38 +116,54 @@ export default function TopBarProfile() {
         }}
       >
         <List disablePadding>
-          {ListContents.map((item, index) => {
-            const size = item.title === "list.manageAccount" ? 18 : 15;
-            return (
-              <Fragment key={item.title}>
-                <ListItem disablePadding>
-                  <ListItemButton
-                    sx={{ padding: "0.7rem 1rem" }}
-                    {...(item.title === "list.logout" && { onClick: () => signOut() })}
-                  >
-                    <ListItemIcon sx={{ minWidth: 0, marginRight: "1rem" }}>
-                      <Image
-                        src={item.iconSRC}
-                        alt={item.title}
-                        width={size}
-                        height={size}
-                        style={{
-                          width: size,
-                          height: size
-                        }}
-                      />
-                    </ListItemIcon>
-                    <Typography variant="body2" whiteSpace="nowrap">
-                      {t(item.title)}
-                    </Typography>
-                  </ListItemButton>
-                </ListItem>
-                {index !== ListContents.length - 1 && (
-                  <Divider sx={{ borderColor: ({ palette }) => palette.grey[100] }} />
-                )}
-              </Fragment>
-            );
-          })}
+          <ListItem disablePadding>
+            <ListItemButton
+              component={Link}
+              href={adminButtonHREF}
+              onClick={() => handleClose()}
+              sx={{ padding: "0.7rem 1rem" }}
+            >
+              <ListItemIcon sx={{ minWidth: 0, marginRight: "1rem" }}>
+                <Image
+                  src={
+                    isAdminArea
+                      ? "/static/icons/profile-alert-area.svg"
+                      : "/static/icons/profile-admin-area.svg"
+                  }
+                  alt="admin-area"
+                  width={18}
+                  height={18}
+                  style={{
+                    width: 18,
+                    height: 18
+                  }}
+                />
+              </ListItemIcon>
+              <Typography variant="body2" whiteSpace="nowrap">
+                {isAdminArea ? "Alert Area" : "Admin Area"}
+              </Typography>
+            </ListItemButton>
+          </ListItem>
+          <Divider sx={{ borderColor: ({ palette }) => palette.grey[100] }} />
+          <ListItem disablePadding>
+            <ListItemButton sx={{ padding: "0.7rem 1rem" }} onClick={() => signOut()}>
+              <ListItemIcon sx={{ minWidth: 0, marginRight: "1rem" }}>
+                <Image
+                  src="/static/icons/profile-log-out.svg"
+                  alt="log-out"
+                  width={18}
+                  height={18}
+                  style={{
+                    width: 18,
+                    height: 18
+                  }}
+                />
+              </ListItemIcon>
+              <Typography variant="body2" whiteSpace="nowrap">
+                {t("list.logout")}
+              </Typography>
+            </ListItemButton>
+          </ListItem>
         </List>
       </Popover>
     </>
