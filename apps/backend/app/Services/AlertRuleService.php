@@ -46,7 +46,9 @@ class AlertRuleService
             case AlertRuleType::ZABBIX:
                 $check = ZabbixCheck::where('alertRuleId', $alertRuleId)->first();
                 if ($check && ! empty($check->fireEvents)) {
-                    return ZabbixWebhookAlert::whereIn('event_id', $check->fireEvents)->get();
+                    return ZabbixWebhookAlert::whereIn('event_id', $check->fireEvents)
+                        ->where("alertRuleId", $alertRuleId)
+                        ->get();
                 }
                 break;
         }
