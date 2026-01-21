@@ -71,6 +71,23 @@ class GrafanaWebhookAlert extends BaseModel implements Messageable
         if (! empty($this->alerts)) {
             foreach ($this->alerts as $alert) {
                 //                $text .= "Grafana Instance: " . $alert['dataSourceName'] . "\n";
+                if (empty($alert['status']) || $alert['status'] == self::FIRING) {
+                    $severity = $alert['labels']['severity'] ?? '';
+                    switch ($severity) {
+                        case 'warning':
+                            $text .= 'Warning ⚠️'."\n";
+                            break;
+                        case 'info':
+                            $text .= 'Info ℹ️'."\n";
+                            break;
+                        default:
+                            $text .= 'Fire 🔥'."\n";
+                            break;
+                    }
+                } else {
+                    $text .= 'Resolved ✅'."\n";
+
+                }
 
                 if (! empty($alert['labels'])) {
                     foreach ($alert['labels'] as $label => $labelValue) {

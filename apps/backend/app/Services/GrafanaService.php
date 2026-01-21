@@ -49,16 +49,14 @@ class GrafanaService
 
     }
 
-    public static function CheckMatchedAlerts($webhook, $alerts, $alertRules): array
+    public static function CheckMatchedAlerts( $alerts, $alertRules): array
     {
 
-        $status = $webhook['status'];
         $fireAlertsByRule = [];
         foreach ($alerts as $alert) {
             foreach ($alertRules as $alertRule) {
                 $isMatch = true;
-                $matchLabels = [];
-                $matchAnnotations = [];
+
                 if (empty($alertRule['queryType']) || $alertRule['queryType'] == AlertRule::DYNAMIC_QUERY_TYPE) {
 
                     if (in_array($alert['dataSourceId'], $alertRule['dataSourceIds'])) {
@@ -69,11 +67,9 @@ class GrafanaService
 
                         if (! empty($alertRule->extraField)) {
                             foreach ($alertRule->extraField as $key => $patterns) {
-                                if ((! empty($alert['labels'][$key]) && Utilities::CheckPatternsString($patterns, $alert['labels'][$key]))) {
-                                    $matchLabels[$key] = $patterns;
-                                } elseif ((! empty($alert['annotations'][$key]) && Utilities::CheckPatternsString($patterns, $alert['annotations'][$key]))) {
-                                    $matchAnnotations[$key] = $patterns;
-                                } else {
+                                $value = $alert['labels'][$key] ?? $alert['annotations'][$key] ?? null;
+
+                                if (empty($value) || ! Utilities::CheckPatternsString($patterns, $value)) {
                                     $isMatch = false;
                                     break;
                                 }
@@ -97,7 +93,6 @@ class GrafanaService
                 }
 
                 if ($isMatch) {
-                    // check with database checkprometheus
 
                     if (empty($fireAlertsByRule[$alertRule->_id])) {
                         $fireAlertsByRule[$alertRule->_id] = [];
@@ -110,6 +105,12 @@ class GrafanaService
                         'labels' => $alert['labels'],
                         'annotations' => $alert['annotations'],
                         'alertRuleId' => $alertRule->_id,
+                        'status' => $alert['status'],
+                        'startsAt' => $alert['startsAt'] ?? '',
+                        'endsAt' => $alert['endsAt'] ?? '',
+                        'generatorURL' => $alert['generatorURL'],
+                        'orgId' => $alert['orgId'] ?? null,
+
                         //                        "state" => $status,
                     ];
 
