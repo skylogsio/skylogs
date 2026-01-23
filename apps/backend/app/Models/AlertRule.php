@@ -116,12 +116,12 @@ class AlertRule extends BaseModel implements Messageable
 
     public function enableAcknowledgeBtnInMessage(): bool
     {
-        return ! empty($this->showAcknowledgeBtn) && $this->showAcknowledgeBtn;
+        return !empty($this->showAcknowledgeBtn) && $this->showAcknowledgeBtn;
     }
 
     public function isAcknowledged(): bool
     {
-        return ! empty($this->acknowledgedBy);
+        return !empty($this->acknowledgedBy);
     }
 
     public function acknowledge($user)
@@ -136,7 +136,7 @@ class AlertRule extends BaseModel implements Messageable
 
     public function removeAcknowledge()
     {
-        if (! empty($this->acknowledgedBy)) {
+        if (!empty($this->acknowledgedBy)) {
             $this->acknowledgedBy = null;
             $this->save();
         }
@@ -144,7 +144,7 @@ class AlertRule extends BaseModel implements Messageable
 
     public function isPin(): bool
     {
-        return ! empty($this->pinUserIds) && in_array(\Auth::user()->_id, $this->pinUserIds);
+        return !empty($this->pinUserIds) && in_array(\Auth::user()->_id, $this->pinUserIds);
     }
 
     public function pin()
@@ -161,7 +161,7 @@ class AlertRule extends BaseModel implements Messageable
 
     public function isSilent(): bool
     {
-        return ! empty($this->silentUserIds) && in_array(\Auth::user()->_id, $this->silentUserIds);
+        return !empty($this->silentUserIds) && in_array(\Auth::user()->_id, $this->silentUserIds);
     }
 
     public function silent()
@@ -192,6 +192,7 @@ class AlertRule extends BaseModel implements Messageable
             case AlertRuleType::METABASE:
             case AlertRuleType::ZABBIX:
                 $alertState = $this->state ?? self::UNKNOWN;
+                $alertCount = $alert->fireCount ?? 0;
                 break;
             case AlertRuleType::HEALTH:
                 $check = HealthCheck::where('alertRuleId', $this->_id)->first();
@@ -210,8 +211,8 @@ class AlertRule extends BaseModel implements Messageable
                     $alertState = self::CRITICAL;
                 }
                 break;
-            case AlertRuleType::NOTIFICATION:
-                // TODO
+//            case AlertRuleType::NOTIFICATION:
+
             case AlertRuleType::SPLUNK:
                 // TODO
                 break;

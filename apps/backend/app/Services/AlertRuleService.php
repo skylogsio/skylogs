@@ -12,6 +12,7 @@ use App\Models\Config\ConfigSkylogs;
 use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
 use App\Models\Endpoint;
+use App\Models\GrafanaCheck;
 use App\Models\HealthCheck;
 use App\Models\PrometheusCheck;
 use App\Models\SkylogsInstance;
@@ -51,6 +52,15 @@ class AlertRuleService
                         ->get();
                 }
                 break;
+
+            case AlertRuleType::GRAFANA:
+            case AlertRuleType::PMM:
+                $check = GrafanaCheck::where('alertRuleId', $alertRuleId)->first();
+                if ($check) {
+                    return $check->alerts ?? [];
+                }
+                break;
+
         }
 
         return [];

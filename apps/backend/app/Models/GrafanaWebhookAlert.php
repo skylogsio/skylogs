@@ -51,54 +51,54 @@ class GrafanaWebhookAlert extends BaseModel implements Messageable
 
         $needLabelAnotArray = ['summary', 'description'];
 
-        $alert = $this->alertRule;
+        $alertRule = $this->alertRule;
 
-        $text = $alert->name."\n\n";
+        $text = $alertRule->name . "\n\n";
 
-        if (! empty($alert->state)) {
-            switch ($alert->state) {
-                case AlertRule::RESOlVED:
-                    $text .= 'State: Resolved ✅'."\n\n";
-                    break;
-                case AlertRule::CRITICAL:
-                    $text .= 'State: Fire 🔥'."\n\n";
-                    break;
-            }
+
+        switch ($this->status) {
+            case GrafanaWebhookAlert::RESOLVED:
+                $text .= 'State: Resolved ✅' . "\n\n";
+                break;
+            case GrafanaWebhookAlert::FIRING:
+                $text .= 'State: Firing 🔥' . "\n\n";
+                break;
         }
 
-        $text .= 'Data Source: '.$this->dataSourceName."\n\n";
 
-        if (! empty($this->alerts)) {
+        $text .= 'Data Source: ' . $this->dataSourceName . "\n\n";
+
+        if (!empty($this->alerts)) {
             foreach ($this->alerts as $alert) {
                 //                $text .= "Grafana Instance: " . $alert['dataSourceName'] . "\n";
                 if (empty($alert['status']) || $alert['status'] == self::FIRING) {
                     $severity = $alert['labels']['severity'] ?? '';
                     switch ($severity) {
                         case 'warning':
-                            $text .= 'Warning ⚠️'."\n";
+                            $text .= 'Warning ⚠️' . "\n";
                             break;
                         case 'info':
-                            $text .= 'Info ℹ️'."\n";
+                            $text .= 'Info ℹ️' . "\n";
                             break;
                         default:
-                            $text .= 'Fire 🔥'."\n";
+                            $text .= 'Fire 🔥' . "\n";
                             break;
                     }
                 } else {
-                    $text .= 'Resolved ✅'."\n";
+                    $text .= 'Resolved ✅' . "\n";
 
                 }
 
-                if (! empty($alert['labels'])) {
+                if (!empty($alert['labels'])) {
                     foreach ($alert['labels'] as $label => $labelValue) {
                         $text .= "$label : $labelValue\n";
                     }
                 }
 
-                if (! empty($alert['annotations'])) {
+                if (!empty($alert['annotations'])) {
                     foreach ($needLabelAnotArray as $label) {
-                        if (! empty($alert['annotations'][$label])) {
-                            $text .= "$label : ".$alert['annotations'][$label]."\n";
+                        if (!empty($alert['annotations'][$label])) {
+                            $text .= "$label : " . $alert['annotations'][$label] . "\n";
                         }
                     }
                 }
@@ -106,7 +106,7 @@ class GrafanaWebhookAlert extends BaseModel implements Messageable
             }
         }
 
-        $text .= 'Date: '.Jalalian::now()->format('Y/m/d');
+        $text .= 'Date: ' . Jalalian::now()->format('Y/m/d');
 
         return $text;
     }
@@ -120,7 +120,7 @@ class GrafanaWebhookAlert extends BaseModel implements Messageable
             $result['meta'] = [
                 [
                     'text' => 'Acknowledge',
-                    'url' => config('app.url').route('acknowledgeLink', ['id' => $this->alertRuleId], false),
+                    'url' => config('app.url') . route('acknowledgeLink', ['id' => $this->alertRuleId], false),
                 ],
             ];
         }
@@ -147,11 +147,11 @@ class GrafanaWebhookAlert extends BaseModel implements Messageable
     {
         $alert = $this->alertRule;
 
-        $text = 'Alert '.$alert->name;
+        $text = 'Alert ' . $alert->name;
 
-        $text .= match ($alert->state) {
-            AlertRule::CRITICAL => ' fired',
-            AlertRule::RESOlVED => ' resolved',
+        $text .= match ($this->status) {
+            GrafanaWebhookAlert::FIRING => ' fired',
+            GrafanaWebhookAlert::RESOLVED => ' resolved',
             default => '',
         };
 

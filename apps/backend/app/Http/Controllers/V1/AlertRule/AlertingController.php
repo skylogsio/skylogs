@@ -11,6 +11,7 @@ use App\Models\ApiAlertHistory;
 use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
 use App\Models\ElasticHistory;
+use App\Models\GrafanaCheck;
 use App\Models\GrafanaWebhookAlert;
 use App\Models\HealthHistory;
 use App\Models\MetabaseWebhookAlert;
@@ -656,6 +657,12 @@ class AlertingController extends Controller
                     $sendResolve = true;
                     $alert->state = AlertRule::RESOlVED;
                     $alert->save();
+                    $check = GrafanaCheck::where('alertRuleId',$alert->id)->first();
+                    if ($check) {
+                        $check->alerts = [];
+                        $check->state = GrafanaWebhookAlert::RESOLVED;
+                        $check->save();
+                    }
                 }
                 break;
 

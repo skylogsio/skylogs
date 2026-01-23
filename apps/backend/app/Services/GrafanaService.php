@@ -6,6 +6,7 @@ use App\Helpers\Constants;
 use App\Helpers\Utilities;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertRule;
+use App\Models\GrafanaCheck;
 use App\Models\GrafanaWebhookAlert;
 
 class GrafanaService
@@ -143,24 +144,58 @@ class GrafanaService
             $model->orgId = $webhook['orgId'] ?? '';
             $model->title = $webhook['title'] ?? '';
             $model->message = $webhook['message'] ?? '';
-
+            $grafanaAlertnames = collect($alerts)->map(function ($gAlert) {
+                return $gAlert['dataSourceAlertName'];
+            })->unique()->toArray();
             $alertRule = $model->alertRule;
 
-            if ($alertRule) {
-                if ($status == GrafanaWebhookAlert::RESOLVED) {
-                    $alertRule->state = AlertRule::RESOlVED;
-                } elseif ($status == GrafanaWebhookAlert::FIRING) {
-                    $alertRule->state = AlertRule::CRITICAL;
-                }
-                $alertRule->save();
-                if ($alertRule->state == AlertRule::RESOlVED) {
-                    $alertRule->removeAcknowledge();
-                }
-            }
-            $model->save();
-
+            self::updateAlertRuleStatus($alertRule, $alerts,$grafanaAlertnames);
             SendNotifyService::CreateNotify(SendNotifyJob::GRAFANA_WEBHOOK, $model, $alertRule->_id);
 
+        }
+
+    }
+
+    public static function updateAlertRuleStatus($alertRule, $alerts,$grafanaAlertnames)
+    {
+
+        $webhookAlerts = collect($alerts)->filter(function ($alert) {
+           return $alert['status'] == GrafanaWebhookAlert::FIRING;
+        });
+
+        $check = GrafanaCheck::firstOrCreate([
+            'alertRuleId' => $alertRule->_id,
+        ],[
+            'alertRuleId' => $alertRule->_id,
+            'alerts' => [],
+            'state' => GrafanaWebhookAlert::RESOLVED,
+        ]);
+
+        $checkAlerts = collect($check->alerts)->reject(function ($alert) use ($grafanaAlertnames) {
+            return in_array($alert['dataSourceAlertName'], $grafanaAlertnames);
+        });
+
+        if ($webhookAlerts->isNotEmpty()) {
+            foreach ($webhookAlerts as $webhookAlert) {
+                $checkAlerts[] = $webhookAlert;
+            }
+        }
+
+        $fireCount = $checkAlerts->count();
+
+        $check->alerts = $checkAlerts->toArray();
+        $check->state = $fireCount == 0 ? GrafanaWebhookAlert::RESOLVED : GrafanaWebhookAlert::FIRING;
+        $check->save();
+
+        $alertRuleState = $fireCount == 0 ? AlertRule::RESOlVED : AlertRule::CRITICAL;
+
+        if ($alertRule) {
+            $alertRule->state = $alertRuleState;
+            $alertRule->fireCount = $fireCount;
+            $alertRule->save();
+            if ($alertRule->state == AlertRule::RESOlVED) {
+                $alertRule->removeAcknowledge();
+            }
         }
 
     }
