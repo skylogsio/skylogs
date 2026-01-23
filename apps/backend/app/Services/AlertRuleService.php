@@ -703,6 +703,9 @@ class AlertRuleService
             case AlertRuleType::ELASTIC:
                 ElasticCheck::where('alertRuleId', $alertRuleId)->delete();
                 break;
+            case AlertRuleType::GRAFANA:
+                GrafanaCheck::where('alertRuleId', $alertRuleId)->delete();
+                break;
         }
 
     }
