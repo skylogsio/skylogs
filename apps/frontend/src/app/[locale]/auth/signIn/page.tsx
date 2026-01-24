@@ -10,7 +10,8 @@ import {
   TextField,
   Typography,
   useTheme,
-  CircularProgress
+  CircularProgress,
+  useColorScheme
 } from "@mui/material";
 import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
@@ -32,6 +33,7 @@ const signInSchema = z.object({
 type SignInBody = z.infer<typeof signInSchema>;
 
 export default function AuthenticationPage() {
+  const { systemMode, mode } = useColorScheme();
   const translate = useScopedI18n("auth");
   const globalTranslate = useScopedI18n("global");
   const { palette } = useTheme();
@@ -83,7 +85,7 @@ export default function AuthenticationPage() {
       alignItems="center"
       padding="1rem"
       sx={{
-        backgroundImage: "url('/static/images/background.png')",
+        backgroundImage: `url('/static/images/background-${systemMode || mode || "light"}.png')`,
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center center"
