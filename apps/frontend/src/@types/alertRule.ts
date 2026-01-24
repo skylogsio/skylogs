@@ -20,14 +20,14 @@ export interface IAlertRule {
   apiToken?: string;
   name: string;
   type: AlertRuleType;
-  user_id: string;
+  userId: string;
   acknowledgedBy: string | null;
   enableAutoResolve: boolean;
   autoResolveMinutes: number;
   updated_at: Date;
   created_at: Date;
-  endpoint_ids: string[];
-  user_ids: string[];
+  endpointIds: string[];
+  userIds: string[];
   id: string;
   ownerName: string;
   hasActionAccess: boolean;
