@@ -25,7 +25,7 @@ class DataSourceService
                     $response = $request->get($ds->url);
                     break;
                 case DataSourceType::ELASTIC:
-                    $response = $request->withBasicAuth($ds->username,$ds->password)->get($ds->url."/_search?size=0");
+                    $response = $request->withBasicAuth($ds->username, $ds->password)->get($ds->url.'/_search?size=0');
                     break;
             }
 

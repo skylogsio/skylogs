@@ -49,7 +49,6 @@ class GroupActionController extends Controller
                     $hasAccessToAdd = $isAdmin || $selectableEndpointIds->contains($endpointId);
 
                     if ($hasAccessToAdd) {
-                        $alert->push('endpoint_ids', $endpointId, true);
                         $alert->push('endpointIds', $endpointId, true);
                     }
 

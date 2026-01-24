@@ -24,7 +24,7 @@ class CallKaveNegarService
             return '';
         }
 
-        $result = Http::pool(function (Pool $pool) use ($nums, $alert,$config) {
+        $result = Http::pool(function (Pool $pool) use ($nums, $alert, $config) {
             if ($nums instanceof Collection) {
                 $numsString = $nums->implode(',');
             } else {
@@ -56,10 +56,9 @@ class CallKaveNegarService
 
     }
 
-
     public function sendOTP(ConfigCall $config, EndpointOTP $endpoint)
     {
-        $response = Http::post(self::Url($config), [
+        $response = Http::get(self::Url($config), [
             'receptor' => $endpoint->value,
             'message' => $endpoint->generateOTPMessage(),
         ]);

@@ -127,10 +127,10 @@ class ConfigCallDoc
     public function destroy() {}
 
     // ----------------------------
-    // POST /api/v1/config/call/resolve/{id}
+    // POST /api/v1/config/call/make-default/{id}
     // ----------------------------
     #[OA\Post(
-        path: '/api/v1/config/call/resolve/{id}',
+        path: '/api/v1/config/call/make-default/{id}',
         operationId: 'makeDefaultConfigCall',
         summary: 'make default config call',
         security: [['bearerAuth' => []]],
@@ -139,6 +139,20 @@ class ConfigCallDoc
         responses: [new OA\Response(response: 200, description: 'OK')]
     )]
     public function makeDefault() {}
+
+    // ----------------------------
+    // POST /api/v1/config/call/make-backup/{id}
+    // ----------------------------
+    #[OA\Post(
+        path: '/api/v1/config/call/make-backup/{id}',
+        operationId: 'makeBackupConfigCall',
+        summary: 'make backup config call',
+        security: [['bearerAuth' => []]],
+        tags: ['ConfigCall'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'OK')]
+    )]
+    public function makeBackup() {}
 
     // ----------------------------
     // GET /api/v1/config/call/types

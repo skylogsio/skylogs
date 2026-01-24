@@ -11,6 +11,7 @@ use App\Models\ApiAlertHistory;
 use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
 use App\Models\ElasticHistory;
+use App\Models\GrafanaCheck;
 use App\Models\GrafanaWebhookAlert;
 use App\Models\HealthHistory;
 use App\Models\MetabaseWebhookAlert;
@@ -333,14 +334,12 @@ class AlertingController extends Controller
 
             if ($request->has('endpointIds') && ! empty($request->endpointIds)) {
                 foreach ($request->endpointIds as $end) {
-                    $alert->push('endpoint_ids', $end, true);
                     $alert->push('endpointIds', $end, true);
                 }
             }
 
             if ($request->has('userIds') && ! empty($request->userIds)) {
                 foreach ($request->userIds as $userId) {
-                    $alert->push('user_ids', $userId, true);
                     $alert->push('userIds', $userId, true);
                 }
             }
@@ -514,14 +513,12 @@ class AlertingController extends Controller
         foreach ($alertEndpoints as $end) {
             if ($selectableEndpoints->contains($end)) {
                 if ($endpointsIds->doesntContain($end)) {
-                    $model->pull('endpoint_ids', $end);
                     $model->pull('endpointIds', $end);
                 }
             }
         }
 
         foreach ($endpointsIds as $endpointId) {
-            $model->push('endpoint_ids', $endpointId, true);
             $model->push('endpointIds', $endpointId, true);
         }
 
@@ -530,13 +527,11 @@ class AlertingController extends Controller
 
         foreach ($alertUserIds as $alertUserId) {
             if ($userIds->doesntContain($alertUserId)) {
-                $model->pull('user_ids', $alertUserId);
                 $model->pull('userIds', $alertUserId);
             }
         }
 
         foreach ($userIds as $userId) {
-            $model->push('user_ids', $userId, true);
             $model->push('userIds', $userId, true);
         }
 
@@ -656,6 +651,12 @@ class AlertingController extends Controller
                     $sendResolve = true;
                     $alert->state = AlertRule::RESOlVED;
                     $alert->save();
+                    $check = GrafanaCheck::where('alertRuleId', $alert->id)->first();
+                    if ($check) {
+                        $check->alerts = [];
+                        $check->state = GrafanaWebhookAlert::RESOLVED;
+                        $check->save();
+                    }
                 }
                 break;
 

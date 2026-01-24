@@ -41,7 +41,7 @@ Route::prefix('v1')->group(function () {
     Route::get('status/all', [StatusController::class, 'Status'])->name('status.all');
     Route::get('alert-rule/acknowledgeL/{id}', [AlertingController::class, 'AcknowledgeLoginLink'])->name('acknowledgeLink');
 
-    Route::middleware(['apiAuth','throttle:api-alert'])
+    Route::middleware(['apiAuth', 'throttle:api-alert'])
         ->controller(ApiAlertController::class)
         ->group(function () {
             Route::post('fire-alert', 'FireAlert')->name('webhook.api.fire');
@@ -70,14 +70,15 @@ Route::prefix('v1')->group(function () {
                 Route::post('logout', 'logout');
                 Route::post('refresh', 'refresh');
                 Route::post('me', 'me');
+                Route::post('pass', 'ChangePassword');
             });
 
         Route::prefix('/user')
             ->controller(UserController::class)
             ->group(function () {
                 Route::get('/all', 'All');
-                Route::middleware('role:' . Constants::ROLE_OWNER->value)->post('/changeOwner', 'ChangeOwnerShipOfData');
-                Route::middleware('role:' . Constants::ROLE_OWNER->value . '|' . Constants::ROLE_MANAGER->value)->group(function () {
+                Route::middleware('role:'.Constants::ROLE_OWNER->value)->post('/changeOwner', 'ChangeOwnerShipOfData');
+                Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->group(function () {
                     Route::get('/', 'Index');
                     Route::get('/{id}', 'Show');
                     Route::post('/', 'Create');
@@ -103,7 +104,7 @@ Route::prefix('v1')->group(function () {
             });
         Route::prefix('/skylogs-instance')
             ->controller(SkylogsInstanceController::class)
-            ->middleware('role:' . Constants::ROLE_OWNER->value)
+            ->middleware('role:'.Constants::ROLE_OWNER->value)
             ->group(function () {
                 Route::get('/', 'Index');
                 Route::get('/status/{id}', 'IsConnected');
@@ -115,7 +116,7 @@ Route::prefix('v1')->group(function () {
 
         Route::prefix('/data-source')
             ->controller(DataSourceController::class)
-            ->middleware('role:' . Constants::ROLE_OWNER->value . '|' . Constants::ROLE_MANAGER->value)
+            ->middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)
             ->group(function () {
                 Route::get('/', 'Index');
                 Route::get('/types', 'GetTypes');
@@ -132,14 +133,14 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', 'Index');
                 Route::get('/all', 'All');
                 Route::get('/{id}', 'Show');
-                Route::middleware('role:' . Constants::ROLE_OWNER->value . '|' . Constants::ROLE_MANAGER->value)->post('/', 'Create');
-                Route::middleware('role:' . Constants::ROLE_OWNER->value . '|' . Constants::ROLE_MANAGER->value)->put('/{id}', 'Update');
-                Route::middleware('role:' . Constants::ROLE_OWNER->value . '|' . Constants::ROLE_MANAGER->value)->delete('/{id}', 'Delete');
+                Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->post('/', 'Create');
+                Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->put('/{id}', 'Update');
+                Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->delete('/{id}', 'Delete');
             });
 
         Route::prefix('/status')
             ->controller(StatusController::class)
-            ->middleware('role:' . Constants::ROLE_OWNER->value . '|' . Constants::ROLE_MANAGER->value)
+            ->middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)
             ->group(function () {
                 Route::get('/', 'Index');
                 Route::get('/{id}', 'Show');
@@ -226,7 +227,7 @@ Route::prefix('v1')->group(function () {
             });
 
         Route::prefix('/profile')
-            ->middleware('role:' . Constants::ROLE_OWNER->value)
+            ->middleware('role:'.Constants::ROLE_OWNER->value)
             ->group(function () {
                 Route::prefix('/asset')
                     ->controller(AssetController::class)
@@ -241,7 +242,7 @@ Route::prefix('v1')->group(function () {
             });
 
         Route::prefix('/config')
-            ->middleware('role:' . Constants::ROLE_OWNER->value)
+            ->middleware('role:'.Constants::ROLE_OWNER->value)
             ->group(function () {
 
                 Route::prefix('/skylogs')
@@ -272,8 +273,8 @@ Route::prefix('v1')->group(function () {
                         Route::get('/{id}', 'Show');
                         Route::post('/', 'Create');
                         Route::get('/providers', 'providers');
-                        Route::post('/makeDefault/{id}', 'makeDefault');
-                        Route::post('/makeBackUp/{id}', 'makeBackup');
+                        Route::post('/make-default/{id}', 'makeDefault');
+                        Route::post('/make-backup/{id}', 'makeBackup');
                         Route::put('/{id}', 'Update');
                         Route::delete('/{id}', 'Delete');
                     });
@@ -285,8 +286,8 @@ Route::prefix('v1')->group(function () {
                         Route::get('/{id}', 'Show');
                         Route::post('/', 'Create');
                         Route::get('/providers', 'providers');
-                        Route::post('/makeDefault/{id}', 'makeDefault');
-                        Route::post('/makeBackUp/{id}', 'makeBackup');
+                        Route::post('/make-default/{id}', 'makeDefault');
+                        Route::post('/make-backup/{id}', 'makeBackup');
                         Route::put('/{id}', 'Update');
                         Route::delete('/{id}', 'Delete');
                     });
@@ -298,8 +299,8 @@ Route::prefix('v1')->group(function () {
 
                         Route::get('/{id}', 'Show');
                         Route::post('/', 'Create');
-                        Route::post('/makeDefault/{id}', 'makeDefault');
-                        Route::post('/makeBackUp/{id}', 'makeBackup');
+                        Route::post('/make-default/{id}', 'makeDefault');
+                        Route::post('/make-backup/{id}', 'makeBackup');
                         Route::put('/{id}', 'Update');
                         Route::delete('/{id}', 'Delete');
                     });

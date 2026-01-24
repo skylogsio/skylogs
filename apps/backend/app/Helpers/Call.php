@@ -43,8 +43,9 @@ class Call
             return "$config->provider is not providing";
         }
 
-        if (empty(self::Token()))
-            return "Sms is not configured";
+        if (empty(self::Token())) {
+            return 'Sms is not configured';
+        }
 
         $result = Http::pool(function (Pool $pool) use ($nums, $alert) {
             if ($nums instanceof Collection) {
@@ -81,7 +82,6 @@ class Call
     public static function sendOTP(EndpointOTP $endpoint)
     {
 
-
         $config = app(ConfigCallService::class)->getDefault();
 
         if (! empty($config)) {
@@ -92,11 +92,11 @@ class Call
             return "$config->provider is not providing";
         }
 
-        if (empty(self::Token()))
-            return "Sms is not configured";
+        if (empty(self::Token())) {
+            return 'Sms is not configured';
+        }
 
-
-        $response = Http::post(self::Url(), [
+        $response = Http::get(self::Url(), [
             'receptor' => $endpoint->value,
             'message' => $endpoint->generateOTPMessage(),
         ]);

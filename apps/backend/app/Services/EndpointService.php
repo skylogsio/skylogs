@@ -83,7 +83,6 @@ class EndpointService
         $endpoints = Endpoint::where('userId', $fromUser->id)->get();
         foreach ($endpoints as $endpoint) {
             $endpoint->userId = $toUser->id;
-            $endpoint->user_id = $toUser->id;
             $endpoint->save();
         }
     }
@@ -99,7 +98,6 @@ class EndpointService
             case EndpointType::TELEGRAM->value:
 
                 $model = Endpoint::create([
-                    'user_id' => \Auth::id(),
                     'userId' => \Auth::id(),
                     'name' => $request->name,
                     'type' => $request->type,
@@ -116,7 +114,6 @@ class EndpointService
                 $this->validateFlowEndpointData($request);
 
                 $model = Endpoint::create([
-                    'user_id' => \Auth::id(),
                     'userId' => \Auth::id(),
                     'name' => $request->name,
                     'type' => $request->type,
@@ -140,7 +137,6 @@ class EndpointService
                     abort(422, 'otp code invalid');
                 }
                 $model = Endpoint::create([
-                    'user_id' => \Auth::id(),
                     'userId' => \Auth::id(),
                     'name' => $request->name,
                     'type' => $request->type,
@@ -151,7 +147,6 @@ class EndpointService
                 break;
             default:
                 $model = Endpoint::create([
-                    'user_id' => \Auth::id(),
                     'userId' => \Auth::id(),
                     'name' => $request->name,
                     'type' => $request->type,

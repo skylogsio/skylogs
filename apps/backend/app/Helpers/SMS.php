@@ -47,9 +47,9 @@ class SMS
             return "$config->provider is not providing";
         }
 
-        if (empty(self::Token()))
-            return "Sms is not configured";
-
+        if (empty(self::Token())) {
+            return 'Sms is not configured';
+        }
 
         $result = Http::pool(function (Pool $pool) use ($nums, $alert) {
 
@@ -97,8 +97,9 @@ class SMS
             return "$config->provider is not providing";
         }
 
-        if (empty(self::Token()))
-            return "Sms is not configured";
+        if (empty(self::Token())) {
+            return 'Sms is not configured';
+        }
 
         $response = Http::get(self::Url(), [
             'sender' => self::SenderNumber(),

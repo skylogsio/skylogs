@@ -192,6 +192,7 @@ class AlertRule extends BaseModel implements Messageable
             case AlertRuleType::METABASE:
             case AlertRuleType::ZABBIX:
                 $alertState = $this->state ?? self::UNKNOWN;
+                $alertCount = $alert->fireCount ?? 0;
                 break;
             case AlertRuleType::HEALTH:
                 $check = HealthCheck::where('alertRuleId', $this->_id)->first();
@@ -210,8 +211,8 @@ class AlertRule extends BaseModel implements Messageable
                     $alertState = self::CRITICAL;
                 }
                 break;
-            case AlertRuleType::NOTIFICATION:
-                // TODO
+                //            case AlertRuleType::NOTIFICATION:
+
             case AlertRuleType::SPLUNK:
                 // TODO
                 break;

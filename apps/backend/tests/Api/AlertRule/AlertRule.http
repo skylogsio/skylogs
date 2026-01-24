@@ -184,7 +184,7 @@ Accept: application/json
 Authorization: Bearer {{authToken}}
 
 {
-    "endpoint_ids" : [
+    "endpointIds" : [
         "680d668e20f7ecb5bc026722"
     ]
 }
@@ -225,7 +225,7 @@ Accept: application/json
 Authorization: Bearer {{authToken}}
 
 {
-    "user_ids" : [
+    "userIds" : [
         "67c5dc54bdf1685c060cf8f2"
     ]
 }

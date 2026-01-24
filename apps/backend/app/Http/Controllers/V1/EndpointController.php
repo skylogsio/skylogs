@@ -226,7 +226,7 @@ class EndpointController extends Controller
 
         $endpoint = $endpoint->firstOrFail();
 
-        $toUser = User::where('id', $request->user_id)->firstOrFail();
+        $toUser = User::where('id', $request->userId)->firstOrFail();
 
         $endpoint->userId = $toUser->id;
         $endpoint->save();

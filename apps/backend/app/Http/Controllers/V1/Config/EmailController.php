@@ -39,13 +39,13 @@ class EmailController extends Controller
 
         $isDefault = $model->isDefault;
 
-        if ($isDefault){
+        if ($isDefault) {
             $count = ConfigEmail::all()->count();
-            if ($count != 1){
+            if ($count != 1) {
                 return response()->json([
-                    "status" => false,
-                    "message" => "Default can not be deleted"
-                ],422);
+                    'status' => false,
+                    'message' => 'Default can not be deleted',
+                ], 422);
             }
         }
 
@@ -97,7 +97,7 @@ class EmailController extends Controller
         return response()->json([
             'status' => false,
             'message' => implode(' ', $va->errors()->all()),
-        ],422);
+        ], 422);
 
     }
 
@@ -138,11 +138,10 @@ class EmailController extends Controller
 
         }
 
-
         return response()->json([
             'status' => false,
             'message' => implode(' ', $va->errors()->all()),
-        ],422);
+        ], 422);
     }
 
     public function makeDefault($id)
@@ -166,7 +165,7 @@ class EmailController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => $exception->getMessage(),
-            ],422);
+            ], 422);
         }
 
         return response()->json([

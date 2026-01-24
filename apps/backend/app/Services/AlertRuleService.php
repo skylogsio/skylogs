@@ -12,6 +12,7 @@ use App\Models\Config\ConfigSkylogs;
 use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
 use App\Models\Endpoint;
+use App\Models\GrafanaCheck;
 use App\Models\HealthCheck;
 use App\Models\PrometheusCheck;
 use App\Models\SkylogsInstance;
@@ -46,9 +47,20 @@ class AlertRuleService
             case AlertRuleType::ZABBIX:
                 $check = ZabbixCheck::where('alertRuleId', $alertRuleId)->first();
                 if ($check && ! empty($check->fireEvents)) {
-                    return ZabbixWebhookAlert::whereIn('event_id', $check->fireEvents)->get();
+                    return ZabbixWebhookAlert::whereIn('event_id', $check->fireEvents)
+                        ->where('alertRuleId', $alertRuleId)
+                        ->get();
                 }
                 break;
+
+            case AlertRuleType::GRAFANA:
+            case AlertRuleType::PMM:
+                $check = GrafanaCheck::where('alertRuleId', $alertRuleId)->first();
+                if ($check) {
+                    return $check->alerts ?? [];
+                }
+                break;
+
         }
 
         return [];
@@ -691,6 +703,10 @@ class AlertRuleService
             case AlertRuleType::ELASTIC:
                 ElasticCheck::where('alertRuleId', $alertRuleId)->delete();
                 break;
+            case AlertRuleType::GRAFANA:
+            case AlertRuleType::PMM:
+                GrafanaCheck::where('alertRuleId', $alertRuleId)->delete();
+                break;
         }
 
     }
@@ -709,9 +725,7 @@ class AlertRuleService
                 $alert->save();
             } elseif (in_array($fromUser->id, $alert->userIds ?? [])) {
                 $alert->push('userIds', $toUser->id, true);
-                $alert->push('user_ids', $toUser->id, true);
                 $alert->pull('userIds', $fromUser->id);
-                $alert->pull('user_ids', $fromUser->id);
                 $alert->save();
             }
         }
