@@ -725,9 +725,7 @@ class AlertRuleService
                 $alert->save();
             } elseif (in_array($fromUser->id, $alert->userIds ?? [])) {
                 $alert->push('userIds', $toUser->id, true);
-                $alert->push('user_ids', $toUser->id, true);
                 $alert->pull('userIds', $fromUser->id);
-                $alert->pull('user_ids', $fromUser->id);
                 $alert->save();
             }
         }
