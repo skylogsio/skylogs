@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Fragment, useState } from "react";
 
 import {
@@ -27,8 +27,9 @@ import { useScopedI18n } from "@/locales/client";
 
 export default function TopBarProfile() {
   const pathname = usePathname();
+  const router = useRouter();
   const t = useScopedI18n("wrapper.profile");
-  const { userInfo } = useRole();
+  const { userInfo, hasRole } = useRole();
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -41,8 +42,11 @@ export default function TopBarProfile() {
   const open = Boolean(anchorEl);
   const id = open ? "top-bar-profile-popover" : undefined;
 
+  const isAdmin = hasRole("owner");
+
   const isAdminArea = pathname.includes("admin-area");
   const adminButtonHREF = isAdminArea ? "/alert-rule" : "admin-area";
+
 
   return (
     <>
@@ -116,35 +120,39 @@ export default function TopBarProfile() {
         }}
       >
         <List disablePadding>
-          <ListItem disablePadding>
-            <ListItemButton
-              component={Link}
-              href={adminButtonHREF}
-              onClick={() => handleClose()}
-              sx={{ padding: "0.7rem 1rem" }}
-            >
-              <ListItemIcon sx={{ minWidth: 0, marginRight: "1rem" }}>
-                <Image
-                  src={
-                    isAdminArea
-                      ? "/static/icons/profile-alert-area.svg"
-                      : "/static/icons/profile-admin-area.svg"
-                  }
-                  alt="admin-area"
-                  width={18}
-                  height={18}
-                  style={{
-                    width: 18,
-                    height: 18
-                  }}
-                />
-              </ListItemIcon>
-              <Typography variant="body2" whiteSpace="nowrap">
-                {isAdminArea ? "Alert Area" : "Admin Area"}
-              </Typography>
-            </ListItemButton>
-          </ListItem>
-          <Divider sx={{ borderColor: ({ palette }) => palette.grey[100] }} />
+          {isAdmin && (
+            <>
+              <ListItem disablePadding>
+                <ListItemButton
+                  component={Link}
+                  href={adminButtonHREF}
+                  onClick={() => handleClose()}
+                  sx={{ padding: "0.7rem 1rem" }}
+                >
+                  <ListItemIcon sx={{ minWidth: 0, marginRight: "1rem" }}>
+                    <Image
+                      src={
+                        isAdminArea
+                          ? "/static/icons/profile-alert-area.svg"
+                          : "/static/icons/profile-admin-area.svg"
+                      }
+                      alt="admin-area"
+                      width={18}
+                      height={18}
+                      style={{
+                        width: 18,
+                        height: 18
+                      }}
+                    />
+                  </ListItemIcon>
+                  <Typography variant="body2" whiteSpace="nowrap">
+                    {isAdminArea ? "Alert Area" : "Admin Area"}
+                  </Typography>
+                </ListItemButton>
+              </ListItem>
+              <Divider sx={{ borderColor: ({ palette }) => palette.grey[100] }} />
+            </>
+          )}
           <ListItem disablePadding>
             <ListItemButton sx={{ padding: "0.7rem 1rem" }} onClick={() => signOut()}>
               <ListItemIcon sx={{ minWidth: 0, marginRight: "1rem" }}>
