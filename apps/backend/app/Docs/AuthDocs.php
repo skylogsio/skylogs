@@ -47,9 +47,7 @@ class AuthDocs
             new OA\Response(response: 401, description: 'Invalid credentials'),
         ]
     )]
-    public function login()
-    {
-    }
+    public function login() {}
 
     #[OA\Post(
         path: '/api/v1/auth/me',
@@ -81,9 +79,7 @@ class AuthDocs
             new OA\Response(response: 401, description: 'Unauthorized'),
         ]
     )]
-    public function me()
-    {
-    }
+    public function me() {}
 
     #[OA\Post(
         path: '/api/v1/auth/pass',
@@ -127,9 +123,7 @@ class AuthDocs
             new OA\Response(response: 422, description: 'Validation failed'),
         ]
     )]
-    public function pass()
-    {
-    }
+    public function pass() {}
 
     #[OA\Post(
         path: '/api/v1/auth/logout',
@@ -150,9 +144,7 @@ class AuthDocs
             new OA\Response(response: 401, description: 'Unauthorized'),
         ]
     )]
-    public function logout()
-    {
-    }
+    public function logout() {}
 
     #[OA\Post(
         path: '/api/v1/auth/refresh',
@@ -182,7 +174,5 @@ class AuthDocs
             new OA\Response(response: 401, description: 'Token invalid or expired'),
         ]
     )]
-    public function refresh()
-    {
-    }
+    public function refresh() {}
 }

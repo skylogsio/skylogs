@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\V1;
 
-use App\Enums\Constants;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Hash;
@@ -77,7 +76,6 @@ class AuthController extends Controller
         return response()->json($result);
     }
 
-
     public function ChangePassword(Request $request)
     {
         Validator::validate(
@@ -105,11 +103,10 @@ class AuthController extends Controller
 
         return response()->json([
             'status' => false,
-            'message' => "Current password is incorrect",
+            'message' => 'Current password is incorrect',
         ]);
 
     }
-
 
     public function logout()
     {
