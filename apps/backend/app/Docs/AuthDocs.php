@@ -39,7 +39,7 @@ class AuthDocs
                             type: 'array',
                             items: new OA\Items(type: 'string'),
                             example: ['admin', 'user']
-                        ),                        new OA\Property(property: 'expiresIn', type: 'integer', example: 3600),
+                        ), new OA\Property(property: 'expiresIn', type: 'integer', example: 3600),
                         new OA\Property(property: 'refreshExpiresIn', type: 'integer', example: 10800),
                     ]
                 )
@@ -47,7 +47,9 @@ class AuthDocs
             new OA\Response(response: 401, description: 'Invalid credentials'),
         ]
     )]
-    public function login() {}
+    public function login()
+    {
+    }
 
     #[OA\Post(
         path: '/api/v1/auth/me',
@@ -72,14 +74,62 @@ class AuthDocs
                         property: 'permissions',
                         type: 'array',
                         items: new OA\Items(type: 'string'),
-                    ),                        new OA\Property(property: 'expiresIn', type: 'integer', example: 3600),
+                    ), new OA\Property(property: 'expiresIn', type: 'integer', example: 3600),
                 ]
             )
             ),
             new OA\Response(response: 401, description: 'Unauthorized'),
         ]
     )]
-    public function me() {}
+    public function me()
+    {
+    }
+
+    #[OA\Post(
+        path: '/api/v1/auth/pass',
+        operationId: 'changePasswordCurrentUser',
+        summary: 'Change the authenticated user password',
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['currentPassword', 'newPassword', 'confirmPassword'],
+                properties: [
+                    new OA\Property(property: 'currentPassword', type: 'string', format: 'password', example: 'OldPassword123!'),
+                    new OA\Property(property: 'newPassword', type: 'string', format: 'password', example: 'NewPassword123!'),
+                    new OA\Property(property: 'confirmPassword', type: 'string', format: 'password', example: 'NewPassword123!'),
+                ]
+            )
+        ),
+        tags: ['Authentication'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Password changed successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'data', type: 'object', example: '{"_id": "507f1f77bcf86cd799439011", "name": "John Doe", "email": "john@example.com"}'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: 'Validation error or incorrect current password',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'boolean', example: false),
+                        new OA\Property(property: 'message', type: 'string', example: 'Current password is incorrect'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+            new OA\Response(response: 422, description: 'Validation failed'),
+        ]
+    )]
+    public function pass()
+    {
+    }
 
     #[OA\Post(
         path: '/api/v1/auth/logout',
@@ -100,7 +150,9 @@ class AuthDocs
             new OA\Response(response: 401, description: 'Unauthorized'),
         ]
     )]
-    public function logout() {}
+    public function logout()
+    {
+    }
 
     #[OA\Post(
         path: '/api/v1/auth/refresh',
@@ -122,7 +174,7 @@ class AuthDocs
                             type: 'array',
                             items: new OA\Items(type: 'string'),
                             example: ['owner']
-                        ),                        new OA\Property(property: 'expiresIn', type: 'integer', example: 3600),
+                        ), new OA\Property(property: 'expiresIn', type: 'integer', example: 3600),
                         new OA\Property(property: 'refreshExpiresIn', type: 'integer', example: 10800),
                     ]
                 )
@@ -130,5 +182,7 @@ class AuthDocs
             new OA\Response(response: 401, description: 'Token invalid or expired'),
         ]
     )]
-    public function refresh() {}
+    public function refresh()
+    {
+    }
 }

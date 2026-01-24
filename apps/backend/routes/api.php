@@ -70,6 +70,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('logout', 'logout');
                 Route::post('refresh', 'refresh');
                 Route::post('me', 'me');
+                Route::post('pass', 'ChangePassword');
             });
 
         Route::prefix('/user')
