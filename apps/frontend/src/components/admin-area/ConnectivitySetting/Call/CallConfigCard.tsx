@@ -13,11 +13,15 @@ import {
   Typography,
   useTheme,
   alpha,
-  Stack
+  Stack,
+  CircularProgress
 } from "@mui/material";
+import { useMutation } from "@tanstack/react-query";
 import { HiDotsHorizontal } from "react-icons/hi";
+import { toast } from "react-toastify";
 
 import type { ICallConfig } from "@/@types/admin-area/callConfig";
+import { setDefaultCallConfig } from "@/api/admin-area/callConfig";
 import { ENDPOINT_CONFIG } from "@/utils/endpointVariants";
 
 export interface CallConfigCardProps {
@@ -40,6 +44,15 @@ export function CallConfigCard({ config, onEdit, onDelete, onSetAsDefault }: Cal
     setAnchorEl(null);
   };
 
+  const { mutate: setDefaultCallConfigMutation, isPending: isSettingDefault } = useMutation({
+    mutationFn: () => setDefaultCallConfig(config.id),
+    onSuccess: () => {
+      toast.success(`The ${config.name} set as default Call config.`);
+      onSetAsDefault?.();
+      handleMenuClose();
+    }
+  });
+
   const handleEdit = () => {
     onEdit?.();
     handleMenuClose();
@@ -47,11 +60,6 @@ export function CallConfigCard({ config, onEdit, onDelete, onSetAsDefault }: Cal
 
   const handleDelete = () => {
     onDelete?.();
-    handleMenuClose();
-  };
-
-  const handleSetAsDefault = () => {
-    onSetAsDefault?.();
     handleMenuClose();
   };
 
@@ -167,7 +175,12 @@ export function CallConfigCard({ config, onEdit, onDelete, onSetAsDefault }: Cal
         <MenuItem onClick={handleDelete} sx={{ color: palette.error.main }}>
           Delete
         </MenuItem>
-        {!config.isDefault && <MenuItem onClick={handleSetAsDefault}>Set As Default</MenuItem>}
+        {!config.isDefault && (
+          <MenuItem onClick={() => setDefaultCallConfigMutation()} disabled={isSettingDefault}>
+            Set As Default
+            {isSettingDefault && <CircularProgress size={16} sx={{ marginLeft: 2 }} />}
+          </MenuItem>
+        )}
       </Menu>
     </Card>
   );

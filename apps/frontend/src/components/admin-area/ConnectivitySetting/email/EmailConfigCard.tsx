@@ -13,11 +13,15 @@ import {
   Typography,
   useTheme,
   alpha,
-  Stack
+  Stack,
+  CircularProgress
 } from "@mui/material";
+import { useMutation } from "@tanstack/react-query";
 import { HiDotsHorizontal } from "react-icons/hi";
+import { toast } from "react-toastify";
 
 import type { IEmailConfig } from "@/@types/admin-area/emailConfig";
+import { setDefaultEmailConfig } from "@/api/admin-area/emailConfig";
 import { ENDPOINT_CONFIG } from "@/utils/endpointVariants";
 
 export interface EmailConfigCardProps {
@@ -45,6 +49,15 @@ export function EmailConfigCard({
     setAnchorEl(null);
   };
 
+  const { mutate: setDefaultEmailConfigMutation, isPending: isSettingDefault } = useMutation({
+    mutationFn: () => setDefaultEmailConfig(config.id),
+    onSuccess: () => {
+      toast.success(`The ${config.name} set as default Email config.`);
+      onSetAsDefault?.();
+      handleMenuClose();
+    }
+  });
+
   const handleEdit = () => {
     onEdit?.();
     handleMenuClose();
@@ -52,11 +65,6 @@ export function EmailConfigCard({
 
   const handleDelete = () => {
     onDelete?.();
-    handleMenuClose();
-  };
-
-  const handleSetAsDefault = () => {
-    onSetAsDefault?.();
     handleMenuClose();
   };
 
@@ -187,7 +195,12 @@ export function EmailConfigCard({
         <MenuItem onClick={handleDelete} sx={{ color: palette.error.main }}>
           Delete
         </MenuItem>
-        {!config.isDefault && <MenuItem onClick={handleSetAsDefault}>Set As Default</MenuItem>}
+        {!config.isDefault && (
+          <MenuItem onClick={() => setDefaultEmailConfigMutation()} disabled={isSettingDefault}>
+            Set As Default
+            {isSettingDefault && <CircularProgress size={16} sx={{ marginLeft: 2 }} />}
+          </MenuItem>
+        )}
       </Menu>
     </Card>
   );

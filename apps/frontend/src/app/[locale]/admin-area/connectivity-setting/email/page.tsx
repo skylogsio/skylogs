@@ -84,6 +84,7 @@ export default function EmailPage() {
                   config={item}
                   onEdit={() => setModalData(item)}
                   onDelete={() => setDeleteModalData(item)}
+                  onSetAsDefault={handleRefreshData}
                 />
               </Grid>
             ))}

@@ -1,5 +1,5 @@
 export interface IEndpoint {
-  user_id: string;
+  userId: string;
   name: string;
   type: "sms" | "telegram" | "teams" | "call";
   value: string;

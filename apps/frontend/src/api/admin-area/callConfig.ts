@@ -47,3 +47,16 @@ export async function deleteCallConfig(id: ICallConfig["id"]): Promise<ServerRes
     throw error;
   }
 }
+
+export async function setDefaultCallConfig(
+  id: ICallConfig["id"]
+): Promise<ServerResponse<unknown>> {
+  try {
+    const response = await axios.post<ServerResponse<unknown>>(
+      `${CALL_CONFIG_URL}/make-default/${id}`
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
