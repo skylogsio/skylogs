@@ -66,16 +66,18 @@ class Utilities
                     return true;
                 }
             }
+
             return false;
         }
 
         if (strpos($expression, '&') !== false) {
             $parts = preg_split('/\s*&\s*/', $expression);
             foreach ($parts as $part) {
-                if (!self::evaluateExpression($part, $string)) {
+                if (! self::evaluateExpression($part, $string)) {
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -88,7 +90,7 @@ class Utilities
         }
 
         if ($expression === '1') {
-            return !$isNegated;
+            return ! $isNegated;
         }
         if ($expression === '0') {
             return $isNegated;
@@ -96,9 +98,6 @@ class Utilities
 
         $matches = Str::is($expression, $string);
 
-        return $isNegated ? !$matches : $matches;
+        return $isNegated ? ! $matches : $matches;
     }
-
-
-
 }

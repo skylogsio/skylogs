@@ -60,7 +60,8 @@ class SMSKaveNegarService
 
     public function sendOTP(ConfigSms $config, EndpointOTP $endpoint)
     {
-        $response = Http::post(self::Url($config), [
+
+        $response = Http::get(self::Url($config), [
             'sender' => $config->senderNumber,
             'receptor' => $endpoint->value,
             'message' => $endpoint->generateOTPMessage(),

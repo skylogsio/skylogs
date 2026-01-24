@@ -140,7 +140,6 @@ class ConfigSmsDoc
     )]
     public function makeDefault() {}
 
-
     // ----------------------------
     // POST /api/v1/config/sms/make-backup/{id}
     // ----------------------------

@@ -55,16 +55,15 @@ class CallController extends Controller
         $model = $model->firstOrFail();
         $isDefault = $model->isDefault;
 
-        if ($isDefault){
+        if ($isDefault) {
             $count = ConfigCall::all()->count();
-            if ($count != 1){
+            if ($count != 1) {
                 return response()->json([
-                    "status" => false,
-                    "message" => "Default can not be deleted"
-                ],422);
+                    'status' => false,
+                    'message' => 'Default can not be deleted',
+                ], 422);
             }
         }
-
 
         $model->delete();
 
@@ -107,11 +106,10 @@ class CallController extends Controller
             }
         }
 
-
         return response()->json([
             'status' => false,
             'message' => implode(' ', $va->errors()->all()),
-        ],422);
+        ], 422);
 
     }
 
@@ -148,11 +146,10 @@ class CallController extends Controller
 
         }
 
-
         return response()->json([
             'status' => false,
             'message' => implode(' ', $va->errors()->all()),
-        ],422);
+        ], 422);
     }
 
     public function makeDefault($id)
@@ -176,7 +173,7 @@ class CallController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => $exception->getMessage(),
-            ],422);
+            ], 422);
         }
 
         return response()->json([

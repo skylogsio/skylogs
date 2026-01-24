@@ -20,7 +20,8 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void {
+    public function boot(): void
+    {
         RateLimiter::for('api-alert', function (Request $request) {
             return Limit::perMinute(60)->by($request->bearerToken());
         });

@@ -657,7 +657,7 @@ class AlertingController extends Controller
                     $sendResolve = true;
                     $alert->state = AlertRule::RESOlVED;
                     $alert->save();
-                    $check = GrafanaCheck::where('alertRuleId',$alert->id)->first();
+                    $check = GrafanaCheck::where('alertRuleId', $alert->id)->first();
                     if ($check) {
                         $check->alerts = [];
                         $check->state = GrafanaWebhookAlert::RESOLVED;

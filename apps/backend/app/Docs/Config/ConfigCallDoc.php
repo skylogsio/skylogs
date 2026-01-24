@@ -140,7 +140,6 @@ class ConfigCallDoc
     )]
     public function makeDefault() {}
 
-
     // ----------------------------
     // POST /api/v1/config/call/make-backup/{id}
     // ----------------------------

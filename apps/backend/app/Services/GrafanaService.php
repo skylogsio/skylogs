@@ -50,7 +50,7 @@ class GrafanaService
 
     }
 
-    public static function CheckMatchedAlerts( $alerts, $alertRules): array
+    public static function CheckMatchedAlerts($alerts, $alertRules): array
     {
 
         $fireAlertsByRule = [];
@@ -149,23 +149,23 @@ class GrafanaService
             })->unique()->toArray();
             $alertRule = $model->alertRule;
 
-            self::updateAlertRuleStatus($alertRule, $alerts,$grafanaAlertnames);
+            self::updateAlertRuleStatus($alertRule, $alerts, $grafanaAlertnames);
             SendNotifyService::CreateNotify(SendNotifyJob::GRAFANA_WEBHOOK, $model, $alertRule->_id);
 
         }
 
     }
 
-    public static function updateAlertRuleStatus($alertRule, $alerts,$grafanaAlertnames)
+    public static function updateAlertRuleStatus($alertRule, $alerts, $grafanaAlertnames)
     {
 
         $webhookAlerts = collect($alerts)->filter(function ($alert) {
-           return $alert['status'] == GrafanaWebhookAlert::FIRING;
+            return $alert['status'] == GrafanaWebhookAlert::FIRING;
         });
 
         $check = GrafanaCheck::firstOrCreate([
             'alertRuleId' => $alertRule->_id,
-        ],[
+        ], [
             'alertRuleId' => $alertRule->_id,
             'alerts' => [],
             'state' => GrafanaWebhookAlert::RESOLVED,
