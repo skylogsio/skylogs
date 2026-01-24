@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost:9000",
+            "url": "http://localhost:8000",
             "description": "Skylogs local server"
         }
     ],
@@ -629,7 +629,7 @@
                                     },
                                     "password": {
                                         "type": "string",
-                                        "example": "123456789"
+                                        "example": "123456"
                                     }
                                 },
                                 "type": "object"
@@ -854,25 +854,6 @@
                 ],
                 "summary": "List call configuration",
                 "operationId": "getConfigCallList",
-                "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number",
-                        "schema": {
-                            "type": "integer",
-                            "default": 1
-                        }
-                    },
-                    {
-                        "name": "perPage",
-                        "in": "query",
-                        "schema": {
-                            "type": "integer",
-                            "default": 25
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -1040,13 +1021,42 @@
                 ]
             }
         },
-        "/api/v1/config/call/resolve/{id}": {
+        "/api/v1/config/call/make-default/{id}": {
             "post": {
                 "tags": [
                     "ConfigCall"
                 ],
                 "summary": "make default config call",
                 "operationId": "makeDefaultConfigCall",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/config/call/make-backup/{id}": {
+            "post": {
+                "tags": [
+                    "ConfigCall"
+                ],
+                "summary": "make backup config call",
+                "operationId": "makeBackupConfigCall",
                 "parameters": [
                     {
                         "name": "id",
@@ -1090,25 +1100,6 @@
                 ],
                 "summary": "List email configuration",
                 "operationId": "getConfigEmailList",
-                "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number",
-                        "schema": {
-                            "type": "integer",
-                            "default": 1
-                        }
-                    },
-                    {
-                        "name": "perPage",
-                        "in": "query",
-                        "schema": {
-                            "type": "integer",
-                            "default": 25
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -1308,13 +1299,42 @@
                 ]
             }
         },
-        "/api/v1/config/email/resolve/{id}": {
+        "/api/v1/config/email/make-default/{id}": {
             "post": {
                 "tags": [
                     "ConfigEmail"
                 ],
                 "summary": "make default config email",
                 "operationId": "makeDefaultConfigEmail",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/config/email/make-backup/{id}": {
+            "post": {
+                "tags": [
+                    "ConfigEmail"
+                ],
+                "summary": "make backup config email",
+                "operationId": "makeBackupConfigEmail",
                 "parameters": [
                     {
                         "name": "id",
@@ -1358,25 +1378,6 @@
                 ],
                 "summary": "List sms configuration",
                 "operationId": "getConfigSmsList",
-                "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number",
-                        "schema": {
-                            "type": "integer",
-                            "default": 1
-                        }
-                    },
-                    {
-                        "name": "perPage",
-                        "in": "query",
-                        "schema": {
-                            "type": "integer",
-                            "default": 25
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK"
@@ -1544,13 +1545,42 @@
                 ]
             }
         },
-        "/api/v1/config/sms/resolve/{id}": {
+        "/api/v1/config/sms/make-default/{id}": {
             "post": {
                 "tags": [
                     "ConfigSms"
                 ],
                 "summary": "make default config sms",
                 "operationId": "makeDefaultConfigSms",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/config/sms/make-backup/{id}": {
+            "post": {
+                "tags": [
+                    "ConfigSms"
+                ],
+                "summary": "make backup config sms",
+                "operationId": "makeBackupConfigSms",
                 "parameters": [
                     {
                         "name": "id",

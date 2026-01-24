@@ -19,20 +19,6 @@ class ConfigEmailDoc
         summary: 'List email configuration',
         security: [['bearerAuth' => []]],
         tags: ['ConfigEmail'],
-        parameters: [
-            new OA\Parameter(
-                name: 'page',
-                description: 'Page number',
-                in: 'query',
-                schema: new OA\Schema(type: 'integer', default: 1)
-            ),
-            new OA\Parameter(
-                name: 'perPage',
-                in: 'query',
-                schema: new OA\Schema(type: 'integer', default: 25)
-            ),
-
-        ],
         responses: [
             new OA\Response(response: 200, description: 'OK'),
         ]
@@ -141,10 +127,10 @@ class ConfigEmailDoc
     public function destroy() {}
 
     // ----------------------------
-    // POST /api/v1/config/email/resolve/{id}
+    // POST /api/v1/config/email/make-default/{id}
     // ----------------------------
     #[OA\Post(
-        path: '/api/v1/config/email/resolve/{id}',
+        path: '/api/v1/config/email/make-default/{id}',
         operationId: 'makeDefaultConfigEmail',
         summary: 'make default config email',
         security: [['bearerAuth' => []]],
@@ -153,6 +139,20 @@ class ConfigEmailDoc
         responses: [new OA\Response(response: 200, description: 'OK')]
     )]
     public function makeDefault() {}
+
+    // ----------------------------
+    // POST /api/v1/config/email/make-backup/{id}
+    // ----------------------------
+    #[OA\Post(
+        path: '/api/v1/config/email/make-backup/{id}',
+        operationId: 'makeBackupConfigEmail',
+        summary: 'make backup config email',
+        security: [['bearerAuth' => []]],
+        tags: ['ConfigEmail'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'OK')]
+    )]
+    public function makeBackup() {}
 
     // ----------------------------
     // GET /api/v1/config/email/types

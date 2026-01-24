@@ -20,7 +20,7 @@ class AuthDocs
                 required: ['username', 'password'],
                 properties: [
                     new OA\Property(property: 'username', type: 'string', example: 'admin'),
-                    new OA\Property(property: 'password', type: 'string', example: '123456789'),
+                    new OA\Property(property: 'password', type: 'string', example: '123456'),
                 ]
             )
         ),

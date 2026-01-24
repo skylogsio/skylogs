@@ -14,11 +14,11 @@ class EmailController extends Controller
     public function Index(Request $request)
     {
 
-        $data = ConfigEmail::query()->orderByDesc('isDefault')->orderByDesc('isBackup')->latest();
-        if ($request->filled('name')) {
-            $data->where('name', 'like', '%'.$request->name.'%');
-        }
-        $data = $data->get();
+        $data = ConfigEmail::query()
+            ->orderByDesc('isDefault')
+            ->orderByDesc('isBackup')
+            ->latest()
+            ->get();
 
         return response()->json($data);
 
@@ -36,6 +36,19 @@ class EmailController extends Controller
     {
         $model = ConfigEmail::where('_id', $id);
         $model = $model->firstOrFail();
+
+        $isDefault = $model->isDefault;
+
+        if ($isDefault){
+            $count = ConfigEmail::all()->count();
+            if ($count != 1){
+                return response()->json([
+                    "status" => false,
+                    "message" => "Default can not be deleted"
+                ],422);
+            }
+        }
+
         $model->delete();
 
         return response()->json($model);
@@ -83,7 +96,8 @@ class EmailController extends Controller
 
         return response()->json([
             'status' => false,
-        ]);
+            'message' => implode(' ', $va->errors()->all()),
+        ],422);
 
     }
 
@@ -124,9 +138,11 @@ class EmailController extends Controller
 
         }
 
+
         return response()->json([
             'status' => false,
-        ]);
+            'message' => implode(' ', $va->errors()->all()),
+        ],422);
     }
 
     public function makeDefault($id)
@@ -150,7 +166,7 @@ class EmailController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => $exception->getMessage(),
-            ]);
+            ],422);
         }
 
         return response()->json([
