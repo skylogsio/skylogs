@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Fragment, useState } from "react";
 
 import {
@@ -27,7 +27,6 @@ import { useScopedI18n } from "@/locales/client";
 
 export default function TopBarProfile() {
   const pathname = usePathname();
-  const router = useRouter();
   const t = useScopedI18n("wrapper.profile");
   const { userInfo, hasRole } = useRole();
 
@@ -46,7 +45,6 @@ export default function TopBarProfile() {
 
   const isAdminArea = pathname.includes("admin-area");
   const adminButtonHREF = isAdminArea ? "/alert-rule" : "admin-area";
-
 
   return (
     <>
