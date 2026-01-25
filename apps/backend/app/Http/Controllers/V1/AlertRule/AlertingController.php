@@ -564,7 +564,7 @@ class AlertingController extends Controller
         $alert = AlertRule::where('_id', $id)->first();
         $sendResolve = false;
         $currentUser = auth()->user();
-        if (! $this->alertRuleService->hasUserAccessAlert($currentUser, $alert)) {
+        if (! $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert)) {
             abort(403);
         }
 
