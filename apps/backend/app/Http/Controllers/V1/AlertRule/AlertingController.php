@@ -602,9 +602,9 @@ class AlertingController extends Controller
                 }
                 break;
             case AlertRuleType::ZABBIX:
-                if (empty($alert->status) || $alert->status != AlertRule::RESOlVED) {
+                if (empty($alert->state) || $alert->state != AlertRule::RESOlVED) {
                     $sendResolve = true;
-                    $alert->status = AlertRule::RESOlVED;
+                    $alert->state = AlertRule::RESOlVED;
                     $alert->fireCount = 0;
                     $alert->save();
                     $zabbixCheck = ZabbixCheck::where('alertRuleId', $alert->id)->first();
