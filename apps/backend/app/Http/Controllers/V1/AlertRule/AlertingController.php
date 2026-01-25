@@ -564,7 +564,7 @@ class AlertingController extends Controller
         $alert = AlertRule::where('_id', $id)->first();
         $sendResolve = false;
         $currentUser = auth()->user();
-        if (! $this->alertRuleService->hasUserAccessAlert($currentUser, $alert)) {
+        if (! $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert)) {
             abort(403);
         }
 
@@ -602,9 +602,9 @@ class AlertingController extends Controller
                 }
                 break;
             case AlertRuleType::ZABBIX:
-                if (empty($alert->status) || $alert->status != AlertRule::RESOlVED) {
+                if (empty($alert->state) || $alert->state != AlertRule::RESOlVED) {
                     $sendResolve = true;
-                    $alert->status = AlertRule::RESOlVED;
+                    $alert->state = AlertRule::RESOlVED;
                     $alert->fireCount = 0;
                     $alert->save();
                     $zabbixCheck = ZabbixCheck::where('alertRuleId', $alert->id)->first();
