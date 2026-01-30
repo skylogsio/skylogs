@@ -5,22 +5,31 @@ namespace App\Services;
 use App\Enums\AlertRuleType;
 use App\Enums\HealthAlertType;
 use App\Helpers\Constants;
+use App\Helpers\Utilities;
+use App\Jobs\SendNotifyJob;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
 use App\Models\ApiAlertHistory;
 use App\Models\Config\ConfigSkylogs;
 use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
+use App\Models\ElasticHistory;
 use App\Models\Endpoint;
 use App\Models\GrafanaCheck;
+use App\Models\GrafanaWebhookAlert;
 use App\Models\HealthCheck;
+use App\Models\HealthHistory;
+use App\Models\MetabaseWebhookAlert;
 use App\Models\PrometheusCheck;
+use App\Models\PrometheusHistory;
+use App\Models\SentryWebhookAlert;
 use App\Models\SkylogsInstance;
 use App\Models\User;
 use App\Models\ZabbixCheck;
 use App\Models\ZabbixWebhookAlert;
 use Cache;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use MongoDB\BSON\UTCDateTime;
 
@@ -58,6 +67,12 @@ class AlertRuleService
                 $check = GrafanaCheck::where('alertRuleId', $alertRuleId)->first();
                 if ($check) {
                     return $check->alerts ?? [];
+                }
+                break;
+            case AlertRuleType::ELASTIC:
+                $check = ElasticCheck::where('alertRuleId', $alertRuleId)->first();
+                if ($check) {
+                    return $check->toArray() ?? [];
                 }
                 break;
 
@@ -151,7 +166,7 @@ class AlertRuleService
         }
     }
 
-    public static function GetAllHistory(Request $request)
+    public function getAllHistory(Request $request)
     {
         if ($request->has('perPage')) {
             $perPage = (int) $request->perPage;
@@ -556,6 +571,49 @@ class AlertRuleService
 
     }
 
+    public function getHistory($alert,
+        int $perPage = 50,
+        ?Carbon $from = null,
+        ?Carbon $to = null)
+    {
+
+        $query = match ($alert->type) {
+            AlertRuleType::PMM => GrafanaWebhookAlert::query(),
+            AlertRuleType::GRAFANA => GrafanaWebhookAlert::query(),
+            AlertRuleType::PROMETHEUS => PrometheusHistory::query(),
+            AlertRuleType::SENTRY => SentryWebhookAlert::query(),
+            AlertRuleType::SPLUNK => SplunkWebhookAlert::query(),
+            AlertRuleType::METABASE => MetabaseWebhookAlert::query(),
+            AlertRuleType::ZABBIX => ZabbixWebhookAlert::query(),
+            AlertRuleType::API => ApiAlertHistory::query(),
+            AlertRuleType::NOTIFICATION => ApiAlertHistory::query(),
+            AlertRuleType::HEALTH => HealthHistory::query(),
+            AlertRuleType::ELASTIC => ElasticHistory::query(),
+            default => throw new ModelNotFoundException,
+        };
+
+        $query->where('alertRuleId', $alert->id)->latest();
+
+        if ($from) {
+            $query->where('createdAt', '>=', $from);
+        }
+
+        if ($to) {
+            $query->where('createdAt', '<=', $to);
+        }
+
+        $data = $query->paginate($perPage)->toArray();
+
+        $arrayData = $data['data'];
+        foreach ($arrayData as &$item) {
+            $item['updatedAt'] = Utilities::ConvertUTCTimeTOJalali($item['updatedAt']);
+            $item['createdAt'] = Utilities::ConvertUTCTimeTOJalali($item['createdAt']);
+        }
+        $data['data'] = $arrayData;
+
+        return $data;
+    }
+
     public function createHealthDataSource(DataSource $dataSource) {}
 
     public function createHealthCluster(SkylogsInstance|ConfigSkylogs $instance)
@@ -728,6 +786,115 @@ class AlertRuleService
                 $alert->pull('userIds', $fromUser->id);
                 $alert->save();
             }
+        }
+
+    }
+
+    public function resolveAlertManually($alert)
+    {
+        $sendResolve = false;
+
+        switch ($alert->type) {
+            case AlertRuleType::API:
+                $apiAlerts = AlertInstance::where('alertRuleId', $alert->id)
+                    ->where('state', AlertInstance::FIRE)
+                    ->get();
+                if ($apiAlerts->isNotEmpty()) {
+                    $sendResolve = true;
+                    foreach ($apiAlerts as $apiAlert) {
+                        $apiAlert->description = '';
+                        $apiAlert->state = AlertInstance::RESOLVED;
+                        $apiAlert->save();
+                        $apiHistory = $apiAlert->createHistory();
+                        $apiAlert->createStatusHistory($apiHistory);
+                    }
+                }
+                app(ApiService::class)->refreshStatus($alert);
+                break;
+            case AlertRuleType::SENTRY:
+                if (empty($alert->state) || $alert->state != AlertRule::RESOlVED) {
+                    $sendResolve = true;
+                    $alert->state = AlertRule::RESOlVED;
+                    $alert->save();
+
+                    SentryWebhookAlert::create([
+                        'alertRuleName' => $alert->name,
+                        'dataSourceAlertName' => $alert->dataSourceAlertName,
+                        'alertRuleId' => $alert->_id,
+                        'action' => 'resolved',
+                        'message' => 'resolved manually.',
+                        'description' => 'resolved manually.',
+                    ]);
+                }
+                break;
+            case AlertRuleType::ZABBIX:
+                if (empty($alert->state) || $alert->state != AlertRule::RESOlVED) {
+                    $sendResolve = true;
+                    $alert->state = AlertRule::RESOlVED;
+                    $alert->fireCount = 0;
+                    $alert->save();
+                    $zabbixCheck = ZabbixCheck::where('alertRuleId', $alert->id)->first();
+                    if ($zabbixCheck) {
+                        $zabbixCheck->fireEvents = [];
+                        $zabbixCheck->save();
+                    }
+                }
+                break;
+            case AlertRuleType::PROMETHEUS:
+                $prometheusAlert = PrometheusCheck::where('alertRuleId', $alert->_id)->where('state', PrometheusCheck::FIRE)->first();
+                if ($prometheusAlert && $prometheusAlert->state == PrometheusCheck::FIRE) {
+                    $prometheusAlert->state = PrometheusCheck::RESOLVED;
+                    $prometheusAlert->save();
+                    $prometheusAlert->createHistory();
+                    $sendResolve = true;
+                }
+                break;
+            case AlertRuleType::ELASTIC:
+                $check = ElasticCheck::where('alertRuleId', $alert->_id)->where('state', ElasticCheck::FIRE)->first();
+                if ($check && $check->state == ElasticCheck::FIRE) {
+                    $check->state = ElasticCheck::RESOLVED;
+                    $check->save();
+
+                    ElasticHistory::create([
+                        'alertRuleId' => $alert->_id,
+                        'alertRuleName' => $alert->name,
+                        'dataSourceId' => $alert->dataSourceId,
+                        'dataviewName' => $alert->dataviewName,
+                        'dataviewTitle' => $alert->dataviewTitle,
+                        'queryString' => $alert->queryString,
+                        'conditionType' => $alert->conditionType,
+                        'minutes' => $alert->minutes,
+                        'countDocument' => $alert->countDocument,
+                        'currentCountDocument' => -1,
+                        'state' => ElasticCheck::RESOLVED,
+                    ]);
+                    $sendResolve = true;
+                }
+                break;
+            case AlertRuleType::PMM:
+            case AlertRuleType::GRAFANA:
+                if ($alert->state == AlertRule::CRITICAL) {
+                    $sendResolve = true;
+                    $alert->state = AlertRule::RESOlVED;
+                    $alert->save();
+                    $check = GrafanaCheck::where('alertRuleId', $alert->id)->first();
+                    if ($check) {
+                        $check->alerts = [];
+                        $check->state = GrafanaWebhookAlert::RESOLVED;
+                        $check->save();
+                    }
+                }
+                break;
+
+            case AlertRuleType::SPLUNK:
+            case AlertRuleType::NOTIFICATION:
+            case AlertRuleType::METABASE:
+                break;
+
+        }
+        $alert->removeAcknowledge();
+        if ($sendResolve) {
+            SendNotifyService::CreateNotify(SendNotifyJob::RESOLVED_MANUALLY, $alert, $alert->_id);
         }
 
     }

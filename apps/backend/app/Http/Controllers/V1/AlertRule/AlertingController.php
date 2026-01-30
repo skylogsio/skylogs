@@ -7,21 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
-use App\Models\ApiAlertHistory;
 use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
-use App\Models\ElasticHistory;
-use App\Models\GrafanaCheck;
-use App\Models\GrafanaWebhookAlert;
-use App\Models\HealthHistory;
-use App\Models\MetabaseWebhookAlert;
-use App\Models\PrometheusCheck;
-use App\Models\PrometheusHistory;
-use App\Models\SentryWebhookAlert;
-use App\Models\ZabbixCheck;
-use App\Models\ZabbixWebhookAlert;
 use App\Services\AlertRuleService;
-use App\Services\ApiService;
 use App\Services\EndpointService;
 use App\Services\SendNotifyService;
 use App\Services\UserService;
@@ -29,7 +17,6 @@ use App\Services\ZabbixService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Morilog\Jalali\Jalalian;
 use Str;
 
 class AlertingController extends Controller
@@ -219,6 +206,7 @@ class AlertingController extends Controller
         );
         //        dd("");
         if ($va->passes()) {
+
             $alertType = AlertRuleType::tryFrom($request->type);
             $commonFields = [
                 'name' => $request->name,
@@ -359,20 +347,16 @@ class AlertingController extends Controller
     public function Show($id)
     {
         $alert = AlertRule::where('_id', $id)->firstOrFail();
-        $userIds = [];
-        if (! empty($alert->userIds)) {
-            $userIds = $alert->userIds;
-        }
-        $userIds[] = $alert->userId;
         $currentUser = Auth::user();
 
-        if (! ($currentUser->isAdmin() || in_array($currentUser->_id, $userIds))) {
+        if (! $this->alertRuleService->hasUserAccessAlert($currentUser, $alert)) {
             abort(403);
         }
 
         if (! empty($alert->dataSourceIds)) {
             $alert->dataSourceLabels = DataSource::whereIn('id', $alert->dataSourceIds)->get()->pluck('name')->toArray();
         }
+
         $extraField = [];
         if (! empty($alert->extraField)) {
             foreach ($alert->extraField as $key => $value) {
@@ -562,114 +546,13 @@ class AlertingController extends Controller
     {
 
         $alert = AlertRule::where('_id', $id)->first();
-        $sendResolve = false;
+
         $currentUser = auth()->user();
         if (! $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert)) {
             abort(403);
         }
 
-        switch ($alert->type) {
-            case AlertRuleType::API:
-                $apiAlerts = AlertInstance::where('alertRuleId', $alert->id)
-                    ->where('state', AlertInstance::FIRE)
-                    ->get();
-                if ($apiAlerts->isNotEmpty()) {
-                    $sendResolve = true;
-                    foreach ($apiAlerts as $apiAlert) {
-                        $apiAlert->description = '';
-                        $apiAlert->state = AlertInstance::RESOLVED;
-                        $apiAlert->save();
-                        $apiHistory = $apiAlert->createHistory();
-                        $apiAlert->createStatusHistory($apiHistory);
-                    }
-                }
-                app(ApiService::class)->refreshStatus($alert);
-                break;
-            case AlertRuleType::SENTRY:
-                if (empty($alert->state) || $alert->state != AlertRule::RESOlVED) {
-                    $sendResolve = true;
-                    $alert->state = AlertRule::RESOlVED;
-                    $alert->save();
-
-                    SentryWebhookAlert::create([
-                        'alertRuleName' => $alert->name,
-                        'dataSourceAlertName' => $alert->dataSourceAlertName,
-                        'alertRuleId' => $alert->_id,
-                        'action' => 'resolved',
-                        'message' => 'resolved manually.',
-                        'description' => 'resolved manually.',
-                    ]);
-                }
-                break;
-            case AlertRuleType::ZABBIX:
-                if (empty($alert->state) || $alert->state != AlertRule::RESOlVED) {
-                    $sendResolve = true;
-                    $alert->state = AlertRule::RESOlVED;
-                    $alert->fireCount = 0;
-                    $alert->save();
-                    $zabbixCheck = ZabbixCheck::where('alertRuleId', $alert->id)->first();
-                    if ($zabbixCheck) {
-                        $zabbixCheck->fireEvents = [];
-                        $zabbixCheck->save();
-                    }
-                }
-                break;
-            case AlertRuleType::PROMETHEUS:
-                $prometheusAlert = PrometheusCheck::where('alertRuleId', $alert->_id)->where('state', PrometheusCheck::FIRE)->first();
-                if ($prometheusAlert && $prometheusAlert->state == PrometheusCheck::FIRE) {
-                    $prometheusAlert->state = PrometheusCheck::RESOLVED;
-                    $prometheusAlert->save();
-                    $prometheusAlert->createHistory();
-                    $sendResolve = true;
-                }
-                break;
-            case AlertRuleType::ELASTIC:
-                $check = ElasticCheck::where('alertRuleId', $alert->_id)->where('state', ElasticCheck::FIRE)->first();
-                if ($check && $check->state == ElasticCheck::FIRE) {
-                    $check->state = ElasticCheck::RESOLVED;
-                    $check->save();
-
-                    ElasticHistory::create([
-                        'alertRuleId' => $alert->_id,
-                        'alertRuleName' => $alert->name,
-                        'dataSourceId' => $alert->dataSourceId,
-                        'dataviewName' => $alert->dataviewName,
-                        'dataviewTitle' => $alert->dataviewTitle,
-                        'queryString' => $alert->queryString,
-                        'conditionType' => $alert->conditionType,
-                        'minutes' => $alert->minutes,
-                        'countDocument' => $alert->countDocument,
-                        'currentCountDocument' => -1,
-                        'state' => ElasticCheck::RESOLVED,
-                    ]);
-                    $sendResolve = true;
-                }
-                break;
-            case AlertRuleType::PMM:
-            case AlertRuleType::GRAFANA:
-                if ($alert->state == AlertRule::CRITICAL) {
-                    $sendResolve = true;
-                    $alert->state = AlertRule::RESOlVED;
-                    $alert->save();
-                    $check = GrafanaCheck::where('alertRuleId', $alert->id)->first();
-                    if ($check) {
-                        $check->alerts = [];
-                        $check->state = GrafanaWebhookAlert::RESOLVED;
-                        $check->save();
-                    }
-                }
-                break;
-
-            case AlertRuleType::SPLUNK:
-            case AlertRuleType::NOTIFICATION:
-            case AlertRuleType::METABASE:
-                break;
-
-        }
-        $alert->removeAcknowledge();
-        if ($sendResolve) {
-            SendNotifyService::CreateNotify(SendNotifyJob::RESOLVED_MANUALLY, $alert, $alert->_id);
-        }
+        $this->alertRuleService->resolveAlertManually($alert);
 
         return ['status' => true];
     }
@@ -688,81 +571,34 @@ class AlertingController extends Controller
 
     public function AllHistory(Request $request)
     {
-        return AlertRuleService::GetAllHistory($request);
+        return $this->alertRuleService->getAllHistory($request);
 
     }
 
     public function History(Request $request, $id)
     {
-        $perPage = $request->perPage ?? 50;
+        $perPage = (int) $request->input('perPage', 50);
+
+        $from = $request->filled('from')
+            ? Carbon::createFromFormat('Y-m-d H:i', $request->from)
+            : null;
+
+        $to = $request->filled('to')
+            ? Carbon::createFromFormat('Y-m-d H:i', $request->to)
+            : null;
 
         $alert = AlertRule::where('_id', $id)->firstOrFail();
-        $userIds = [];
-        if (! empty($alert->userIds)) {
-            $userIds = $alert->userIds;
-        }
-        $userIds[] = $alert->userId;
 
-        if (! (Auth::user()->isAdmin() || in_array(Auth::user()->_id, $userIds))) {
+        if (! $this->alertRuleService->hasUserAccessAlert(Auth::user(), $alert)) {
             abort(403);
         }
 
-        switch ($alert->type) {
-            case AlertRuleType::PMM:
-            case AlertRuleType::GRAFANA:
-                $data = GrafanaWebhookAlert::where('alertRuleId', $id)->latest();
-                break;
-
-            case AlertRuleType::PROMETHEUS:
-                $data = PrometheusHistory::where('alertRuleId', $id)->latest();
-                break;
-
-            case AlertRuleType::SENTRY:
-                $data = SentryWebhookAlert::where('alertRuleId', $id)->latest();
-                break;
-            case AlertRuleType::SPLUNK:
-                $data = SplunkWebhookAlert::where('alertRuleId', $id)->latest();
-                break;
-
-            case AlertRuleType::METABASE:
-                $data = MetabaseWebhookAlert::where('alertRuleId', $id)->latest();
-                break;
-
-            case AlertRuleType::ZABBIX:
-                $data = ZabbixWebhookAlert::where('alertRuleId', $id)->latest();
-                break;
-
-            case AlertRuleType::API:
-            case AlertRuleType::NOTIFICATION:
-                $data = ApiAlertHistory::where('alertRuleId', $id)->latest();
-                break;
-
-            case AlertRuleType::HEALTH:
-                $data = HealthHistory::where('alertRuleId', $id)->latest();
-                break;
-
-            case AlertRuleType::ELASTIC:
-                $data = ElasticHistory::where('alertRuleId', $id)->latest();
-                break;
-            default:
-                abort(404);
-        }
-        if ($request->has('from') && ! empty($request->from)) {
-            $date = Carbon::createFromFormat('Y-m-d H:i', $request->from);
-            $data = $data->where('createdAt', '>=', $date->toDateTime());
-        }
-        if ($request->has('to') && ! empty($request->to)) {
-            $date = Carbon::createFromFormat('Y-m-d H:i', $request->to);
-            $data = $data->where('createdAt', '<=', $date->toDateTime());
-        }
-        $data = $data->paginate($perPage)->toArray();
-
-        $arrayData = $data['data'];
-        foreach ($arrayData as &$item) {
-            $item['updatedAt'] = Jalalian::fromCarbon(Carbon::parse($item['updatedAt'])->setTimezone('Asia/Tehran'))->format('Y/m/d H:i:s');
-            $item['createdAt'] = Jalalian::fromCarbon(Carbon::parse($item['createdAt'])->setTimezone('Asia/Tehran'))->format('Y/m/d H:i:s');
-        }
-        $data['data'] = $arrayData;
+        $data = $this->alertRuleService->getHistory(
+            $alert,
+            $perPage,
+            $from,
+            $to
+        );
 
         return response()->json($data);
     }
