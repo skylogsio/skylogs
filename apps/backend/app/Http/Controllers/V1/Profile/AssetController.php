@@ -112,12 +112,4 @@ class AssetController extends Controller
         }
     }
 
-    public function generateAlerts($id)
-    {
-        $asset = ProfileAsset::where('id', $id)->firstOrFail();
-
-        $this->profileService->createAlertRules($asset);
-
-        return response()->json(['status' => true]);
-    }
 }
