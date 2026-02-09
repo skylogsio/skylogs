@@ -51,7 +51,7 @@ class ProfileService
         }
         $this->alertRuleService->flushCache();
 
-        return $createdAlerts;
+        return $createdAlertIds;
     }
 
     private function generateGrafanaPrometheusPmmAlert($type, $userId, $service, $env, $dataSourceToken, $config)
@@ -62,6 +62,8 @@ class ProfileService
         $commonFields = [
             'type' => $type,
             'dataSourceIds' => [$dataSource->id],
+            'description' => '',
+            'showAcknowledgeBtn' => false,
             'queryType' => AlertRule::DYNAMIC_QUERY_TYPE,
             'queryText' => '',
 
@@ -70,6 +72,7 @@ class ProfileService
             'silentUserIds' => [],
             'endpointIds' => [],
             'userIds' => [],
+            'teamIds' => []
         ];
         $commonLabels = collect($config['labels'])->map(function ($item) {
             if (is_array($item)) {
@@ -105,7 +108,10 @@ class ProfileService
 
                 if ($alertRule->exists) {
                     unset($createData['endpointIds']);
+                    unset($createData['description']);
                     unset($createData['userIds']);
+                    unset($createData['showAcknowledgeBtn']);
+                    unset($createData['teamIds']);
                     $alertRule->update($createData);
                 } else {
                     $alertRule->save();
@@ -130,7 +136,10 @@ class ProfileService
 
             if ($alertRule->exists) {
                 unset($createData['endpointIds']);
+                unset($createData['description']);
                 unset($createData['userIds']);
+                unset($createData['showAcknowledgeBtn']);
+                unset($createData['teamIds']);
                 $alertRule->update($createData);
             } else {
                 $alertRule->save();
@@ -150,11 +159,14 @@ class ProfileService
         $commonFields = [
             'type' => AlertRuleType::ELASTIC->value,
             'dataSourceId' => $dataSource->id,
+            'description' => '',
+            'showAcknowledgeBtn' => false,
             'tags' => $tags->toArray(),
             'userId' => $userId,
             'silentUserIds' => [],
             'endpointIds' => [],
             'userIds' => [],
+            'teamIds' => [],
         ];
 
         if (! empty($config['alerts'])) {
@@ -178,7 +190,10 @@ class ProfileService
 
                 if ($alertRule->exists) {
                     unset($createData['endpointIds']);
+                    unset($createData['description']);
+                    unset($createData['showAcknowledgeBtn']);
                     unset($createData['userIds']);
+                    unset($createData['teamIds']);
                     $alertRule->update($createData);
                 } else {
                     $alertRule->save();

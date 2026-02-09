@@ -2,7 +2,9 @@
 
 namespace App\Helpers;
 
+use Carbon\Carbon;
 use Illuminate\Support\Str;
+use Morilog\Jalali\Jalalian;
 
 class Utilities
 {
@@ -21,21 +23,9 @@ class Utilities
         }
     }
 
-    public static function ShortText($longString, $number = 100)
+    public static function ConvertUTCTimeTOJalali($date)
     {
-
-        if (Str::length($longString) < $number + 3) {
-            return $longString;
-        }
-
-        $maxLength = intval($number / 2);
-
-        $firstPart = Str::substr($longString, 0, $maxLength);
-        $lastPart = Str::substr($longString, -$maxLength);
-
-        $shortenedString = $firstPart.' ... '.$lastPart;
-
-        return $shortenedString;
+        return Jalalian::fromCarbon(Carbon::parse($date)->setTimezone('Asia/Tehran'))->format('Y/m/d H:i:s');
     }
 
     public static function CheckPatternsString($pattern, $string)

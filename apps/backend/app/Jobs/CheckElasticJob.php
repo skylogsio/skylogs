@@ -42,16 +42,18 @@ class CheckElasticJob implements ShouldQueue
                 'queryString' => $this->alert->queryString,
                 'minutes' => $this->alert->minutes,
                 'countDocument' => $this->alert->countDocument,
+                'currentCountDocument' => 0,
                 'state' => ElasticCheck::RESOLVED,
             ]
         );
 
         $documents = ElasticService::getDocuments($check);
         $check->refresh();
+        $countDocuments = count($documents);
         if (empty($this->alert->conditionType) || $this->alert->conditionType == ElasticCheck::CONDITION_TYPE_GREATER_OR_EQUAL) {
-            $isFired = count($documents) >= $check->countDocument;
+            $isFired = $countDocuments >= $check->countDocument;
         } else {
-            $isFired = count($documents) <= $check->countDocument;
+            $isFired = $countDocuments <= $check->countDocument;
         }
 
         if ($isFired) {
@@ -62,6 +64,7 @@ class CheckElasticJob implements ShouldQueue
                 $alertRule->notifyAt = time();
                 $alertRule->state = AlertRule::CRITICAL;
                 $alertRule->save();
+                $check->currentCountDocument = $countDocuments;
 
                 $check->save();
 
@@ -74,11 +77,14 @@ class CheckElasticJob implements ShouldQueue
                     'queryString' => $this->alert->queryString,
                     'minutes' => $this->alert->minutes,
                     'countDocument' => $this->alert->countDocument,
-                    'currentCountDocument' => count($documents),
+                    'currentCountDocument' => $countDocuments,
                     'state' => ElasticCheck::FIRE,
                 ]);
 
                 SendNotifyService::CreateNotify(SendNotifyJob::ELASTIC_CHECK, $check, $this->alert->_id);
+            } elseif ($check->currentCountDocument !== $countDocuments) {
+                $check->currentCountDocument = $countDocuments;
+                $check->save();
             }
 
         } else {
@@ -89,6 +95,7 @@ class CheckElasticJob implements ShouldQueue
                 $alertRule->state = AlertRule::RESOlVED;
                 $alertRule->save();
                 $alertRule->removeAcknowledge();
+                $check->currentCountDocument = $countDocuments;
 
                 $check->save();
 
@@ -101,7 +108,7 @@ class CheckElasticJob implements ShouldQueue
                     'queryString' => $this->alert->queryString,
                     'minutes' => $this->alert->minutes,
                     'countDocument' => $this->alert->countDocument,
-                    'currentCountDocument' => count($documents),
+                    'currentCountDocument' => $countDocuments,
                     'state' => ElasticCheck::RESOLVED,
                 ]);
 
