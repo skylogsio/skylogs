@@ -14,7 +14,9 @@ heartbeat:
   fail_after: 15s         # Mark main SkyLogs as down if unreachable for this period
 
 alert:
-  webhook_url: "http://nginx-back:8080/internal/alerts/sentinel"  # Where to send alerts
+  webhook_url: "http://nginx-back:80/api/v1/fire-alert"  # Where to send alerts
+  token: "the-alert-rule-token"
+  instance: "arvan-bamdad-sentinel"
   retry_interval: 10s     # Retry alerting if first attempt fails
 
 runtime:

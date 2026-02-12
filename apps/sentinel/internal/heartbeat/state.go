@@ -35,6 +35,17 @@ func (s *State) MarkUnhealthy() {
 	s.Unhealthy = true
 }
 
+func (s *State) MarkUnhealthyIfNeeded() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !s.Unhealthy {
+		s.Unhealthy = true
+		return true
+	}
+	return false
+}
+
 func (s *State) IsUnhealthy() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()

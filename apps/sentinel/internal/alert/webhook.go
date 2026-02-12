@@ -2,28 +2,56 @@ package alert
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 )
 
-type Payload struct {
-	Type     string    `json:"type"`
-	Peer     string    `json:"peer"`
-	Since    time.Time `json:"since"`
-	Severity string    `json:"severity"`
+type WebhookPayload struct {
+	Instance    string `json:"instance"`
+	Description string `json:"description"`
 }
 
-func Send(webhook string, payload Payload) {
-	data, _ := json.Marshal(payload)
+func SendWebhook(
+	ctx context.Context,
+	url string,
+	bearerToken string,
+	payload WebhookPayload,
+) error {
 
-	req, _ := http.NewRequest(
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
 		http.MethodPost,
-		webhook,
-		bytes.NewBuffer(data),
+		url,
+		bytes.NewBuffer(body),
 	)
+	if err != nil {
+		return fmt.Errorf("create request: %w", err)
+	}
 
 	req.Header.Set("Content-Type", "application/json")
-	http.DefaultClient.Do(req)
-}
+	req.Header.Set("Authorization", "Bearer "+bearerToken)
 
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("send webhook: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("webhook failed with status %s", resp.Status)
+	}
+
+	return nil
+}
