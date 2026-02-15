@@ -174,7 +174,6 @@ const StatusMonitoringCards = ({
   }
 
   function handleCardClick(tags: IStatusCard["tags"], state: IStatusCard["state"]) {
-    if (!isOwner) return;
     const filters: Record<string, unknown> = {};
 
     if (tags && tags.length > 0) {
