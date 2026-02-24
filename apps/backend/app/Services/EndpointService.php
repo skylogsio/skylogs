@@ -142,6 +142,8 @@ class EndpointService
                     'type' => $request->type,
                     'value' => $value,
                     'isPublic' => $isPublic,
+                    'accessUserIds' => $accessUserIds,
+                    'accessTeamIds' => $accessTeamIds,
                 ]);
 
                 break;
@@ -217,6 +219,8 @@ class EndpointService
                     'type' => $request->type,
                     'value' => $value,
                     'isPublic' => $isPublic,
+                    'accessUserIds' => $accessUserIds,
+                    'accessTeamIds' => $accessTeamIds,
                 ]);
                 break;
 
