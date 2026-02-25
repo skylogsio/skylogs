@@ -4,6 +4,7 @@ import {
   Autocomplete,
   Chip,
   FormControlLabel,
+  Grid2 as Grid,
   Stack,
   TextField,
   Checkbox,
@@ -11,7 +12,7 @@ import {
   Box,
   Typography
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries } from "@tanstack/react-query";
 import {
   Controller,
   type Path,
@@ -21,13 +22,14 @@ import {
 } from "react-hook-form";
 import { MdInfoOutline } from "react-icons/md";
 
-import { getAlertRuleCreateData } from "@/api/alertRule";
+import { getAlertRuleCreateData, getAlertRuleTags } from "@/api/alertRule";
 import AccessUsersAndTeams from "@/components/AccessUsersAndTeams";
 
 type MustHaveFields = {
   endpointIds: string[];
   userIds: string[];
   teamIds: string[];
+  tags: string[];
   description: string;
   showAcknowledgeBtn?: boolean;
 };
@@ -45,9 +47,17 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
 }: AlertRuleEndpointUserSelectorProps<T>) {
   const { control, setValue, watch } = methods;
 
-  const { data } = useQuery({
-    queryKey: ["alert-rule-create-data"],
-    queryFn: () => getAlertRuleCreateData()
+  const [{ data }, { data: tagsList }] = useQueries({
+    queries: [
+      {
+        queryKey: ["alert-rule-create-data"],
+        queryFn: () => getAlertRuleCreateData()
+      },
+      {
+        queryKey: ["all-alert-rule-tags"],
+        queryFn: () => getAlertRuleTags()
+      }
+    ]
   });
 
   const endpoints = data?.endpoints ?? [];
@@ -72,13 +82,6 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
                   value={selectedEndpoints}
                   onChange={(_, newValue) => {
                     field.onChange(newValue.map((ep) => ep.id) as PathValue<T, Path<T>>);
-                  }}
-                  renderOption={(props, option) => {
-                    return (
-                      <li {...props} key={option.id}>
-                        {option.name}
-                      </li>
-                    );
                   }}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
                   renderTags={(value, getTagProps) =>
@@ -120,6 +123,34 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
         </Box>
       </Stack>
       {children}
+      <Grid size={12}>
+        <Autocomplete
+          multiple
+          id="alert-rule-tags"
+          options={tagsList ?? []}
+          freeSolo
+          value={(watch("tags" as Path<T>) as string[]) ?? []}
+          onChange={(_, value) => setValue("tags" as Path<T>, value as PathValue<T, Path<T>>)}
+          renderTags={(value: readonly string[], getItemProps) =>
+            value.map((option: string, index: number) => {
+              const { key, ...itemProps } = getItemProps({ index });
+              return <Chip variant="filled" label={option} key={key} size="small" {...itemProps} />;
+            })
+          }
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              slotProps={{
+                input: params.InputProps,
+                inputLabel: params.InputLabelProps,
+                htmlInput: params.inputProps
+              }}
+              variant="filled"
+              label="Tags"
+            />
+          )}
+        />
+      </Grid>
       <Controller
         control={control}
         name={"showAcknowledgeBtn" as Path<T>}
@@ -152,6 +183,7 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
           </Stack>
         )}
       />
+
       <Controller
         control={control}
         name={"description" as Path<T>}

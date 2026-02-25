@@ -4,7 +4,6 @@ import { type ReactNode, useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Autocomplete,
   Box,
   Button,
   Chip,
@@ -24,7 +23,6 @@ import type { CreateUpdateModal } from "@/@types/global";
 import {
   createAlertRule,
   getAlertRuleDataSourcesByAlertType,
-  getAlertRuleTags,
   getZabbixCreateData,
   updateAlertRule
 } from "@/api/alertRule";
@@ -90,13 +88,8 @@ export default function ZabbixAlertRuleForm({
     defaultValues
   });
 
-  const [{ data: tagsList }, { data: dataSourceList }, { data: createData }] = useQueries({
+  const [{ data: dataSourceList }, { data: createData }] = useQueries({
     queries: [
-      {
-        queryKey: ["all-alert-rule-tags"],
-        queryFn: () => getAlertRuleTags()
-      },
-
       {
         queryKey: ["alert-rule-data-source", "zabbix"],
         queryFn: () => getAlertRuleDataSourcesByAlertType("zabbix")
@@ -299,34 +292,6 @@ export default function ZabbixAlertRuleForm({
                 </MenuItem>
               ))}
             </TextField>
-          </Grid>
-          <Grid size={12}>
-            <Autocomplete
-              multiple
-              id="alert-tags"
-              options={tagsList ?? []}
-              freeSolo
-              value={watch("tags")}
-              onChange={(_, value) => setValue("tags", value)}
-              renderTags={(value: readonly string[], getItemProps) =>
-                value.map((option: string, index: number) => {
-                  const { key, ...itemProps } = getItemProps({ index });
-                  return <Chip variant="filled" label={option} key={key} {...itemProps} />;
-                })
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  slotProps={{
-                    input: params.InputProps,
-                    inputLabel: params.InputLabelProps,
-                    htmlInput: params.inputProps
-                  }}
-                  variant="filled"
-                  label="Tags"
-                />
-              )}
-            />
           </Grid>
         </AlertRuleGeneralFields>
       </Grid>

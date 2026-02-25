@@ -22,7 +22,6 @@ import type { CreateUpdateModal } from "@/@types/global";
 import {
   createAlertRule,
   getAlertRuleDataSourcesByAlertType,
-  getAlertRuleTags,
   getDataSourceAlertName,
   updateAlertRule
 } from "@/api/alertRule";
@@ -90,12 +89,8 @@ export default function SentryAlertRuleForm({
     defaultValues
   });
 
-  const [{ data: tagsList }, { data: alertRuleNameList }, { data: dataSourceList }] = useQueries({
+  const [{ data: alertRuleNameList }, { data: dataSourceList }] = useQueries({
     queries: [
-      {
-        queryKey: ["all-alert-rule-tags"],
-        queryFn: () => getAlertRuleTags()
-      },
       {
         queryKey: ["all-alert-rule-names", "sentry"],
         queryFn: () => getDataSourceAlertName("sentry")
@@ -233,34 +228,6 @@ export default function SentryAlertRuleForm({
                   helperText={errors.dataSourceAlertName?.message}
                   variant="filled"
                   label="DataSource Alert Name"
-                />
-              )}
-            />
-          </Grid>
-          <Grid size={12}>
-            <Autocomplete
-              multiple
-              id="alert-tags"
-              options={tagsList ?? []}
-              freeSolo
-              value={watch("tags")}
-              onChange={(_, value) => setValue("tags", value)}
-              renderTags={(value: readonly string[], getItemProps) =>
-                value.map((option: string, index: number) => {
-                  const { key, ...itemProps } = getItemProps({ index });
-                  return <Chip variant="filled" label={option} key={key} {...itemProps} />;
-                })
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  slotProps={{
-                    input: params.InputProps,
-                    inputLabel: params.InputLabelProps,
-                    htmlInput: params.inputProps
-                  }}
-                  variant="filled"
-                  label="Tags"
                 />
               )}
             />
