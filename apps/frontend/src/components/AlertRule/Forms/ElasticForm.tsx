@@ -3,7 +3,15 @@
 import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Grid2 as Grid, MenuItem, Stack, TextField, Typography } from "@mui/material";
+import {
+  Autocomplete,
+  Button,
+  Grid2 as Grid,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography
+} from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
@@ -162,21 +170,29 @@ export default function ElasticAlertRuleForm({
           errors={errors}
         >
           <Grid size={12}>
-            <TextField
-              label="Data Source"
-              variant="filled"
-              error={!!errors.dataSourceId}
-              helperText={errors.dataSourceId?.message}
-              {...register("dataSourceId")}
-              value={watch("dataSourceId")}
-              select
-            >
-              {dataSourceList?.map((dataSource) => (
-                <MenuItem key={dataSource.id} value={dataSource.id}>
-                  {dataSource.name}
-                </MenuItem>
-              ))}
-            </TextField>
+            <Autocomplete
+              options={dataSourceList ?? []}
+              getOptionLabel={(option) => option.name}
+              value={dataSourceList?.find((ds) => ds.id === watch("dataSourceId")) ?? null}
+              onChange={(_, newValue) => {
+                setValue("dataSourceId", newValue?.id ?? "");
+              }}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  slotProps={{
+                    input: params.InputProps,
+                    inputLabel: params.InputLabelProps,
+                    htmlInput: params.inputProps
+                  }}
+                  variant="filled"
+                  label="Data Source"
+                  error={!!errors.dataSourceId}
+                  helperText={errors.dataSourceId?.message}
+                />
+              )}
+            />
           </Grid>
           <Grid size={12}>
             <TextField
