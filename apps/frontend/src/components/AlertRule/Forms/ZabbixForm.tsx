@@ -1,14 +1,13 @@
 "use client";
 
-import { type ReactNode, useEffect } from "react";
+import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Box,
+  Autocomplete,
   Button,
   Chip,
   Grid2 as Grid,
-  MenuItem,
   Stack,
   TextField,
   Typography
@@ -18,7 +17,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
-import type { IAlertRule, IZabbixCreateData } from "@/@types/alertRule";
+import type { IAlertRule } from "@/@types/alertRule";
 import type { CreateUpdateModal } from "@/@types/global";
 import {
   createAlertRule,
@@ -132,50 +131,6 @@ export default function ZabbixAlertRuleForm({
     }
   }
 
-  function renderDataSourceChip(selectedDataSourceIds: unknown): ReactNode {
-    const selectedDataSources = dataSourceList?.filter((dataSource) =>
-      (selectedDataSourceIds as string[]).includes(dataSource.id)
-    );
-    const selectedDataSourceNames = selectedDataSources?.map((dataSource) => dataSource.name) ?? [];
-    return (
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-        {selectedDataSourceNames.map((value, index) => (
-          <Chip size="small" key={index} label={value} />
-        ))}
-      </Box>
-    );
-  }
-
-  function removeChip(
-    item: string,
-    key: keyof Pick<IZabbixCreateData, "actions" | "hosts" | "severities">
-  ) {
-    const allItems = getValues(key);
-    setValue(
-      key,
-      allItems.filter((value) => value !== item)
-    );
-  }
-
-  function renderChip(
-    selectedItems: unknown,
-    key: keyof Pick<IZabbixCreateData, "actions" | "hosts" | "severities">
-  ): ReactNode {
-    return (
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-        {(selectedItems as string[]).map((value) => (
-          <Chip
-            size="small"
-            key={value}
-            label={value}
-            onMouseDown={(event) => event.stopPropagation()}
-            onDelete={() => removeChip(value, key)}
-          />
-        ))}
-      </Box>
-    );
-  }
-
   useEffect(() => {
     if (data === "NEW") {
       reset(defaultValues);
@@ -216,82 +171,137 @@ export default function ZabbixAlertRuleForm({
           errors={errors}
         >
           <Grid size={6}>
-            <TextField
-              label="Data Source"
-              variant="filled"
-              error={!!errors.dataSourceIds}
-              helperText={errors.dataSourceIds?.message}
-              {...register("dataSourceIds")}
-              value={watch("dataSourceIds") ?? ""}
-              select
-              slotProps={{ select: { multiple: true, renderValue: renderDataSourceChip } }}
-            >
-              {dataSourceList?.map((dataSource) => (
-                <MenuItem key={dataSource.id} value={dataSource.id}>
-                  {dataSource.name}
-                </MenuItem>
-              ))}
-            </TextField>
+            <Autocomplete
+              multiple
+              options={dataSourceList ?? []}
+              getOptionLabel={(option) => option.name}
+              value={(dataSourceList ?? []).filter((ds) =>
+                (watch("dataSourceIds") ?? []).includes(ds.id)
+              )}
+              onChange={(_, newValue) => {
+                setValue(
+                  "dataSourceIds",
+                  newValue.map((ds) => ds.id)
+                );
+              }}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => {
+                  const { key, ...tagProps } = getTagProps({ index });
+                  return <Chip key={key} size="small" label={option.name} {...tagProps} />;
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  slotProps={{
+                    input: params.InputProps,
+                    inputLabel: params.InputLabelProps,
+                    htmlInput: params.inputProps
+                  }}
+                  variant="filled"
+                  label="Data Source"
+                  error={!!errors.dataSourceIds}
+                  helperText={errors.dataSourceIds?.message}
+                />
+              )}
+            />
           </Grid>
           <Grid size={6}>
-            <TextField
-              label="Severity"
-              variant="filled"
-              error={!!errors.severities}
-              helperText={errors.severities?.message}
-              {...register("severities")}
-              value={watch("severities") ?? ""}
-              select
-              slotProps={{
-                select: { multiple: true, renderValue: (value) => renderChip(value, "severities") }
+            <Autocomplete
+              multiple
+              options={createData?.severities ?? []}
+              getOptionLabel={(option) => option}
+              value={watch("severities") ?? []}
+              onChange={(_, newValue) => {
+                setValue("severities", newValue);
               }}
-            >
-              {createData?.severities?.map((item) => (
-                <MenuItem key={item} value={item}>
-                  {item}
-                </MenuItem>
-              ))}
-            </TextField>
+              isOptionEqualToValue={(option, value) => option === value}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => {
+                  const { key, ...tagProps } = getTagProps({ index });
+                  return <Chip key={key} size="small" label={option} {...tagProps} />;
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  slotProps={{
+                    input: params.InputProps,
+                    inputLabel: params.InputLabelProps,
+                    htmlInput: params.inputProps
+                  }}
+                  variant="filled"
+                  label="Severity"
+                  error={!!errors.severities}
+                  helperText={errors.severities?.message}
+                />
+              )}
+            />
           </Grid>
           <Grid size={6}>
-            <TextField
-              label="Actions"
-              variant="filled"
-              error={!!errors.actions}
-              helperText={errors.actions?.message}
-              {...register("actions")}
-              value={watch("actions") ?? ""}
-              select
-              slotProps={{
-                select: { multiple: true, renderValue: (value) => renderChip(value, "actions") }
+            <Autocomplete
+              multiple
+              options={createData?.actions ?? []}
+              getOptionLabel={(option) => option}
+              value={watch("actions") ?? []}
+              onChange={(_, newValue) => {
+                setValue("actions", newValue);
               }}
-            >
-              {createData?.actions?.map((action) => (
-                <MenuItem key={action} value={action}>
-                  {action}
-                </MenuItem>
-              ))}
-            </TextField>
+              isOptionEqualToValue={(option, value) => option === value}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => {
+                  const { key, ...tagProps } = getTagProps({ index });
+                  return <Chip key={key} size="small" label={option} {...tagProps} />;
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  slotProps={{
+                    input: params.InputProps,
+                    inputLabel: params.InputLabelProps,
+                    htmlInput: params.inputProps
+                  }}
+                  variant="filled"
+                  label="Actions"
+                  error={!!errors.actions}
+                  helperText={errors.actions?.message}
+                />
+              )}
+            />
           </Grid>
           <Grid size={6}>
-            <TextField
-              label="Hosts"
-              variant="filled"
-              error={!!errors.hosts}
-              helperText={errors.hosts?.message}
-              {...register("hosts")}
-              value={watch("hosts") ?? ""}
-              select
-              slotProps={{
-                select: { multiple: true, renderValue: (value) => renderChip(value, "hosts") }
+            <Autocomplete
+              multiple
+              options={createData?.hosts ?? []}
+              getOptionLabel={(option) => option}
+              value={watch("hosts") ?? []}
+              onChange={(_, newValue) => {
+                setValue("hosts", newValue);
               }}
-            >
-              {createData?.hosts?.map((host) => (
-                <MenuItem key={host} value={host}>
-                  {host}
-                </MenuItem>
-              ))}
-            </TextField>
+              isOptionEqualToValue={(option, value) => option === value}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => {
+                  const { key, ...tagProps } = getTagProps({ index });
+                  return <Chip key={key} size="small" label={option} {...tagProps} />;
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  slotProps={{
+                    input: params.InputProps,
+                    inputLabel: params.InputLabelProps,
+                    htmlInput: params.inputProps
+                  }}
+                  variant="filled"
+                  label="Hosts"
+                  error={!!errors.hosts}
+                  helperText={errors.hosts?.message}
+                />
+              )}
+            />
           </Grid>
         </AlertRuleGeneralFields>
       </Grid>
