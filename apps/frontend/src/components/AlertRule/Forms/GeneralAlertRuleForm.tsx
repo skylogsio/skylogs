@@ -1,13 +1,11 @@
-import { type ReactNode, useEffect } from "react";
+import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Autocomplete,
-  Box,
   Button,
   Chip,
   Grid2 as Grid,
-  MenuItem,
   Stack,
   TextField,
   ToggleButton,
@@ -24,7 +22,6 @@ import type { CreateUpdateModal } from "@/@types/global";
 import {
   createAlertRule,
   getAlertRuleDataSourcesByAlertType,
-  getAlertRuleTags,
   getDataSourceAlertName,
   updateAlertRule
 } from "@/api/alertRule";
@@ -118,12 +115,8 @@ export default function GeneralAlertRuleForm({
     name: "extraField"
   });
 
-  const [{ data: tagsList }, { data: alertRuleNameList }, { data: dataSourceList }] = useQueries({
+  const [{ data: alertRuleNameList }, { data: dataSourceList }] = useQueries({
     queries: [
-      {
-        queryKey: ["all-alert-rule-tags"],
-        queryFn: () => getAlertRuleTags()
-      },
       {
         queryKey: ["all-alert-rule-names", type],
         queryFn: () => getDataSourceAlertName(type)
@@ -143,9 +136,6 @@ export default function GeneralAlertRuleForm({
         onSubmit();
         onClose?.();
       }
-    },
-    onError: (error) => {
-      console.log(error);
     }
   });
 
@@ -169,20 +159,6 @@ export default function GeneralAlertRuleForm({
     }
   }
 
-  function renderDataSourceChip(selectedDataSourceIds: unknown): ReactNode {
-    const selectedDataSources = dataSourceList?.filter((dataSource) =>
-      (selectedDataSourceIds as string[]).includes(dataSource.id)
-    );
-    const selectedDataSourceNames = selectedDataSources?.map((dataSource) => dataSource.name) ?? [];
-    return (
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-        {selectedDataSourceNames.map((value, index) => (
-          <Chip size="small" key={index} label={value} />
-        ))}
-      </Box>
-    );
-  }
-
   useEffect(() => {
     if (data === "NEW") {
       reset(defaultValues);
@@ -197,11 +173,15 @@ export default function GeneralAlertRuleForm({
     }
   }, [setValue, type]);
 
+  const selectedDataSources = (dataSourceList ?? []).filter((ds) =>
+    (watch("dataSourceIds") ?? []).includes(ds.id)
+  );
+
   return (
     <Stack
       component="form"
       height="100%"
-      onSubmit={handleSubmit(handleSubmitForm, (error) => console.log(error))}
+      onSubmit={handleSubmit(handleSubmitForm)}
       padding={2}
       flex={1}
     >
@@ -249,22 +229,39 @@ export default function GeneralAlertRuleForm({
           {watch("queryType") === "dynamic" ? (
             <Grid container size={12} spacing={2}>
               <Grid size={6}>
-                <TextField
-                  label="Data Source"
-                  variant="filled"
-                  error={!!errors.dataSourceIds}
-                  helperText={errors.dataSourceIds?.message}
-                  {...register("dataSourceIds")}
-                  value={watch("dataSourceIds") ?? []}
-                  select
-                  slotProps={{ select: { multiple: true, renderValue: renderDataSourceChip } }}
-                >
-                  {dataSourceList?.map((dataSource) => (
-                    <MenuItem key={dataSource.id} value={dataSource.id}>
-                      {dataSource.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                <Autocomplete
+                  multiple
+                  options={dataSourceList ?? []}
+                  getOptionLabel={(option) => option.name}
+                  value={selectedDataSources}
+                  onChange={(_, newValue) => {
+                    setValue(
+                      "dataSourceIds",
+                      newValue.map((ds) => ds.id)
+                    );
+                  }}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => {
+                      const { key, ...tagProps } = getTagProps({ index });
+                      return <Chip key={key} size="small" label={option.name} {...tagProps} />;
+                    })
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      slotProps={{
+                        input: params.InputProps,
+                        inputLabel: params.InputLabelProps,
+                        htmlInput: params.inputProps
+                      }}
+                      variant="filled"
+                      label="Data Source"
+                      error={!!errors.dataSourceIds}
+                      helperText={errors.dataSourceIds?.message}
+                    />
+                  )}
+                />
               </Grid>
               <Grid size={6}>
                 <Autocomplete
@@ -328,35 +325,6 @@ export default function GeneralAlertRuleForm({
               <TextField label="Query" variant="filled" multiline minRows={4} />
             </Grid>
           )}
-
-          <Grid size={12}>
-            <Autocomplete
-              multiple
-              id="alert-tags"
-              options={tagsList ?? []}
-              freeSolo
-              value={watch("tags")}
-              onChange={(_, value) => setValue("tags", value)}
-              renderTags={(value: readonly string[], getItemProps) =>
-                value.map((option: string, index: number) => {
-                  const { key, ...itemProps } = getItemProps({ index });
-                  return <Chip variant="filled" label={option} key={key} {...itemProps} />;
-                })
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  slotProps={{
-                    input: params.InputProps,
-                    inputLabel: params.InputLabelProps,
-                    htmlInput: params.inputProps
-                  }}
-                  variant="filled"
-                  label="Tags"
-                />
-              )}
-            />
-          </Grid>
         </AlertRuleGeneralFields>
       </Grid>
       <Stack direction="row" justifyContent="flex-end" spacing={2} paddingY={2}>
