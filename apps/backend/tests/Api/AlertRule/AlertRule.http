@@ -18,7 +18,7 @@ Accept: application/json
 Authorization: Bearer {{authToken}}
 
 ###
-GET {{domain}}/alert-rule/history/6890a245f0de5409ce0e4498
+GET {{domain}}/alert-rule/history/696bc5fbae8c9d232803c1a6
 Content-Type: application/json
 Accept: application/json
 Authorization: Bearer {{authToken}}

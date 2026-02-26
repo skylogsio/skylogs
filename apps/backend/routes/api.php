@@ -62,7 +62,7 @@ Route::prefix('v1')->group(function () {
 
     });
 
-    Route::middleware('auth')->group(function () {
+    Route::middleware(['auth','clusterProxy'])->group(function () {
 
         Route::prefix('auth')
             ->controller(AuthController::class)

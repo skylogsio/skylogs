@@ -10,7 +10,9 @@ use App\Services\ClusterService;
 
 Artisan::command('app:test', function () {
     if (config('app.env') === 'local') {
-
+        $user = \App\Models\User::first();
+        $token = auth()->login($user);
+        new \Tymon\JWTAuth\Manager();
     }
 })->purpose('Run Code');
 

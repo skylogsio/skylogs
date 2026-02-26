@@ -180,10 +180,16 @@ class ZabbixService
                         'alertRuleId' => $includedAlert->id,
                         'fireEvents' => [],
                     ]);
-
+                    $currentEventIds = $check->fireEvents ?? [];
                     if ($model->event_status == ZabbixWebhookAlert::RESOLVED) {
+//                        if(!in_array($model->event_id, $currentEventIds)) {
+//                            continue;
+//                        }
                         $check->pull('fireEvents', $model->event_id);
                     } elseif ($model->event_status == ZabbixWebhookAlert::PROBLEM) {
+//                        if(in_array($model->event_id, $currentEventIds)) {
+//                           continue;
+//                        }
                         $check->push('fireEvents', $model->event_id, true);
                     }
 

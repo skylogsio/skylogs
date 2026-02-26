@@ -72,9 +72,9 @@ class ProfileService
             'silentUserIds' => [],
             'endpointIds' => [],
             'userIds' => [],
-            'teamIds' => []
+            'teamIds' => [],
         ];
-        $commonLabels = collect($config['labels'])->map(function ($item) {
+        $commonLabels = collect($config['labels'] ?? [])->map(function ($item) {
             if (is_array($item)) {
                 return implode(' | ', $item);
             } else {

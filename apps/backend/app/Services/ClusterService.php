@@ -30,6 +30,11 @@ class ClusterService
         return SkylogsInstance::where('token', $token)->first();
     }
 
+    public function clusterById($id): ?SkylogsInstance
+    {
+        return SkylogsInstance::where('id', $id)->first();
+    }
+
     public function refreshHealthMain(ConfigSkylogs $model)
     {
         $alert = AlertRule::where('type', AlertRuleType::HEALTH)
@@ -82,6 +87,7 @@ class ClusterService
 
                 $model = User::where('username', $user['username'])->firstOrNew();
                 $model->name = $user['name'];
+                $model->mainClusterId = $user['id'];
                 $model->username = $user['username'];
                 $model->password = $user['password'];
                 $model->save();
