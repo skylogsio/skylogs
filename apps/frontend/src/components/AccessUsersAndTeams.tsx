@@ -7,7 +7,8 @@ import {
   ListSubheader,
   Stack,
   TextField,
-  Typography
+  Typography,
+  useColorScheme
 } from "@mui/material";
 import { useQueries } from "@tanstack/react-query";
 import { FaUsers, FaUser } from "react-icons/fa";
@@ -37,6 +38,8 @@ export default function AccessUsersAndTeams({
   helperText,
   disabled = false
 }: AccessUsersAndTeamsProps) {
+  const { colorScheme } = useColorScheme();
+
   const [
     { data: teamsData, isLoading: isLoadingTeams },
     { data: usersData, isLoading: isLoadingUsers }
@@ -110,7 +113,7 @@ export default function AccessUsersAndTeams({
           <ListSubheader
             component="div"
             sx={{
-              backgroundColor: "grey.100",
+              backgroundColor: colorScheme === "dark" ? "background.paper" : "background.default",
               fontWeight: "bold",
               display: "flex",
               alignItems: "center",
