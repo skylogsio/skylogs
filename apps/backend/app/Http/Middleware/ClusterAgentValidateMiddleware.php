@@ -4,13 +4,14 @@ namespace App\Http\Middleware;
 
 use App\Enums\ClusterType;
 use App\Services\ClusterService;
+use App\Services\UserService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class ClusterAgentValidateMiddleware
 {
-    public function __construct(protected ClusterService $clusterService)
+    public function __construct(protected ClusterService $clusterService,protected UserService $userService)
     {
     }
 
@@ -40,7 +41,6 @@ class ClusterAgentValidateMiddleware
             return;
         }
 
-
         $mainToken = str_replace('Bearer ', '', $originalAuth);
 
         if (empty($mainToken)) {
@@ -49,37 +49,18 @@ class ClusterAgentValidateMiddleware
 
         try {
 
-            $decoded = JWT::decode(
-                $mainToken,
-                new Key(config('jwt.main_secret'), 'HS256')
-            );
-
-            $mainUserId = $decoded->sub ?? null;
-
-            if (! $mainUserId) {
-                return;
-            }
-
-            // 2️⃣ Find agent user by main_user_id
-            $agentUser = User::where('main_user_id', $mainUserId)->first();
+            $agentUser = $this->userService->getUserByMainId($mainToken);
 
             if (! $agentUser) {
                 return;
             }
 
-            // 3️⃣ Generate AGENT token
             $agentToken = auth('api')->login($agentUser);
 
-            // 4️⃣ Replace Authorization header
             $request->headers->set('Authorization', 'Bearer ' . $agentToken);
 
-            // 5️⃣ Authenticate agent user
-            auth('api')->setToken($agentToken)->authenticate();
-
-
         } catch (\Exception $e) {
-            // Non-fatal: cluster token already granted access.
-            // Just leave the guard unauthenticated.
+
         }
     }
 }

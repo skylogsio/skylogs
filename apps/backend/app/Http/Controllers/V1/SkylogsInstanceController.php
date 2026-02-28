@@ -11,6 +11,12 @@ use Illuminate\Http\Request;
 
 class SkylogsInstanceController extends Controller
 {
+    public function All(Request $request)
+    {
+        $data = SkylogsInstance::all()->makeHidden(['createdAt', 'updatedAt','token']);
+        return response()->json($data);
+    }
+
     public function Index(Request $request)
     {
         $perPage = $request->perPage ?? 25;

@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'webhookAuth' => \App\Http\Middleware\WebhookAuth::class,
             'clusterAuth' => \App\Http\Middleware\ClusterAuth::class,
             'clusterProxy' => \App\Http\Middleware\ClusterProxyMiddleware::class,
+            'clusterAgentValidate' => \App\Http\Middleware\ClusterAgentValidateMiddleware::class,
             'horizonBasicAuth' => \App\Http\Middleware\HorizonBasicAuthMiddleware::class,
         ]);
     })
