@@ -3,6 +3,8 @@ package heartbeat
 import (
 	"context"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -33,6 +35,8 @@ func (s *Sender) Send(ctx context.Context) error {
 	signature := security.Sign(s.Secret, message)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.Target, nil)
 	if err != nil {
+		log.Println("Error NewRequestWithContext:")
+		log.Println(err.Error())
 		return err
 	}
 	req.Header.Set("X-SkyLogs-Timestamp", ts)
@@ -40,11 +44,20 @@ func (s *Sender) Send(ctx context.Context) error {
 
 	resp, err := s.Client.Do(req)
 	if err != nil {
+		log.Println("Error sending heartbeat:")
+		log.Println(err.Error())
 		return err
 	}
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+
+	}
+
 	if resp.StatusCode != http.StatusOK {
+		log.Println(string(body))
 		return fmt.Errorf("heartbeat failed: %s", resp.Status)
 	}
 	s.State.MarkSeen()

@@ -9,9 +9,7 @@ import (
 	"github.com/skylogsio/skylogs/apps/sentinel/internal/security"
 )
 
-const maxSkew = 10 * time.Second
-
-func Receiver(state *State, secret string) http.HandlerFunc {
+func Receiver(state *State, secret string, maxSkew time.Duration) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tsStr := r.Header.Get("X-SkyLogs-Timestamp")
 		sig := r.Header.Get("X-SkyLogs-Signature")
