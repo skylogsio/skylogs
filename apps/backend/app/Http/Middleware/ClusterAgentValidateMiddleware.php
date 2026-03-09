@@ -37,26 +37,7 @@ class ClusterAgentValidateMiddleware
             return;
         }
 
-        $mainToken = str_replace('Bearer ', '', $originalAuth);
+        $request->headers->set('Authorization', $originalAuth);
 
-        if (empty($mainToken)) {
-            return;
-        }
-
-        try {
-
-            $agentUser = $this->userService->getUserByMainId($mainToken);
-
-            if (! $agentUser) {
-                return;
-            }
-
-            $agentToken = auth('api')->login($agentUser);
-
-            $request->headers->set('Authorization', 'Bearer '.$agentToken);
-
-        } catch (\Exception $e) {
-
-        }
     }
 }
