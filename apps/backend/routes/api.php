@@ -30,9 +30,7 @@ Route::prefix('cluster')
     ->controller(SyncController::class)
     ->middleware('clusterAuth')
     ->group(function () {
-
         Route::get('/sync-data', 'Data')->name('cluster.data');
-
     });
 
 Route::prefix('v1')->group(function () {
@@ -62,7 +60,7 @@ Route::prefix('v1')->group(function () {
 
     });
 
-    Route::middleware('auth')->group(function () {
+    Route::middleware(['clusterAgentValidate', 'auth', 'clusterProxy'])->group(function () {
 
         Route::prefix('auth')
             ->controller(AuthController::class)
@@ -104,14 +102,18 @@ Route::prefix('v1')->group(function () {
             });
         Route::prefix('/skylogs-instance')
             ->controller(SkylogsInstanceController::class)
-            ->middleware('role:'.Constants::ROLE_OWNER->value)
             ->group(function () {
-                Route::get('/', 'Index');
+
+                Route::get('/all', 'All');
                 Route::get('/status/{id}', 'IsConnected');
-                Route::get('/{id}', 'Show');
-                Route::post('/', 'Create');
-                Route::put('/{id}', 'Update');
-                Route::delete('/{id}', 'Delete');
+
+                Route::middleware('role:'.Constants::ROLE_OWNER->value)->group(function () {
+                    Route::get('/', 'Index');
+                    Route::get('/{id}', 'Show');
+                    Route::post('/', 'Create');
+                    Route::put('/{id}', 'Update');
+                    Route::delete('/{id}', 'Delete');
+                });
             });
 
         Route::prefix('/data-source')
@@ -217,6 +219,7 @@ Route::prefix('v1')->group(function () {
                 Route::put('/batchAlert', 'StoreBatch');
 
             });
+
         Route::prefix('/alert-rule-user')
             ->controller(AccessUserController::class)
             ->group(function () {
