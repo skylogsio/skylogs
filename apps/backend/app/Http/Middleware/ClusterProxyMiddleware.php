@@ -12,22 +12,18 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ClusterProxyMiddleware
 {
-
-    public function __construct(protected ClusterService $clusterService)
-    {
-    }
+    public function __construct(protected ClusterService $clusterService) {}
 
     /**
      * Handle an incoming request.
      *
-     * @param \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response) $next
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
         if ($this->clusterService->type() !== ClusterType::MAIN) {
             return $next($request);
         }
-
 
         $clusterId = $request->header('X-Cluster');
 
@@ -37,7 +33,7 @@ class ClusterProxyMiddleware
 
         $instance = $this->clusterService->clusterById($clusterId);
 
-        if (!$instance) {
+        if (! $instance) {
             return response()->json([
                 'message' => 'Cluster not found.',
             ], Response::HTTP_NOT_FOUND);
@@ -53,7 +49,7 @@ class ClusterProxyMiddleware
         // Build the target URL (strip /api prefix if already in base, adjust as needed)
         $path = $request->getPathInfo();
         $queryString = $request->getQueryString();
-        $targetUrl = $baseUrl . $path . ($queryString ? '?' . $queryString : '');
+        $targetUrl = $baseUrl.$path.($queryString ? '?'.$queryString : '');
 
         // Pass original Authorization header as X-Original-Authorization
         // so the agent knows which user initiated the request (for logging etc.)

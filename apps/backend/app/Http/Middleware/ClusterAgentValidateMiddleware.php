@@ -11,14 +11,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ClusterAgentValidateMiddleware
 {
-    public function __construct(protected ClusterService $clusterService,protected UserService $userService)
-    {
-    }
+    public function __construct(protected ClusterService $clusterService, protected UserService $userService) {}
 
     /**
      * Handle an incoming request.
      *
-     * @param \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response) $next
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -26,9 +24,7 @@ class ClusterAgentValidateMiddleware
             return $next($request);
         }
 
-
         $this->authenticateOriginalUser($request);
-
 
         return $next($request);
     }
@@ -57,7 +53,7 @@ class ClusterAgentValidateMiddleware
 
             $agentToken = auth('api')->login($agentUser);
 
-            $request->headers->set('Authorization', 'Bearer ' . $agentToken);
+            $request->headers->set('Authorization', 'Bearer '.$agentToken);
 
         } catch (\Exception $e) {
 

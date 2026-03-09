@@ -20,9 +20,11 @@ class UserService
 
         $mainId = $this->getUserIdFromToken($mainToken);
 
-        if (empty($mainId)) return null;
+        if (empty($mainId)) {
+            return null;
+        }
 
-        return cache()->tags(['user', $mainId])->remember('user:admin',3600, function ()use ($mainId) {
+        return cache()->tags(['user', $mainId])->remember('user:admin', 3600, function () use ($mainId) {
             return User::where('mainClusterId', $mainId)->first();
         });
     }

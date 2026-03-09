@@ -13,7 +13,8 @@ class SkylogsInstanceController extends Controller
 {
     public function All(Request $request)
     {
-        $data = SkylogsInstance::all()->makeHidden(['createdAt', 'updatedAt','token']);
+        $data = SkylogsInstance::all()->makeHidden(['createdAt', 'updatedAt', 'token']);
+
         return response()->json($data);
     }
 
