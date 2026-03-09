@@ -3,8 +3,6 @@
 namespace App\Services;
 
 use App\Models\User;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
 
 class UserService
 {
@@ -14,5 +12,4 @@ class UserService
             return User::where('username', 'admin')->first();
         });
     }
-
 }

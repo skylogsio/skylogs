@@ -84,7 +84,7 @@ class ClusterService
             'users' => User::get()->makeVisible('password'),
             'endpoints' => Endpoint::get(),
             'roles' => Role::all(),
-            'permission' => Permission::all(),
+            'permissions' => Permission::all(),
             'teams' => Team::all(),
         ];
     }
@@ -138,20 +138,20 @@ class ClusterService
                     $exists = true;
                     $endpointModel = new Endpoint;
                 }
+
                 $endpointModel->_id = new ObjectId($endpoint['id']);
                 $endpointModel->userId = $endpoint['userId'];
                 $endpointModel->name = $endpoint['name'];
                 $endpointModel->type = $endpoint['type'];
-                $endpointModel->accessUserIds = $endpoint['accessUserIds'];
-                $endpointModel->accessTeamIds = $endpoint['accessTeamIds'];
-                $endpointModel->isPublic = $endpoint['isPublic'];
+                $endpointModel->accessUserIds = $endpoint['accessUserIds'] ?? [];
+                $endpointModel->accessTeamIds = $endpoint['accessTeamIds'] ?? [];
 
                 if ($endpoint['type'] == EndpointType::FLOW->value) {
                     $endpointModel->steps = $endpoint['steps'];
                 } elseif ($endpoint['type'] == EndpointType::TELEGRAM->value) {
-                    $endpointModel->chatId = $endpoint['chatId'];
-                    $endpointModel->threadId = $endpoint['threadId'];
-                    $endpointModel->botToken = $endpoint['botToken'];
+                    $endpointModel->chatId = $endpoint['chatId'] ?? '';
+                    $endpointModel->threadId = $endpoint['threadId'] ?? '';
+                    $endpointModel->botToken = $endpoint['botToken'] ?? '';
                 } else {
                     $endpointModel->value = $endpoint['value'];
                 }
