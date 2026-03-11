@@ -205,7 +205,7 @@ class ClusterService
                         $permissionModel->_id = new ObjectId($permission['id']);
                         $exists = false;
                     } else {
-                        $permissionModel = $dbRole;
+                        $permissionModel = $dbPermission;
                         $exists = true;
                     }
                 }
