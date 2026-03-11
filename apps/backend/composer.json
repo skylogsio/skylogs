@@ -19,6 +19,7 @@
         "morilog/jalali": "3.*",
         "predis/predis": "^2.3",
         "spatie/laravel-permission": "^6.13.0",
+        "spatie/laravel-prometheus": "^1.4.0",
         "tymon/jwt-auth": "^2.1.1"
     },
     "require-dev": {
