@@ -1,0 +1,185 @@
+applicationName: skylogs
+
+applications:
+
+  skylogs-back:
+    deployment:
+      enabled: true
+      replicaCount: 1
+
+    image:
+      repository: ${IMAGE_TAG_BACK}
+      tag: latest
+      pullPolicy: IfNotPresent
+
+    env:
+      DEPLOY_TYPE: web
+
+    ports:
+      - name: http
+        containerPort: 9000
+
+    service:
+      enabled: true
+      ports:
+        - name: http
+          port: 9001
+          targetPort: 9000
+
+    persistence:
+      enabled: true
+      mountPath: /var/www/html
+      size: 5Gi
+      accessMode: ReadWriteOnce
+
+    dependencies:
+      - mongodb
+      - redis
+
+
+  skylogs-front:
+    deployment:
+      enabled: true
+      replicaCount: 1
+
+    image:
+      repository: ${IMAGE_TAG_FRONT}
+      tag: latest
+      pullPolicy: IfNotPresent
+
+    env:
+      NEXTAUTH_SECRET: ""
+      BASE_URL: "http://nginx-back/api/v1/"
+      NEXTAUTH_URL: ""
+
+    ports:
+      - name: http
+        containerPort: 3000
+
+    service:
+      enabled: true
+      ports:
+        - name: http
+          port: 8080
+          targetPort: 3000
+
+
+  horizon:
+    deployment:
+      enabled: true
+      replicaCount: 1
+
+    image:
+      repository: ${IMAGE_TAG_BACK}
+      tag: latest
+
+    env:
+      DEPLOY_TYPE: horizon
+
+
+  crontab:
+    deployment:
+      enabled: true
+      replicaCount: 1
+
+    image:
+      repository: ${IMAGE_TAG_BACK}
+      tag: latest
+
+    env:
+      DEPLOY_TYPE: crontab
+
+
+  nginx-back:
+    deployment:
+      enabled: true
+      replicaCount: 1
+
+    image:
+      repository: nginx
+      tag: alpine
+
+    ports:
+      - name: http
+        containerPort: 80
+
+    service:
+      enabled: true
+      ports:
+        - port: 8083
+          targetPort: 80
+
+    volumeMounts:
+      - name: skylogs-back
+        mountPath: /var/www/html
+
+    configMaps:
+      - name: nginx-config
+        mountPath: /etc/nginx/conf.d
+
+
+  mongodb:
+    deployment:
+      enabled: true
+      replicaCount: 1
+
+    image:
+      repository: mongo
+      tag: "8.2"
+
+    env:
+      MONGO_INITDB_ROOT_USERNAME: 
+      MONGO_INITDB_ROOT_PASSWORD: 
+
+    ports:
+      - containerPort: 27017
+
+    persistence:
+      enabled: true
+      mountPath: /data/db
+      size: 10Gi
+
+
+  redis:
+    deployment:
+      enabled: true
+      replicaCount: 1
+
+    image:
+      repository: redis
+      tag: "6.2-alpine"
+
+    command:
+      - redis-server
+      - --save
+      - "60"
+      - "1"
+      - --loglevel
+      - warning
+      - --requirepass
+      - ASdfasdfa097sdfg
+
+    ports:
+      - containerPort: 6379
+
+
+  skylogs-sentinel:
+    deployment:
+      enabled: true
+      replicaCount: 1
+
+    image:
+      repository: ${IMAGE_TAG_SENTINEL}
+      tag: latest
+
+    env:
+      SENTINEL_ID: dc2-sentinel
+      SENTINEL_ROLE: secondary
+      MAIN_SKYLOGS_HEARTBEAT_URL: http://skylogs-core:8080/heartbeat
+      HEARTBEAT_INTERVAL: 5s
+      HEARTBEAT_TIMEOUT: 3s
+      FAIL_THRESHOLD: 3
+      ALERT_WEBHOOK_URL: http://skylogs-core:8080/internal/alerts/sentinel
+
+    ports:
+      - containerPort: 9191
