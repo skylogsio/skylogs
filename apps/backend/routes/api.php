@@ -104,8 +104,6 @@ Route::prefix('v1')->group(function () {
             ->controller(SkylogsInstanceController::class)
             ->group(function () {
 
-                Route::get('/all', 'All');
-                Route::get('/status/{id}', 'IsConnected');
 
                 Route::middleware('role:'.Constants::ROLE_OWNER->value)->group(function () {
                     Route::get('/', 'Index');
@@ -114,6 +112,10 @@ Route::prefix('v1')->group(function () {
                     Route::put('/{id}', 'Update');
                     Route::delete('/{id}', 'Delete');
                 });
+
+                Route::get('/all', 'All');
+                Route::get('/status/{id}', 'IsConnected');
+
             });
 
         Route::prefix('/data-source')
@@ -121,9 +123,9 @@ Route::prefix('v1')->group(function () {
             ->middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)
             ->group(function () {
                 Route::get('/', 'Index');
-                Route::get('/types', 'GetTypes');
                 Route::get('/status/{id}', 'IsConnected');
                 Route::get('/{id}', 'Show');
+                Route::get('/types', 'GetTypes');
                 Route::post('/', 'Create');
                 Route::put('/{id}', 'Update');
                 Route::delete('/{id}', 'Delete');
