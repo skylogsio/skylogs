@@ -4,7 +4,77 @@ import { useMemo, type PropsWithChildren } from "react";
 
 import { alpha, inputBaseClasses, menuItemClasses } from "@mui/material";
 import { grey } from "@mui/material/colors";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
+import { createTheme, ThemeProvider, type StorageManager } from "@mui/material/styles";
+import Cookies from "js-cookie";
+
+const THEME_KEY = "theme";
+
+function resolveMode(mode: string | undefined | null): "light" | "dark" {
+  if (mode === "light" || mode === "dark") return mode;
+  if (typeof window !== "undefined") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  return "light";
+}
+
+function syncThemeCookie(mode: string | undefined | null): void {
+  Cookies.set(THEME_KEY, resolveMode(mode));
+}
+
+function createStorageManager(): StorageManager {
+  return ({ key }) => ({
+    get(defaultValue) {
+      return Cookies.get(key) ?? defaultValue;
+    },
+    set(value) {
+      if (value === null) {
+        Cookies.remove(key, { path: "/" });
+        Cookies.remove(THEME_KEY, { path: "/" });
+      } else {
+        Cookies.set(key, value);
+        syncThemeCookie(value);
+      }
+    },
+    subscribe(handler) {
+      if (typeof window === "undefined") return () => {};
+
+      let current = Cookies.get(key);
+
+      let mediaQuery: MediaQueryList | null = null;
+
+      const handleMediaChange = () => {
+        if (Cookies.get(key) === "system" || Cookies.get(key) === undefined) {
+          syncThemeCookie("system");
+        }
+      };
+
+      if (typeof window !== "undefined") {
+        mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        mediaQuery.addEventListener("change", handleMediaChange);
+      }
+
+      const intervalId = window.setInterval(() => {
+        const next = Cookies.get(key);
+        if (next !== current) {
+          current = next;
+          syncThemeCookie(next);
+          handler(next ?? null);
+        }
+      }, 1000);
+
+      return () => {
+        window.clearInterval(intervalId);
+        mediaQuery?.removeEventListener("change", handleMediaChange);
+      };
+    }
+  });
+}
+
+if (typeof window !== "undefined") {
+  syncThemeCookie(Cookies.get("mui-mode"));
+}
+
+const storageManager = createStorageManager();
 
 export const ENDPOINT_COLORS = {
   sms: "#4880FF",
@@ -197,7 +267,7 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
   );
 
   return (
-    <ThemeProvider theme={theme} defaultMode="system">
+    <ThemeProvider theme={theme} defaultMode="system" storageManager={storageManager}>
       {children}
     </ThemeProvider>
   );
