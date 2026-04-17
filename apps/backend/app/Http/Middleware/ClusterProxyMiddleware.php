@@ -46,13 +46,10 @@ class ClusterProxyMiddleware
     {
         $baseUrl = rtrim($instance->getBaseUrl(), '/');
 
-        // Build the target URL (strip /api prefix if already in base, adjust as needed)
         $path = $request->getPathInfo();
         $queryString = $request->getQueryString();
         $targetUrl = $baseUrl.$path.($queryString ? '?'.$queryString : '');
 
-        // Pass original Authorization header as X-Original-Authorization
-        // so the agent knows which user initiated the request (for logging etc.)
         $originalAuth = $request->header('Authorization', '');
 
         try {
@@ -61,7 +58,6 @@ class ClusterProxyMiddleware
                 ->withHeader('X-Original-Authorization', $originalAuth)
                 ->withHeader('X-Forwarded-By', 'skylogs-main');
 
-            // Forward request body for non-GET methods
             $method = strtolower($request->method());
 
             $response = match ($method) {
