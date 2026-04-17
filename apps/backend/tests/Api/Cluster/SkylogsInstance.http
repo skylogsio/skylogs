@@ -10,6 +10,13 @@ Content-Type: application/json
 Accept: application/json
 Authorization: Bearer {{authToken}}
 
+
+###
+GET {{domain}}/skylogs-instance/all
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
 ###
 GET {{domain}}/skylogs-instance/status/681f545e36ecf6ff7300cfc2
 Content-Type: application/json
