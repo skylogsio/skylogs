@@ -4,25 +4,127 @@ import { useMemo, type PropsWithChildren } from "react";
 
 import { alpha, inputBaseClasses, menuItemClasses } from "@mui/material";
 import { grey } from "@mui/material/colors";
-import { extendTheme, ThemeProvider } from "@mui/material/styles";
+import { createTheme, ThemeProvider, type StorageManager } from "@mui/material/styles";
+import Cookies from "js-cookie";
+
+const THEME_KEY = "theme";
+
+function resolveMode(mode: string | undefined | null): "light" | "dark" {
+  if (mode === "light" || mode === "dark") return mode;
+  if (typeof window !== "undefined") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  return "light";
+}
+
+function syncThemeCookie(mode: string | undefined | null): void {
+  Cookies.set(THEME_KEY, resolveMode(mode));
+}
+
+function createStorageManager(): StorageManager {
+  return ({ key }) => ({
+    get(defaultValue) {
+      return Cookies.get(key) ?? defaultValue;
+    },
+    set(value) {
+      if (value === null) {
+        Cookies.remove(key, { path: "/" });
+        Cookies.remove(THEME_KEY, { path: "/" });
+      } else {
+        Cookies.set(key, value);
+        syncThemeCookie(value);
+      }
+    },
+    subscribe(handler) {
+      if (typeof window === "undefined") return () => {};
+
+      let current = Cookies.get(key);
+
+      let mediaQuery: MediaQueryList | null = null;
+
+      const handleMediaChange = () => {
+        if (Cookies.get(key) === "system" || Cookies.get(key) === undefined) {
+          syncThemeCookie("system");
+        }
+      };
+
+      if (typeof window !== "undefined") {
+        mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        mediaQuery.addEventListener("change", handleMediaChange);
+      }
+
+      const intervalId = window.setInterval(() => {
+        const next = Cookies.get(key);
+        if (next !== current) {
+          current = next;
+          syncThemeCookie(next);
+          handler(next ?? null);
+        }
+      }, 1000);
+
+      return () => {
+        window.clearInterval(intervalId);
+        mediaQuery?.removeEventListener("change", handleMediaChange);
+      };
+    }
+  });
+}
+
+if (typeof window !== "undefined") {
+  syncThemeCookie(Cookies.get("mui-mode"));
+}
+
+const storageManager = createStorageManager();
+
+export const ENDPOINT_COLORS = {
+  sms: "#4880FF",
+  telegram: "#2AABEE",
+  teams: "#454DB3",
+  call: "#11AC26",
+  email: "#F05A28",
+  flow: "#ff00ff",
+  discord: "#5865F2",
+  "matter-most": "#284077"
+} as const;
 
 export default function MuiProvider({ children }: PropsWithChildren<object>) {
   /*
-                    info: Read the below document to create new theme
-                    @link: https://mui.com/material-ui/experimental-api/css-theme-variables/customization/
-                  */
+    info: Read the below document to create new theme
+    @link: https://mui.com/material-ui/experimental-api/css-theme-variables/customization/
+  */
   const theme = useMemo(
     () =>
-      extendTheme({
+      createTheme({
+        cssVariables: {
+          colorSchemeSelector: "class"
+        },
         colorSchemes: {
           light: {
             palette: {
+              mode: "light",
               primary: { light: "#6F9BFF", main: "#4880FF", dark: "#3D6FDF" },
               secondary: { light: "#DDDDDD", main: "#9A9A9A", dark: "#525252" },
               success: { light: "#7BEA85", main: "#13C82B", dark: "#0E8F1F" },
               warning: { light: "#FABF7A", main: "#F28D22", dark: "#B86419" },
               error: { light: "#FF7D76", main: "#E64940", dark: "#A8322C" },
-              background: { default: "#F5F6FA", paper: "#FFFFFF" }
+              background: { default: "#F5F6FA", paper: "#FFFFFF" },
+              endpoint: ENDPOINT_COLORS
+            }
+          },
+          dark: {
+            palette: {
+              mode: "dark",
+              primary: { light: "#6F9BFF", main: "#4880FF", dark: "#3D6FDF" },
+              secondary: { light: "#757575", main: "#B0B0B0", dark: "#E0E0E0" },
+              success: { light: "#0E8F1F", main: "#13C82B", dark: "#7BEA85" },
+              warning: { light: "#B86419", main: "#F28D22", dark: "#FABF7A" },
+              error: { light: "#A8322C", main: "#E64940", dark: "#FF7D76" },
+              background: { default: "#18171e", paper: "#28272d" },
+              text: {
+                primary: "#dddddd",
+                secondary: "#bfbfc3"
+              },
+              endpoint: ENDPOINT_COLORS
             }
           }
         },
@@ -43,7 +145,7 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
           },
           MuiTextField: {
             styleOverrides: {
-              root: {
+              root: ({ theme }) => ({
                 width: "100%",
                 "& input::-webkit-outer-spin-button,& input::-webkit-inner-spin-button": {
                   WebkitAppearance: "none",
@@ -58,19 +160,43 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
                 },
                 [`& .${inputBaseClasses.root}`]: {
                   borderRadius: "0.55rem",
-                  backgroundColor: "#F1F4F9",
+                  backgroundColor:
+                    theme.palette.mode === "light" ? "#F1F4F9" : "rgba(255, 255, 255, 0.09)",
+                  color: theme.palette.text.primary,
                   "&:hover": {
-                    backgroundColor: "#E8EFFA"
+                    backgroundColor:
+                      theme.palette.mode === "light" ? "#E8EFFA" : "rgba(255, 255, 255, 0.13)"
                   },
                   [`&.${inputBaseClasses.focused}`]: {
-                    backgroundColor: "#E8EFFA"
+                    backgroundColor:
+                      theme.palette.mode === "light" ? "#E8EFFA" : "rgba(255, 255, 255, 0.13)"
                   },
                   [`&.${inputBaseClasses.disabled}`]: {
                     backgroundColor: `${alpha(grey[600], 0.1)}!important`,
                     color: grey[600]
+                  },
+                  "& input": {
+                    color: theme.palette.text.primary
+                  },
+                  "& textarea": {
+                    color: theme.palette.text.primary
                   }
+                },
+                "& .MuiInputLabel-root": {
+                  color: theme.palette.text.secondary,
+                  "&.Mui-focused": {
+                    color: theme.palette.primary.main
+                  }
+                },
+                "& input::placeholder": {
+                  color: theme.palette.text.secondary,
+                  opacity: 0.7
+                },
+                "& textarea::placeholder": {
+                  color: theme.palette.text.secondary,
+                  opacity: 0.7
                 }
-              }
+              })
             },
             defaultProps: {
               slotProps: {
@@ -82,23 +208,30 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
           },
           MuiSelect: {
             styleOverrides: {
-              root: {
+              root: ({ theme }) => ({
                 width: "100%",
                 [`& .${inputBaseClasses.root}`]: {
                   borderRadius: "0.55rem",
-                  backgroundColor: "#F1F4F9",
+                  backgroundColor:
+                    theme.palette.mode === "light" ? "#F1F4F9" : "rgba(255, 255, 255, 0.09)",
+                  color: theme.palette.text.primary,
                   "&:hover": {
-                    backgroundColor: "#E8EFFA"
+                    backgroundColor:
+                      theme.palette.mode === "light" ? "#E8EFFA" : "rgba(255, 255, 255, 0.13)"
                   },
                   [`&.${inputBaseClasses.focused}`]: {
-                    backgroundColor: "#E8EFFA"
+                    backgroundColor:
+                      theme.palette.mode === "light" ? "#E8EFFA" : "rgba(255, 255, 255, 0.13)"
                   },
                   [`&.${inputBaseClasses.disabled}`]: {
                     backgroundColor: `${alpha(grey[600], 0.1)}!important`,
                     color: grey[600]
                   }
+                },
+                "& .MuiSelect-icon": {
+                  color: theme.palette.text.secondary
                 }
-              }
+              })
             },
             defaultProps: {
               disableUnderline: true
@@ -134,7 +267,7 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
   );
 
   return (
-    <ThemeProvider theme={theme} defaultMode="light">
+    <ThemeProvider theme={theme} defaultMode="system" storageManager={storageManager}>
       {children}
     </ThemeProvider>
   );

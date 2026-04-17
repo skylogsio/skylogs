@@ -1,18 +1,18 @@
 import { useState } from "react";
 
 import { alpha, IconButton } from "@mui/material";
-import { FaUsers } from "react-icons/fa";
+import { FaUsersCog } from "react-icons/fa";
 
 import type { IAlertRule } from "@/@types/alertRule";
 import ModalContainer from "@/components/Modal";
 
-import AlertRuleUserManager from "./AlertRuleUserManager";
+import AlertRuleAccessManager from "./AlertRuleAccessManager";
 
-interface AlertRuleUserModalProps {
+interface AlertRuleAccessModalProps {
   alertId: IAlertRule["id"];
 }
 
-export default function AlertRuleUserModal({ alertId }: AlertRuleUserModalProps) {
+export default function AlertRuleAccessModal({ alertId }: AlertRuleAccessModalProps) {
   const [open, setOpen] = useState(false);
 
   function handleClose() {
@@ -28,10 +28,10 @@ export default function AlertRuleUserModal({ alertId }: AlertRuleUserModalProps)
           backgroundColor: alpha(palette.primary.light, 0.05)
         })}
       >
-        <FaUsers size="1.3rem" />
+        <FaUsersCog size="1.3rem" />
       </IconButton>
-      <ModalContainer title="Users" open={open} onClose={handleClose} disableEscapeKeyDown>
-        <AlertRuleUserManager alertId={alertId} onClose={handleClose} />
+      <ModalContainer title="Access Control" open={open} onClose={handleClose} disableEscapeKeyDown>
+        <AlertRuleAccessManager alertId={alertId} onClose={handleClose} />
       </ModalContainer>
     </>
   );

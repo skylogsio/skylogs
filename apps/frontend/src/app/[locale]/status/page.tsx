@@ -14,10 +14,13 @@ import StatusMonitoringCards from "@/components/Status/StatusCard";
 import StatusCardModal from "@/components/Status/StatusCardModal";
 import StatusCardSkeleton from "@/components/Status/StatusCardSkeleton";
 import StatusDeleteConfirmationDialog from "@/components/Status/StatusDeleteConfirmationDialog";
+import { useRole } from "@/hooks";
 
 export default function StatusPage() {
   const [modalData, setModalData] = useState<CreateUpdateModal<IStatusCard>>(null);
   const [deleteDialogData, setDeleteDialogData] = useState<IStatusCard | null>(null);
+  const { hasRole } = useRole();
+  const isOwner = hasRole("owner");
 
   const { data: statusCards, refetch } = useQuery({
     queryKey: ["all-status-cards"],
@@ -70,15 +73,17 @@ export default function StatusPage() {
           <Typography variant="h5" fontSize="1.8rem" fontWeight="700" component="div">
             Status
           </Typography>
-          <Button
-            startIcon={<HiOutlinePlusSm size="1.3rem" />}
-            onClick={() => setModalData("NEW")}
-            size="small"
-            variant="contained"
-            sx={{ paddingRight: "1rem" }}
-          >
-            Create
-          </Button>
+          {isOwner && (
+            <Button
+              startIcon={<HiOutlinePlusSm size="1.3rem" />}
+              onClick={() => setModalData("NEW")}
+              size="small"
+              variant="contained"
+              sx={{ paddingRight: "1rem" }}
+            >
+              Create
+            </Button>
+          )}
         </Stack>
         <Box
           sx={{
@@ -106,7 +111,7 @@ export default function StatusPage() {
         </Box>
       </Stack>
 
-      {modalData && (
+      {isOwner && modalData && (
         <StatusCardModal
           data={modalData}
           open={!!modalData}

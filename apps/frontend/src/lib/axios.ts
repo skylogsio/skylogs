@@ -26,7 +26,7 @@ async function getAuthorizationHeader() {
 
 const axiosInstance = axios.create({
   baseURL: process.env.BASE_URL,
-  headers: { "Content-Type": "application/json" }
+  headers: { "Content-Type": "application/json", Accept: "application/json" }
 });
 
 axiosInstance.interceptors.request.use(

@@ -1,0 +1,65 @@
+package heartbeat
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/skylogsio/skylogs/apps/sentinel/internal/security"
+)
+
+type Sender struct {
+	Client *http.Client
+	Target string
+	State  *State
+	Secret string
+}
+
+func NewSender(target string, state *State, secret string, timeout time.Duration) *Sender {
+	return &Sender{
+		Client: &http.Client{Timeout: timeout},
+		Target: target,
+		State:  state,
+		Secret: secret,
+	}
+}
+
+func (s *Sender) Send(ctx context.Context) error {
+	ts := strconv.FormatInt(time.Now().Unix(), 10)
+
+	message := fmt.Sprintf("GET|/heartbeat|%s", ts)
+	signature := security.Sign(s.Secret, message)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.Target, nil)
+	if err != nil {
+		log.Println("Error NewRequestWithContext:")
+		log.Println(err.Error())
+		return err
+	}
+	req.Header.Set("X-SkyLogs-Timestamp", ts)
+	req.Header.Set("X-SkyLogs-Signature", signature)
+
+	resp, err := s.Client.Do(req)
+	if err != nil {
+		log.Println("Error sending heartbeat:")
+		log.Println(err.Error())
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Println(string(body))
+		return fmt.Errorf("heartbeat failed: %s", resp.Status)
+	}
+	s.State.MarkSeen()
+	return nil
+}

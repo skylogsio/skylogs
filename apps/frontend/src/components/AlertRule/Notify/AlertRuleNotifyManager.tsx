@@ -13,8 +13,8 @@ import {
   removeEndpointFromAlertRule
 } from "@/api/alertRule";
 import EmptyList from "@/components/EmptyList";
+import EndPointTypeChip from "@/components/EndpointTypeChip";
 import DataTable from "@/components/Table/DataTable";
-import { renderEndPointChip } from "@/utils/endpointVariants";
 
 export default function AlertRuleNotifyManager({ alertId }: { alertId: IAlertRule["id"] }) {
   const { palette } = useTheme();
@@ -96,7 +96,7 @@ export default function AlertRuleNotifyManager({ alertId }: { alertId: IAlertRul
             {
               header: "Type",
               accessorKey: "type",
-              cell: ({ cell }) => renderEndPointChip(cell.getValue())
+              cell: ({ cell }) => <EndPointTypeChip type={cell.getValue()} />
             },
             {
               header: "Actions",
@@ -117,15 +117,11 @@ export default function AlertRuleNotifyManager({ alertId }: { alertId: IAlertRul
         />
       ) : (
         <EmptyList
-          icon={
-            <AiFillNotification
-              size="3rem"
-              style={{ color: palette.warning.light, marginBottom: "16px" }}
-            />
-          }
-          title="No Notification Endpoints Configured"
-          description="This alert rule doesn&#39;t have any notification endpoints set up yet. Use the form
-            above to add endpoints like Teams, Telegram, SMS or Call to receive alerts."
+          minimal
+          icon={<AiFillNotification size="2.2rem" color={palette.common.white} />}
+          title="No Notifications Configured"
+          description="This alert rule doesn't have any notification endpoints set up yet. Use the form above to add endpoints like Teams, Telegram, SMS and etc. to receive alerts."
+          gradientColors={[palette.warning.main, palette.warning.light]}
         />
       )}
     </Stack>

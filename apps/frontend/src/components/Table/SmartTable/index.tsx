@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import React, { forwardRef, useImperativeHandle, useMemo, useState, useEffect } from "react";
+import { forwardRef, useImperativeHandle, useMemo, useState, useEffect } from "react";
 
 import {
   Table as MuiTable,
@@ -38,7 +38,7 @@ import { useCurrentDirection } from "@/hooks";
 import { useScopedI18n } from "@/locales/client";
 
 import SearchBox from "../SearchBox";
-import { SmartTableComponentProps, TableComponentRef } from "../types";
+import type { SmartTableComponentProps, TableComponentRef } from "../types";
 
 function Table<T>(
   {
@@ -70,8 +70,8 @@ function Table<T>(
     const pageSizeFromUrl = searchParams.get("perPage");
 
     return {
-      pageIndex: pageFromUrl ? parseInt(pageFromUrl) - 1 : defaultPage,
-      pageSize: pageSizeFromUrl ? parseInt(pageSizeFromUrl) : (defaultPageSize ?? 10)
+      pageIndex: pageFromUrl ? Number.parseInt(pageFromUrl) - 1 : defaultPage,
+      pageSize: pageSizeFromUrl ? Number.parseInt(pageSizeFromUrl) : (defaultPageSize ?? 10)
     };
   };
 
@@ -99,7 +99,12 @@ function Table<T>(
         const parsedFilters = JSON.parse(decodeURIComponent(filterParam));
         const params = new URLSearchParams();
         Object.entries(parsedFilters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== "") {
+          if (
+            value !== undefined &&
+            value !== null &&
+            value !== "" &&
+            !(Array.isArray(value) && value.length === 0)
+          ) {
             if (Array.isArray(value)) {
               params.append(key, value.join(","));
             } else {
@@ -330,7 +335,7 @@ function Table<T>(
           borderRadius="1rem"
           marginTop={1}
           border="1px solid"
-          borderColor="grey.200"
+          borderColor={palette.divider}
         >
           {filterComponent?.({ onChange: handleChangeFilter })}
           <Stack direction="row" spacing={1} justifyContent="space-between">
@@ -360,7 +365,7 @@ function Table<T>(
         bgcolor="background.paper"
         borderRadius="1rem"
         border="1px solid"
-        borderColor="grey.200"
+        borderColor={(theme) => theme.palette.divider}
         overflow="hidden"
         marginTop={1}
       >
@@ -368,7 +373,17 @@ function Table<T>(
           <MuiTable stickyHeader sx={{ width: "100%" }}>
             <TableHead>
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} sx={{ "& th": { backgroundColor: "grey.50" } }}>
+                <TableRow
+                  key={headerGroup.id}
+                  sx={{
+                    "& th": {
+                      backgroundColor: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? theme.palette.grey[900]
+                          : theme.palette.grey[50]
+                    }
+                  }}
+                >
                   {headerGroup.headers.map((header) => (
                     <TableCell
                       key={header.id}
@@ -379,7 +394,7 @@ function Table<T>(
                         width: header.id === "select" ? "50px" : "auto",
                         paddingY: "1rem",
                         textTransform: "capitalize",
-                        borderBottomColor: palette.grey[200],
+                        borderBottomColor: palette.divider,
                         fontSize: "0.9rem"
                       })}
                     >
@@ -398,7 +413,7 @@ function Table<T>(
                           key={cellIndex}
                           sx={{
                             width: cellIndex === 0 ? "40px" : "auto",
-                            borderBottomColor: "grey.200"
+                            borderBottomColor: (theme) => theme.palette.divider
                           }}
                         >
                           <Skeleton
@@ -407,7 +422,7 @@ function Table<T>(
                             height="30px"
                             className="mx-auto"
                             animation="wave"
-                            sx={{ bgcolor: "grey.200" }}
+                            sx={{ bgcolor: (theme) => theme.palette.action.hover }}
                           />
                         </TableCell>
                       ))}
@@ -430,7 +445,7 @@ function Table<T>(
                       {row.getVisibleCells().map((cell) => (
                         <TableCell
                           key={cell.id}
-                          sx={{ borderBottomColor: "grey.200" }}
+                          sx={{ borderBottomColor: (theme) => theme.palette.divider }}
                           align="center"
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -468,25 +483,25 @@ function Table<T>(
           width: "100%",
           "& .MuiTablePagination-displayedRows": {
             marginLeft: "auto",
-            color: "grey.600"
+            color: (theme) => theme.palette.text.secondary
           },
           "& .MuiTablePagination-spacer": {
             display: "none"
           },
           "& .MuiTablePagination-selectLabel": {
-            color: "grey.600"
+            color: (theme) => theme.palette.text.secondary
           },
           "& .MuiTablePagination-input": {
-            color: "grey.600"
+            color: (theme) => theme.palette.text.secondary
           },
           "& .MuiTablePagination-actions": {
             "& button": {
               transform: `rotateY(${direction === "ltr" ? 0 : "180deg"})`,
               "svg path": {
-                color: "grey.600"
+                color: (theme) => theme.palette.text.secondary
               },
               "&.Mui-disabled svg path": {
-                color: "grey.400"
+                color: (theme) => theme.palette.action.disabled
               }
             }
           }

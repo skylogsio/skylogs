@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,8 +10,8 @@ import {
   TextField,
   Typography,
   useTheme,
-  // alpha,
-  CircularProgress
+  CircularProgress,
+  useColorScheme
 } from "@mui/material";
 import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
@@ -18,7 +19,6 @@ import { HiEye, HiEyeOff } from "react-icons/hi";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
-// import TopBarLanguage from "@/components/Wrapper/TopBarLanguage";
 import { useScopedI18n } from "@/locales/client";
 
 const signInSchema = z.object({
@@ -33,9 +33,11 @@ const signInSchema = z.object({
 type SignInBody = z.infer<typeof signInSchema>;
 
 export default function AuthenticationPage() {
+  const { systemMode, mode } = useColorScheme();
   const translate = useScopedI18n("auth");
   const globalTranslate = useScopedI18n("global");
   const { palette } = useTheme();
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -46,20 +48,29 @@ export default function AuthenticationPage() {
 
   async function handleSubmitSignIn(body: SignInBody) {
     setLoading(true);
+
     try {
       const response = await signIn("credentials", {
         redirect: false,
         username: body.username,
         password: body.password
       });
+
       setLoading(false);
-      if (response?.error === null) {
-        window.location.reload();
+
+      if (response?.error) {
+        toast.error(response.error);
         return;
       }
-      toast.error(response!.error);
+
+      if (response?.ok) {
+        toast.success("Login successful!");
+        router.replace("/alert-rule");
+        router.refresh();
+      }
     } catch (error) {
-      console.log(error);
+      setLoading(false);
+      console.error("Sign in error:", error);
       toast.error(globalTranslate("SomethingWentWrongPleaseTryAgainLater"));
     }
   }
@@ -74,7 +85,7 @@ export default function AuthenticationPage() {
       alignItems="center"
       padding="1rem"
       sx={{
-        backgroundImage: "url('/static/images/background.png')",
+        backgroundImage: `url('/static/images/background-${systemMode || mode || "light"}.png')`,
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center center"
@@ -106,6 +117,7 @@ export default function AuthenticationPage() {
                 ? translate(errors.username.message as "RequiredUsername")
                 : undefined
             }
+            disabled={loading}
             {...register("username")}
           />
           <TextField
@@ -133,6 +145,7 @@ export default function AuthenticationPage() {
                 ? translate(errors.password.message as "RequiredPassword")
                 : undefined
             }
+            disabled={loading}
             {...register("password")}
           />
           <Button
@@ -165,16 +178,6 @@ export default function AuthenticationPage() {
           </Button>
         </Box>
       </Box>
-      {/*<Box*/}
-      {/*  style={{ marginRight: "auto" }}*/}
-      {/*  sx={{*/}
-      {/*    backgroundColor: ({ palette }) => alpha(palette.background.paper, 0.3),*/}
-      {/*    padding: "0.6rem 0",*/}
-      {/*    borderRadius: "0.6rem"*/}
-      {/*  }}*/}
-      {/*>*/}
-      {/*  <TopBarLanguage />*/}
-      {/*</Box>*/}
     </Box>
   );
 }

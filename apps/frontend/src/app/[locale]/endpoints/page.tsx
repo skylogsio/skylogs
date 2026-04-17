@@ -7,9 +7,9 @@ import type { IEndpoint } from "@/@types/endpoint";
 import { CreateUpdateModal } from "@/@types/global";
 import DeleteEndPointModal from "@/app/[locale]/endpoints/DeleteEndPointModal";
 import ActionColumn from "@/components/ActionColumn";
+import EndPointTypeChip from "@/components/EndpointTypeChip";
 import Table from "@/components/Table/SmartTable";
 import { type TableComponentRef } from "@/components/Table/types";
-import { renderEndPointChip } from "@/utils/endpointVariants";
 import { truncateLongString } from "@/utils/general";
 
 import EndPointModal from "./EndPointModal";
@@ -123,7 +123,7 @@ export default function EndPoints() {
             {
               header: "Type",
               accessorKey: "type",
-              cell: ({ cell }) => renderEndPointChip(cell.getValue())
+              cell: ({ cell }) => <EndPointTypeChip type={cell.getValue()} />
             },
             {
               header: "Value",

@@ -1,4 +1,5 @@
 import type { IEndpoint } from "@/@types/endpoint";
+import type { ITeam } from "@/@types/team";
 import type { IUser } from "@/@types/user";
 import { type AlertRuleType } from "@/utils/alertRuleUtils";
 
@@ -19,14 +20,14 @@ export interface IAlertRule {
   apiToken?: string;
   name: string;
   type: AlertRuleType;
-  user_id: string;
+  userId: string;
   acknowledgedBy: string | null;
   enableAutoResolve: boolean;
   autoResolveMinutes: number;
   updated_at: Date;
   created_at: Date;
-  endpoint_ids: string[];
-  user_ids: string[];
+  endpointIds: string[];
+  userIds: string[];
   id: string;
   ownerName: string;
   hasActionAccess: boolean;
@@ -51,9 +52,17 @@ export interface IAlertRuleEndpoints {
   selectableEndpoints: Array<IEndpoint>;
 }
 
-export interface IAlertRuleUsers {
+export interface IAlertRuleAccess {
   alertUsers: Array<IUser>;
   selectableUsers: Array<IUser>;
+  alertTeams: Array<ITeam>;
+  selectableTeams: Array<ITeam>;
+}
+
+export interface IAccessOption {
+  type: "team" | "user";
+  id: string;
+  label: string;
 }
 
 export interface IApiAndNotificationAlertRuleHistory {
@@ -189,3 +198,5 @@ export interface IZabbixAlertHistory {
   createdAt: string;
   id: string;
 }
+
+export interface IZabbixHistoryInstance extends IZabbixAlertHistory {}

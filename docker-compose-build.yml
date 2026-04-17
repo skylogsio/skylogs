@@ -96,7 +96,26 @@ services:
             - nginx
         <<: *front-env
 
-
+    skylogs-sentinel:
+        build: skylogs-sentinel
+        container_name: skylogs-sentinel
+        restart: always
+        depends_on:
+        - skylogs-back
+        environment:
+          - SENTINEL_ID=dc2-sentinel
+          - SENTINEL_ROLE=secondary
+          - MAIN_SKYLOGS_HEARTBEAT_URL=http://skylogs-core:8080/heartbeat
+          - HEARTBEAT_INTERVAL=5s
+          - HEARTBEAT_TIMEOUT=3s
+          - FAIL_THRESHOLD=3
+          - ALERT_WEBHOOK_URL=http://skylogs-core:8080/internal/alerts/sentinel
+        volumes:
+          - ./apps/sentinel/config.yaml:/app/config.yaml:ro
+        ports:
+          - "9191:9191"
+        networks:
+          - skylogs_net
 networks:
     skylogs_net:
         driver: bridge

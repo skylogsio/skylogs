@@ -17,7 +17,8 @@ export default function ApiAndNotificationAlertHistory({ alertId }: { alertId: I
 
   const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ["api-notification-alert-rule", alertId],
-    queryFn: ({ pageParam }) => getAlertRuleHistory<IApiAndNotificationAlertRuleHistory>(alertId, pageParam),
+    queryFn: ({ pageParam }) =>
+      getAlertRuleHistory<IApiAndNotificationAlertRuleHistory>(alertId, pageParam),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.next_page_url ? lastPage.current_page + 1 : undefined,
@@ -38,11 +39,11 @@ export default function ApiAndNotificationAlertHistory({ alertId }: { alertId: I
   if (totalCount === 0) {
     return (
       <EmptyList
-        icon={
-          <FaClockRotateLeft size="2.5rem" style={{ color: purple[200], marginBottom: "16px" }} />
-        }
+        minimal
+        icon={<FaClockRotateLeft size="2rem" color={palette.common.white} />}
         title="No history available"
         description="This alert rule hasn't been fired or resolved yet. Each time the alert gets fired or resolved, a new history entry will appear here."
+        gradientColors={[purple[300], purple[200]]}
       />
     );
   }

@@ -17,6 +17,7 @@ import type { IAlertRule } from "@/@types/alertRule";
 import type { CreateUpdateModal } from "@/@types/global";
 import { getAlertRuleCreateData } from "@/api/alertRule";
 import ClientAPIForm from "@/components/AlertRule/Forms/ClientAPIForm";
+import ElasticAlertRuleForm from "@/components/AlertRule/Forms/ElasticForm";
 import GeneralAlertRuleForm from "@/components/AlertRule/Forms/GeneralAlertRuleForm";
 import NotificationForm from "@/components/AlertRule/Forms/NotificationForm";
 import SentryAlertRuleForm from "@/components/AlertRule/Forms/SentryForm";
@@ -81,6 +82,14 @@ export default function AlertRuleModal({ open, onClose, onSubmit, data }: AlertR
       case "splunk":
         return (
           <SplunkAlertRuleForm
+            data={data as CreateUpdateModal<IAlertRule>}
+            onSubmit={onSubmit}
+            onClose={onClose}
+          />
+        );
+      case "elastic":
+        return (
+          <ElasticAlertRuleForm
             data={data as CreateUpdateModal<IAlertRule>}
             onSubmit={onSubmit}
             onClose={onClose}
