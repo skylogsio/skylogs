@@ -78,7 +78,7 @@ Route::prefix('v1')->group(function () {
                 Route::middleware('role:'.Constants::ROLE_OWNER->value)->post('/changeOwner', 'ChangeOwnerShipOfData');
                 Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->group(function () {
                     Route::get('/', 'Index');
-                    Route::get('/{id}', 'Show');
+                    Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                     Route::post('/', 'Create');
                     Route::put('/pass/{id}', 'ChangePassword');
                     Route::put('/{id}', 'Update');
@@ -93,7 +93,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', 'Index');
                 Route::get('/indexFlow', 'IndexFlow');
                 Route::get('/createFlowEndpoints', 'EndpointsToCreateFlow');
-                Route::get('/{id}', 'Show');
+                Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                 Route::post('/', 'Create');
                 Route::post('/sendOTP', 'SendOTPCode');
                 Route::put('/{id}', 'Update');
@@ -104,16 +104,18 @@ Route::prefix('v1')->group(function () {
             ->controller(SkylogsInstanceController::class)
             ->group(function () {
 
-                Route::get('/all', 'All');
-                Route::get('/status/{id}', 'IsConnected');
 
                 Route::middleware('role:'.Constants::ROLE_OWNER->value)->group(function () {
                     Route::get('/', 'Index');
-                    Route::get('/{id}', 'Show');
+                    Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                     Route::post('/', 'Create');
                     Route::put('/{id}', 'Update');
                     Route::delete('/{id}', 'Delete');
                 });
+
+                Route::get('/all', 'All');
+                Route::get('/status/{id}', 'IsConnected');
+
             });
 
         Route::prefix('/data-source')
@@ -121,9 +123,9 @@ Route::prefix('v1')->group(function () {
             ->middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)
             ->group(function () {
                 Route::get('/', 'Index');
-                Route::get('/types', 'GetTypes');
                 Route::get('/status/{id}', 'IsConnected');
-                Route::get('/{id}', 'Show');
+                Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
+                Route::get('/types', 'GetTypes');
                 Route::post('/', 'Create');
                 Route::put('/{id}', 'Update');
                 Route::delete('/{id}', 'Delete');
@@ -134,7 +136,7 @@ Route::prefix('v1')->group(function () {
             ->group(function () {
                 Route::get('/', 'Index');
                 Route::get('/all', 'All');
-                Route::get('/{id}', 'Show');
+                Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                 Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->post('/', 'Create');
                 Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->put('/{id}', 'Update');
                 Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->delete('/{id}', 'Delete');
@@ -145,7 +147,7 @@ Route::prefix('v1')->group(function () {
             ->middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)
             ->group(function () {
                 Route::get('/', 'Index');
-                Route::get('/{id}', 'Show');
+                Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                 Route::post('/', 'Create');
                 Route::put('/{id}', 'Update');
                 Route::delete('/{id}', 'Delete');
@@ -180,7 +182,7 @@ Route::prefix('v1')->group(function () {
                         Route::post('/add-user-notify', 'AddUserAccessNotify');
                     });
 
-                Route::get('/{id}', 'Show');
+                Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                 Route::post('/', 'Store');
                 Route::post('/silent/{id}', 'Silent');
                 Route::post('/pin/{id}', 'Pin');

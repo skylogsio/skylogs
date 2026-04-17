@@ -27,6 +27,7 @@ class SentryWebhookAlert extends BaseModel implements Messageable
             if (! empty($dataArray['metric_alert'])) {
                 $this->project_name = $jsonWebhook['data']['metric_alert']['projects'][0] ?? '';
                 $this->action = $jsonWebhook['action'];
+                $this->title = $jsonWebhook['data']['metric_alert']['title'] ?? '';
 
                 $this->message = $jsonWebhook['data']['description_text'] ?? '';
                 $this->description = $jsonWebhook['data']['description_text'] ?? '';
