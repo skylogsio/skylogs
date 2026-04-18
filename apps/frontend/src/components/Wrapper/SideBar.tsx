@@ -1,7 +1,8 @@
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Box, List, Stack, Typography, useTheme } from "@mui/material";
+import { Box, IconButton, List, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import {
   AiOutlineApi,
   AiOutlineUser,
@@ -13,6 +14,7 @@ import {
   AiOutlineFundProjectionScreen,
   AiOutlineTeam
 } from "react-icons/ai";
+import { FaGithub } from "react-icons/fa";
 
 import { SideBarItem } from "./SideBarItem";
 import { URLType } from "./types";
@@ -34,6 +36,8 @@ const URLS: Array<URLType> = [
   { pathname: "/profile-services", label: "Profile Services", role: "owner", icon: AiOutlineCloud },
   { pathname: "/settings", label: "Settings", role: "owner", icon: AiOutlineSetting }
 ];
+
+const GITHUB_URL = "https://github.com/skylogsio/skylogs/";
 
 export default function SideBar({ version }: { version: string }) {
   const pathname = usePathname();
@@ -57,10 +61,29 @@ export default function SideBar({ version }: { version: string }) {
             return <SideBarItem key={url.pathname} url={url} isActive={isActive} />;
           })}
         </List>
-        <Stack alignItems="center" marginTop="auto">
+        <Stack direction="row" justifyContent="center" alignItems="center" marginTop="auto">
           <Typography variant="caption" color="text.secondary" fontSize={10}>
             version {version}
           </Typography>
+          <Tooltip title="View on GitHub" arrow placement="top">
+            <IconButton
+              component={Link}
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              size="small"
+              sx={{
+                padding: 0.5,
+                color: palette.text.secondary,
+                "&:hover": {
+                  color: palette.primary.main,
+                  backgroundColor: palette.action.hover
+                }
+              }}
+            >
+              <FaGithub size={16} />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Stack>
     </Box>

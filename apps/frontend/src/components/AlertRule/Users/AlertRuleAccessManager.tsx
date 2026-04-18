@@ -11,8 +11,7 @@ import {
   ListSubheader,
   Box,
   Typography,
-  Chip,
-  useColorScheme
+  Chip
 } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { FaUser, FaUsers } from "react-icons/fa";
@@ -36,7 +35,6 @@ interface AlertRuleAccessManagerProps {
 }
 
 export default function AlertRuleAccessManager({ alertId }: AlertRuleAccessManagerProps) {
-  const { colorScheme } = useColorScheme();
   const { palette } = useTheme();
   const [selectedUserIds, setSelectedUserIds] = useState<Array<IUser["id"]>>([]);
   const [selectedTeamIds, setSelectedTeamIds] = useState<Array<ITeam["id"]>>([]);
@@ -141,8 +139,7 @@ export default function AlertRuleAccessManager({ alertId }: AlertRuleAccessManag
               <ListSubheader
                 component="div"
                 sx={{
-                  backgroundColor:
-                    colorScheme === "dark" ? "background.paper" : "background.default",
+                  backgroundColor: "grey.100",
                   fontWeight: "bold",
                   display: "flex",
                   alignItems: "center",

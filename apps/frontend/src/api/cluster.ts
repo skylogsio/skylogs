@@ -6,8 +6,8 @@ import axios from "@/lib/axios";
 
 const CLUSTER_URL = "skylogs-instance";
 
-export const getClusters = async (): Promise<ICluster[]> => {
-  const response = await axios.get(CLUSTER_URL);
+export const getAllClusters = async (): Promise<ICluster[]> => {
+  const response = await axios.get(`${CLUSTER_URL}/all`);
   return response.data;
 };
 

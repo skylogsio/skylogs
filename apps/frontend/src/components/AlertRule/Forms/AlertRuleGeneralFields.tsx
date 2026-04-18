@@ -1,10 +1,9 @@
 import { type ReactNode } from "react";
 
 import {
-  Autocomplete,
   Chip,
   FormControlLabel,
-  Grid2 as Grid,
+  MenuItem,
   Stack,
   TextField,
   Checkbox,
@@ -12,7 +11,7 @@ import {
   Box,
   Typography
 } from "@mui/material";
-import { useQueries } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Controller,
   type Path,
@@ -22,14 +21,13 @@ import {
 } from "react-hook-form";
 import { MdInfoOutline } from "react-icons/md";
 
-import { getAlertRuleCreateData, getAlertRuleTags } from "@/api/alertRule";
+import { getAlertRuleCreateData } from "@/api/alertRule";
 import AccessUsersAndTeams from "@/components/AccessUsersAndTeams";
 
 type MustHaveFields = {
   endpointIds: string[];
   userIds: string[];
   teamIds: string[];
-  tags: string[];
   description: string;
   showAcknowledgeBtn?: boolean;
 };
@@ -45,22 +43,44 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
   errors,
   children
 }: AlertRuleEndpointUserSelectorProps<T>) {
-  const { control, setValue, watch } = methods;
+  const { control, setValue, getValues, watch } = methods;
 
-  const [{ data }, { data: tagsList }] = useQueries({
-    queries: [
-      {
-        queryKey: ["alert-rule-create-data"],
-        queryFn: () => getAlertRuleCreateData()
-      },
-      {
-        queryKey: ["all-alert-rule-tags"],
-        queryFn: () => getAlertRuleTags()
-      }
-    ]
+  const { data } = useQuery({
+    queryKey: ["alert-rule-create-data"],
+    queryFn: () => getAlertRuleCreateData()
   });
 
-  const endpoints = data?.endpoints ?? [];
+  const handleRemoveEndpointChip = (endpointId: string) => {
+    const selected = getValues("endpointIds" as Path<T>) as string[];
+    setValue(
+      "endpointIds" as Path<T>,
+      selected.filter((id) => id !== endpointId) as PathValue<T, Path<T>>
+    );
+  };
+
+  const renderEndpointChips = (selectedIds: unknown) => {
+    const selected =
+      data?.endpoints.filter((endpoint) => (selectedIds as string[]).includes(endpoint.id)) ?? [];
+    return (
+      <Stack
+        gap={1}
+        direction="row"
+        flexWrap="wrap"
+        justifyContent="flex-start"
+        sx={{ float: "left" }}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        {selected.map((endpoint) => (
+          <Chip
+            key={endpoint.id}
+            label={endpoint.name}
+            size="small"
+            onDelete={() => handleRemoveEndpointChip(endpoint.id)}
+          />
+        ))}
+      </Stack>
+    );
+  };
 
   return (
     <>
@@ -69,44 +89,29 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
           <Controller
             control={control}
             name={"endpointIds" as Path<T>}
-            render={({ field }) => {
-              const selectedEndpoints = endpoints.filter((ep) =>
-                (field.value as string[])?.includes(ep.id)
-              );
-
-              return (
-                <Autocomplete
-                  multiple
-                  options={endpoints}
-                  getOptionLabel={(option) => option.name}
-                  value={selectedEndpoints}
-                  onChange={(_, newValue) => {
-                    field.onChange(newValue.map((ep) => ep.id) as PathValue<T, Path<T>>);
-                  }}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
-                  renderTags={(value, getTagProps) =>
-                    value.map((option, index) => {
-                      const { key, ...tagProps } = getTagProps({ index });
-                      return <Chip key={key} label={option.name} size="small" {...tagProps} />;
-                    })
+            render={({ field }) => (
+              <TextField
+                {...field}
+                select
+                label="Endpoints"
+                variant="filled"
+                error={!!errors.endpointIds}
+                helperText={errors.endpointIds?.message as string}
+                value={field.value ?? []}
+                slotProps={{
+                  select: {
+                    multiple: true,
+                    renderValue: renderEndpointChips
                   }
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      slotProps={{
-                        input: params.InputProps,
-                        inputLabel: params.InputLabelProps,
-                        htmlInput: params.inputProps
-                      }}
-                      variant="filled"
-                      label="Endpoints"
-                      error={!!errors.endpointIds}
-                      helperText={errors.endpointIds?.message as string}
-                    />
-                  )}
-                />
-              );
-            }}
+                }}
+              >
+                {data?.endpoints.map((endpoint) => (
+                  <MenuItem key={endpoint.id} value={endpoint.id}>
+                    {endpoint.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
           />
         </Box>
         <Box width="50%">
@@ -123,34 +128,6 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
         </Box>
       </Stack>
       {children}
-      <Grid size={12}>
-        <Autocomplete
-          multiple
-          id="alert-rule-tags"
-          options={tagsList ?? []}
-          freeSolo
-          value={(watch("tags" as Path<T>) as string[]) ?? []}
-          onChange={(_, value) => setValue("tags" as Path<T>, value as PathValue<T, Path<T>>)}
-          renderTags={(value: readonly string[], getItemProps) =>
-            value.map((option: string, index: number) => {
-              const { key, ...itemProps } = getItemProps({ index });
-              return <Chip variant="filled" label={option} key={key} size="small" {...itemProps} />;
-            })
-          }
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              slotProps={{
-                input: params.InputProps,
-                inputLabel: params.InputLabelProps,
-                htmlInput: params.inputProps
-              }}
-              variant="filled"
-              label="Tags"
-            />
-          )}
-        />
-      </Grid>
       <Controller
         control={control}
         name={"showAcknowledgeBtn" as Path<T>}
@@ -183,7 +160,6 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
           </Stack>
         )}
       />
-
       <Controller
         control={control}
         name={"description" as Path<T>}
@@ -194,7 +170,7 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
             variant="filled"
             error={!!errors.description}
             helperText={errors.description?.message as string}
-            value={field.value ?? ""}
+            value={field.value ?? []}
             multiline
             minRows={3}
             maxRows={8}

@@ -6,13 +6,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Autocomplete,
   Button,
+  Chip,
   Grid2 as Grid,
   MenuItem,
   Stack,
   TextField,
   Typography
 } from "@mui/material";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueries } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { z } from "zod";
@@ -22,6 +23,7 @@ import type { CreateUpdateModal } from "@/@types/global";
 import {
   createAlertRule,
   getAlertRuleDataSourcesByAlertType,
+  getAlertRuleTags,
   updateAlertRule
 } from "@/api/alertRule";
 import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGeneralFields";
@@ -94,9 +96,17 @@ export default function ElasticAlertRuleForm({
     defaultValues
   });
 
-  const { data: dataSourceList } = useQuery({
-    queryKey: ["alert-rule-data-source", "elastic"],
-    queryFn: () => getAlertRuleDataSourcesByAlertType("elastic")
+  const [{ data: tagsList }, { data: dataSourceList }] = useQueries({
+    queries: [
+      {
+        queryKey: ["all-alert-rule-tags"],
+        queryFn: () => getAlertRuleTags()
+      },
+      {
+        queryKey: ["alert-rule-data-source", "elastic"],
+        queryFn: () => getAlertRuleDataSourcesByAlertType("elastic")
+      }
+    ]
   });
 
   const { mutate: createElasticMutation, isPending: isCreating } = useMutation({
@@ -170,29 +180,21 @@ export default function ElasticAlertRuleForm({
           errors={errors}
         >
           <Grid size={12}>
-            <Autocomplete
-              options={dataSourceList ?? []}
-              getOptionLabel={(option) => option.name}
-              value={dataSourceList?.find((ds) => ds.id === watch("dataSourceId")) ?? null}
-              onChange={(_, newValue) => {
-                setValue("dataSourceId", newValue?.id ?? "");
-              }}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  slotProps={{
-                    input: params.InputProps,
-                    inputLabel: params.InputLabelProps,
-                    htmlInput: params.inputProps
-                  }}
-                  variant="filled"
-                  label="Data Source"
-                  error={!!errors.dataSourceId}
-                  helperText={errors.dataSourceId?.message}
-                />
-              )}
-            />
+            <TextField
+              label="Data Source"
+              variant="filled"
+              error={!!errors.dataSourceId}
+              helperText={errors.dataSourceId?.message}
+              {...register("dataSourceId")}
+              value={watch("dataSourceId")}
+              select
+            >
+              {dataSourceList?.map((dataSource) => (
+                <MenuItem key={dataSource.id} value={dataSource.id}>
+                  {dataSource.name}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid size={12}>
             <TextField
@@ -259,6 +261,34 @@ export default function ElasticAlertRuleForm({
               error={!!errors.minutes}
               helperText={errors.minutes?.message}
               {...register("minutes")}
+            />
+          </Grid>
+          <Grid size={12}>
+            <Autocomplete
+              multiple
+              id="alert-tags"
+              options={tagsList ?? []}
+              freeSolo
+              value={watch("tags")}
+              onChange={(_, value) => setValue("tags", value)}
+              renderTags={(value: readonly string[], getItemProps) =>
+                value.map((option: string, index: number) => {
+                  const { key, ...itemProps } = getItemProps({ index });
+                  return <Chip variant="filled" label={option} key={key} {...itemProps} />;
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  slotProps={{
+                    input: params.InputProps,
+                    inputLabel: params.InputLabelProps,
+                    htmlInput: params.inputProps
+                  }}
+                  variant="filled"
+                  label="Tags"
+                />
+              )}
             />
           </Grid>
         </AlertRuleGeneralFields>

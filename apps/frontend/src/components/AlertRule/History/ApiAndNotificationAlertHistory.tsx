@@ -24,6 +24,7 @@ export default function ApiAndNotificationAlertHistory({ alertId }: { alertId: I
       lastPage.next_page_url ? lastPage.current_page + 1 : undefined,
     refetchOnWindowFocus: false
   });
+  console.log("🚀 ~ ApiAndNotificationAlertHistory ~ data:", data);
 
   const allData = useMemo(() => {
     if (!data?.pages) return [];

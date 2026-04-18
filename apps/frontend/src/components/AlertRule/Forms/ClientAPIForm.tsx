@@ -2,21 +2,23 @@ import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  Autocomplete,
   Button,
+  Chip,
   Grid2 as Grid,
   Stack,
   Switch,
   TextField,
   Typography
 } from "@mui/material";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
 import type { IAlertRule } from "@/@types/alertRule";
 import type { CreateUpdateModal } from "@/@types/global";
-import { createAlertRule, updateAlertRule } from "@/api/alertRule";
+import { createAlertRule, getAlertRuleTags, updateAlertRule } from "@/api/alertRule";
 import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGeneralFields";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
@@ -119,6 +121,10 @@ export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModa
     }
   });
 
+  const { data: tagsList } = useQuery({
+    queryKey: ["all-alert-rule-tags"],
+    queryFn: () => getAlertRuleTags()
+  });
 
   function handleAutoResolve(event: React.ChangeEvent<HTMLInputElement>) {
     if (!event.target.checked) {
@@ -181,6 +187,34 @@ export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModa
                 valueAsNumber: true,
                 setValueAs: (value) => parseInt(value)
               })}
+            />
+          </Grid>
+          <Grid size={12}>
+            <Autocomplete
+              multiple
+              id="api-alert-tags"
+              options={tagsList ?? []}
+              freeSolo
+              value={watch("tags")}
+              onChange={(_, value) => setValue("tags", value)}
+              renderTags={(value: readonly string[], getItemProps) =>
+                value.map((option: string, index: number) => {
+                  const { key, ...itemProps } = getItemProps({ index });
+                  return <Chip variant="filled" label={option} key={key} {...itemProps} />;
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  slotProps={{
+                    input: params.InputProps,
+                    inputLabel: params.InputLabelProps,
+                    htmlInput: params.inputProps
+                  }}
+                  variant="filled"
+                  label="Tags"
+                />
+              )}
             />
           </Grid>
         </AlertRuleGeneralFields>

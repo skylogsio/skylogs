@@ -38,3 +38,5 @@ export function useRole() {
 
   return { hasRole, userInfo };
 }
+
+export { useZone } from "@/context/ZoneContext";
