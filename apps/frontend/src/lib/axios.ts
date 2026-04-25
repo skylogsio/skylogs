@@ -28,12 +28,10 @@ async function getAuthorizationHeader() {
 
 async function getZoneHeader() {
   if (typeof window === "undefined") {
-    // Server-side: read from cookies
     const cookieStore = await cookies();
     const zoneCookie = cookieStore.get("X-Cluster");
     return zoneCookie?.value || "";
   } else {
-    // Client-side: read from document.cookie
     const cookies = document.cookie.split(";");
     const zoneCookie = cookies.find((c) => c.trim().startsWith("X-Cluster="));
     if (zoneCookie) {
@@ -53,7 +51,6 @@ axiosInstance.interceptors.request.use(
     config.headers.Authorization = await getAuthorizationHeader();
 
     const zone = await getZoneHeader();
-    console.log("🚀 ~ zone:", zone);
 
     config.headers["X-Cluster"] = zone;
 

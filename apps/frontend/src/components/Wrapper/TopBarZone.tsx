@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   Box,
@@ -13,26 +13,23 @@ import {
   Typography,
   alpha
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FaCheck, FaChevronDown } from "react-icons/fa";
 
+import { ICluster } from "@/@types/cluster";
 import { getAllClusters } from "@/api/cluster";
 import { useZone } from "@/context/ZoneContext";
+import { refetchAllExcept } from "@/utils/queryUtils";
 
-const AVAILABLE_ZONES = [
-  { name: "Main", type: "agent", url: "", id: "" },
-  { name: "Arvan", type: "agent", url: "http://10.10.10.10:8080", id: "69ad4bd0727eac3d8f03d4a6" }
-];
+const MAIN_ZONE = { name: "Main", type: "agent", url: "", id: "" } as ICluster;
 
 export default function TopBarZone() {
+  const queryClient = useQueryClient();
   const { selectedZone, setSelectedZone } = useZone();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const currentZone =
-    AVAILABLE_ZONES.find((zone) => zone.id === selectedZone) || AVAILABLE_ZONES[0];
-
-  const { data, refetch } = useQuery({
+  const { data } = useQuery({
     queryKey: ["all-zone-list"],
     queryFn: () => getAllClusters()
   });
@@ -47,9 +44,16 @@ export default function TopBarZone() {
 
   const handleZoneSelect = (zoneId: string) => {
     setSelectedZone(zoneId);
+    refetchAllExcept(queryClient, ["all-zone-list"]);
     handleClose();
   };
-  console.log(data);
+
+  const currentZone = useMemo(
+    () => data?.find((zone) => zone.id === selectedZone) || MAIN_ZONE,
+    [data, selectedZone]
+  );
+
+  const zoneList = useMemo(() => [MAIN_ZONE, ...(data ?? [])], [data]);
 
   return (
     <>
@@ -75,7 +79,7 @@ export default function TopBarZone() {
             Zone
           </Typography>
           <Typography variant="body2" fontWeight="600" fontSize="0.85rem">
-            {currentZone.name}
+            {currentZone?.name}
           </Typography>
         </Box>
         <IconButton
@@ -116,7 +120,7 @@ export default function TopBarZone() {
             SELECT ZONE
           </Typography>
         </Box>
-        {AVAILABLE_ZONES.map((zone) => (
+        {zoneList?.map((zone) => (
           <MenuItem
             key={zone.id}
             onClick={() => handleZoneSelect(zone.id)}

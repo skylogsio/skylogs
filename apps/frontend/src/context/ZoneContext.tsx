@@ -1,5 +1,3 @@
-// File: apps/frontend/src/context/ZoneContext.tsx
-
 "use client";
 
 import { createContext, useContext, useState, type PropsWithChildren } from "react";

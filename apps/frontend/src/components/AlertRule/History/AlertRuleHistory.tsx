@@ -1,11 +1,9 @@
 import type { IAlertRule } from "@/@types/alertRule";
+import ApiAndNotificationAlertHistory from "@/components/AlertRule/History/ApiAndNotificationAlertHistory";
+import GrafanaAndPmmAlertHistory from "@/components/AlertRule/History/GrafanaAndPmmAlertHistory";
+import PrometheusAlertsHistory from "@/components/AlertRule/History/PrometheusAlertHistory";
+import ZabbixAlertHistory from "@/components/AlertRule/History/ZabbixAlertHistory";
 import type { AlertRuleType } from "@/utils/alertRuleUtils";
-
-import ApiAndNotificationAlertHistory from "./ApiAndNotificationAlertHistory";
-import GrafanaAndPmmAlertHistory from "./GrafanaAndPmmAlertHistory";
-import PrometheusAlertsHistory from "./PrometheusAlertHistory";
-import SentryAlertHistory from "./SentryAlertHistory";
-import ZabbixAlertHistory from "./ZabbixAlertHistory";
 
 export default function AlertRuleHistory({
   alertId,
@@ -25,8 +23,6 @@ export default function AlertRuleHistory({
       return <GrafanaAndPmmAlertHistory alertId={alertId} />;
     case "zabbix":
       return <ZabbixAlertHistory alertId={alertId} />;
-    case "sentry":
-      return <SentryAlertHistory alertId={alertId} />;
     default:
       return null;
   }
