@@ -7,7 +7,7 @@
   
   [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
   [![Laravel](https://img.shields.io/badge/Laravel-12.x-red.svg)](https://laravel.com)
-  [![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue.svg)](https://php.net)
+  [![PHP](https://img.shields.io/badge/PHP-8.3%2B-blue.svg)](https://php.net)
   [![Docker](https://img.shields.io/badge/Docker-supported-blue.svg)](https://docker.com)
 </div>
 

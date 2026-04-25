@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+
 import axios, { AxiosError } from "axios";
 import { getServerSession } from "next-auth";
 import { getSession, signOut } from "next-auth/react";
@@ -24,6 +26,21 @@ async function getAuthorizationHeader() {
   }
 }
 
+async function getZoneHeader() {
+  if (typeof window === "undefined") {
+    const cookieStore = await cookies();
+    const zoneCookie = cookieStore.get("X-Cluster");
+    return zoneCookie?.value || "";
+  } else {
+    const cookies = document.cookie.split(";");
+    const zoneCookie = cookies.find((c) => c.trim().startsWith("X-Cluster="));
+    if (zoneCookie) {
+      return zoneCookie.split("=")[1];
+    }
+    return "";
+  }
+}
+
 const axiosInstance = axios.create({
   baseURL: process.env.BASE_URL,
   headers: { "Content-Type": "application/json", Accept: "application/json" }
@@ -32,6 +49,11 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   async function (config) {
     config.headers.Authorization = await getAuthorizationHeader();
+
+    const zone = await getZoneHeader();
+
+    config.headers["X-Cluster"] = zone;
+
     return config;
   },
   function (error) {
