@@ -54,7 +54,8 @@ class ClusterProxyMiddleware
 
         try {
             $pendingRequest = Http::timeout(15)
-                ->withToken($instance->token)
+                ->acceptJson()
+                ->withHeader('Authorization',$originalAuth)
                 ->withHeader('X-Original-Authorization', $originalAuth)
                 ->withHeader('X-Forwarded-By', 'skylogs-main');
 
