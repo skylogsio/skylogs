@@ -187,8 +187,8 @@ export default function ViewAlertRule() {
                   onClick={() => setCurrentOpenModal("DELETE")}
                   sx={{
                     textTransform: "capitalize !important",
-                    color: palette.error.light,
-                    backgroundColor: alpha(palette.error.light, 0.05),
+                    color: palette.error.main,
+                    backgroundColor: alpha(palette.error.main, 0.05),
                     paddingX: 2
                   }}
                 >
