@@ -200,3 +200,35 @@ export interface IZabbixAlertHistory {
 }
 
 export interface IZabbixHistoryInstance extends IZabbixAlertHistory {}
+
+interface ISentryBaseHistory {
+  message: string;
+  description: string;
+  url: string;
+  dataSourceAlertName: string;
+  dataSourceId: string;
+  dataSourceName: string;
+  alertRuleId: string;
+  alertRuleName: string;
+  updatedAt: string;
+  createdAt: string;
+  id: string;
+}
+
+interface ISentryEventHistory extends ISentryBaseHistory {
+  action: Extract<AlertRuleStatus, "triggered">;
+  data: { event: object; triggered_rule: string };
+  title: string;
+}
+
+interface ISentryMetricHistory extends ISentryBaseHistory {
+  action: Exclude<AlertRuleStatus, "triggered">;
+  data: {
+    description_text: string;
+    description_title: string;
+    web_url: string;
+    metric_alert: object;
+  };
+}
+
+export type ISentryAlertHistory = ISentryEventHistory | ISentryMetricHistory;
