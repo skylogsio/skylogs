@@ -9,27 +9,26 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Skeleton,
   Stack,
   Typography,
   alpha
 } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { FaCheck, FaChevronDown } from "react-icons/fa";
 
 import { ICluster } from "@/@types/cluster";
 import { getAllClusters } from "@/api/cluster";
 import { useZone } from "@/context/ZoneContext";
-import { refetchAllExcept } from "@/utils/queryUtils";
 
 const MAIN_ZONE = { name: "Main", type: "agent", url: "", id: "" } as ICluster;
 
 export default function TopBarZone() {
-  const queryClient = useQueryClient();
   const { selectedZone, setSelectedZone } = useZone();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["all-zone-list"],
     queryFn: () => getAllClusters()
   });
@@ -44,7 +43,7 @@ export default function TopBarZone() {
 
   const handleZoneSelect = (zoneId: string) => {
     setSelectedZone(zoneId);
-    refetchAllExcept(queryClient, ["all-zone-list"]);
+    window.location.replace("/alert-rule");
     handleClose();
   };
 
@@ -79,7 +78,7 @@ export default function TopBarZone() {
             Zone
           </Typography>
           <Typography variant="body2" fontWeight="600" fontSize="0.85rem">
-            {currentZone?.name}
+            {isLoading ? <Skeleton variant="text" width={60} height={24} /> : currentZone?.name}
           </Typography>
         </Box>
         <IconButton

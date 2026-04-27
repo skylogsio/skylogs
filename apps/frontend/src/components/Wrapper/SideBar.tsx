@@ -14,6 +14,8 @@ import {
   AiOutlineTeam
 } from "react-icons/ai";
 
+import { useZone } from "@/context/ZoneContext";
+
 import { SideBarItem } from "./SideBarItem";
 import { URLType } from "./types";
 
@@ -36,8 +38,14 @@ const URLS: Array<URLType> = [
 ];
 
 export default function SideBar({ version }: { version: string }) {
+  const { selectedZone } = useZone();
   const pathname = usePathname();
   const { palette } = useTheme();
+
+  const filteredURLS = URLS.filter(
+    (item) => (selectedZone && item.label !== "Clusters") || !selectedZone
+  );
+
   return (
     <Box height="100%" overflow="auto" sx={{ direction: "rtl" }}>
       <Stack width="100%" height="100%" sx={{ direction: "ltr" }}>
@@ -51,7 +59,7 @@ export default function SideBar({ version }: { version: string }) {
           />
         </Box>
         <List>
-          {URLS.map((url) => {
+          {filteredURLS.map((url) => {
             const isActive =
               url.pathname === "/" ? pathname === url.pathname : pathname.includes(url.pathname);
             return <SideBarItem key={url.pathname} url={url} isActive={isActive} />;
