@@ -102,6 +102,7 @@ Route::prefix('v1')->group(function () {
             });
         Route::prefix('/skylogs-instance')
             ->controller(SkylogsInstanceController::class)
+            ->withoutMiddleware(['clusterProxy'])
             ->group(function () {
 
 
