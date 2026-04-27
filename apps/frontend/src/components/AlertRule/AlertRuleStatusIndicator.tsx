@@ -62,7 +62,7 @@ export default function AlertRuleStatusIndicator({
       resolved: palette.success.main,
       critical: palette.error.main,
       warning: palette.warning.main,
-      triggered: palette.grey[100]
+      triggered: palette.text.secondary
     }),
     [palette]
   );

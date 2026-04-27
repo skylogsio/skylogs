@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 
-import { IconButton, Stack, Typography, useTheme } from "@mui/material";
+import { IconButton, Stack, Typography, useColorScheme, useTheme } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import JsonView from "@uiw/react-json-view";
+import { githubDarkTheme } from "@uiw/react-json-view/githubDark";
 import { githubLightTheme } from "@uiw/react-json-view/githubLight";
 import { HiInformationCircle } from "react-icons/hi";
 
-import type { IAlertRule,IAlertRuleHistoryInstance } from "@/@types/alertRule";
+import type { IAlertRule, IAlertRuleHistoryInstance } from "@/@types/alertRule";
 import { getFiredInstances } from "@/api/alertRule";
 import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndicator";
 import ModalContainer from "@/components/Modal";
@@ -14,6 +15,7 @@ import DataTable from "@/components/Table/DataTable";
 import { truncateLongString } from "@/utils/general";
 
 export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRule["id"] }) {
+  const { colorScheme } = useColorScheme();
   const { palette } = useTheme();
   const [details, setDetails] = useState<IAlertRuleHistoryInstance | null>(null);
 
@@ -120,7 +122,7 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
                   Annotations:
                 </Typography>
                 <JsonView
-                  style={githubLightTheme}
+                  style={colorScheme === "dark" ? githubDarkTheme : githubLightTheme}
                   value={details.annotations}
                   enableClipboard={false}
                   displayDataTypes={false}
@@ -139,7 +141,7 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
                   Labels:
                 </Typography>
                 <JsonView
-                  style={githubLightTheme}
+                  style={colorScheme === "dark" ? githubDarkTheme : githubLightTheme}
                   value={details.labels}
                   enableClipboard={false}
                   displayDataTypes={false}
