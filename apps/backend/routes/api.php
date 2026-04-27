@@ -26,6 +26,10 @@ use App\Http\Controllers\V1\Webhooks\ApiAlertController;
 use App\Http\Controllers\V1\Webhooks\WebhookAlertsController;
 use Illuminate\Support\Facades\Route;
 
+Route::get("/", function () {
+    return response()->json(["message" => "Welcome to Skylogs!"]);
+});
+
 Route::prefix('cluster')
     ->controller(SyncController::class)
     ->middleware('clusterAuth')
