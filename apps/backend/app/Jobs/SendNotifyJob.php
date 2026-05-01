@@ -21,6 +21,7 @@ class SendNotifyJob implements ShouldQueue
     public const HEALTH_CHECK = 'health-check';
 
     public const ELASTIC_CHECK = 'elastic-check';
+    public const VICTORIA_LOGS_CHECK = 'victoria-logs-check';
 
     public const RESOLVED_MANUALLY = 'resolved_manually';
 
@@ -81,6 +82,7 @@ class SendNotifyJob implements ShouldQueue
             case self::GRAFANA_WEBHOOK:
             case self::HEALTH_CHECK:
             case self::ELASTIC_CHECK:
+            case self::VICTORIA_LOGS_CHECK:
             case self::API_RESOLVE:
             case self::API_FIRE:
             case self::API_NOTIFICATION:
