@@ -10,30 +10,20 @@ class VictoriaLogsService
 {
     public static function countDocuments(VictoriaLogsCheck $victoriaLogsCheck): array
     {
-        $documents = [];
+        $documents = 0;
 
         $dataSource = $victoriaLogsCheck->alertRule->dataSource;
         try {
-            $nowCarbon = Carbon::now('UTC');
-            $nowString = $nowCarbon->format("Y-m-d\TH:i:s");
-            $agoString = $nowCarbon->subMinutes($victoriaLogsCheck->minutes)->format("Y-m-d\TH:i:s");
-            //        dd($nowString,$agoString);
+            $timeString = $victoriaLogsCheck->minutes."m";
             $response = \Http::acceptJson()
-                ->withBasicAuth($dataSource->username, $dataSource->password)
-                ->post($dataSource->url."/$victoriaLogsCheck->dataviewTitle/_search",
+                ->get($dataSource->url."/select/logsql/query",
                     [
-                        'size' => $victoriaLogsCheck->countDocument + 10,
-                        'query' => [
-                            'query_string' => [
-                                'query' => "timestamp:[$agoString TO $nowString] $victoriaLogsCheck->queryString",
-                                'default_operator' => 'AND',
-                            ],
-                        ],
+                        'query' => "_time:$timeString $victoriaLogsCheck->queryString | stats count() as total" ,
                     ]
                 );
             $body = $response->json();
 
-            $documents = $body['hits']['hits'];
+            $documents = (int) $body['total'];
 
         } catch (\Exception $exception) {
 
