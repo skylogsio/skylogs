@@ -11,6 +11,7 @@ enum DataSourceType: string
     case ZABBIX = 'zabbix';
     case SPLUNK = 'splunk';
     case ELASTIC = 'elastic';
+    case VICTORIA_LOGS = 'victoria_logs';
 
     public static function GetTypes()
     {
@@ -22,6 +23,7 @@ enum DataSourceType: string
             self::ZABBIX,
             self::SPLUNK,
             self::ELASTIC,
+            self::VICTORIA_LOGS,
         ];
     }
 }

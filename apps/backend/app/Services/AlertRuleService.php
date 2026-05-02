@@ -25,6 +25,8 @@ use App\Models\PrometheusHistory;
 use App\Models\SentryWebhookAlert;
 use App\Models\SkylogsInstance;
 use App\Models\User;
+use App\Models\VictoriaLogsCheck;
+use App\Models\VictoriaLogsHistory;
 use App\Models\ZabbixCheck;
 use App\Models\ZabbixWebhookAlert;
 use Cache;
@@ -71,6 +73,12 @@ class AlertRuleService
                 break;
             case AlertRuleType::ELASTIC:
                 $check = ElasticCheck::where('alertRuleId', $alertRuleId)->first();
+                if ($check) {
+                    return $check->toArray() ?? [];
+                }
+                break;
+            case AlertRuleType::VICTORIA_LOGS:
+                $check = VictoriaLogsCheck::where('alertRuleId', $alertRuleId)->first();
                 if ($check) {
                     return $check->toArray() ?? [];
                 }
@@ -589,6 +597,7 @@ class AlertRuleService
             AlertRuleType::NOTIFICATION => ApiAlertHistory::query(),
             AlertRuleType::HEALTH => HealthHistory::query(),
             AlertRuleType::ELASTIC => ElasticHistory::query(),
+            AlertRuleType::VICTORIA_LOGS => VictoriaLogsHistory::query(),
             default => throw new ModelNotFoundException,
         };
 
@@ -761,6 +770,9 @@ class AlertRuleService
             case AlertRuleType::ELASTIC:
                 ElasticCheck::where('alertRuleId', $alertRuleId)->delete();
                 break;
+            case AlertRuleType::VICTORIA_LOGS:
+                VictoriaLogsCheck::where('alertRuleId', $alertRuleId)->delete();
+                break;
             case AlertRuleType::GRAFANA:
             case AlertRuleType::PMM:
                 GrafanaCheck::where('alertRuleId', $alertRuleId)->delete();
@@ -867,6 +879,28 @@ class AlertRuleService
                         'countDocument' => $alert->countDocument,
                         'currentCountDocument' => -1,
                         'state' => ElasticCheck::RESOLVED,
+                    ]);
+                    $sendResolve = true;
+                }
+                break;
+            case AlertRuleType::VICTORIA_LOGS:
+                $check = VictoriaLogsCheck::where('alertRuleId', $alert->_id)
+                    ->where('state', VictoriaLogsCheck::FIRE)
+                    ->first();
+                if ($check && $check->state == VictoriaLogsCheck::FIRE) {
+                    $check->state = VictoriaLogsCheck::RESOLVED;
+                    $check->save();
+
+                    VictoriaLogsHistory::create([
+                        'alertRuleId' => $alert->_id,
+                        'alertRuleName' => $alert->name,
+                        'dataSourceId' => $alert->dataSourceId,
+                        'queryString' => $alert->queryString,
+                        'conditionType' => $alert->conditionType,
+                        'minutes' => $alert->minutes,
+                        'countDocument' => $alert->countDocument,
+                        'currentCountDocument' => -1,
+                        'state' => VictoriaLogsCheck::RESOLVED,
                     ]);
                     $sendResolve = true;
                 }
