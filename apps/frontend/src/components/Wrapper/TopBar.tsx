@@ -5,6 +5,7 @@ import { Box, Stack } from "@mui/material";
 
 import ThemeSwitch from "./ThemeSwitch";
 import TopBarProfile from "./TopBarProfile";
+import TopBarZone from "./TopBarZone";
 // import TopBarSearch from "./TopBarSearch";
 
 export default function TopBar() {
@@ -28,6 +29,7 @@ export default function TopBar() {
       {/*<TopBarLanguage />*/}
       {/* <Stack direction="row"> */}
       <Stack direction="row" alignItems="center" spacing={2}>
+        <TopBarZone />
         <ThemeSwitch />
         <TopBarProfile />
       </Stack>

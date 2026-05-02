@@ -1,7 +1,8 @@
 "use client";
 
-import { Stack, Typography, useTheme } from "@mui/material";
+import { Stack, Typography, useColorScheme, useTheme } from "@mui/material";
 import JsonView from "@uiw/react-json-view";
+import { githubDarkTheme } from "@uiw/react-json-view/githubDark";
 import { githubLightTheme } from "@uiw/react-json-view/githubLight";
 
 import type { IAlertRuleHistoryInstance, AlertRuleStatus } from "@/@types/alertRule";
@@ -15,6 +16,7 @@ interface HistoryDetailsModalProps extends Pick<ModalContainerProps, "onClose"> 
 }
 
 export default function HistoryDetailsModal({ alerts, status, onClose }: HistoryDetailsModalProps) {
+  const { colorScheme } = useColorScheme();
   const { palette } = useTheme();
 
   if (!alerts) return null;
@@ -98,7 +100,7 @@ export default function HistoryDetailsModal({ alerts, status, onClose }: History
                 </Typography>
                 <JsonView
                   collapsed={0}
-                  style={githubLightTheme}
+                  style={colorScheme === "dark" ? githubDarkTheme : githubLightTheme}
                   value={alert.annotations}
                   enableClipboard={false}
                 />
@@ -117,7 +119,7 @@ export default function HistoryDetailsModal({ alerts, status, onClose }: History
                 </Typography>
                 <JsonView
                   collapsed={0}
-                  style={githubLightTheme}
+                  style={colorScheme === "dark" ? githubDarkTheme : githubLightTheme}
                   value={alert.labels}
                   enableClipboard={false}
                 />

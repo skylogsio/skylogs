@@ -1,6 +1,7 @@
 import { type PropsWithChildren } from "react";
 
 // eslint-disable-next-line import/order
+import { ZoneProvider } from "@/context/ZoneContext";
 import { I18nProviderClient } from "@/locales/client";
 
 import MuiProvider from "./MuiProvider";
@@ -14,7 +15,9 @@ export default function Provider({ children, locale }: PropsWithChildren<{ local
       <NextAuthProvider>
         <ReactQueryProvider>
           <RTLProvider locale={locale}>
-            <MuiProvider>{children}</MuiProvider>
+            <MuiProvider>
+              <ZoneProvider>{children}</ZoneProvider>
+            </MuiProvider>
           </RTLProvider>
         </ReactQueryProvider>
       </NextAuthProvider>
