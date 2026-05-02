@@ -14,6 +14,7 @@ enum AlertRuleType: string
     case ZABBIX = 'zabbix';
     case SPLUNK = 'splunk';
     case ELASTIC = 'elastic';
+    case VICTORIA_LOGS = 'victoria_logs';
     case HEALTH = 'health';
 
     public static function GetTypes()
@@ -30,6 +31,7 @@ enum AlertRuleType: string
             self::ELASTIC,
             self::HEALTH,
             self::METABASE,
+            self::VICTORIA_LOGS
         ];
     }
 

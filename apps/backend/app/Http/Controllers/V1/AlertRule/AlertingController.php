@@ -9,6 +9,7 @@ use App\Models\AlertInstance;
 use App\Models\AlertRule;
 use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
+use App\Models\VictoriaLogsCheck;
 use App\Services\AlertRuleService;
 use App\Services\EndpointService;
 use App\Services\SendNotifyService;
@@ -315,6 +316,16 @@ class AlertingController extends Controller
                         'countDocument' => ((int) $request->countDocument),
                     ]);
                     break;
+                case AlertRuleType::VICTORIA_LOGS:
+                    $alert = AlertRule::create([
+                        ...$commonFields,
+                        'dataSourceId' => $request->dataSourceId,
+                        'queryString' => $request->queryString,
+                        'minutes' => ((int) $request->minutes),
+                        'conditionType' => $request->conditionType,
+                        'countDocument' => ((int) $request->countDocument),
+                    ]);
+                    break;
             }
             $alert->tags = collect($request->tags ?? [])->map(fn ($item) => trim($item))->unique()->toArray();
 
@@ -469,6 +480,17 @@ class AlertingController extends Controller
                 $model->countDocument = ((int) $request->countDocument);
                 $model->save();
                 ElasticCheck::where('alertRuleId', $model->_id)->delete();
+                break;
+
+            case AlertRuleType::VICTORIA_LOGS:
+                $model->name = $request->name;
+                $model->dataSourceId = $request->dataSourceId;
+                $model->queryString = $request->queryString;
+                $model->conditionType = $request->conditionType;
+                $model->minutes = ((int) $request->minutes);
+                $model->countDocument = ((int) $request->countDocument);
+                $model->save();
+                VictoriaLogsCheck::where('alertRuleId', $model->_id)->delete();
                 break;
 
             case AlertRuleType::NOTIFICATION:
