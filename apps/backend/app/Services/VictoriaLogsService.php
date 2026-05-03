@@ -2,9 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\ElasticCheck;
 use App\Models\VictoriaLogsCheck;
-use Carbon\Carbon;
 
 class VictoriaLogsService
 {
@@ -14,11 +12,11 @@ class VictoriaLogsService
 
         $dataSource = $victoriaLogsCheck->alertRule->dataSource;
         try {
-            $timeString = $victoriaLogsCheck->minutes."m";
+            $timeString = $victoriaLogsCheck->minutes.'m';
             $response = \Http::acceptJson()
-                ->get($dataSource->url."/select/logsql/query",
+                ->get($dataSource->url.'/select/logsql/query',
                     [
-                        'query' => "_time:$timeString $victoriaLogsCheck->queryString | stats count() as total" ,
+                        'query' => "_time:$timeString $victoriaLogsCheck->queryString | stats count() as total",
                     ]
                 );
             $body = $response->json();

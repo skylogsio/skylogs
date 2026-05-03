@@ -4,13 +4,14 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        if (!Schema::hasTable('jobs'))
+        if (! Schema::hasTable('jobs')) {
             Schema::create('jobs', function (Blueprint $table) {
                 $table->id();
                 $table->string('queue')->index();
@@ -20,8 +21,9 @@ return new class extends Migration {
                 $table->unsignedInteger('available_at');
                 $table->unsignedInteger('createdAt');
             });
+        }
 
-        if (!Schema::hasTable('job_batches'))
+        if (! Schema::hasTable('job_batches')) {
 
             Schema::create('job_batches', function (Blueprint $table) {
                 $table->string('id')->primary();
@@ -35,7 +37,8 @@ return new class extends Migration {
                 $table->integer('createdAt');
                 $table->integer('finished_at')->nullable();
             });
-        if (!Schema::hasTable('failed_jobs'))
+        }
+        if (! Schema::hasTable('failed_jobs')) {
 
             Schema::create('failed_jobs', function (Blueprint $table) {
                 $table->id();
@@ -46,6 +49,7 @@ return new class extends Migration {
                 $table->longText('exception');
                 $table->timestamp('failed_at')->useCurrent();
             });
+        }
     }
 
     /**

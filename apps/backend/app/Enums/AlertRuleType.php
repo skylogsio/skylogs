@@ -31,7 +31,7 @@ enum AlertRuleType: string
             self::ELASTIC,
             self::HEALTH,
             self::METABASE,
-            self::VICTORIA_LOGS
+            self::VICTORIA_LOGS,
         ];
     }
 

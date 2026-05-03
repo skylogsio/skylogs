@@ -3,11 +3,8 @@
 namespace App\Jobs;
 
 use App\Models\AlertRule;
-use App\Models\ElasticCheck;
-use App\Models\ElasticHistory;
 use App\Models\VictoriaLogsCheck;
 use App\Models\VictoriaLogsHistory;
-use App\Services\ElasticService;
 use App\Services\SendNotifyService;
 use App\Services\VictoriaLogsService;
 use Illuminate\Bus\Queueable;
