@@ -183,7 +183,7 @@ class AlertRule extends BaseModel implements Messageable
         switch ($this->type) {
             case AlertRuleType::API:
                 $alertState = $this->state ?? self::RESOlVED;
-                $alertCount = $alert->fireCount ?? 0;
+                $alertCount = $this->fireCount ?? 0;
                 break;
             case AlertRuleType::GRAFANA:
             case AlertRuleType::PROMETHEUS:
@@ -192,7 +192,7 @@ class AlertRule extends BaseModel implements Messageable
             case AlertRuleType::METABASE:
             case AlertRuleType::ZABBIX:
                 $alertState = $this->state ?? self::UNKNOWN;
-                $alertCount = $alert->fireCount ?? 0;
+                $alertCount = $this->fireCount ?? 0;
                 break;
             case AlertRuleType::HEALTH:
                 $check = HealthCheck::where('alertRuleId', $this->_id)->first();
