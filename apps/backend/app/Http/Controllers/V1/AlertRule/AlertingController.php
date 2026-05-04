@@ -201,7 +201,7 @@ class AlertingController extends Controller
                 'name' => 'required|unique:alert_rules',
                 'type' => 'required',
                 'dataSourceAlertName' => 'required_if:type,'.AlertRuleType::GetDataSourceAlertNeed()->implode(','),
-                'dataSourceId' => 'required_if:type,'.AlertRuleType::ELASTIC->value,
+                'dataSourceId' => 'required_if:type,'.AlertRuleType::ELASTIC->value.','.AlertRuleType::VICTORIA_LOGS->value,
             ], [
             ]
         );

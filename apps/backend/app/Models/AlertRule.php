@@ -48,7 +48,7 @@ class AlertRule extends BaseModel implements Messageable
 
     public function dataSource(): ?BelongsTo
     {
-        if ($this->type == AlertRuleType::ELASTIC) {
+        if ($this->type == AlertRuleType::ELASTIC || $this->type == AlertRuleType::VICTORIA_LOGS) {
             return $this->belongsTo(DataSource::class, 'dataSourceId', '_id');
         } else {
             return null;
@@ -183,7 +183,7 @@ class AlertRule extends BaseModel implements Messageable
         switch ($this->type) {
             case AlertRuleType::API:
                 $alertState = $this->state ?? self::RESOlVED;
-                $alertCount = $alert->fireCount ?? 0;
+                $alertCount = $this->fireCount ?? 0;
                 break;
             case AlertRuleType::GRAFANA:
             case AlertRuleType::PROMETHEUS:
@@ -192,7 +192,7 @@ class AlertRule extends BaseModel implements Messageable
             case AlertRuleType::METABASE:
             case AlertRuleType::ZABBIX:
                 $alertState = $this->state ?? self::UNKNOWN;
-                $alertCount = $alert->fireCount ?? 0;
+                $alertCount = $this->fireCount ?? 0;
                 break;
             case AlertRuleType::HEALTH:
                 $check = HealthCheck::where('alertRuleId', $this->_id)->first();
@@ -206,6 +206,14 @@ class AlertRule extends BaseModel implements Messageable
             case AlertRuleType::ELASTIC:
                 $check = ElasticCheck::where('alertRuleId', $this->_id)->first();
                 if (empty($check) || $check->state == ElasticCheck::RESOLVED) {
+                    $alertState = self::RESOlVED;
+                } else {
+                    $alertState = self::CRITICAL;
+                }
+                break;
+            case AlertRuleType::VICTORIA_LOGS:
+                $check = VictoriaLogsCheck::where('alertRuleId', $this->_id)->first();
+                if (empty($check) || $check->state == VictoriaLogsCheck::RESOLVED) {
                     $alertState = self::RESOlVED;
                 } else {
                     $alertState = self::CRITICAL;

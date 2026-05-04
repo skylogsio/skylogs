@@ -26,8 +26,8 @@ use App\Http\Controllers\V1\Webhooks\ApiAlertController;
 use App\Http\Controllers\V1\Webhooks\WebhookAlertsController;
 use Illuminate\Support\Facades\Route;
 
-Route::get("/", function () {
-    return response()->json(["message" => "Welcome to Skylogs!"]);
+Route::get('/', function () {
+    return response()->json(['message' => 'Welcome to Skylogs!']);
 });
 
 Route::prefix('cluster')
@@ -40,7 +40,7 @@ Route::prefix('cluster')
 Route::prefix('v1')->group(function () {
 
     Route::post('auth/login', [AuthController::class, 'login']);
-    Route::middleware("clusterProxy")->get('status/all', [StatusController::class, 'Status'])->name('status.all');
+    Route::middleware('clusterProxy')->get('status/all', [StatusController::class, 'Status'])->name('status.all');
     Route::get('alert-rule/acknowledgeL/{id}', [AlertingController::class, 'AcknowledgeLoginLink'])->name('acknowledgeLink');
 
     Route::middleware(['apiAuth', 'throttle:api-alert'])
@@ -108,7 +108,6 @@ Route::prefix('v1')->group(function () {
             ->controller(SkylogsInstanceController::class)
             ->withoutMiddleware(['clusterProxy'])
             ->group(function () {
-
 
                 Route::middleware('role:'.Constants::ROLE_OWNER->value)->group(function () {
                     Route::get('/', 'Index');

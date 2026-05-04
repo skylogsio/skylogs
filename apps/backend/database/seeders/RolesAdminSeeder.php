@@ -7,7 +7,6 @@ use App\Models\Auth\Permission;
 use App\Models\Auth\Role;
 use App\Models\User;
 use Hash;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class RolesAdminSeeder extends Seeder
@@ -30,10 +29,9 @@ class RolesAdminSeeder extends Seeder
             'guard_name' => 'api',
         ]);
 
-
-        if (!$user->hasRole($roleOwner))
+        if (! $user->hasRole($roleOwner)) {
             $user->assignRole($roleOwner);
-
+        }
 
         $roleManager = Role::firstOrCreate([
             'name' => Constants::ROLE_MANAGER->value,
@@ -55,13 +53,16 @@ class RolesAdminSeeder extends Seeder
             'guard_name' => 'api',
         ]);
 
-        if (!$roleOwner->hasPermissionTo($permissionMangerMemberUsers))
+        if (! $roleOwner->hasPermissionTo($permissionMangerMemberUsers)) {
             $roleOwner->givePermissionTo($permissionMangerMemberUsers);
+        }
 
-        if (!$roleOwner->hasPermissionTo($permissionMangerAdminUsers))
+        if (! $roleOwner->hasPermissionTo($permissionMangerAdminUsers)) {
             $roleOwner->givePermissionTo($permissionMangerAdminUsers);
+        }
 
-        if (!$roleManager->hasPermissionTo($permissionMangerMemberUsers))
+        if (! $roleManager->hasPermissionTo($permissionMangerMemberUsers)) {
             $roleManager->givePermissionTo($permissionMangerMemberUsers);
+        }
     }
 }

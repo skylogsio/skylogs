@@ -31,7 +31,7 @@ class AddChecksJob implements ShouldQueue
         $alertRules = app(AlertRuleService::class)->getAlerts([
             AlertRuleType::ELASTIC,
             AlertRuleType::VICTORIA_LOGS,
-            AlertRuleType::HEALTH
+            AlertRuleType::HEALTH,
         ]);
 
         foreach ($alertRules as $alert) {

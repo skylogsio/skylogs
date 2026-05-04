@@ -21,6 +21,7 @@ class SendNotifyJob implements ShouldQueue
     public const HEALTH_CHECK = 'health-check';
 
     public const ELASTIC_CHECK = 'elastic-check';
+
     public const VICTORIA_LOGS_CHECK = 'victoria-logs-check';
 
     public const RESOLVED_MANUALLY = 'resolved_manually';
