@@ -13,7 +13,7 @@ class SilentRuleService
         $now = Carbon::now()->format('H:i:s');
 
         $silentRule = SilentRule::get();
-        $alert_ids = collect();
+        $alertIds = collect();
 
         foreach ($silentRule as $silent) {
             if ($silent->periods[0]['from'] <= $now && $silent->periods[0]['to'] >= $now) {
@@ -25,7 +25,7 @@ class SilentRuleService
                         $query = $query->where('type', $silent->alert_rule_types);
 
                         $alerts = $query->get()->pluck('_id');
-                        $alert_ids = $alert_ids->merge($alerts);
+                        $alertIds = $alertIds->merge($alerts);
 
                         break;
                     case SilentRule::TAGS:
@@ -39,17 +39,17 @@ class SilentRuleService
                         }
 
                         $alerts = $query->get()->pluck('_id');
-                        $alert_ids = $alert_ids->merge($alerts);
+                        $alertIds = $alertIds->merge($alerts);
 
                         break;
                     case SilentRule::ALERTNAME:
-                        $alert_ids = $alert_ids->merge($silent->alertRuleIds);
+                        $alertIds = $alertIds->merge($silent->alertRuleIds);
                         break;
                 }
             }
         }
 
-        return $alert_ids->toArray();
+        return $alertIds->toArray();
 
     }
 }

@@ -26,6 +26,7 @@
     "framer-motion": "^12.23.25",
     "glob": "^11.0.0",
     "intl-locale-textinfo-polyfill": "^2.1.1",
+    "js-cookie": "^3.0.5",
     "lru-cache": "^11.0.1",
     "next": "14.2.15",
     "next-auth": "^4.24.10",
@@ -43,6 +44,7 @@
   },
   "devDependencies": {
     "@tanstack/eslint-plugin-query": "^5.52.0",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",

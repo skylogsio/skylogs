@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 
 import {
   Table as MuiTable,
@@ -23,7 +23,7 @@ import {
   type Row
 } from "@tanstack/react-table";
 
-import { DataTableComponentProps } from "../types";
+import type { DataTableComponentProps } from "../types";
 
 export default function DataTable<T>({
   data,
@@ -82,7 +82,7 @@ export default function DataTable<T>({
         bgcolor="background.paper"
         borderRadius="1rem"
         border="1px solid"
-        borderColor="grey.200"
+        borderColor={(theme) => theme.palette.divider}
         overflow="hidden"
         marginTop={1}
       >
@@ -90,7 +90,17 @@ export default function DataTable<T>({
           <MuiTable stickyHeader sx={{ width: "100%" }}>
             <TableHead>
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} sx={{ "& th": { backgroundColor: "grey.50" } }}>
+                <TableRow
+                  key={headerGroup.id}
+                  sx={{
+                    "& th": {
+                      backgroundColor: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? theme.palette.grey[900]
+                          : theme.palette.grey[50]
+                    }
+                  }}
+                >
                   {headerGroup.headers.map((header) => (
                     <TableCell
                       key={header.id}
@@ -101,7 +111,7 @@ export default function DataTable<T>({
                         width: header.id === "select" ? "50px" : "auto",
                         paddingY: "1rem",
                         textTransform: "capitalize",
-                        borderBottomColor: palette.grey[200],
+                        borderBottomColor: palette.divider,
                         fontSize: "0.9rem"
                       })}
                     >
@@ -120,7 +130,7 @@ export default function DataTable<T>({
                           key={cellIndex}
                           sx={{
                             width: cellIndex === 0 ? "40px" : "auto",
-                            borderBottomColor: "grey.200"
+                            borderBottomColor: (theme) => theme.palette.divider
                           }}
                         >
                           <Skeleton
@@ -129,7 +139,7 @@ export default function DataTable<T>({
                             height="30px"
                             className="mx-auto"
                             animation="wave"
-                            sx={{ bgcolor: "grey.200" }}
+                            sx={{ bgcolor: (theme) => theme.palette.action.hover }}
                           />
                         </TableCell>
                       ))}
@@ -152,7 +162,7 @@ export default function DataTable<T>({
                       {row.getVisibleCells().map((cell) => (
                         <TableCell
                           key={cell.id}
-                          sx={{ borderBottomColor: "grey.200" }}
+                          sx={{ borderBottomColor: (theme) => theme.palette.divider }}
                           align="center"
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}

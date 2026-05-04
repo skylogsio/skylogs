@@ -2,8 +2,11 @@
 
 namespace App\Helpers;
 
+use App\Enums\CallProviderType;
 use App\interfaces\Messageable;
 use App\Models\EndpointOTP;
+use App\Services\Config\Call\CallKaveNegarService;
+use App\Services\ConfigCallService;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
@@ -28,6 +31,20 @@ class Call
 
         if (empty($nums)) {
             return '';
+        }
+
+        $config = app(ConfigCallService::class)->getDefault();
+
+        if (! empty($config)) {
+            if ($config->provider == CallProviderType::KAVE_NEGAR->value) {
+                return app(CallKaveNegarService::class)->sendAlert($config, $nums, $alert);
+            }
+
+            return "$config->provider is not providing";
+        }
+
+        if (empty(self::Token())) {
+            return 'Sms is not configured';
         }
 
         $result = Http::pool(function (Pool $pool) use ($nums, $alert) {
@@ -64,7 +81,22 @@ class Call
 
     public static function sendOTP(EndpointOTP $endpoint)
     {
-        $response = Http::post(self::Url(), [
+
+        $config = app(ConfigCallService::class)->getDefault();
+
+        if (! empty($config)) {
+            if ($config->provider == CallProviderType::KAVE_NEGAR->value) {
+                return app(CallKaveNegarService::class)->sendOTP($config, $endpoint);
+            }
+
+            return "$config->provider is not providing";
+        }
+
+        if (empty(self::Token())) {
+            return 'Sms is not configured';
+        }
+
+        $response = Http::get(self::Url(), [
             'receptor' => $endpoint->value,
             'message' => $endpoint->generateOTPMessage(),
         ]);

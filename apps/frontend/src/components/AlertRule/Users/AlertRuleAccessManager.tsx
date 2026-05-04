@@ -11,7 +11,8 @@ import {
   ListSubheader,
   Box,
   Typography,
-  Chip
+  Chip,
+  useColorScheme
 } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { FaUser, FaUsers } from "react-icons/fa";
@@ -35,6 +36,7 @@ interface AlertRuleAccessManagerProps {
 }
 
 export default function AlertRuleAccessManager({ alertId }: AlertRuleAccessManagerProps) {
+  const { colorScheme } = useColorScheme();
   const { palette } = useTheme();
   const [selectedUserIds, setSelectedUserIds] = useState<Array<IUser["id"]>>([]);
   const [selectedTeamIds, setSelectedTeamIds] = useState<Array<ITeam["id"]>>([]);
@@ -139,7 +141,8 @@ export default function AlertRuleAccessManager({ alertId }: AlertRuleAccessManag
               <ListSubheader
                 component="div"
                 sx={{
-                  backgroundColor: "grey.100",
+                  backgroundColor:
+                    colorScheme === "dark" ? "background.paper" : "background.default",
                   fontWeight: "bold",
                   display: "flex",
                   alignItems: "center",
@@ -265,10 +268,11 @@ export default function AlertRuleAccessManager({ alertId }: AlertRuleAccessManag
         />
       ) : (
         <EmptyList
-          icon={<FaUsers size="3rem" style={{ color: palette.primary.light, marginBottom: 5 }} />}
+          minimal
+          icon={<FaUsers size="2rem" color={palette.common.white} />}
           title="No Teams Or Users Assigned"
-          description="This alert rule doesn&#39;t have any teams or users assigned yet. Use the form above to add users or teams
-            who should receive notifications for this alert."
+          description="This alert rule doesn't have any teams or users assigned yet. Use the form above to add users or teams who should receive notifications for this alert."
+          gradientColors={[palette.primary.dark, palette.primary.light]}
         />
       )}
     </Stack>

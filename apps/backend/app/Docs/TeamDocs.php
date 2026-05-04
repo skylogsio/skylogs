@@ -51,6 +51,7 @@ class TeamDocs
         ]
     )]
     public function index() {}
+
     #[OA\Get(
         path: '/api/v1/team/all',
         operationId: 'getAllTeams',

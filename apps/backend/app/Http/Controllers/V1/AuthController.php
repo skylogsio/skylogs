@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use Hash;
 use Illuminate\Http\Request;
+use Validator;
 
 class AuthController extends Controller
 {
@@ -71,6 +74,38 @@ class AuthController extends Controller
         $result['permissions'] = $user->permissions->pluck('name')->toArray();
 
         return response()->json($result);
+    }
+
+    public function ChangePassword(Request $request)
+    {
+        Validator::validate(
+            $request->all(),
+            [
+                'currentPassword' => 'required',
+                'newPassword' => 'required',
+                'confirmPassword' => 'required|same:newPassword',
+            ],
+        );
+
+        $model = User::where('_id', auth()->user()->id)->firstOrFail();
+
+        if (Hash::check($request->currentPassword, $model->password)) {
+
+            $model->update([
+                'password' => Hash::make($request->post('confirmPassword')),
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'data' => $model,
+            ]);
+        }
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Current password is incorrect',
+        ]);
+
     }
 
     public function logout()

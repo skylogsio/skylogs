@@ -8,7 +8,7 @@ x-back-env: &back-env
   - KAVENEGAR_SENDER_NUMBER=
   - TELEGRAM_BOT_TOKEN=
 #  Change the secret
-  - JWT_SECRET=mysecret
+  - JWT_SECRET=mysecretmysecretmysecretmysecret
 
 x-front-env: &front-env
   environment:
@@ -97,7 +97,7 @@ services:
         <<: *front-env
 
     skylogs-sentinel:
-        build: skylogs-sentinel
+        build: apps/sentinel
         container_name: skylogs-sentinel
         restart: always
         depends_on:

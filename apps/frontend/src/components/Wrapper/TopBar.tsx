@@ -1,7 +1,11 @@
-import { Box } from "@mui/material";
+"use client";
 
+import { Box, Stack } from "@mui/material";
 // import TopBarLanguage from "./TopBarLanguage";
+
+import ThemeSwitch from "./ThemeSwitch";
 import TopBarProfile from "./TopBarProfile";
+import TopBarZone from "./TopBarZone";
 // import TopBarSearch from "./TopBarSearch";
 
 export default function TopBar() {
@@ -10,7 +14,7 @@ export default function TopBar() {
       width="100%"
       display="flex"
       flexDirection="row-reverse"
-      justifyContent="space-between"
+      justifyContent="flex-start"
       alignItems="center"
       sx={{
         position: "sticky",
@@ -23,7 +27,13 @@ export default function TopBar() {
     >
       {/*<TopBarSearch />*/}
       {/*<TopBarLanguage />*/}
-      <TopBarProfile />
+      {/* <Stack direction="row"> */}
+      <Stack direction="row" alignItems="center" spacing={2}>
+        <TopBarZone />
+        <ThemeSwitch />
+        <TopBarProfile />
+      </Stack>
+      {/* </Stack> */}
     </Box>
   );
 }

@@ -27,7 +27,7 @@ class WebhookAlertsController extends Controller
             $alert['dataSourceId'] = $dataSource->id;
         }
 
-        $matchedAlerts = GrafanaService::CheckMatchedAlerts($request->all(), $alerts, $alertRules);
+        $matchedAlerts = GrafanaService::CheckMatchedAlerts($alerts, $alertRules);
         GrafanaService::SaveMatchedAlerts($dataSource, $request->all(), $matchedAlerts);
 
         return [
@@ -47,7 +47,7 @@ class WebhookAlertsController extends Controller
             $alert['dataSourceId'] = $dataSource->id;
         }
 
-        $matchedAlerts = GrafanaService::CheckMatchedAlerts($request->all(), $alerts, $alertRules);
+        $matchedAlerts = GrafanaService::CheckMatchedAlerts($alerts, $alertRules);
         GrafanaService::SaveMatchedAlerts($dataSource, $request->all(), $matchedAlerts);
 
         return [

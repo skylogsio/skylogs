@@ -9,13 +9,19 @@ import { signOut, useSession } from "next-auth/react";
 import SideBar from "@/components/Wrapper/SideBar";
 import { useRole } from "@/hooks";
 
+import AdminSideBar from "./AdminSideBar";
 import TopBar from "./TopBar";
+
+const SKYLOGS_VERSION = "0.15.0";
+const DEFAULT_REDIRECT_PATH = "/alert-rule";
 
 export default function Wrapper({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const router = useRouter();
   const { userInfo, hasRole } = useRole();
   const session = useSession();
+
+  const isAdminArea = pathname.includes("admin-area");
 
   if (session.data?.error === "RefreshTokenError") {
     signOut();
@@ -24,19 +30,24 @@ export default function Wrapper({ children }: PropsWithChildren) {
   if (pathname.includes("/auth")) return children;
 
   if (pathname.includes("/data-source") && userInfo && !hasRole(["owner", "manager"])) {
-    router.replace("/");
+    router.replace(DEFAULT_REDIRECT_PATH);
     return null;
   }
   if (pathname.includes("/users") && userInfo && !hasRole(["owner", "manager"])) {
-    router.replace("/");
+    router.replace(DEFAULT_REDIRECT_PATH);
     return null;
   }
   if (pathname.includes("/settings/telegram") && userInfo && !hasRole(["owner", "manager"])) {
-    router.replace("/");
+    router.replace(DEFAULT_REDIRECT_PATH);
     return null;
   }
   if (pathname.includes("/clusters") && userInfo && !hasRole(["owner"])) {
-    router.replace("/");
+    router.replace(DEFAULT_REDIRECT_PATH);
+    return null;
+  }
+
+  if (isAdminArea && !hasRole("owner")) {
+    router.replace(DEFAULT_REDIRECT_PATH);
     return null;
   }
 
@@ -62,7 +73,11 @@ export default function Wrapper({ children }: PropsWithChildren) {
         maxWidth="300px"
         sx={{ backgroundColor: ({ palette }) => palette.background.paper }}
       >
-        <SideBar />
+        {isAdminArea ? (
+          <AdminSideBar version={SKYLOGS_VERSION} />
+        ) : (
+          <SideBar version={SKYLOGS_VERSION} />
+        )}
       </Box>
       <Box display="flex" flexDirection="column" flex={1} height="100%">
         <TopBar />

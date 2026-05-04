@@ -156,7 +156,7 @@ export async function addEndpointToAlertRule(
   try {
     const response = await axios.put<ServerResponse<unknown>>(
       `${ALERT_RULE_NOTIFY_URL}/${alertRuleId}`,
-      { endpoint_ids: endpointIds }
+      { endpointIds }
     );
     return response.data;
   } catch (error) {

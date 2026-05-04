@@ -10,7 +10,10 @@ use App\Http\Controllers\V1\AlertRule\NotifyController;
 use App\Http\Controllers\V1\AlertRule\PrometheusController;
 use App\Http\Controllers\V1\AlertRule\TagsController;
 use App\Http\Controllers\V1\AuthController;
+use App\Http\Controllers\V1\Config\CallController;
+use App\Http\Controllers\V1\Config\EmailController;
 use App\Http\Controllers\V1\Config\SkylogsController;
+use App\Http\Controllers\V1\Config\SmsController;
 use App\Http\Controllers\V1\Config\TelegramController;
 use App\Http\Controllers\V1\DataSourceController;
 use App\Http\Controllers\V1\EndpointController;
@@ -23,28 +26,32 @@ use App\Http\Controllers\V1\Webhooks\ApiAlertController;
 use App\Http\Controllers\V1\Webhooks\WebhookAlertsController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/', function () {
+    return response()->json(['message' => 'Welcome to Skylogs!']);
+});
+
 Route::prefix('cluster')
     ->controller(SyncController::class)
     ->middleware('clusterAuth')
     ->group(function () {
-
         Route::get('/sync-data', 'Data')->name('cluster.data');
-
     });
 
 Route::prefix('v1')->group(function () {
 
     Route::post('auth/login', [AuthController::class, 'login']);
-    Route::get('status/all', [StatusController::class, 'Status'])->name('status.all');
+    Route::middleware('clusterProxy')->get('status/all', [StatusController::class, 'Status'])->name('status.all');
     Route::get('alert-rule/acknowledgeL/{id}', [AlertingController::class, 'AcknowledgeLoginLink'])->name('acknowledgeLink');
 
-    Route::middleware('apiAuth')->controller(ApiAlertController::class)->group(function () {
-        Route::post('fire-alert', 'FireAlert')->name('webhook.api.fire');
-        Route::post('resolve-alert', 'ResolveAlert')->name('webhook.api.resolve');
-        Route::post('status-alert', 'StatusAlert')->name('webhook.api.status');
-        Route::post('notification-alert', 'NotificationAlert')->name('webhook.notification');
-        Route::post('stop-alert', 'ResolveAlert')->name('webhook.api.stop');
-    });
+    Route::middleware(['apiAuth', 'throttle:api-alert'])
+        ->controller(ApiAlertController::class)
+        ->group(function () {
+            Route::post('fire-alert', 'FireAlert')->name('webhook.api.fire');
+            Route::post('resolve-alert', 'ResolveAlert')->name('webhook.api.resolve');
+            Route::post('status-alert', 'StatusAlert')->name('webhook.api.status');
+            Route::post('notification-alert', 'NotificationAlert')->name('webhook.notification');
+            Route::post('stop-alert', 'ResolveAlert')->name('webhook.api.stop');
+        });
 
     Route::middleware('webhookAuth')->controller(WebhookAlertsController::class)->group(function () {
 
@@ -57,7 +64,7 @@ Route::prefix('v1')->group(function () {
 
     });
 
-    Route::middleware('auth')->group(function () {
+    Route::middleware(['clusterAgentValidate', 'auth', 'clusterProxy'])->group(function () {
 
         Route::prefix('auth')
             ->controller(AuthController::class)
@@ -65,6 +72,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('logout', 'logout');
                 Route::post('refresh', 'refresh');
                 Route::post('me', 'me');
+                Route::post('pass', 'ChangePassword');
             });
 
         Route::prefix('/user')
@@ -74,7 +82,7 @@ Route::prefix('v1')->group(function () {
                 Route::middleware('role:'.Constants::ROLE_OWNER->value)->post('/changeOwner', 'ChangeOwnerShipOfData');
                 Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->group(function () {
                     Route::get('/', 'Index');
-                    Route::get('/{id}', 'Show');
+                    Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                     Route::post('/', 'Create');
                     Route::put('/pass/{id}', 'ChangePassword');
                     Route::put('/{id}', 'Update');
@@ -89,7 +97,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', 'Index');
                 Route::get('/indexFlow', 'IndexFlow');
                 Route::get('/createFlowEndpoints', 'EndpointsToCreateFlow');
-                Route::get('/{id}', 'Show');
+                Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                 Route::post('/', 'Create');
                 Route::post('/sendOTP', 'SendOTPCode');
                 Route::put('/{id}', 'Update');
@@ -98,14 +106,20 @@ Route::prefix('v1')->group(function () {
             });
         Route::prefix('/skylogs-instance')
             ->controller(SkylogsInstanceController::class)
-            ->middleware('role:'.Constants::ROLE_OWNER->value)
+            ->withoutMiddleware(['clusterProxy'])
             ->group(function () {
-                Route::get('/', 'Index');
+
+                Route::middleware('role:'.Constants::ROLE_OWNER->value)->group(function () {
+                    Route::get('/', 'Index');
+                    Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
+                    Route::post('/', 'Create');
+                    Route::put('/{id}', 'Update');
+                    Route::delete('/{id}', 'Delete');
+                });
+
+                Route::get('/all', 'All');
                 Route::get('/status/{id}', 'IsConnected');
-                Route::get('/{id}', 'Show');
-                Route::post('/', 'Create');
-                Route::put('/{id}', 'Update');
-                Route::delete('/{id}', 'Delete');
+
             });
 
         Route::prefix('/data-source')
@@ -113,9 +127,9 @@ Route::prefix('v1')->group(function () {
             ->middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)
             ->group(function () {
                 Route::get('/', 'Index');
-                Route::get('/types', 'GetTypes');
                 Route::get('/status/{id}', 'IsConnected');
-                Route::get('/{id}', 'Show');
+                Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
+                Route::get('/types', 'GetTypes');
                 Route::post('/', 'Create');
                 Route::put('/{id}', 'Update');
                 Route::delete('/{id}', 'Delete');
@@ -126,7 +140,7 @@ Route::prefix('v1')->group(function () {
             ->group(function () {
                 Route::get('/', 'Index');
                 Route::get('/all', 'All');
-                Route::get('/{id}', 'Show');
+                Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                 Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->post('/', 'Create');
                 Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->put('/{id}', 'Update');
                 Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->delete('/{id}', 'Delete');
@@ -137,7 +151,7 @@ Route::prefix('v1')->group(function () {
             ->middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)
             ->group(function () {
                 Route::get('/', 'Index');
-                Route::get('/{id}', 'Show');
+                Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                 Route::post('/', 'Create');
                 Route::put('/{id}', 'Update');
                 Route::delete('/{id}', 'Delete');
@@ -172,7 +186,7 @@ Route::prefix('v1')->group(function () {
                         Route::post('/add-user-notify', 'AddUserAccessNotify');
                     });
 
-                Route::get('/{id}', 'Show');
+                Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                 Route::post('/', 'Store');
                 Route::post('/silent/{id}', 'Silent');
                 Route::post('/pin/{id}', 'Pin');
@@ -211,6 +225,7 @@ Route::prefix('v1')->group(function () {
                 Route::put('/batchAlert', 'StoreBatch');
 
             });
+
         Route::prefix('/alert-rule-user')
             ->controller(AccessUserController::class)
             ->group(function () {
@@ -255,6 +270,46 @@ Route::prefix('v1')->group(function () {
                         Route::post('/', 'Create');
                         Route::post('/deactivate', 'Deactivate');
                         Route::post('/activate/{id}', 'Activate');
+                        Route::put('/{id}', 'Update');
+                        Route::delete('/{id}', 'Delete');
+                    });
+
+                Route::prefix('/sms')
+                    ->controller(SmsController::class)
+                    ->group(function () {
+                        Route::get('/', 'Index');
+
+                        Route::get('/{id}', 'Show');
+                        Route::post('/', 'Create');
+                        Route::get('/providers', 'providers');
+                        Route::post('/make-default/{id}', 'makeDefault');
+                        Route::post('/make-backup/{id}', 'makeBackup');
+                        Route::put('/{id}', 'Update');
+                        Route::delete('/{id}', 'Delete');
+                    });
+                Route::prefix('/call')
+                    ->controller(CallController::class)
+                    ->group(function () {
+                        Route::get('/', 'Index');
+
+                        Route::get('/{id}', 'Show');
+                        Route::post('/', 'Create');
+                        Route::get('/providers', 'providers');
+                        Route::post('/make-default/{id}', 'makeDefault');
+                        Route::post('/make-backup/{id}', 'makeBackup');
+                        Route::put('/{id}', 'Update');
+                        Route::delete('/{id}', 'Delete');
+                    });
+
+                Route::prefix('/email')
+                    ->controller(EmailController::class)
+                    ->group(function () {
+                        Route::get('/', 'Index');
+
+                        Route::get('/{id}', 'Show');
+                        Route::post('/', 'Create');
+                        Route::post('/make-default/{id}', 'makeDefault');
+                        Route::post('/make-backup/{id}', 'makeBackup');
                         Route::put('/{id}', 'Update');
                         Route::delete('/{id}', 'Delete');
                     });

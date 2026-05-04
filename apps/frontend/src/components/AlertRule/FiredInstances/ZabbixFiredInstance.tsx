@@ -65,7 +65,7 @@ export default function ZabbixFiredInstance({ alertId }: { alertId: IAlertRule["
             width="100%"
             padding={2}
             borderRadius={2}
-            sx={{ backgroundColor: ({ palette }) => palette.grey[200] }}
+            sx={{ backgroundColor: ({ palette }) => palette.background.default }}
           >
             <Typography variant="subtitle2" component="pre">
               {details}

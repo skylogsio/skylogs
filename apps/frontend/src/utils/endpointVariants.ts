@@ -1,5 +1,7 @@
-import { BsChatDotsFill, BsMicrosoftTeams, BsTelegram, BsTelephoneFill } from "react-icons/bs";
+import { type IconType } from "react-icons";
+import { BsChatDotsFill, BsMicrosoftTeams, BsTelephoneFill } from "react-icons/bs";
 import { MdEmail } from "react-icons/md";
+import { RiTelegram2Fill } from "react-icons/ri";
 import { SiDiscord, SiMattermost } from "react-icons/si";
 import { TiFlowChildren } from "react-icons/ti";
 
@@ -15,7 +17,7 @@ export type EndpointType =
 
 interface EndpointTypeConfig {
   title: string;
-  icon: React.ComponentType<{ style?: React.CSSProperties; color?: string }>;
+  icon: IconType;
 }
 
 export const ENDPOINT_CONFIG: Record<EndpointType, EndpointTypeConfig> = {
@@ -25,7 +27,7 @@ export const ENDPOINT_CONFIG: Record<EndpointType, EndpointTypeConfig> = {
   },
   telegram: {
     title: "Telegram",
-    icon: BsTelegram
+    icon: RiTelegram2Fill
   },
   teams: {
     title: "Teams",

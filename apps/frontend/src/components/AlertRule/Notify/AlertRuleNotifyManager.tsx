@@ -117,15 +117,11 @@ export default function AlertRuleNotifyManager({ alertId }: { alertId: IAlertRul
         />
       ) : (
         <EmptyList
-          icon={
-            <AiFillNotification
-              size="3rem"
-              style={{ color: palette.warning.light, marginBottom: "16px" }}
-            />
-          }
-          title="No Notification Endpoints Configured"
-          description="This alert rule doesn&#39;t have any notification endpoints set up yet. Use the form
-            above to add endpoints like Teams, Telegram, SMS or Call to receive alerts."
+          minimal
+          icon={<AiFillNotification size="2.2rem" color={palette.common.white} />}
+          title="No Notifications Configured"
+          description="This alert rule doesn't have any notification endpoints set up yet. Use the form above to add endpoints like Teams, Telegram, SMS and etc. to receive alerts."
+          gradientColors={[palette.warning.main, palette.warning.light]}
         />
       )}
     </Stack>

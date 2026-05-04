@@ -6,8 +6,8 @@ use App\Enums\AlertRuleType;
 use App\Enums\DataSourceType;
 use App\Http\Controllers\Controller;
 use App\Models\DataSource\DataSource;
-use App\Models\Endpoint;
 use App\Models\User;
+use App\Services\EndpointService;
 use App\Services\GrafanaInstanceService;
 use App\Services\PrometheusInstanceService;
 use App\Services\ZabbixService;
@@ -26,9 +26,7 @@ class CreateDataController extends Controller
 
         $adminUserId = User::where('username', 'admin')->first()->_id;
 
-        $endpoints = Endpoint::where('userId', \Auth::user()->_id)
-            ->orWhere('isPublic', true)
-            ->get();
+        $endpoints = app(EndpointService::class)->selectableUserEndpoint(auth()->user());
         $users = User::whereNotIn('_id', [$adminUserId, \Auth::id()])->get();
 
         return response()->json(

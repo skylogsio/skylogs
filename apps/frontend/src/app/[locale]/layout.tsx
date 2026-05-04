@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import localfont from "next/font/local";
+import { cookies } from "next/headers";
 import { type PropsWithChildren } from "react";
 
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v14-appRouter";
@@ -38,6 +39,9 @@ export default async function RootLayout({
   params: { locale }
 }: PropsWithChildren<{ params: { locale: string } }>) {
   const dir = await getCurrentDirection();
+  const cookieStore = cookies();
+  const theme = cookieStore.get("theme");
+
   return (
     <html lang={locale} dir={dir}>
       <body className={dir === "ltr" ? inter.className : vazir.className}>
@@ -49,6 +53,7 @@ export default async function RootLayout({
         <ToastContainer
           position={dir === "ltr" ? "bottom-right" : "bottom-left"}
           hideProgressBar
+          theme={theme?.value}
           transition={Zoom}
         />
       </body>

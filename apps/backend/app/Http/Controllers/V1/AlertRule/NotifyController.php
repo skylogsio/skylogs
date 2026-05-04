@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
-use App\Models\User;
 use App\Services\AlertRuleService;
+use App\Services\EndpointService;
 use App\Services\SendNotifyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,29 +18,15 @@ class NotifyController extends Controller
     {
 
         $alert = AlertRule::where('_id', $id)->firstOrFail();
-        $currentUser = \Auth::user();
 
-        $alertUserIds = $alert->userIds ?? [];
-        $selectableEndpoints = [];
-        if ($currentUser->isAdmin()) {
-            $selectableEndpoints = Endpoint::get();
-        } elseif ($alert->userId == $currentUser->_id) {
-            $selectableEndpoints = Endpoint::where('userId', $currentUser->_id)->orWhere('isPublic', true)->get();
-        } elseif (in_array($currentUser->_id, $alertUserIds)) {
-            $selectableEndpoints = Endpoint::where('userId', $currentUser->_id)->get();
-        }
+        $selectableEndpoints = app(EndpointService::class)->selectableUserEndpoint(auth()->user(), $alert);
 
         $alertEndpoints = [];
-        if (! empty($alert->endpointIds)) {
-            if ($currentUser->isAdmin()) {
-                $alertEndpoints = Endpoint::whereIn('_id', $alert->endpointIds)->get();
-            } elseif ($alert->userId == $currentUser->_id) {
-                $alertEndpoints = Endpoint::whereIn('_id', $alert->endpointIds)->where(function ($query) use ($currentUser) {
-                    return $query->where('userId', $currentUser->id)->orWhere('isPublic', true);
-                })->get();
-            } elseif (in_array($currentUser->_id, $alertUserIds)) {
-                $alertEndpoints = Endpoint::whereIn('_id', $alert->endpointIds)->where('userId', $currentUser->_id)->get();
-            }
+        $selectableEndpointsIds = $selectableEndpoints->pluck('id')->toArray();
+        if (! empty($alert->endpointIds) && ! empty($selectableEndpointsIds)) {
+            $alertEndpoints = Endpoint::whereIn('_id', $alert->endpointIds)
+                ->whereIn('_id', $selectableEndpointsIds)
+                ->get();
         }
 
         return response()->json(compact('alertEndpoints', 'selectableEndpoints'));
@@ -49,7 +35,7 @@ class NotifyController extends Controller
     public function CreateBatch()
     {
 
-        $selectableEndpoints = Endpoint::where('userId', Auth::user()->id)->orWhere('isPublic', true)->get();
+        $selectableEndpoints = app(EndpointService::class)->selectableUserEndpoint(Auth::user());
 
         return response()->json(compact('selectableEndpoints'));
     }
@@ -72,28 +58,21 @@ class NotifyController extends Controller
 
         $currentUser = Auth::user();
         $isAdmin = $currentUser->isAdmin();
-        if ($request->has('endpoint_ids') && ! empty($request->post('endpoint_ids'))) {
-            $adminUserId = User::where('username', 'admin')->first()->_id;
+        if ($request->has('endpointIds') && ! empty($request->post('endpointIds'))) {
 
             $alert = AlertRule::where('_id', $id)->firstOrFail();
 
-            foreach ($request->endpoint_ids as $end) {
-                $hasAccessToAdd = false;
-                $alertUserIds = $alert->userIds ?? [];
-                if ($isAdmin) {
-                    $hasAccessToAdd = true;
-                } elseif ($alert->userId == $currentUser->_id) {
-                    $hasAccessToAdd = Endpoint::where('id', $end)->where(function ($query) use ($currentUser) {
-                        return $query->where('userId', $currentUser->id)->orWhere('isPublic', true);
-                    })->get();
-                } elseif (in_array($currentUser->_id, $alertUserIds)) {
-                    $hasAccessToAdd = Endpoint::where('id', $end)->where('userId', $currentUser->_id)->get();
-                }
+            $selectableEndpointIds = app(EndpointService::class)->selectableUserEndpoint($currentUser, $alert)->pluck('id');
+            foreach ($request->endpointIds as $endpointId) {
+
+                $hasAccessToAdd = $isAdmin || $selectableEndpointIds->contains($endpointId);
+
                 if ($hasAccessToAdd) {
-                    $alert->push('endpoint_ids', $end, true);
-                    $alert->push('endpointIds', $end, true);
+                    $alert->push('endpointIds', $endpointId, true);
                 }
+
             }
+
             $alert->save();
 
         }
@@ -111,32 +90,21 @@ class NotifyController extends Controller
             $alertIds = $request->post('alertIds');
         }
         if ($request->has('endpoints') && ! empty($request->post('endpoints'))) {
-            $adminUserId = User::where('username', 'admin')->first()->_id;
-            $adminEndpoints = Endpoint::where('userId', $adminUserId)
-                ->get()
-                ->pluck('_id')->toArray();
 
             foreach ($alertIds as $id) {
                 $alert = AlertRule::where('_id', $id)->first();
 
+                $selectableEndpointIds = app(EndpointService::class)->selectableUserEndpoint($currentUser, $alert)->pluck('id');
                 foreach ($request->endpoints as $endpointId) {
-                    $hasAccessToAdd = false;
-                    $alertUserIds = $alert->userIds ?? [];
-                    if ($isAdmin) {
-                        $hasAccessToAdd = true;
-                    } elseif ($alert->userId == $currentUser->_id) {
-                        $hasAccessToAdd = Endpoint::where('id', $endpointId)->where(function ($query) use ($currentUser) {
-                            return $query->where('userId', $currentUser->id)->orWhere('isPublic', true);
-                        })->get();
-                    } elseif (in_array($currentUser->_id, $alertUserIds)) {
-                        $hasAccessToAdd = Endpoint::where('id', $endpointId)->where('userId', $currentUser->_id)->get();
-                    }
+
+                    $hasAccessToAdd = $isAdmin || $selectableEndpointIds->contains($endpointId);
+
                     if ($hasAccessToAdd) {
-                        $alert->push('endpoint_ids', $endpointId, true);
                         $alert->push('endpointIds', $endpointId, true);
                     }
 
                 }
+
                 $alert->save();
             }
 
@@ -149,7 +117,6 @@ class NotifyController extends Controller
     {
 
         $alert = AlertRule::where('_id', $alertId)->firstOrFail();
-        $alert->pull('endpoint_ids', $endpointId);
         $alert->pull('endpointIds', $endpointId);
         $alert->save();
 

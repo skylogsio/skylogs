@@ -6,6 +6,7 @@ use App\Helpers\Constants;
 use App\Helpers\Utilities;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertRule;
+use App\Models\GrafanaCheck;
 use App\Models\GrafanaWebhookAlert;
 
 class GrafanaService
@@ -49,16 +50,14 @@ class GrafanaService
 
     }
 
-    public static function CheckMatchedAlerts($webhook, $alerts, $alertRules): array
+    public static function CheckMatchedAlerts($alerts, $alertRules): array
     {
 
-        $status = $webhook['status'];
         $fireAlertsByRule = [];
         foreach ($alerts as $alert) {
             foreach ($alertRules as $alertRule) {
                 $isMatch = true;
-                $matchLabels = [];
-                $matchAnnotations = [];
+
                 if (empty($alertRule['queryType']) || $alertRule['queryType'] == AlertRule::DYNAMIC_QUERY_TYPE) {
 
                     if (in_array($alert['dataSourceId'], $alertRule['dataSourceIds'])) {
@@ -69,11 +68,9 @@ class GrafanaService
 
                         if (! empty($alertRule->extraField)) {
                             foreach ($alertRule->extraField as $key => $patterns) {
-                                if ((! empty($alert['labels'][$key]) && Utilities::CheckPatternsString($patterns, $alert['labels'][$key]))) {
-                                    $matchLabels[$key] = $patterns;
-                                } elseif ((! empty($alert['annotations'][$key]) && Utilities::CheckPatternsString($patterns, $alert['annotations'][$key]))) {
-                                    $matchAnnotations[$key] = $patterns;
-                                } else {
+                                $value = $alert['labels'][$key] ?? $alert['annotations'][$key] ?? null;
+
+                                if (empty($value) || ! Utilities::CheckPatternsString($patterns, $value)) {
                                     $isMatch = false;
                                     break;
                                 }
@@ -97,7 +94,6 @@ class GrafanaService
                 }
 
                 if ($isMatch) {
-                    // check with database checkprometheus
 
                     if (empty($fireAlertsByRule[$alertRule->_id])) {
                         $fireAlertsByRule[$alertRule->_id] = [];
@@ -110,6 +106,12 @@ class GrafanaService
                         'labels' => $alert['labels'],
                         'annotations' => $alert['annotations'],
                         'alertRuleId' => $alertRule->_id,
+                        'status' => $alert['status'],
+                        'startsAt' => $alert['startsAt'] ?? '',
+                        'endsAt' => $alert['endsAt'] ?? '',
+                        'generatorURL' => $alert['generatorURL'],
+                        'orgId' => $alert['orgId'] ?? null,
+
                         //                        "state" => $status,
                     ];
 
@@ -142,24 +144,58 @@ class GrafanaService
             $model->orgId = $webhook['orgId'] ?? '';
             $model->title = $webhook['title'] ?? '';
             $model->message = $webhook['message'] ?? '';
-
+            $grafanaAlertnames = collect($alerts)->map(function ($gAlert) {
+                return $gAlert['dataSourceAlertName'];
+            })->unique()->toArray();
             $alertRule = $model->alertRule;
 
-            if ($alertRule) {
-                if ($status == GrafanaWebhookAlert::RESOLVED) {
-                    $alertRule->state = AlertRule::RESOlVED;
-                } elseif ($status == GrafanaWebhookAlert::FIRING) {
-                    $alertRule->state = AlertRule::CRITICAL;
-                }
-                $alertRule->save();
-                if ($alertRule->state == AlertRule::RESOlVED) {
-                    $alertRule->removeAcknowledge();
-                }
-            }
-            $model->save();
-
+            self::updateAlertRuleStatus($alertRule, $alerts, $grafanaAlertnames);
             SendNotifyService::CreateNotify(SendNotifyJob::GRAFANA_WEBHOOK, $model, $alertRule->_id);
 
+        }
+
+    }
+
+    public static function updateAlertRuleStatus($alertRule, $alerts, $grafanaAlertnames)
+    {
+
+        $webhookAlerts = collect($alerts)->filter(function ($alert) {
+            return $alert['status'] == GrafanaWebhookAlert::FIRING;
+        });
+
+        $check = GrafanaCheck::firstOrCreate([
+            'alertRuleId' => $alertRule->_id,
+        ], [
+            'alertRuleId' => $alertRule->_id,
+            'alerts' => [],
+            'state' => GrafanaWebhookAlert::RESOLVED,
+        ]);
+
+        $checkAlerts = collect($check->alerts)->reject(function ($alert) use ($grafanaAlertnames) {
+            return in_array($alert['dataSourceAlertName'], $grafanaAlertnames);
+        });
+
+        if ($webhookAlerts->isNotEmpty()) {
+            foreach ($webhookAlerts as $webhookAlert) {
+                $checkAlerts[] = $webhookAlert;
+            }
+        }
+
+        $fireCount = $checkAlerts->count();
+
+        $check->alerts = $checkAlerts->toArray();
+        $check->state = $fireCount == 0 ? GrafanaWebhookAlert::RESOLVED : GrafanaWebhookAlert::FIRING;
+        $check->save();
+
+        $alertRuleState = $fireCount == 0 ? AlertRule::RESOlVED : AlertRule::CRITICAL;
+
+        if ($alertRule) {
+            $alertRule->state = $alertRuleState;
+            $alertRule->fireCount = $fireCount;
+            $alertRule->save();
+            if ($alertRule->state == AlertRule::RESOlVED) {
+                $alertRule->removeAcknowledge();
+            }
         }
 
     }
