@@ -22,6 +22,7 @@ import GeneralAlertRuleForm from "@/components/AlertRule/Forms/GeneralAlertRuleF
 import NotificationForm from "@/components/AlertRule/Forms/NotificationForm";
 import SentryAlertRuleForm from "@/components/AlertRule/Forms/SentryForm";
 import SplunkAlertRuleForm from "@/components/AlertRule/Forms/SplunkForm";
+import VictoriaLogsAlertRuleForm from "@/components/AlertRule/Forms/VictoriaLogsForm";
 import ZabbixAlertRuleForm from "@/components/AlertRule/Forms/ZabbixForm";
 import type { ModalContainerProps } from "@/components/Modal/types";
 import { ALERT_RULE_VARIANTS, type AlertRuleType } from "@/utils/alertRuleUtils";
@@ -90,6 +91,14 @@ export default function AlertRuleModal({ open, onClose, onSubmit, data }: AlertR
       case "elastic":
         return (
           <ElasticAlertRuleForm
+            data={data as CreateUpdateModal<IAlertRule>}
+            onSubmit={onSubmit}
+            onClose={onClose}
+          />
+        );
+      case "victoria_logs":
+        return (
+          <VictoriaLogsAlertRuleForm
             data={data as CreateUpdateModal<IAlertRule>}
             onSubmit={onSubmit}
             onClose={onClose}
