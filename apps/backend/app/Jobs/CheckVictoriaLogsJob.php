@@ -76,7 +76,7 @@ class CheckVictoriaLogsJob implements ShouldQueue
                     'state' => VictoriaLogsCheck::FIRE,
                 ]);
 
-                SendNotifyService::CreateNotify(SendNotifyJob::ELASTIC_CHECK, $check, $this->alert->_id);
+                SendNotifyService::CreateNotify(SendNotifyJob::VICTORIA_LOGS_CHECK, $check, $this->alert->_id);
             } elseif ($check->currentCountDocument !== $countDocuments) {
                 $check->currentCountDocument = $countDocuments;
                 $check->save();
