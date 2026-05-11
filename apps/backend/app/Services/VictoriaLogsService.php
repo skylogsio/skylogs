@@ -6,7 +6,7 @@ use App\Models\VictoriaLogsCheck;
 
 class VictoriaLogsService
 {
-    public static function countDocuments(VictoriaLogsCheck $victoriaLogsCheck): array
+    public static function countDocuments(VictoriaLogsCheck $victoriaLogsCheck): int
     {
         $documents = 0;
 
