@@ -21,7 +21,7 @@ class VictoriaLogsService
                 );
             $body = $response->json();
 
-            $documents = (int) $body['total'];
+            $documents = intval($body['total']);
 
         } catch (\Exception $exception) {
 
