@@ -21,6 +21,7 @@ class DataSourceService
                 case DataSourceType::SENTRY:
                 case DataSourceType::PMM:
                 case DataSourceType::SPLUNK:
+                case DataSourceType::VICTORIA_LOGS:
                 case DataSourceType::ZABBIX:
                     $response = $request->get($ds->url);
                     break;
