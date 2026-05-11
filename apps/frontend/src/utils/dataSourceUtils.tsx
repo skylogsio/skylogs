@@ -1,4 +1,4 @@
-import { blue, grey, orange, red, yellow } from "@mui/material/colors";
+import { blue, grey, orange, red, yellow, lightBlue } from "@mui/material/colors";
 import { type IconType } from "react-icons";
 import { FaBell } from "react-icons/fa";
 import { SiGrafana, SiMetabase, SiPrometheus, SiSentry, SiVictoriametrics } from "react-icons/si";
@@ -18,6 +18,7 @@ export type DataSourceType =
   | "zabbix"
   | "splunk"
   | "victoriametrics"
+  | "victoria_logs"
   | "pmm";
 
 export const DATA_SOURCE_VARIANTS: Record<
@@ -87,6 +88,12 @@ export const DATA_SOURCE_VARIANTS: Record<
     label: "Percona PMM",
     Icon: PerconaIcon as IconType,
     defaultColor: "",
+    defaultSize: "1.2rem"
+  },
+  victoria_logs: {
+    label: "Victoria Logs",
+    Icon: SiVictoriametrics,
+    defaultColor: lightBlue[600],
     defaultSize: "1.2rem"
   }
 };
