@@ -96,6 +96,7 @@ services:
             - nginx
         <<: *front-env
 
+    # Main sentinel: define full peers: in apps/sentinel/config.yaml (role main). Agents use MAIN_SENTINEL_URL + cache.
     skylogs-sentinel:
         build: apps/sentinel
         container_name: skylogs-sentinel
@@ -103,19 +104,44 @@ services:
         depends_on:
         - skylogs-back
         environment:
-          - SENTINEL_ID=dc2-sentinel
-          - SENTINEL_ROLE=secondary
-          - MAIN_SKYLOGS_HEARTBEAT_URL=http://skylogs-core:8080/heartbeat
+          - SENTINEL_ID=main-cluster-sentinel
+          - SENTINEL_ROLE=main
           - HEARTBEAT_INTERVAL=5s
           - HEARTBEAT_TIMEOUT=3s
-          - FAIL_THRESHOLD=3
-          - ALERT_WEBHOOK_URL=http://skylogs-core:8080/internal/alerts/sentinel
+          - HEARTBEAT_FAIL_AFTER=15s
+          - ALERT_WEBHOOK_URL=http://nginx:80/api/v1/fire-alert
         volumes:
           - ./apps/sentinel/config.yaml:/app/config.yaml:ro
         ports:
           - "9191:9191"
         networks:
           - skylogs_net
+
+    # Optional second zone: uncomment and point config at main (see apps/sentinel/config.example.yaml).
+    # skylogs-sentinel-agent:
+    #     build: apps/sentinel
+    #     container_name: skylogs-sentinel-agent
+    #     restart: always
+    #     depends_on:
+    #       - skylogs-sentinel
+    #     environment:
+    #       - SENTINEL_ID=agent-zone-sentinel
+    #       - SENTINEL_ROLE=agent
+    #       - MAIN_SENTINEL_URL=http://skylogs-sentinel:9191
+    #       - CLUSTER_REFRESH_INTERVAL=30s
+    #       - PEERS_CACHE_FILE=/data/sentinel-peers-cache.json
+    #       - HEARTBEAT_INTERVAL=5s
+    #       - HEARTBEAT_TIMEOUT=3s
+    #       - HEARTBEAT_FAIL_AFTER=15s
+    #       - ALERT_WEBHOOK_URL=http://nginx:80/api/v1/fire-alert
+    #       - SHARED_SECRET=${SENTINEL_SHARED_SECRET:-}
+    #     volumes:
+    #       - ./apps/sentinel/config.agent.yaml:/app/config.yaml:ro
+    #       - sentinel_peer_cache:/data
+    #     ports:
+    #       - "9192:9191"
+    #     networks:
+    #       - skylogs_net
 networks:
     skylogs_net:
         driver: bridge

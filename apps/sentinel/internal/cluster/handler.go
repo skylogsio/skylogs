@@ -1,28 +1,29 @@
-package heartbeat
+package cluster
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/skylogsio/skylogs/apps/sentinel/internal/discovery"
 	"github.com/skylogsio/skylogs/apps/sentinel/internal/security"
 )
 
-const sentinelIDHeader = "X-SkyLogs-Sentinel-Id"
-
-func Receiver(reg *Registry, secret string, maxSkew time.Duration) http.HandlerFunc {
+// PeersHandler serves the authoritative peer list (main sentinel only). Auth matches heartbeat: signed GET.
+func PeersHandler(secret string, maxSkew time.Duration, snapshot func() []discovery.Peer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
 		tsStr := r.Header.Get("X-SkyLogs-Timestamp")
 		sig := r.Header.Get("X-SkyLogs-Signature")
-		senderID := r.Header.Get(sentinelIDHeader)
 
 		if tsStr == "" || sig == "" {
 			http.Error(w, "missing auth headers", http.StatusUnauthorized)
-			return
-		}
-		if senderID == "" {
-			http.Error(w, "missing sentinel id", http.StatusUnauthorized)
 			return
 		}
 
@@ -38,21 +39,20 @@ func Receiver(reg *Registry, secret string, maxSkew time.Duration) http.HandlerF
 			return
 		}
 
-		message := fmt.Sprintf(
-			"%s|%s|%s",
-			r.Method,
-			r.URL.Path,
-			tsStr,
-		)
-
+		message := fmt.Sprintf("%s|%s|%s", r.Method, r.URL.Path, tsStr)
 		if !security.Verify(secret, message, sig) {
 			http.Error(w, "invalid signature", http.StatusUnauthorized)
 			return
 		}
 
-		st := reg.GetOrCreate(senderID)
-		st.MarkSeen()
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
+		peers := snapshot()
+		out := make([]discovery.Peer, len(peers))
+		copy(out, peers)
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(discovery.ClusterPeersResponse{
+			Peers:     out,
+			UpdatedAt: time.Now().UTC(),
+		})
 	}
 }
