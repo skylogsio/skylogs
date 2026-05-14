@@ -56,17 +56,12 @@ class SendNotifyService
             ];
 
         } else {
+            $alertRule = $alertRuleId
+                ? AlertRule::where('_id', $alertRuleId)->first()
+                    ?? AlertRule::where('id', $alertRuleId)->first()
+                : null;
 
-            $messages = [
-                'matterMostMessage' => $alert->matterMostMessage(),
-                'telegram' => $alert->telegram(),
-                'teamsMessage' => $alert->teamsMessage(),
-                'emailMessage' => $alert->emailMessage(),
-                'smsMessage' => $alert->smsMessage(),
-                'discordMessage' => $alert->discordMessage(),
-                'callMessage' => $alert->callMessage(),
-                'defaultMessage' => $alert->defaultMessage(),
-            ];
+            $messages = NotifyMessageComposer::buildMessages($alertRule, $alert);
 
         }
         $notify->messages = $messages;
