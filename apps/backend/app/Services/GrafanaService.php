@@ -196,11 +196,41 @@ class GrafanaService
             'state' => GrafanaWebhookAlert::RESOLVED,
         ]);
 
-        $byKey = collect($check->alerts ?? [])
+        $merged = self::mergeGrafanaCheckAlertBatch($check->alerts ?? [], $alerts);
+
+        $fireCount = count($merged);
+
+        $check->alerts = $merged;
+        $check->state = $fireCount == 0 ? GrafanaWebhookAlert::RESOLVED : GrafanaWebhookAlert::FIRING;
+        $check->save();
+
+        $alertRuleState = $fireCount == 0 ? AlertRule::RESOlVED : AlertRule::CRITICAL;
+
+        if ($alertRule) {
+            $alertRule->state = $alertRuleState;
+            $alertRule->fireCount = $fireCount;
+            $alertRule->save();
+            if ($alertRule->state == AlertRule::RESOlVED) {
+                $alertRule->removeAcknowledge();
+            }
+        }
+
+    }
+
+    /**
+     * Merge a webhook batch into stored Grafana check alerts (keyed by fingerprint or legacy hash).
+     *
+     * @param  array<int, mixed>  $storedAlerts
+     * @param  array<int, mixed>  $incomingAlerts
+     * @return array<int, array<string, mixed>>
+     */
+    public static function mergeGrafanaCheckAlertBatch(array $storedAlerts, array $incomingAlerts): array
+    {
+        $byKey = collect($storedAlerts)
             ->map(fn ($stored) => is_array($stored) ? $stored : (array) $stored)
             ->keyBy(fn (array $stored) => self::grafanaAlertInstanceKey($stored));
 
-        foreach ($alerts as $incoming) {
+        foreach ($incomingAlerts as $incoming) {
             $incoming = is_array($incoming) ? $incoming : (array) $incoming;
             $incoming = self::normalizeStoredGrafanaAlert($incoming);
             $key = self::grafanaAlertInstanceKey($incoming);
@@ -224,7 +254,7 @@ class GrafanaService
 
             if (! empty($incoming['fingerprint'])) {
                 $incomingLegacy = self::legacyGrafanaAlertInstanceKey($incoming);
-                foreach ($byKey->keys() as $existingKey) {
+                foreach ($byKey->keys()->all() as $existingKey) {
                     $stored = $byKey->get($existingKey);
                     if ($existingKey === $key) {
                         continue;
@@ -241,25 +271,7 @@ class GrafanaService
             $byKey->put($key, $incoming);
         }
 
-        $checkAlerts = $byKey->values();
-
-        $fireCount = $checkAlerts->count();
-
-        $check->alerts = $checkAlerts->toArray();
-        $check->state = $fireCount == 0 ? GrafanaWebhookAlert::RESOLVED : GrafanaWebhookAlert::FIRING;
-        $check->save();
-
-        $alertRuleState = $fireCount == 0 ? AlertRule::RESOlVED : AlertRule::CRITICAL;
-
-        if ($alertRule) {
-            $alertRule->state = $alertRuleState;
-            $alertRule->fireCount = $fireCount;
-            $alertRule->save();
-            if ($alertRule->state == AlertRule::RESOlVED) {
-                $alertRule->removeAcknowledge();
-            }
-        }
-
+        return $byKey->values()->all();
     }
 
     /**
