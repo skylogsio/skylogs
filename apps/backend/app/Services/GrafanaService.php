@@ -148,7 +148,7 @@ class GrafanaService
                 return $gAlert['dataSourceAlertName'];
             })->unique()->toArray();
             $alertRule = $model->alertRule;
-
+            $model->save();
             self::updateAlertRuleStatus($alertRule, $alerts, $grafanaAlertnames);
             SendNotifyService::CreateNotify(SendNotifyJob::GRAFANA_WEBHOOK, $model, $alertRule->_id);
 
