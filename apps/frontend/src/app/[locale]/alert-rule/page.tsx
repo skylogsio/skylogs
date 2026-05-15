@@ -81,6 +81,7 @@ export default function AlertRule() {
                 alignItems="center"
                 justifyContent="center"
                 component={Link}
+                sx={{ color: ({ palette }) => palette.text.primary, textDecoration: "none" }}
                 href={`${pathname}/${row.original.id}`}
               >
                 {row.original.isPinned && (
