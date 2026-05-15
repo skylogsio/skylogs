@@ -1,6 +1,5 @@
-import { blue, grey, orange, red, yellow, lightBlue } from "@mui/material/colors";
+import { blue, grey, orange, red, lightBlue } from "@mui/material/colors";
 import { type IconType } from "react-icons";
-import { FaBell } from "react-icons/fa";
 import { SiGrafana, SiMetabase, SiPrometheus, SiSentry, SiVictoriametrics } from "react-icons/si";
 
 import ElasticIcon from "@/assets/svg/ElasticIcon";
@@ -10,7 +9,6 @@ import ZabbixIcon from "@/assets/svg/ZabbixIcon";
 
 export type DataSourceType =
   | "prometheus"
-  | "notification"
   | "sentry"
   | "grafana"
   | "metabase"
@@ -34,12 +32,6 @@ export const DATA_SOURCE_VARIANTS: Record<
     label: "Prometheus",
     Icon: SiPrometheus,
     defaultColor: red[500],
-    defaultSize: "1.2rem"
-  },
-  notification: {
-    label: "Notification",
-    Icon: FaBell,
-    defaultColor: yellow[600],
     defaultSize: "1.2rem"
   },
   sentry: {
