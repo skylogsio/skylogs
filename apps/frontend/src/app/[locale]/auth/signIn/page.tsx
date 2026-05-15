@@ -38,7 +38,10 @@ export default function AuthenticationPage() {
     register,
     handleSubmit,
     formState: { errors }
-  } = useForm<SignInFormType>({ resolver: zodResolver(signInSchema) });
+  } = useForm<SignInFormType>({
+    resolver: zodResolver(signInSchema),
+    mode: "onSubmit"
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -121,11 +124,17 @@ export default function AuthenticationPage() {
             {...register("username")}
           />
           <TextField
+            type={showPassword ? "text" : "password"}
             variant="filled"
             size="medium"
             label={translate("Password")}
-            type={showPassword ? "text" : "password"}
-            sx={{ WebkitTextSecurity: "*" }}
+            sx={{ marginBottom: 1.5 }}
+            error={!!errors.password}
+            helperText={
+              errors.password?.message
+                ? translate(errors.password.message as "RequiredPassword")
+                : undefined
+            }
             slotProps={{
               input: {
                 endAdornment: (
@@ -139,12 +148,6 @@ export default function AuthenticationPage() {
                 )
               }
             }}
-            error={!!errors.password}
-            helperText={
-              errors.password?.message
-                ? translate(errors.password.message as "RequiredPassword")
-                : undefined
-            }
             disabled={loading}
             {...register("password")}
           />
@@ -154,6 +157,7 @@ export default function AuthenticationPage() {
             sx={{
               textTransform: "none",
               width: "auto",
+              marginTop: -1,
               backgroundColor: "transparent !important",
               transition: "all 200ms ease",
               "&:hover": {
