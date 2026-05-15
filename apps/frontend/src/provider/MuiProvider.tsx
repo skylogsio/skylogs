@@ -162,7 +162,6 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
                   borderRadius: "0.55rem",
                   backgroundColor:
                     theme.palette.mode === "light" ? "#F1F4F9" : "rgba(255, 255, 255, 0.09)",
-                  color: theme.palette.text.primary,
                   "&:hover": {
                     backgroundColor:
                       theme.palette.mode === "light" ? "#E8EFFA" : "rgba(255, 255, 255, 0.13)"
