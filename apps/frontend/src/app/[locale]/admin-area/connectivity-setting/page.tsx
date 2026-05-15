@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Box, Typography, Grid2 as Grid, Card, alpha } from "@mui/material";
+import { Box, Typography, Grid, Card, alpha } from "@mui/material";
 import { grey } from "@mui/material/colors";
 import { motion } from "framer-motion";
 import { IoIosArrowForward } from "react-icons/io";

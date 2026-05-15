@@ -8,7 +8,7 @@ import {
   CardContent,
   FormControl,
   FormControlLabel,
-  Grid2 as Grid,
+  Grid,
   Radio,
   RadioGroup,
   Stack,

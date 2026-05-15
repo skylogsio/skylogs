@@ -6,7 +6,7 @@ import {
   Card,
   CardContent,
   Container,
-  Grid2 as Grid,
+  Grid,
   Stack,
   Typography,
   useTheme,

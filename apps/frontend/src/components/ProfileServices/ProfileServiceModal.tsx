@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Box, Button, Grid2 as Grid, MenuItem, TextField, Typography } from "@mui/material";
+import { Box, Button, Grid, MenuItem, TextField, Typography } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Editor } from "prism-react-editor";
 import { BasicSetup } from "prism-react-editor/setups";

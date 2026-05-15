@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Grid2 as Grid, MenuItem, Stack, TextField, Chip } from "@mui/material";
+import { Button, Grid, MenuItem, Stack, TextField, Chip } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "react-toastify";

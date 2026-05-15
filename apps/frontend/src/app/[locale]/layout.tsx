@@ -54,7 +54,7 @@ export default async function RootLayout({
         <ToastContainer
           position={dir === "ltr" ? "bottom-right" : "bottom-left"}
           hideProgressBar
-          theme={theme?.value}
+          theme={theme}
           transition={Zoom}
         />
       </body>

@@ -8,7 +8,7 @@ import {
   Checkbox,
   Chip,
   FormControlLabel,
-  Grid2 as Grid,
+  Grid,
   MenuItem,
   Stack,
   TextField,

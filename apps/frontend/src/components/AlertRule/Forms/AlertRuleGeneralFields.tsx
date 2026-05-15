@@ -4,7 +4,7 @@ import {
   Autocomplete,
   Chip,
   FormControlLabel,
-  Grid2 as Grid,
+  Grid,
   Stack,
   TextField,
   Checkbox,

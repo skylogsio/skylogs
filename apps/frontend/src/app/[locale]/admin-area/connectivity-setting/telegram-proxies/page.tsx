@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { Button, Grid2 as Grid, Stack, Typography, useTheme, alpha } from "@mui/material";
+import { Button, Grid, Stack, Typography, useTheme, alpha } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { HiOutlinePlusSm } from "react-icons/hi";
 import { IoIosArrowBack } from "react-icons/io";

@@ -7,7 +7,7 @@ import {
   Collapse,
   collapseClasses,
   FormControlLabel,
-  Grid2 as Grid,
+  Grid,
   MenuItem,
   Stack,
   TextField

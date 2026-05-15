@@ -5,7 +5,7 @@ import {
   Autocomplete,
   Button,
   Chip,
-  Grid2 as Grid,
+  Grid,
   Stack,
   TextField,
   ToggleButton,

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Grid2 as Grid, Stack, TextField, Typography } from "@mui/material";
+import { Button, Grid, Stack, TextField, Typography } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
@@ -68,7 +68,7 @@ export default function NotificationForm({ onClose, onSubmit, data }: Notificati
         onSubmit();
         onClose?.();
       }
-    },
+    }
   });
 
   const { mutate: updateClientAPIMutation, isPending: isUpdating } = useMutation({

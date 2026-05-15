@@ -1,14 +1,7 @@
 import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Button,
-  Grid2 as Grid,
-  Stack,
-  Switch,
-  TextField,
-  Typography
-} from "@mui/material";
+import { Button, Grid, Stack, Switch, TextField, Typography } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
@@ -118,7 +111,6 @@ export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModa
       }
     }
   });
-
 
   function handleAutoResolve(event: React.ChangeEvent<HTMLInputElement>) {
     if (!event.target.checked) {

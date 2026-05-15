@@ -1,4 +1,4 @@
-import { alpha, Button, Grid2 as Grid, Stack, Typography, useTheme } from "@mui/material";
+import { alpha, Button, Grid, Stack, Typography, useTheme } from "@mui/material";
 import { BsExclamationCircle } from "react-icons/bs";
 import { HiX } from "react-icons/hi";
 

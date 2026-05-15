@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   Autocomplete,
   Chip,
-  Grid2 as Grid,
+  Grid,
   IconButton,
   Stack,
   TextField,
