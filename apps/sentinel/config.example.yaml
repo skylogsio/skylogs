@@ -28,8 +28,12 @@ peers:
     heartbeat_url: "http://10.0.0.2:9191/heartbeat"
 
 # Agent-only: pull signed peer list from main; cache to disk so checks continue if main is down.
+# Agents also GET main_sentinel.base_url/heartbeat on the same schedule as other peers and fire
+# alert.webhook_url when main is unreachable (same as when a zone agent is down).
 # main_sentinel:
 #   base_url: "http://main.example:9191"
+#   name: main # optional alert instance label (default "main")
+#   sentinel_id: main-cluster-sentinel # optional; dedupe if main is already in peers list
 #   peers_path: "/cluster/peers" # default
 #   refresh_interval: 30s
 #   cache_file: "/data/sentinel-peers.json"

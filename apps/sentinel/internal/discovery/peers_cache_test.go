@@ -46,6 +46,19 @@ func TestSavePeersCache_emptyPath(t *testing.T) {
 	}
 }
 
+func TestSavePeersCache_createsParentDir(t *testing.T) {
+	t.Parallel()
+	dir := filepath.Join(t.TempDir(), "nested", "cache")
+	path := filepath.Join(dir, "peers.json")
+	peers := []Peer{{Name: "a", SentinelID: "s1", HeartbeatURL: "http://a/hb"}}
+	if err := SavePeersCache(path, peers); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadPeersCache(path); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCachedPeersFile_JSONEnvelope(t *testing.T) {
 	t.Parallel()
 	// Document on-disk shape used for agent fallback when main is unreachable.

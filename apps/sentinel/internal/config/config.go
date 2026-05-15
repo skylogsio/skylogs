@@ -26,6 +26,10 @@ type Config struct {
 		PeersPath       string        `yaml:"peers_path"`
 		RefreshInterval time.Duration `yaml:"refresh_interval"`
 		CacheFile       string        `yaml:"cache_file"`
+		// Name is the alert instance label when agents watch main (default "main").
+		Name string `yaml:"name"`
+		// SentinelID optional; used to dedupe if main is already in the pulled peer list.
+		SentinelID string `yaml:"sentinel_id"`
 	} `yaml:"main_sentinel"`
 
 	// Peers lists all Sentinel heartbeat URLs when role=main (authoritative). Agents may omit or bootstrap here.
@@ -135,5 +139,11 @@ func applyEnv(cfg *Config) {
 	}
 	if v := os.Getenv("PEERS_CACHE_FILE"); v != "" {
 		cfg.MainSentinel.CacheFile = v
+	}
+	if v := os.Getenv("MAIN_SENTINEL_NAME"); v != "" {
+		cfg.MainSentinel.Name = v
+	}
+	if v := os.Getenv("MAIN_SENTINEL_ID"); v != "" {
+		cfg.MainSentinel.SentinelID = v
 	}
 }

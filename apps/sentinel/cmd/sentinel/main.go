@@ -67,7 +67,7 @@ func main() {
 				if !ok {
 					return
 				}
-				sup.Reconcile(ctx, peers)
+				sup.Reconcile(ctx, peersForAgentWatch(cfg, peers))
 			}
 		}
 	}()
@@ -129,6 +129,19 @@ func main() {
 
 	httpServer.Shutdown(context.Background())
 	log.Println("SkyLogs Sentinel stopped cleanly")
+}
+
+func peersForAgentWatch(cfg *config.Config, peers []discovery.Peer) []discovery.Peer {
+	filtered := discovery.FilterPeers(peers, cfg.Sentinel.SelfInstanceName, cfg.Sentinel.ID)
+	if !cfg.AgentPullEnabled() {
+		return filtered
+	}
+	return discovery.AppendMainWatchPeer(
+		filtered,
+		cfg.MainSentinel.BaseURL,
+		cfg.MainSentinel.Name,
+		cfg.MainSentinel.SentinelID,
+	)
 }
 
 func snapshotPeers(peers []discovery.Peer) []discovery.Peer {
