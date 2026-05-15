@@ -36,11 +36,12 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-  params: { locale }
-}: PropsWithChildren<{ params: { locale: string } }>) {
+  params
+}: PropsWithChildren<{ params: Promise<{ locale: string }> }>) {
+  const { locale } = await params;
   const dir = await getCurrentDirection();
   const cookieStore = cookies();
-  const theme = cookieStore.get("theme");
+  const theme = (await cookieStore).get("theme")?.value;
 
   return (
     <html lang={locale} dir={dir}>
