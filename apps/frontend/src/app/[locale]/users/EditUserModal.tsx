@@ -5,7 +5,7 @@ import { Button, Grid, TextField, ToggleButton, Typography } from "@mui/material
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
-import * as z from "zod";
+import { z } from "zod";
 
 import type { BasicCreateOrUpdateModalProps } from "@/@types/global";
 import type { IUser } from "@/@types/user";
@@ -16,29 +16,30 @@ import { useRole } from "@/hooks";
 import { ROLE_TYPES } from "@/utils/userUtils";
 
 const updateUserSchema = z.object({
-  name: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
-  role: z.enum(ROLE_TYPES, {
-    required_error: "This field is Required.",
-    message: "This field is Required."
-  }),
-  username: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    })
+  name: z.string().trim().min(1, "This field is Required."),
+  role: z.enum(ROLE_TYPES, "This field is Required."),
+  username: z.string().trim().min(1, "This field is Required.")
 });
 
 type UserFormType = z.infer<typeof updateUserSchema>;
 
-const defaultValues: UserFormType = {
+const emptyFormValues: UserFormType = {
   name: "",
   role: "member",
   username: ""
 };
+
+function getFormValues(userData?: IUser): UserFormType {
+  if (!userData) {
+    return emptyFormValues;
+  }
+
+  return {
+    name: userData.name,
+    role: userData.roles[0],
+    username: userData.username
+  };
+}
 
 export default function EditUserModal({
   open,
@@ -55,7 +56,8 @@ export default function EditUserModal({
     formState: { errors }
   } = useForm<UserFormType>({
     resolver: zodResolver(updateUserSchema),
-    defaultValues
+    defaultValues: getFormValues(userData),
+    mode: "onSubmit"
   });
   const { hasRole } = useRole();
 
@@ -73,12 +75,7 @@ export default function EditUserModal({
   }
 
   useEffect(() => {
-    if (userData) {
-      const temp = { ...userData, role: userData.roles[0] };
-      reset(temp as UserFormType);
-    } else {
-      reset(defaultValues);
-    }
+    reset(getFormValues(userData));
   }, [reset, open, userData]);
 
   return (
@@ -88,13 +85,28 @@ export default function EditUserModal({
         onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
-        width="100%"
-        display="flex"
-        marginTop="2rem"
+        sx={{
+          width: 1,
+          display: "flex",
+          marginTop: 4
+        }}
       >
         {watch("role") !== "owner" && hasRole("owner") && (
-          <Grid size={12} display="flex" justifyContent="flex-start" alignItems="center">
-            <Typography variant="body1" component="div" marginRight="0.7rem">
+          <Grid
+            size={12}
+            sx={{
+              display: "flex",
+              justifyContent: "flex-start",
+              alignItems: "center"
+            }}
+          >
+            <Typography
+              variant="body1"
+              component="div"
+              sx={{
+                marginRight: 1
+              }}
+            >
               Role:
             </Typography>
             <ToggleButtonGroup
@@ -132,7 +144,7 @@ export default function EditUserModal({
             helperText={errors.name?.message}
           />
         </Grid>
-        <Grid size={12} marginTop="1rem">
+        <Grid size={12}>
           <Button type="submit" variant="contained" size="large" fullWidth disabled={isCreating}>
             Edit
           </Button>

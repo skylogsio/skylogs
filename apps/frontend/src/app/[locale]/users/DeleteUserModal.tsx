@@ -27,23 +27,42 @@ export default function DeleteUserModal({
     <DeleteModalContainer {...props} onAfterDelete={deleteUserMutation} isLoading={isPending}>
       <Stack spacing={1}>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}>
             Username:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography variant="subtitle2" sx={{
+            color: "text.secondary"
+          }}>
             {username}
           </Typography>
         </Stack>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}>
             Full Name:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography variant="subtitle2" sx={{
+            color: "text.secondary"
+          }}>
             {name}
           </Typography>
         </Stack>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}>
             Role:
           </Typography>
           {roles.map((item, index) => (

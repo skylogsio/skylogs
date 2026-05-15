@@ -6,7 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { HiEye, HiEyeOff } from "react-icons/hi";
 import { toast } from "react-toastify";
-import * as z from "zod";
+import { z } from "zod";
 
 import { changePassword } from "@/api/user";
 import ModalContainer from "@/components/Modal";
@@ -15,16 +15,8 @@ import type { ModalContainerProps } from "@/components/Modal/types";
 const changePasswordSchema = z
   .object({
     //TODO: Add more validation for password
-    password: z
-      .string({ required_error: "This field is Required." })
-      .refine((data) => data.trim() !== "", {
-        message: "This field is Required."
-      }),
-    confirmPassword: z
-      .string({ required_error: "This field is Required." })
-      .refine((data) => data.trim() !== "", {
-        message: "This field is Required."
-      })
+    password: z.string().trim().min(1, "This field is Required."),
+    confirmPassword: z.string().trim().min(1, "This field is Required.")
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Confirm Password does not match.",
@@ -50,7 +42,8 @@ export default function ChangePasswordModal({
     formState: { errors }
   } = useForm<ChangePasswordFormType>({
     resolver: zodResolver(changePasswordSchema),
-    defaultValues
+    defaultValues,
+    mode: "onSubmit"
   });
   const { palette } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
@@ -78,9 +71,11 @@ export default function ChangePasswordModal({
         onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
-        width="100%"
-        display="flex"
-        marginTop="2rem"
+        sx={{
+          width: 1,
+          display: "flex",
+          marginTop: 4
+        }}
       >
         <Grid size={6}>
           <TextField
@@ -129,7 +124,7 @@ export default function ChangePasswordModal({
           />
         </Grid>
 
-        <Grid size={12} marginTop="1rem">
+        <Grid size={12}>
           <Button type="submit" variant="contained" size="large" fullWidth disabled={isCreating}>
             Change Password
           </Button>
