@@ -35,11 +35,11 @@ class CheckPrometheusJob implements ShouldQueue
     {
 
         $alertRules = AlertRule::where('type', AlertRuleType::PROMETHEUS)->get();
-        $alerts = app(PrometheusInstanceService::class)->getTriggered();
+        $sync = app(PrometheusInstanceService::class)->getTriggeredForAlertSync();
 
         $prometheusService = app(PrometheusService::class);
-        $fireAlertsByRule = $prometheusService->CheckPrometheusFiredAlerts($alerts, $alertRules);
-        $prometheusService->CheckAlerts($alertRules, $fireAlertsByRule);
+        $fireAlertsByRule = $prometheusService->CheckPrometheusFiredAlerts($sync['alerts'], $alertRules);
+        $prometheusService->CheckAlerts($alertRules, $fireAlertsByRule, $sync['failedDataSourceIds']);
 
     }
 }
