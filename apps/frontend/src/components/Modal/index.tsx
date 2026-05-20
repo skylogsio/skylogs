@@ -1,6 +1,15 @@
 "use client";
 
-import { Box, IconButton, Modal, Paper, Typography, Fade, backdropClasses } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  Modal,
+  Paper,
+  Typography,
+  Fade,
+  backdropClasses,
+  ModalProps
+} from "@mui/material";
 import { HiOutlineX } from "react-icons/hi";
 
 import { type ModalContainerProps } from "./types";
@@ -13,14 +22,21 @@ export default function ModalContainer({
   title,
   children,
   disableAccidentalClose,
+  disableEscapeKeyDown,
   onClose
 }: ModalContainerProps) {
+  const handleClose: ModalProps["onClose"] = (event, reason) => {
+    if (disableAccidentalClose) return;
+    if (disableEscapeKeyDown && reason === "escapeKeyDown") return;
+    onClose?.();
+  };
+
   return (
     <Modal
       open={open}
-      onClose={disableAccidentalClose ? undefined : onClose}
-      aria-labelledby="modal-modal-title"
-      aria-describedby="modal-modal-description"
+      onClose={handleClose}
+      aria-labelledby="modal-title"
+      aria-describedby="modal-description"
       sx={{
         [`& .${backdropClasses.root}`]: {
           backdropFilter: "blur(4px)"
@@ -29,22 +45,24 @@ export default function ModalContainer({
     >
       <Fade in={open}>
         <Box
-          width={width}
-          maxWidth={maxWidth}
           sx={{
+            width: width,
+            maxWidth: maxWidth,
             position: "absolute",
             top: "50%",
             left: "50%",
             transform: "translate(-50%,-50%)"
           }}
         >
-          <Paper sx={{ padding, borderRadius: "0.7rem", boxShadow: "none" }}>
+          <Paper sx={{ padding, borderRadius: 1, boxShadow: "none" }}>
             <Box
-              width="100%"
-              display="flex"
-              flexDirection="row-reverse"
-              justifyContent="space-between"
-              alignItems="center"
+              sx={{
+                width: 1,
+                display: "flex",
+                flexDirection: "row-reverse",
+                justifyContent: "space-between",
+                alignItems: "center"
+              }}
             >
               <IconButton
                 onClick={() => onClose?.()}
@@ -54,7 +72,12 @@ export default function ModalContainer({
                 <HiOutlineX />
               </IconButton>
               {title && (
-                <Typography variant="h6" fontWeight="bold">
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: "bold"
+                  }}
+                >
                   {title}
                 </Typography>
               )}
