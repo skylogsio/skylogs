@@ -15,18 +15,10 @@ import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
 const teamSchema = z.object({
-  name: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
-  ownerId: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
+  name: z.string().trim().min(1, "This field is Required."),
+  ownerId: z.string().trim().min(1, "This field is Required."),
   userIds: z.array(z.string()).min(1, "At least one user is required."),
-  description: z.string().optional().default("")
+  description: z.string()
 });
 
 type TeamFormType = z.infer<typeof teamSchema>;
@@ -36,12 +28,25 @@ type TeamModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
   onSubmit: () => void;
 };
 
-const defaultValues: TeamFormType = {
+const emptyFormValues: TeamFormType = {
   name: "",
   ownerId: "",
   userIds: [],
   description: ""
 };
+
+function getFormValues(data: CreateUpdateModal<ITeam>): TeamFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return {
+    name: data.name,
+    ownerId: data.ownerId,
+    userIds: data.userIds,
+    description: data.description ?? ""
+  };
+}
 
 export default function TeamModal({ open, onClose, data, onSubmit }: TeamModalProps) {
   const {
@@ -55,7 +60,8 @@ export default function TeamModal({ open, onClose, data, onSubmit }: TeamModalPr
     formState: { errors }
   } = useForm<TeamFormType>({
     resolver: zodResolver(teamSchema),
-    defaultValues
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
 
   const { data: allUsers } = useQuery({ queryKey: ["all-users"], queryFn: () => getAllUsers() });
@@ -102,12 +108,14 @@ export default function TeamModal({ open, onClose, data, onSubmit }: TeamModalPr
     const selected = allUsers?.filter((user) => (selectedIds as string[]).includes(user.id)) ?? [];
     return (
       <Stack
-        gap={1}
         direction="row"
-        flexWrap="wrap"
-        justifyContent="flex-start"
-        sx={{ float: "left" }}
         onMouseDown={(event) => event.stopPropagation()}
+        sx={{
+          gap: 1,
+          flexWrap: "wrap",
+          justifyContent: "flex-start",
+          float: "left"
+        }}
       >
         {selected.map((user) => (
           <Chip
@@ -122,16 +130,7 @@ export default function TeamModal({ open, onClose, data, onSubmit }: TeamModalPr
   };
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else if (data) {
-      reset({
-        name: data.name,
-        ownerId: data.ownerId,
-        userIds: data.userIds,
-        description: data.description
-      });
-    }
+    reset(getFormValues(data));
   }, [data, reset]);
 
   return (
@@ -146,9 +145,11 @@ export default function TeamModal({ open, onClose, data, onSubmit }: TeamModalPr
         onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
-        width="100%"
-        display="flex"
-        marginTop="2rem"
+        sx={{
+          width: 1,
+          display: "flex",
+          marginTop: 4
+        }}
       >
         <Grid size={12}>
           <TextField
@@ -222,7 +223,12 @@ export default function TeamModal({ open, onClose, data, onSubmit }: TeamModalPr
           />
         </Grid>
 
-        <Grid size={12} marginTop="1rem">
+        <Grid
+          size={12}
+          sx={{
+            marginTop: 2
+          }}
+        >
           <Button
             disabled={isCreating || isUpdating}
             type="submit"
