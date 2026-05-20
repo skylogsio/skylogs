@@ -13,36 +13,39 @@ import { createCluster, updateCluster } from "@/api/cluster";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
-const schema = z.object({
-  name: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
-  type: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
+const clusterSchema = z.object({
+  name: z.string().trim().min(1, "This field is Required."),
+  type: z.string().trim().min(1, "This field is Required."),
   url: z
-    .string({ required_error: "This field is Required." })
-    .url({ message: "Please enter a valid URL." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    })
+    .string()
+    .trim()
+    .min(1, "This field is Required.")
+    .pipe(z.url( "Please enter a valid URL." ))
 });
 
-type ClusterFormType = z.infer<typeof schema>;
+type ClusterFormType = z.infer<typeof clusterSchema>;
 type ClusterModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
   data: CreateUpdateModal<ICluster>;
   onSubmit: () => void;
 };
 
-const defaultValues = {
+const emptyFormValues: ClusterFormType = {
   name: "",
   type: "agent",
   url: ""
 };
+
+function getFormValues(data: CreateUpdateModal<ICluster>): ClusterFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return {
+    name: data.name,
+    type: data.type,
+    url: data.url
+  };
+}
 
 // const clusterTypes = [
 //   { value: "agent", label: "Agent" },
@@ -58,8 +61,9 @@ export default function ClusterModal({ open, onClose, data, onSubmit }: ClusterM
     reset,
     formState: { errors }
   } = useForm<ClusterFormType>({
-    resolver: zodResolver(schema),
-    defaultValues
+    resolver: zodResolver(clusterSchema),
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
 
   const { mutate: createClusterMutation, isPending: isCreating } = useMutation({
@@ -97,11 +101,7 @@ export default function ClusterModal({ open, onClose, data, onSubmit }: ClusterM
   }
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else {
-      reset(data as ClusterFormType);
-    }
+    reset(getFormValues(data));
   }, [data, reset]);
 
   return (
@@ -116,9 +116,11 @@ export default function ClusterModal({ open, onClose, data, onSubmit }: ClusterM
         onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
-        width="100%"
-        display="flex"
-        marginTop="2rem"
+        sx={{
+          width: "100%",
+          display: "flex",
+          marginTop: 4
+        }}
       >
         {/*<Grid size={12}>*/}
         {/*  <TextField*/}
@@ -154,7 +156,12 @@ export default function ClusterModal({ open, onClose, data, onSubmit }: ClusterM
             fullWidth
           />
         </Grid>
-        <Grid size={12} marginTop="1rem">
+        <Grid
+          size={12}
+          sx={{
+            marginTop: 2
+          }}
+        >
           <Button
             disabled={isCreating || isUpdating}
             type="submit"
