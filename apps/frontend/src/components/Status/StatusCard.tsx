@@ -208,7 +208,13 @@ const StatusMonitoringCards = ({
   }
 
   return (
-    <Box position="relative" maxHeight="136px" zIndex={showThreeDots ? 999 : "none"}>
+    <Box
+      sx={{
+        position: "relative",
+        maxHeight: 136,
+        zIndex: showThreeDots ? 999 : "none"
+      }}
+    >
       <StateCard
         key={info.id}
         state={info.state}
@@ -218,18 +224,25 @@ const StatusMonitoringCards = ({
         sx={{ cursor: isOwner ? "pointer" : "default" }}
       >
         <CardContent
-          sx={{ padding: "16px !important", height: "100%", position: "relative", zIndex: 1 }}
+          sx={{ padding: "16px !important", height: 1, position: "relative", zIndex: 1 }}
         >
-          <Stack width="100%" direction="row" justifyContent="space-between" alignItems="center">
+          <Stack
+            direction="row"
+            sx={{
+              width: 1,
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}
+          >
             <Typography
               variant="h6"
               sx={{
                 mr: "auto !important",
                 fontWeight: 700,
-                fontSize: "1.1rem",
+                fontSize: 18,
                 color: palette.grey[800],
                 lineHeight: 1.2,
-                maxWidth: "160px"
+                maxWidth: 160
               }}
             >
               {info.name}
@@ -294,7 +307,7 @@ const StatusMonitoringCards = ({
                     variant="outlined"
                     sx={{
                       height: 20,
-                      fontSize: "0.65rem",
+                      fontSize: 10,
                       borderColor: palette.grey[400],
                       color: palette.grey[600]
                     }}
@@ -320,7 +333,7 @@ const StatusMonitoringCards = ({
                       onClick={(event) => handleAlertTagClick(event, info.tags, info.state, tag)}
                       sx={{
                         height: 20,
-                        fontSize: "0.65rem",
+                        fontSize: 10,
                         borderColor: palette.error.main,
                         color: palette.error.main,
                         fontWeight: "bold",
@@ -367,13 +380,7 @@ const StatusMonitoringCards = ({
               elevation: 8,
               sx: {
                 minWidth: 140,
-                borderRadius: 2,
-                "& .MuiMenuItem-root": {
-                  fontSize: "0.875rem",
-                  "&:hover": {
-                    backgroundColor: "rgba(0, 0, 0, 0.04)"
-                  }
-                }
+                borderRadius: 3
               }
             }
           }}

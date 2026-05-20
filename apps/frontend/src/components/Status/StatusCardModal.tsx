@@ -15,25 +15,32 @@ import { createStatusCard, udpateStatusCard } from "@/api/status";
 import ModalContainer from "../Modal";
 import { ModalContainerProps } from "../Modal/types";
 
-const schema = z.object({
-  name: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
+const statusCardSchema = z.object({
+  name: z.string().trim().min(1, "This field is Required."),
   tags: z.array(z.string()).min(1, "This field is Required.")
 });
 
-type StatusCardType = z.infer<typeof schema>;
+type StatusCardType = z.infer<typeof statusCardSchema>;
 type StatusCardModalProps = Pick<ModalContainerProps, "onClose" | "open"> & {
   data: CreateUpdateModal<IStatusCard>;
   onSubmit: () => void;
 };
 
-const defaultValues: StatusCardType = {
+const emptyFormValues: StatusCardType = {
   name: "",
   tags: []
 };
+
+function getFormValues(data: CreateUpdateModal<IStatusCard>): StatusCardType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return {
+    name: data.name,
+    tags: data.tags || []
+  };
+}
 
 export default function StatusCardModal({ data, open, onSubmit, onClose }: StatusCardModalProps) {
   const {
@@ -44,8 +51,9 @@ export default function StatusCardModal({ data, open, onSubmit, onClose }: Statu
     reset,
     formState: { errors }
   } = useForm<StatusCardType>({
-    resolver: zodResolver(schema),
-    defaultValues
+    resolver: zodResolver(statusCardSchema),
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
 
   const { data: tagsList } = useQuery({
@@ -79,13 +87,8 @@ export default function StatusCardModal({ data, open, onSubmit, onClose }: Statu
   });
 
   useEffect(() => {
-    if (data && data !== "NEW") {
-      setValue("name", data.name);
-      setValue("tags", data.tags || []);
-    } else {
-      reset(defaultValues);
-    }
-  }, [data, setValue, reset]);
+    reset(getFormValues(data));
+  }, [data, reset]);
 
   function handleSubmitForm(values: StatusCardType) {
     if (data === "NEW") {
@@ -96,7 +99,7 @@ export default function StatusCardModal({ data, open, onSubmit, onClose }: Statu
   }
 
   const handleClose = () => {
-    reset(defaultValues);
+    reset(emptyFormValues);
     onClose?.();
   };
 
@@ -109,12 +112,14 @@ export default function StatusCardModal({ data, open, onSubmit, onClose }: Statu
     >
       <Grid
         component="form"
-        onSubmit={handleSubmit(handleSubmitForm, (error) => console.log(error))}
+        onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
-        width="100%"
-        display="flex"
-        marginTop="2rem"
+        sx={{
+          width: 1,
+          display: "flex",
+          marginTop: 4
+        }}
       >
         <Grid size={12}>
           <TextField
@@ -135,19 +140,22 @@ export default function StatusCardModal({ data, open, onSubmit, onClose }: Statu
             fullWidth
             value={watch("tags")}
             onChange={(_, value) => setValue("tags", value)}
-            renderTags={(value: readonly string[], getItemProps) =>
+            renderValue={(value: readonly string[], getItemProps) =>
               value.map((option: string, index: number) => {
                 const { key, ...itemProps } = getItemProps({ index });
-                return <Chip variant="filled" label={option} key={key} {...itemProps} />;
+                return (
+                  <Chip key={key} variant="filled" size="small" label={option} {...itemProps} />
+                );
               })
             }
             renderInput={(params) => (
               <TextField
                 {...params}
                 slotProps={{
-                  input: params.InputProps,
-                  inputLabel: params.InputLabelProps,
-                  htmlInput: params.inputProps
+                  ...params.slotProps,
+                  input: params.slotProps.input,
+                  inputLabel: params.slotProps.inputLabel,
+                  htmlInput: params.slotProps.htmlInput
                 }}
                 variant="filled"
                 label="Tags"
@@ -157,7 +165,12 @@ export default function StatusCardModal({ data, open, onSubmit, onClose }: Statu
             )}
           />
         </Grid>
-        <Grid size={12} marginTop="1rem">
+        <Grid
+          size={12}
+          sx={{
+            marginTop: 2
+          }}
+        >
           <Button
             disabled={isCreating || isUpdating}
             type="submit"

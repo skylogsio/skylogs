@@ -69,8 +69,20 @@ export default function StatusPage() {
   return (
     <>
       <Stack spacing={3}>
-        <Stack direction="row" justifyContent="space-between">
-          <Typography variant="h5" fontSize="1.8rem" fontWeight="700" component="div">
+        <Stack
+          direction="row"
+          sx={{
+            justifyContent: "space-between"
+          }}
+        >
+          <Typography
+            variant="h5"
+            component="div"
+            sx={{
+              fontSize: 28,
+              fontWeight: 700
+            }}
+          >
             Status
           </Typography>
           {isOwner && (
@@ -79,7 +91,7 @@ export default function StatusPage() {
               onClick={() => setModalData("NEW")}
               size="small"
               variant="contained"
-              sx={{ paddingRight: "1rem" }}
+              sx={{ paddingRight: 2 }}
             >
               Create
             </Button>
@@ -110,7 +122,6 @@ export default function StatusPage() {
             : renderSkeletonCards()}
         </Box>
       </Stack>
-
       {isOwner && modalData && (
         <StatusCardModal
           data={modalData}
@@ -119,7 +130,6 @@ export default function StatusPage() {
           onSubmit={() => refetch()}
         />
       )}
-
       <StatusDeleteConfirmationDialog
         open={!!deleteDialogData}
         statusCard={deleteDialogData}
