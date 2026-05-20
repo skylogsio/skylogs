@@ -54,7 +54,7 @@ export default function ModalContainer({
             transform: "translate(-50%,-50%)"
           }}
         >
-          <Paper sx={{ padding, borderRadius: 1, boxShadow: "none" }}>
+          <Paper sx={{ padding, borderRadius: 4, boxShadow: "none" }}>
             <Box
               sx={{
                 width: 1,
