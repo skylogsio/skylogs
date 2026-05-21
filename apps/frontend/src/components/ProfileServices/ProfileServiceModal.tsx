@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Box, Button, Grid, MenuItem, TextField, Typography } from "@mui/material";
+import { alpha, Box, Button, Grid, MenuItem, TextField, Typography } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Editor } from "prism-react-editor";
 import { BasicSetup } from "prism-react-editor/setups";
@@ -22,28 +22,24 @@ import "prism-react-editor/themes/vs-code-light.css";
 import "prism-react-editor/search.css";
 
 const profileServiceSchema = z.object({
-  name: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
-  ownerId: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
-  config: z.string().refine(
-    (value) => {
-      try {
-        JSON.parse(value);
-        return true;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (error) {
-        return false;
-      }
-    },
-    { message: "Invalid JSON Format." }
-  )
+  name: z.string().trim().min(1, "This field is Required."),
+  ownerId: z.string().trim().min(1, "This field is Required."),
+  config: z
+    .string()
+    .trim()
+    .min(1, "This field is Required.")
+    .refine(
+      (value) => {
+        try {
+          JSON.parse(value);
+          return true;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (error) {
+          return false;
+        }
+      },
+      { error: "Invalid JSON Format." }
+    )
 });
 
 type ProfileServiceFormType = z.infer<typeof profileServiceSchema>;
@@ -52,11 +48,25 @@ type ProfileServiceModalProps = Pick<ModalContainerProps, "open" | "onClose"> & 
   onSubmit: () => void;
 };
 
-const defaultValues: ProfileServiceFormType = {
+const emptyFormValues: ProfileServiceFormType = {
   name: "",
   ownerId: "",
   config: ""
 };
+
+function getFormValues(
+  data: CreateUpdateModal<ProfileServiceFormType & { id: string }>
+): ProfileServiceFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return {
+    name: data.name,
+    ownerId: data.ownerId,
+    config: data.config
+  };
+}
 
 export default function ProfileServiceModal({
   open,
@@ -74,7 +84,8 @@ export default function ProfileServiceModal({
     formState: { errors }
   } = useForm<ProfileServiceFormType>({
     resolver: zodResolver(profileServiceSchema),
-    defaultValues
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
 
   const { data: allUsers } = useQuery({ queryKey: ["all-users"], queryFn: () => getAllUsers() });
@@ -98,7 +109,6 @@ export default function ProfileServiceModal({
   });
 
   function handleSubmitForm(body: ProfileServiceFormType) {
-    console.log(body);
     if (data === "NEW") {
       createProfileServiceMutation(body);
     } else if (data) {
@@ -112,11 +122,7 @@ export default function ProfileServiceModal({
   );
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else {
-      reset(data as ProfileServiceFormType);
-    }
+    reset(getFormValues(data));
   }, [data, open, reset]);
 
   return (
@@ -128,12 +134,14 @@ export default function ProfileServiceModal({
     >
       <Grid
         component="form"
-        onSubmit={handleSubmit(handleSubmitForm, (error) => console.log(error))}
+        onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
-        width="100%"
-        display="flex"
-        marginTop="2rem"
+        sx={{
+          width: 1,
+          display: "flex",
+          marginTop: 4
+        }}
       >
         <Grid size={6}>
           <TextField
@@ -166,17 +174,25 @@ export default function ProfileServiceModal({
             sx={{
               borderRadius: 3,
               overflow: "hidden",
-              backgroundColor: "#F1F4F9",
-              "& .prism-code-editor": { backgroundColor: "transparent" }
+              backgroundColor: ({ palette }) => alpha(palette.primary.dark, 0.06),
+              "&:hover": {
+                backgroundColor: ({ palette }) => alpha(palette.primary.dark, 0.1)
+              },
+              "& .prism-code-editor": {
+                backgroundColor: "transparent",
+                "& .pce-line.active-line::after": { border: "none" }
+              }
             }}
           >
             <Box
-              width="100%"
-              height="100%"
-              maxHeight={500}
-              overflow="auto"
-              padding={1}
-              paddingLeft={0}
+              sx={{
+                width: 1,
+                height: 1,
+                maxHeight: 500,
+                overflow: "auto",
+                padding: 1,
+                paddingLeft: 0
+              }}
             >
               <Editor
                 language="json"
@@ -192,12 +208,23 @@ export default function ProfileServiceModal({
             </Box>
           </Box>
           {errors.config && (
-            <Typography variant="caption" color="error" paddingLeft={2}>
+            <Typography
+              variant="caption"
+              color="error"
+              sx={{
+                paddingLeft: 2
+              }}
+            >
               {errors.config.message}
             </Typography>
           )}
         </Grid>
-        <Grid size={12} marginTop="1rem">
+        <Grid
+          size={12}
+          sx={{
+            marginTop: 2
+          }}
+        >
           <Button
             disabled={isCreating || isUpdating}
             type="submit"
