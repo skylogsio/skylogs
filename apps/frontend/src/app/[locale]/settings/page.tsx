@@ -124,12 +124,12 @@ export default function SettingsPage() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Stack spacing={4}>
-        <Box textAlign="center" mb={2}>
+        <Box sx={{ textAlign: "center", mb: 2 }}>
           <Typography
             variant="h3"
-            fontWeight="800"
             component="h1"
             sx={{
+              fontWeight: 800,
               background: `linear-gradient(135deg, ${palette.primary.main}, ${palette.secondary.main})`,
               backgroundClip: "text",
               WebkitBackgroundClip: "text",
@@ -142,8 +142,7 @@ export default function SettingsPage() {
           <Typography
             variant="h6"
             color="textSecondary"
-            fontWeight="400"
-            sx={{ maxWidth: 600, mx: "auto" }}
+            sx={{ fontWeight: 400, maxWidth: 600, mx: "auto" }}
           >
             Configure and manage your application settings across different categories
           </Typography>
@@ -156,7 +155,7 @@ export default function SettingsPage() {
 
             return (
               <Box key={category} id="lksdjflksdjflksjdf">
-                <Stack direction="row" alignItems="center" spacing={2} mb={3}>
+                <Stack direction="row" spacing={2} sx={{ alignItems: "center", mb: 3 }}>
                   <Box
                     sx={{
                       width: 4,
@@ -165,7 +164,10 @@ export default function SettingsPage() {
                       borderRadius: 2
                     }}
                   />
-                  <Typography variant="h5" fontWeight="700" color={categoryColors[category]}>
+                  <Typography
+                    variant="h5"
+                    sx={{ fontWeight: 700, color: `${categoryColors[category]}!important` }}
+                  >
                     {category} Settings
                   </Typography>
                   <Chip
@@ -186,7 +188,7 @@ export default function SettingsPage() {
                         onClick={() => handleOptionClick(option)}
                         sx={{
                           cursor: option.isAvailable ? "pointer" : "not-allowed",
-                          height: "100%",
+                          height: 1,
                           boxShadow: "none",
                           position: "relative",
                           overflow: "visible",
@@ -206,7 +208,8 @@ export default function SettingsPage() {
                                 }
                               }
                             : {},
-                          border: `1px solid ${alpha(option.color, 0.1)}`,
+                          border: 1,
+                          borderColor: alpha(option.color, 0.1),
                           "&::before": {
                             content: "''",
                             position: "absolute",
@@ -219,20 +222,18 @@ export default function SettingsPage() {
                           }
                         }}
                       >
-                        <CardContent sx={{ p: 3, height: "100%" }}>
-                          <Stack height="100%" justifyContent="space-between">
+                        <CardContent sx={{ p: 3, height: 1 }}>
+                          <Stack sx={{ height: 1, justifyContent: "space-between" }}>
                             <Stack spacing={2}>
-                              {/* Icon and Status */}
                               <Stack
                                 direction="row"
-                                justifyContent="space-between"
-                                alignItems="flex-start"
+                                sx={{ alignItems: "flex-start", justifyContent: "space-between" }}
                               >
                                 <Box
                                   className="option-icon"
                                   sx={{
                                     p: 2,
-                                    borderRadius: "12px",
+                                    borderRadius: 3,
                                     backgroundColor: alpha(option.color, 0.1),
                                     color: alpha(option.color, 0.8),
                                     transition: "all 0.2s ease",
@@ -251,7 +252,7 @@ export default function SettingsPage() {
                                       backgroundColor: alpha(palette.warning.main, 0.1),
                                       color: palette.warning.main,
                                       fontWeight: 600,
-                                      fontSize: "0.7rem"
+                                      fontSize: 14
                                     }}
                                   />
                                 )}
@@ -260,10 +261,13 @@ export default function SettingsPage() {
                               <Stack spacing={1}>
                                 <Stack
                                   direction="row"
-                                  alignItems="center"
-                                  justifyContent="space-between"
+                                  sx={{ alignItems: "center", justifyContent: "space-between" }}
                                 >
-                                  <Typography variant="h6" fontWeight="700" color="text.primary">
+                                  <Typography
+                                    variant="h6"
+                                    color="text.primary"
+                                    sx={{ fontWeight: 700 }}
+                                  >
                                     {option.title}
                                   </Typography>
                                   {option.isAvailable && (
@@ -280,10 +284,10 @@ export default function SettingsPage() {
                                 </Stack>
                                 <Typography
                                   variant="body2"
-                                  color="text.secondary"
+                                  color="textSecondary"
                                   sx={{
                                     lineHeight: 1.6,
-                                    fontSize: "0.875rem"
+                                    fontSize: 14
                                   }}
                                 >
                                   {option.description}
@@ -291,14 +295,14 @@ export default function SettingsPage() {
                               </Stack>
                             </Stack>
 
-                            <Box mt={2}>
+                            <Box sx={{ mt: 2 }}>
                               <Box
                                 sx={{
                                   display: "inline-flex",
                                   alignItems: "center",
                                   px: 1.5,
                                   py: 0.5,
-                                  borderRadius: "16px",
+                                  borderRadius: 4,
                                   backgroundColor: option.isAvailable
                                     ? alpha(palette.success.main, 0.1)
                                     : alpha(palette.grey[500], 0.1),
@@ -311,12 +315,12 @@ export default function SettingsPage() {
                                   sx={{
                                     width: 6,
                                     height: 6,
-                                    borderRadius: "50%",
+                                    borderRadius: 12,
                                     backgroundColor: "currentColor",
                                     mr: 1
                                   }}
                                 />
-                                <Typography variant="caption" fontWeight="600">
+                                <Typography variant="caption" sx={{ fontWeight: 600 }}>
                                   {option.isAvailable ? "Available" : "Coming Soon"}
                                 </Typography>
                               </Box>
