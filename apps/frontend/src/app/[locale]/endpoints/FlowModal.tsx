@@ -49,15 +49,11 @@ const flowStepSchema = z.discriminatedUnion("type", [
 ]);
 
 const createFlowSchema = z.object({
-  name: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
+  name: z.string().trim().min(1, "This field is Required."),
   steps: z.array(flowStepSchema).min(1, "At least one step is required"),
-  isPublic: z.boolean().default(false),
-  accessTeamIds: z.array(z.string()).optional().default([]),
-  accessUserIds: z.array(z.string()).optional().default([])
+  isPublic: z.boolean(),
+  accessTeamIds: z.array(z.string()),
+  accessUserIds: z.array(z.string())
 });
 
 type FlowFormType = z.infer<typeof createFlowSchema>;
@@ -66,13 +62,27 @@ type FlowModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
   onSubmit: () => void;
 };
 
-const defaultValues: FlowFormType = {
+const emptyFormValues: FlowFormType = {
   name: "",
   steps: [{ type: "wait" as const, duration: 0, timeUnit: "s" as const }],
   isPublic: false,
   accessTeamIds: [],
   accessUserIds: []
 };
+
+function getFormValues(data: CreateUpdateModal<IFlow>): FlowFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return {
+    name: data.name,
+    steps: (data.steps.length > 0 ? data.steps : emptyFormValues.steps) as FlowFormType["steps"],
+    isPublic: data.isPublic ?? false,
+    accessTeamIds: data.accessTeamIds ?? [],
+    accessUserIds: data.accessUserIds ?? []
+  };
+}
 
 export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalProps) {
   const { palette } = useTheme();
@@ -87,7 +97,8 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
     formState: { errors }
   } = useForm<FlowFormType>({
     resolver: zodResolver(createFlowSchema),
-    defaultValues
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -109,7 +120,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
       return createEndpoint(payload);
     },
     onSuccess: () => {
-      toast.success("Flow Created Successfully.");
+      toast.success("Endpoint Flow Created Successfully.");
       onSubmit();
       onClose?.();
     }
@@ -124,7 +135,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
       return updateEndpoint(id, payload);
     },
     onSuccess: () => {
-      toast.success("Flow Updated Successfully.");
+      toast.success("Endpoint Flow Updated Successfully.");
       onSubmit();
       onClose?.();
     }
@@ -159,12 +170,14 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
       endpointsData?.filter((endpoint) => (selectedIds as string[]).includes(endpoint.id)) ?? [];
     return (
       <Stack
-        gap={1}
         direction="row"
-        flexWrap="wrap"
-        justifyContent="flex-start"
-        sx={{ float: "left" }}
         onMouseDown={(event) => event.stopPropagation()}
+        sx={{
+          gap: 1,
+          flexWrap: "wrap",
+          justifyContent: "flex-start",
+          float: "left"
+        }}
       >
         {selected.map((endpoint) => (
           <Chip
@@ -179,17 +192,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
   };
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else if (data) {
-      reset(data as FlowFormType);
-      const endpointSelections: Record<number, string[]> = {};
-      data.steps.forEach((step, index) => {
-        if (step.type === "endpoint" && step.endpointIds) {
-          endpointSelections[index] = step.endpointIds;
-        }
-      });
-    }
+    reset(getFormValues(data));
   }, [data, open, reset]);
 
   return (
@@ -200,7 +203,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
       disableEscapeKeyDown
       maxWidth="md"
     >
-      <Box component="form" onSubmit={handleSubmit(handleSubmitForm)} sx={{ width: "100%", mt: 2 }}>
+      <Box component="form" onSubmit={handleSubmit(handleSubmitForm)} sx={{ width: 1, mt: 2 }}>
         <TextField
           fullWidth
           label="Name"
@@ -212,21 +215,35 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
 
         <Stack
           spacing={2}
-          my={2}
-          p={2}
-          maxHeight="50vh"
-          sx={{ overflow: "auto", border: 1, borderColor: palette.grey[200], borderRadius: 2 }}
+          sx={{
+            my: 2,
+            p: 2,
+            maxHeight: "50vh",
+            overflow: "auto",
+            border: 1,
+            borderColor: palette.grey[200],
+            borderRadius: 2
+          }}
         >
           {fields.map((field, index) => (
-            <Stack key={field.id} direction="row" alignItems="center" spacing={2}>
+            <Stack
+              key={field.id}
+              direction="row"
+              spacing={2}
+              sx={{
+                alignItems: "center",
+                justifyContent: "center"
+              }}
+            >
               {field.type === "wait" ? (
                 <>
                   <Box
-                    p={1}
                     component="span"
                     sx={{
+                      p: 1,
                       borderRadius: "50%",
                       backgroundColor: alpha(palette.warning.main, 0.1),
+                      lineHeight: 0,
                       ...(index !== 0
                         ? {
                             position: "relative",
@@ -272,10 +289,11 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
               ) : (
                 <>
                   <Box
-                    p={1}
                     sx={{
+                      p: 1,
                       borderRadius: "50%",
                       backgroundColor: alpha(palette.primary.main, 0.1),
+
                       ...(index !== 0
                         ? {
                             position: "relative",

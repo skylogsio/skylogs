@@ -38,18 +38,15 @@ const ENDPOINTS_TYPE = [
 const OTP_REQUIRED_ENDPOINT_TYPES = ENDPOINTS_TYPE.slice(0, 3);
 
 const endpointSchema = z.object({
-  name: z.string().trim().nonempty("This field is Required."),
-  type: z.enum(ENDPOINTS_TYPE, {
-    required_error: "This field is Required.",
-    message: "This field is Required."
-  }),
-  value: z.string().trim().nonempty("This field is Required."),
+  name: z.string().trim().min(1, "This field is Required."),
+  type: z.enum(ENDPOINTS_TYPE, "This field is Required."),
+  value: z.string().trim().min(1, "This field is Required."),
   otpCode: z.string().optional(),
-  isPublic: z.optional(z.boolean()).default(false),
-  threadId: z.optional(z.string()).nullable(),
-  botToken: z.optional(z.string()).nullable(),
-  accessTeamIds: z.array(z.string()).optional().default([]),
-  accessUserIds: z.array(z.string()).optional().default([])
+  isPublic: z.boolean(),
+  threadId: z.string().nullable().optional(),
+  botToken: z.string().nullable().optional(),
+  accessTeamIds: z.array(z.string()),
+  accessUserIds: z.array(z.string())
 });
 
 type EndpointFormType = z.infer<typeof endpointSchema> & { chatId?: string };
@@ -58,13 +55,42 @@ type EndpointModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
   onSubmit: () => void;
 };
 
-const defaultValues = {
+const emptyFormValues: EndpointFormType = {
   name: "",
-  type: undefined,
+  type: ENDPOINTS_TYPE[0],
   value: "",
+  isPublic: false,
   accessTeamIds: [],
   accessUserIds: []
 };
+
+function getFormValues(data: CreateUpdateModal<IEndpoint>): EndpointFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  if (data.type === "telegram") {
+    return {
+      name: data.name,
+      type: data.type,
+      value: data.chatId ?? data.value,
+      isPublic: data.isPublic ?? false,
+      threadId: data.threadId ?? null,
+      botToken: null,
+      accessTeamIds: data.accessTeamIds ?? [],
+      accessUserIds: data.accessUserIds ?? []
+    };
+  }
+
+  return {
+    name: data.name,
+    type: data.type,
+    value: data.value,
+    isPublic: data.isPublic ?? false,
+    accessTeamIds: data.accessTeamIds ?? [],
+    accessUserIds: data.accessUserIds ?? []
+  };
+}
 
 export default function EndPointModal({ open, onClose, data, onSubmit }: EndpointModalProps) {
   const {
@@ -78,7 +104,8 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
     formState: { errors }
   } = useForm<EndpointFormType>({
     resolver: zodResolver(endpointSchema),
-    defaultValues
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
   const [isOTPSent, setIsOTPSent] = useState(false);
   const [remainedSeconds, setRemainedSeconds] = useState(0);
@@ -136,15 +163,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
     (data === "NEW" || data?.value !== watch("value") || data?.type !== getValues("type"));
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else {
-      if (data?.type === "telegram") {
-        reset({ ...data, value: data.chatId });
-      } else {
-        reset(data as EndpointFormType);
-      }
-    }
+    reset(getFormValues(data));
   }, [data, open, reset]);
 
   useEffect(() => {
@@ -166,9 +185,11 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
         onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
-        width="100%"
-        display="flex"
-        marginTop="2rem"
+        sx={{
+          width: 1,
+          display: "flex",
+          marginTop: 4
+        }}
       >
         <Grid size={6}>
           <TextField
@@ -253,7 +274,13 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
         </Grid>
         {showOTPSection && (
           <Grid size={12}>
-            <Stack direction="row" spacing={2} alignItems="center">
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{
+                alignItems: "center"
+              }}
+            >
               <Collapse
                 in={isOTPSent}
                 orientation="horizontal"
@@ -272,7 +299,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
                   helperText={errors.otpCode?.message}
                   {...register("otpCode")}
                   placeholder="-----"
-                  sx={{ width: "100%" }}
+                  sx={{ width: 1 }}
                 />
               </Collapse>
               <Button
@@ -282,7 +309,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
                 type="button"
                 onClick={handleSendOTP}
                 disabled={isSendingOTP || (isOTPSent && !!remainedSeconds)}
-                sx={{ maxWidth: isOTPSent ? "130px" : "100%", transition: "all 0.3s ease" }}
+                sx={{ maxWidth: isOTPSent ? 130 : 1, transition: "all 0.3s ease" }}
               >
                 {isOTPSent
                   ? remainedSeconds > 0
