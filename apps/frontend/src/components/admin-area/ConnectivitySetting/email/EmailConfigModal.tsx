@@ -15,12 +15,16 @@ import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
 const emailConfigSchema = z.object({
-  name: z.string().trim().nonempty("This field is Required."),
-  host: z.string().trim().nonempty("This field is Required."),
-  port: z.number({ message: "This field is Required." }).int().min(0).max(65535),
-  username: z.string().trim().nonempty("This field is Required."),
-  password: z.string().trim().nonempty("This field is Required."),
-  fromAddress: z.string().trim().email("Invalid email address").nonempty("This field is Required.")
+  name: z.string().trim().min(1, "This field is Required."),
+  host: z.string().trim().min(1, "This field is Required."),
+  port: z.number("This field is Required.").int().min(0).max(65535),
+  username: z.string().trim().min(1, "This field is Required."),
+  password: z.string().trim().min(1, "This field is Required."),
+  fromAddress: z
+    .string()
+    .trim()
+    .min(1, "This field is Required.")
+    .pipe(z.email({ error: "Invalid email address" }))
 });
 
 type EmailConfigFormType = z.infer<typeof emailConfigSchema>;
@@ -30,7 +34,7 @@ type EmailConfigModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
   onSubmit: () => void;
 };
 
-const defaultValues: EmailConfigFormType = {
+const emptyFormValues: EmailConfigFormType = {
   name: "",
   host: "",
   port: 587,
@@ -38,6 +42,21 @@ const defaultValues: EmailConfigFormType = {
   password: "",
   fromAddress: ""
 };
+
+function getFormValues(data: CreateUpdateModal<IEmailConfig>): EmailConfigFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return {
+    name: data.name,
+    host: data.host,
+    port: data.port,
+    username: data.usrename,
+    password: data.password,
+    fromAddress: data.fromAddress
+  };
+}
 
 export default function EmailConfigModal({ data, open, onClose, onSubmit }: EmailConfigModalProps) {
   const {
@@ -47,7 +66,8 @@ export default function EmailConfigModal({ data, open, onClose, onSubmit }: Emai
     formState: { errors }
   } = useForm<EmailConfigFormType>({
     resolver: zodResolver(emailConfigSchema),
-    defaultValues
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
   const { palette } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
@@ -80,11 +100,7 @@ export default function EmailConfigModal({ data, open, onClose, onSubmit }: Emai
   }
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else {
-      reset(data as unknown as EmailConfigFormType);
-    }
+    reset(getFormValues(data));
   }, [data, reset]);
 
   return (
@@ -99,9 +115,11 @@ export default function EmailConfigModal({ data, open, onClose, onSubmit }: Emai
         onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
-        width="100%"
-        display="flex"
-        marginTop="1rem"
+        sx={{
+          width: 1,
+          display: "flex",
+          marginTop: 2
+        }}
       >
         <Grid size={12}>
           <TextField
@@ -141,6 +159,7 @@ export default function EmailConfigModal({ data, open, onClose, onSubmit }: Emai
             fullWidth
             error={!!errors.username}
             helperText={errors.username?.message}
+            slotProps={{ input: { autoComplete: "false" } }}
             {...register("username")}
           />
         </Grid>
@@ -155,6 +174,7 @@ export default function EmailConfigModal({ data, open, onClose, onSubmit }: Emai
             {...register("password")}
             slotProps={{
               input: {
+                autoComplete: "false",
                 endAdornment: (
                   <IconButton disableRipple onClick={() => setShowPassword((prev) => !prev)}>
                     {showPassword ? (
@@ -179,7 +199,12 @@ export default function EmailConfigModal({ data, open, onClose, onSubmit }: Emai
             {...register("fromAddress")}
           />
         </Grid>
-        <Grid size={12} marginTop="0.5rem">
+        <Grid
+          size={12}
+          sx={{
+            marginTop: 1
+          }}
+        >
           <Button
             disabled={isCreating || isUpdating}
             type="submit"
