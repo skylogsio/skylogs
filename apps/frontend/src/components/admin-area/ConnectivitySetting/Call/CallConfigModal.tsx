@@ -14,9 +14,9 @@ import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
 const callConfigSchema = z.object({
-  name: z.string().trim().nonempty("This field is Required."),
+  name: z.string().trim().min(1, "This field is Required."),
   provider: z.literal("kaveNegar"),
-  apiToken: z.string().trim().nonempty("This field is Required.")
+  apiToken: z.string().trim().min(1, "This field is Required.")
 });
 
 type CallConfigFormType = z.infer<typeof callConfigSchema>;
@@ -26,11 +26,23 @@ type CallConfigModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
   onSubmit: () => void;
 };
 
-const defaultValues: CallConfigFormType = {
+const emptyFormValues: CallConfigFormType = {
   name: "",
   provider: "kaveNegar",
   apiToken: ""
 };
+
+function getFormValues(data: CreateUpdateModal<ICallConfig>): CallConfigFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return {
+    name: data.name,
+    provider: "kaveNegar",
+    apiToken: data.apiToken
+  };
+}
 
 export default function CallConfigModal({ data, open, onClose, onSubmit }: CallConfigModalProps) {
   const {
@@ -40,7 +52,8 @@ export default function CallConfigModal({ data, open, onClose, onSubmit }: CallC
     formState: { errors }
   } = useForm<CallConfigFormType>({
     resolver: zodResolver(callConfigSchema),
-    defaultValues
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
 
   const { mutate: createCallConfigMutation, isPending: isCreating } = useMutation({
@@ -71,11 +84,7 @@ export default function CallConfigModal({ data, open, onClose, onSubmit }: CallC
   }
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else {
-      reset(data as CallConfigFormType);
-    }
+    reset(getFormValues(data));
   }, [data, reset]);
 
   return (
@@ -90,9 +99,11 @@ export default function CallConfigModal({ data, open, onClose, onSubmit }: CallC
         onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
-        width="100%"
-        display="flex"
-        marginTop="1rem"
+        sx={{
+          width: 1,
+          display: "flex",
+          marginTop: 2
+        }}
       >
         <Grid size={12}>
           <TextField
@@ -114,7 +125,12 @@ export default function CallConfigModal({ data, open, onClose, onSubmit }: CallC
             {...register("apiToken")}
           />
         </Grid>
-        <Grid size={12} marginTop="0.5rem">
+        <Grid
+          size={12}
+          sx={{
+            marginTop: 1
+          }}
+        >
           <Button
             disabled={isCreating || isUpdating}
             type="submit"
