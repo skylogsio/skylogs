@@ -137,15 +137,21 @@ export default function AccessUsersAndTeams({
         const { key, ...otherProps } = props;
         return (
           <Box component="li" key={key} {...otherProps}>
-            <Stack direction="row" alignItems="center" spacing={1}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                alignItems: "center"
+              }}
+            >
               <Typography>{option.label}</Typography>
             </Stack>
           </Box>
         );
       }}
-      renderTags={(value, getTagProps) =>
+      renderValue={(value, getItemProps) =>
         value.map((option, index) => {
-          const { key, ...tagProps } = getTagProps({ index });
+          const { key, ...tagProps } = getItemProps({ index });
           return (
             <Chip
               key={key}
@@ -167,9 +173,10 @@ export default function AccessUsersAndTeams({
         <TextField
           {...params}
           slotProps={{
-            input: params.InputProps,
-            inputLabel: params.InputLabelProps,
-            htmlInput: params.inputProps
+            ...params.slotProps,
+            input: params.slotProps.input,
+            inputLabel: params.slotProps.inputLabel,
+            htmlInput: params.slotProps.htmlInput
           }}
           variant="filled"
           label={label}
