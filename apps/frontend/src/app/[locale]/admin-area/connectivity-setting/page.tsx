@@ -49,22 +49,30 @@ const connectivityCards = [
 export default function ConnectivitySetting() {
   const pathname = usePathname();
   return (
-    <Box minHeight="100%">
+    <Box
+      sx={{
+        minHeight: "100%"
+      }}
+    >
       <Box
         component={motion.div}
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        textAlign="center"
-        my={3}
+        sx={{
+          textAlign: "center",
+          my: 3
+        }}
       >
         <Typography
           variant="h3"
-          fontWeight="800"
           component="h1"
           sx={{
+            fontWeight: 800,
+
             background: ({ palette }) =>
               `linear-gradient(135deg, ${palette.primary.main}, ${palette.secondary.main})`,
+
             backgroundClip: "text",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
@@ -76,22 +84,33 @@ export default function ConnectivitySetting() {
         <Typography
           variant="h6"
           color="textSecondary"
-          fontWeight="400"
-          sx={{ maxWidth: 600, mx: "auto" }}
+          sx={{
+            fontWeight: 400,
+            maxWidth: 600,
+            mx: "auto"
+          }}
         >
           Manage Telegram proxy configurations and also Manage Call, Email and SMS providers
         </Typography>
       </Box>
       <Box
-        width="90%"
-        minHeight="100%"
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        paddingX={1}
-        marginX="auto"
+        sx={{
+          width: "90%",
+          minHeight: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          paddingX: 1,
+          marginX: "auto"
+        }}
       >
-        <Grid container spacing={3} marginTop={3}>
+        <Grid
+          container
+          spacing={3}
+          sx={{
+            marginTop: 3
+          }}
+        >
           {connectivityCards.map((item, index) => (
             <Grid
               size={6}
@@ -107,12 +126,16 @@ export default function ConnectivitySetting() {
             >
               <Card
                 sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
                   boxSizing: "border-box !important",
                   borderRadius: 3,
                   cursor: "pointer",
                   boxShadow: `0 3px 5px ${alpha(grey[400], 0.15)}`,
-                  border: `2px solid ${item.color}`,
-                  height: "100%",
+                  border: 2,
+                  borderColor: item.color,
+                  height: 1,
                   transition: "all 0.2s ease-out",
                   "&:hover": {
                     transform: "translateY(-4px) scale(1.01)",
@@ -126,22 +149,32 @@ export default function ConnectivitySetting() {
                 <Box
                   component={Link}
                   href={pathname + item.href}
-                  padding={3}
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  gap={2}
+                  sx={{
+                    padding: 3,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    textDecoration: "none",
+                    gap: 2
+                  }}
                 >
-                  <Box display="flex" alignItems="center" gap={2} flex={1}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      flex: 1
+                    }}
+                  >
                     <Box
-                      display="flex"
-                      justifyContent="center"
-                      alignItems="center"
-                      width={70}
-                      height={70}
-                      borderRadius="50%"
                       className="connectivity-setting-icon"
                       sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        width: 70,
+                        height: 70,
+                        borderRadius: "50%",
                         backgroundColor: item.color,
                         color: ({ palette }) => palette.common.white,
                         flexShrink: 0,
@@ -150,11 +183,28 @@ export default function ConnectivitySetting() {
                     >
                       <item.icon size={item.iconSize} />
                     </Box>
-                    <Box flex={1}>
-                      <Typography variant="h6" fontWeight="bold" marginBottom={0.5}>
+                    <Box
+                      sx={{
+                        flex: 1
+                      }}
+                    >
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: "text.primary",
+                          fontWeight: "bold",
+                          marginBottom: 0.5
+                        }}
+                      >
                         {item.title}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ opacity: 0.8 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "text.secondary",
+                          opacity: 0.8
+                        }}
+                      >
                         {item.description}
                       </Typography>
                     </Box>

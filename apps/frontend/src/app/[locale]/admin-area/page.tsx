@@ -48,22 +48,30 @@ const overviewCards = [
 export default function OverviewPage() {
   const router = useRouter();
   return (
-    <Box minHeight="100%">
+    <Box
+      sx={{
+        minHeight: "100%"
+      }}
+    >
       <Box
         component={motion.div}
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        textAlign="center"
-        my={3}
+        sx={{
+          textAlign: "center",
+          my: 3
+        }}
       >
         <Typography
           variant="h3"
-          fontWeight="800"
           component="h1"
           sx={{
+            fontWeight: 800,
+
             background: ({ palette }) =>
               `linear-gradient(135deg, ${palette.primary.main}, ${palette.secondary.main})`,
+
             backgroundClip: "text",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
@@ -75,22 +83,33 @@ export default function OverviewPage() {
         <Typography
           variant="h6"
           color="textSecondary"
-          fontWeight="400"
-          sx={{ maxWidth: 600, mx: "auto" }}
+          sx={{
+            fontWeight: 400,
+            maxWidth: 600,
+            mx: "auto"
+          }}
         >
           Configure and manage your application settings across different categories
         </Typography>
       </Box>
       <Box
-        width="90%"
-        minHeight="100%"
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        paddingX={1}
-        marginX="auto"
+        sx={{
+          width: "90%",
+          minHeight: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          paddingX: 1,
+          marginX: "auto"
+        }}
       >
-        <Grid container spacing={3} marginTop={3}>
+        <Grid
+          container
+          spacing={3}
+          sx={{
+            marginTop: 3
+          }}
+        >
           {overviewCards.map((item, index) => (
             <Grid
               size={6}
@@ -119,27 +138,32 @@ export default function OverviewPage() {
                     borderLeftWidth: "8px",
                     "& .overview-card-icon": {
                       transform: "scale(1.1)",
-                      top: "-6px",
-                      right: "-6px"
+                      top: -6,
+                      right: -6
                     }
                   }
                 }}
               >
-                <Box padding={2} position="relative">
+                <Box
+                  sx={{
+                    padding: 2,
+                    position: "relative"
+                  }}
+                >
                   <Box
-                    display="flex"
-                    justifyContent="center"
-                    alignItems="center"
-                    width={80}
-                    height={80}
-                    borderRadius="50%"
                     className="overview-card-icon"
                     sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      width: 80,
+                      height: 80,
+                      borderRadius: "50%",
                       background: item.gradient,
                       color: ({ palette }) => palette.common.white,
                       position: "absolute",
-                      top: "-10px",
-                      right: "-10px",
+                      top: -10,
+                      right: -10,
                       transition: "all 0.2s ease"
                     }}
                   >
@@ -154,17 +178,23 @@ export default function OverviewPage() {
                   </Button>
                   <Typography
                     variant="h6"
-                    letterSpacing={1}
-                    marginTop={4}
-                    marginBottom={2}
-                    fontWeight="bold"
+                    sx={{
+                      letterSpacing: 1,
+                      marginTop: 4,
+                      marginBottom: 2,
+                      fontWeight: "bold"
+                    }}
                   >
                     {item.title}
                   </Typography>
                   <Typography
                     variant="body1"
-                    color="text.secondary"
-                    sx={{ opacity: 0.7, width: "95%", marginX: "auto" }}
+                    sx={{
+                      color: "text.secondary",
+                      opacity: 0.7,
+                      width: "95%",
+                      marginX: "auto"
+                    }}
                   >
                     {item.description}
                   </Typography>
