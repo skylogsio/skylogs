@@ -40,9 +40,9 @@ export default function EmptyList({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
         spacing={2}
-        alignItems="center"
-        justifyContent="center"
         sx={{
+          alignItems: "center",
+          justifyContent: "center",
           padding: 4,
           textAlign: "center"
         }}
@@ -59,8 +59,8 @@ export default function EmptyList({
         >
           <Box
             sx={{
-              width: "90px",
-              height: "90px",
+              width: 90,
+              height: 90,
               borderRadius: "50%",
               background: `linear-gradient(135deg, ${finalGradientColors[0]} 0%, ${finalGradientColors[1]} 100%)`,
               display: "flex",
@@ -90,13 +90,22 @@ export default function EmptyList({
             </motion.div>
           </Box>
         </Box>
-        <Typography variant="h6" fontWeight="600" sx={{ marginTop: 1 }}>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 600,
+            marginTop: 1
+          }}
+        >
           {title}
         </Typography>
         <Typography
           variant="body2"
-          color="text.disabled"
-          sx={{ maxWidth: "400px", lineHeight: 1.6 }}
+          sx={{
+            color: "text.disabled",
+            maxWidth: 400,
+            lineHeight: 1.6
+          }}
         >
           {description}
         </Typography>
@@ -142,7 +151,7 @@ export default function EmptyList({
         minHeight: "80vh !important",
         padding: { xs: 3, sm: 6 },
         backgroundColor: "background.paper",
-        borderRadius: "1.5rem",
+        borderRadius: 6,
         position: "relative",
         overflow: "hidden"
       }}
@@ -172,12 +181,14 @@ export default function EmptyList({
           </Button>
         </Box>
       )}
-
       <Stack
         spacing={4}
-        alignItems="center"
-        maxWidth="520px"
-        sx={{ position: "relative", zIndex: 1 }}
+        sx={{
+          alignItems: "center",
+          maxWidth: 520,
+          position: "relative",
+          zIndex: 1
+        }}
       >
         <Box
           component={motion.div}
@@ -191,15 +202,15 @@ export default function EmptyList({
         >
           <Box
             sx={{
-              width: "140px",
-              height: "140px",
+              width: 140,
+              height: 140,
               borderRadius: "50%",
               background: `linear-gradient(135deg, ${finalGradientColors[0]} 0%, ${finalGradientColors[1]} 100%)`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               position: "relative",
-              marginY: "2rem",
+              marginY: 4,
               boxShadow: `0 8px 20px ${alpha(palette.primary.dark, 0.4)}`
             }}
           >
@@ -233,19 +244,27 @@ export default function EmptyList({
             delay: 0.3
           }}
           spacing={2}
-          alignItems="center"
+          sx={{
+            alignItems: "center"
+          }}
         >
-          <Typography variant="h4" fontWeight="700" textAlign="center">
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              textAlign: "center"
+            }}
+          >
             {title}
           </Typography>
           <Typography
             variant="body1"
-            color="text.disabled"
-            textAlign="center"
             sx={{
-              maxWidth: "450px",
+              color: "text.disabled",
+              textAlign: "center",
+              maxWidth: 450,
               lineHeight: 1.7,
-              fontSize: "1rem"
+              fontSize: 16
             }}
           >
             {description}
@@ -282,9 +301,9 @@ export default function EmptyList({
               sx={{
                 paddingX: 4,
                 paddingY: 1.5,
-                fontSize: "1rem",
+                fontSize: 16,
                 fontWeight: 600,
-                borderRadius: "12px",
+                borderRadius: 3,
                 textTransform: "none",
                 background: `linear-gradient(135deg, ${palette.primary.main} 0%, ${palette.primary.light} 100%)`,
                 boxShadow: `0 8px 24px ${alpha(palette.primary.dark, 0.4)}`,
