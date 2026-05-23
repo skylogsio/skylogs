@@ -11,6 +11,30 @@ use App\Models\GrafanaWebhookAlert;
 
 class GrafanaService
 {
+    /**
+     * Stable id for one Grafana/Alertmanager alert series (same alertname, different labels).
+     */
+    public static function legacyGrafanaAlertInstanceKey(array $alert): string
+    {
+        $labels = $alert['labels'] ?? [];
+        if (is_array($labels)) {
+            ksort($labels);
+        }
+
+        $labelsEncoded = is_array($labels) ? json_encode($labels) : '';
+
+        return 'legacy:'.sha1($labelsEncoded.'|'.($alert['generatorURL'] ?? '').'|'.($alert['startsAt'] ?? ''));
+    }
+
+    public static function grafanaAlertInstanceKey(array $alert): string
+    {
+        if (! empty($alert['fingerprint'])) {
+            return (string) $alert['fingerprint'];
+        }
+
+        return self::legacyGrafanaAlertInstanceKey($alert);
+    }
+
     public static function CheckAlertFilter($alert, $query)
     {
 
@@ -102,15 +126,17 @@ class GrafanaService
                     $fireAlertsByRule[$alertRule->_id][] = [
                         'dataSourceId' => $alert['dataSourceId'],
                         'alertRuleName' => $alertRule->name,
-                        'dataSourceAlertName' => $alert['labels']['alertname'],
-                        'labels' => $alert['labels'],
-                        'annotations' => $alert['annotations'],
+                        'dataSourceAlertName' => $alert['labels']['alertname'] ?? '',
+                        'labels' => $alert['labels'] ?? [],
+                        'annotations' => $alert['annotations'] ?? [],
                         'alertRuleId' => $alertRule->_id,
                         'status' => $alert['status'],
                         'startsAt' => $alert['startsAt'] ?? '',
                         'endsAt' => $alert['endsAt'] ?? '',
-                        'generatorURL' => $alert['generatorURL'],
+                        'generatorURL' => $alert['generatorURL'] ?? '',
                         'orgId' => $alert['orgId'] ?? null,
+                        'fingerprint' => $alert['fingerprint'] ?? null,
+                        'instanceKey' => self::grafanaAlertInstanceKey($alert),
 
                         //                        "state" => $status,
                     ];
@@ -144,24 +170,23 @@ class GrafanaService
             $model->orgId = $webhook['orgId'] ?? '';
             $model->title = $webhook['title'] ?? '';
             $model->message = $webhook['message'] ?? '';
-            $grafanaAlertnames = collect($alerts)->map(function ($gAlert) {
-                return $gAlert['dataSourceAlertName'];
-            })->unique()->toArray();
             $alertRule = $model->alertRule;
-
-            self::updateAlertRuleStatus($alertRule, $alerts, $grafanaAlertnames);
+            if (! $alertRule) {
+                continue;
+            }
+            $model->save();
+            self::updateAlertRuleStatus($alertRule, $alerts);
             SendNotifyService::CreateNotify(SendNotifyJob::GRAFANA_WEBHOOK, $model, $alertRule->_id);
 
         }
 
     }
 
-    public static function updateAlertRuleStatus($alertRule, $alerts, $grafanaAlertnames)
+    public static function updateAlertRuleStatus($alertRule, array $alerts): void
     {
-
-        $webhookAlerts = collect($alerts)->filter(function ($alert) {
-            return $alert['status'] == GrafanaWebhookAlert::FIRING;
-        });
+        if (! $alertRule || empty($alertRule->_id)) {
+            return;
+        }
 
         $check = GrafanaCheck::firstOrCreate([
             'alertRuleId' => $alertRule->_id,
@@ -171,19 +196,11 @@ class GrafanaService
             'state' => GrafanaWebhookAlert::RESOLVED,
         ]);
 
-        $checkAlerts = collect($check->alerts)->reject(function ($alert) use ($grafanaAlertnames) {
-            return in_array($alert['dataSourceAlertName'], $grafanaAlertnames);
-        });
+        $merged = self::mergeGrafanaCheckAlertBatch($check->alerts ?? [], $alerts);
 
-        if ($webhookAlerts->isNotEmpty()) {
-            foreach ($webhookAlerts as $webhookAlert) {
-                $checkAlerts[] = $webhookAlert;
-            }
-        }
+        $fireCount = count($merged);
 
-        $fireCount = $checkAlerts->count();
-
-        $check->alerts = $checkAlerts->toArray();
+        $check->alerts = $merged;
         $check->state = $fireCount == 0 ? GrafanaWebhookAlert::RESOLVED : GrafanaWebhookAlert::FIRING;
         $check->save();
 
@@ -198,5 +215,73 @@ class GrafanaService
             }
         }
 
+    }
+
+    /**
+     * Merge a webhook batch into stored Grafana check alerts (keyed by fingerprint or legacy hash).
+     *
+     * @param  array<int, mixed>  $storedAlerts
+     * @param  array<int, mixed>  $incomingAlerts
+     * @return array<int, array<string, mixed>>
+     */
+    public static function mergeGrafanaCheckAlertBatch(array $storedAlerts, array $incomingAlerts): array
+    {
+        $byKey = collect($storedAlerts)
+            ->map(fn ($stored) => is_array($stored) ? $stored : (array) $stored)
+            ->keyBy(fn (array $stored) => self::grafanaAlertInstanceKey($stored));
+
+        foreach ($incomingAlerts as $incoming) {
+            $incoming = is_array($incoming) ? $incoming : (array) $incoming;
+            $incoming = self::normalizeStoredGrafanaAlert($incoming);
+            $key = self::grafanaAlertInstanceKey($incoming);
+            $status = $incoming['status'] ?? '';
+
+            if ($status === GrafanaWebhookAlert::RESOLVED) {
+                $byKey->forget($key);
+                if (! empty($incoming['fingerprint'])) {
+                    $legacyKey = self::legacyGrafanaAlertInstanceKey($incoming);
+                    if ($legacyKey !== $key) {
+                        $byKey->forget($legacyKey);
+                    }
+                }
+
+                continue;
+            }
+
+            if ($status !== GrafanaWebhookAlert::FIRING) {
+                continue;
+            }
+
+            if (! empty($incoming['fingerprint'])) {
+                $incomingLegacy = self::legacyGrafanaAlertInstanceKey($incoming);
+                foreach ($byKey->keys()->all() as $existingKey) {
+                    $stored = $byKey->get($existingKey);
+                    if ($existingKey === $key) {
+                        continue;
+                    }
+                    if (! empty($stored['fingerprint'] ?? null)) {
+                        continue;
+                    }
+                    if (self::legacyGrafanaAlertInstanceKey($stored) === $incomingLegacy) {
+                        $byKey->forget($existingKey);
+                    }
+                }
+            }
+
+            $byKey->put($key, $incoming);
+        }
+
+        return $byKey->values()->all();
+    }
+
+    /**
+     * Ensure stored alerts always carry fingerprint + instanceKey for consistent merging.
+     */
+    private static function normalizeStoredGrafanaAlert(array $alert): array
+    {
+        $alert['fingerprint'] = $alert['fingerprint'] ?? null;
+        $alert['instanceKey'] = $alert['instanceKey'] ?? self::grafanaAlertInstanceKey($alert);
+
+        return $alert;
     }
 }

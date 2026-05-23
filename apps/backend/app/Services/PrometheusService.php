@@ -51,12 +51,56 @@ class PrometheusService
         throw new \Exception('invalid token type');
     }
 
+    /**
+     * When the scrape against a datasource fails, missing alerts must not be interpreted as resolved.
+     *
+     * @param  array<int, array<string, mixed>>  $fetchedAlerts
+     * @param  array<int, array<string, mixed>>  $storedFiringAlerts
+     * @param  array<int|string>  $failedDataSourceIds
+     * @return array<int, array<string, mixed>>
+     */
+    public static function mergeFetchedPrometheusAlertsPreservingUnreachableSources(
+        array $fetchedAlerts,
+        array $storedFiringAlerts,
+        array $failedDataSourceIds,
+    ): array {
+        if ($failedDataSourceIds === []) {
+            return $fetchedAlerts;
+        }
+
+        $failedSet = array_fill_keys(array_map('strval', $failedDataSourceIds), true);
+        $merged = $fetchedAlerts;
+
+        foreach ($storedFiringAlerts as $savedAlert) {
+            $status = $savedAlert['skylogsStatus'] ?? PrometheusCheck::FIRE;
+            if ($status === PrometheusCheck::RESOLVED) {
+                continue;
+            }
+
+            $dataSourceId = (string) ($savedAlert['dataSourceId'] ?? '');
+            if ($dataSourceId === '' || ! isset($failedSet[$dataSourceId])) {
+                continue;
+            }
+
+            foreach ($merged as $existing) {
+                if (($existing['labels'] ?? null) == ($savedAlert['labels'] ?? null)) {
+                    continue 2;
+                }
+            }
+
+            $merged[] = $savedAlert;
+        }
+
+        return $merged;
+    }
+
     public function CheckPrometheusFiredAlerts($alerts, $alertRules): array
     {
 
         $fireAlertsByRule = [];
         foreach ($alerts as $alert) {
             foreach ($alertRules as $alertRule) {
+                $ruleKey = (string) $alertRule->getKey();
                 $isMatch = true;
                 $matchLabels = [];
                 $matchAnnotations = [];
@@ -100,11 +144,11 @@ class PrometheusService
                 if ($isMatch) {
                     // check with database checkprometheus
 
-                    if (empty($fireAlertsByRule[$alertRule->_id])) {
-                        $fireAlertsByRule[$alertRule->_id] = [];
+                    if (empty($fireAlertsByRule[$ruleKey])) {
+                        $fireAlertsByRule[$ruleKey] = [];
                     }
 
-                    $fireAlertsByRule[$alertRule->_id][] = [
+                    $fireAlertsByRule[$ruleKey][] = [
                         'dataSourceId' => $alert['dataSourceId'],
                         'dataSourceName' => $alert['dataSourceName'],
                         'alertRuleName' => $alertRule->name,
@@ -124,7 +168,7 @@ class PrometheusService
 
     }
 
-    public function CheckAlerts($alertRules, $prometheusFiredAlerts)
+    public function CheckAlerts($alertRules, $prometheusFiredAlerts, array $failedDataSourceIds = [])
     {
         self::CleanChecks();
         foreach ($alertRules as $alertRule) {
@@ -139,7 +183,13 @@ class PrometheusService
             $resolvedAlertsArray = collect();
             $commonAlertsArray = collect();
             $updatedAlertsArray = collect();
-            $prometheusAlerts = empty($prometheusFiredAlerts[$alertRule->id]) ? [] : $prometheusFiredAlerts[$alertRule->id];
+            $ruleKey = (string) $alertRule->getKey();
+            $prometheusAlerts = empty($prometheusFiredAlerts[$ruleKey]) ? [] : $prometheusFiredAlerts[$ruleKey];
+            $prometheusAlerts = self::mergeFetchedPrometheusAlertsPreservingUnreachableSources(
+                $prometheusAlerts,
+                $check->alerts,
+                $failedDataSourceIds,
+            );
             foreach ($prometheusAlerts as $prometheusAlert) {
                 $isExists = false;
                 foreach ($check->alerts as $alert) {

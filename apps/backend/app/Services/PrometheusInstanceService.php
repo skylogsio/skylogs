@@ -290,35 +290,58 @@ class PrometheusInstanceService
 
     public function getTriggered(): array
     {
+        return $this->fetchTriggeredAlertsFromDataSources()['alerts'];
+    }
 
+    /**
+     * @return array{alerts: array<int, mixed>, failedDataSourceIds: array<int|string>}
+     */
+    public function getTriggeredForAlertSync(): array
+    {
+        return $this->fetchTriggeredAlertsFromDataSources();
+    }
+
+    /**
+     * @return array{alerts: array<int, mixed>, failedDataSourceIds: array<int|string>}
+     */
+    private function fetchTriggeredAlertsFromDataSources(): array
+    {
         $prometheusAll = $this->dataSourceService->get(DataSourceType::PROMETHEUS);
         $alerts = [];
+        $failedDataSourceIds = [];
 
-        $responses = [];
-        if ($prometheusAll->isNotEmpty()) {
+        if ($prometheusAll->isEmpty()) {
+            return ['alerts' => [], 'failedDataSourceIds' => []];
+        }
 
-            $responses = Http::pool(function (Pool $pool) use ($prometheusAll) {
-                $result = [];
-                /** @var $pro DataSource */
-                foreach ($prometheusAll as $pro) {
-
-                    $request = $pool->as($pro->id)->acceptJson();
-                    if (! empty($pro->username) && ! empty($pro->password)) {
-                        $request = $request->withBasicAuth($pro->username, $pro->password);
-                    }
-                    $result[] = $request->get($pro->prometheusGetAlertsUrl());
+        $responses = Http::pool(function (Pool $pool) use ($prometheusAll) {
+            $result = [];
+            foreach ($prometheusAll as $pro) {
+                $request = $pool->as($pro->id)->acceptJson();
+                if (! empty($pro->username) && ! empty($pro->password)) {
+                    $request = $request->withBasicAuth($pro->username, $pro->password);
                 }
+                $result[] = $request->get($pro->prometheusGetAlertsUrl());
+            }
 
-                return $result;
-            });
+            return $result;
+        });
 
-            foreach ($responses as $id => $response) {
-                if (! ($response instanceof Response && $response->ok())) {
+        foreach ($responses as $id => $response) {
+            if (! ($response instanceof Response && $response->ok())) {
+                $failedDataSourceIds[] = $id;
+
+                continue;
+            }
+
+            try {
+                $decoded = $response->json();
+                $arr = $decoded['data']['alerts'] ?? null;
+                if (! is_array($arr)) {
+                    $failedDataSourceIds[] = $id;
+
                     continue;
                 }
-                $response = $response->json();
-
-                $arr = $response['data']['alerts'];
 
                 foreach ($arr as &$alert) {
                     $alert['dataSourceId'] = $id;
@@ -327,14 +350,16 @@ class PrometheusInstanceService
                     if ($alert['state'] == PrometheusInstance::STATE_FIRING) {
                         $alerts[] = $alert;
                     }
-
                 }
+            } catch (\Throwable) {
+                $failedDataSourceIds[] = $id;
             }
-
         }
 
-        return $alerts;
-
+        return [
+            'alerts' => $alerts,
+            'failedDataSourceIds' => array_values(array_unique($failedDataSourceIds)),
+        ];
     }
 
     public function getMetricLabels($id, $metric)
