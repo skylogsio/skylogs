@@ -1,31 +1,53 @@
 # ----------------------------------------
 # SkyLogs Sentinel Configuration
 # ----------------------------------------
+# Reduce manual duplication:
+# • Main sentinel: keep the full peers: list only here (and share the same shared_secret fleet-wide).
+# • Agent sentinels: set role agent + main_sentinel.base_url (+ optional peers_cache_file). Leave peers: []
+#   or add a minimal fallback row if main might be unreachable on first boot.
+#
+# Alerts: outbound heartbeat watchers call alert.webhook_url when a peer is unhealthy (already implemented).
+#
 server:
-  listen: ":9192"
+  listen: ":9191"
+
 sentinel:
-  id: arvan-bamdad-sentinel       # Unique identifier for this Sentinel instance
-  role: secondary        # Role: primary / secondary (informational)
+  id: main-cluster-sentinel
+  self_instance_name: "" # optional peer.name to omit when it names this zone
+  # main | primary | empty → serves GET /cluster/peers (full list below)
+  # Any other role (e.g. agent, secondary) + main_sentinel.base_url → pull list from main and cache it
+  role: main
+
+# Authoritative list for role=main. Each row must include heartbeat_url and sentinel_id (remote zone's sentinel.id).
+peers:
+  - name: zone-a
+    sentinel_id: zone-a-sentinel
+    heartbeat_url: "http://10.0.0.1:9191/heartbeat"
+  - name: zone-b
+    sentinel_id: zone-b-sentinel
+    heartbeat_url: "http://10.0.0.2:9191/heartbeat"
+
+# Agent-only: pull signed peer list from main; cache to disk so checks continue if main is down.
+# Agents also GET main_sentinel.base_url/heartbeat on the same schedule as other peers and fire
+# alert.webhook_url when main is unreachable (same as when a zone agent is down).
+# main_sentinel:
+#   base_url: "http://main.example:9191"
+#   name: main # optional alert instance label (default "main")
+#   sentinel_id: main-cluster-sentinel # optional; dedupe if main is already in peers list
+#   peers_path: "/cluster/peers" # default
+#   refresh_interval: 30s
+#   cache_file: "/data/sentinel-peers.json"
 
 heartbeat:
-  target_url: "http://localhost:9191/heartbeat"  # Main SkyLogs heartbeat endpoint
-  interval: 5s            # How often to send heartbeat
-  timeout: 3s             # Timeout per heartbeat request
-  fail_after: 15s         # Mark main SkyLogs as down if unreachable for this period
+  interval: 5s
+  timeout: 3s
+  fail_after: 15s
 
 alert:
-  webhook_url: "http://nginx-back:80/api/v1/fire-alert"  # Where to send alerts
+  webhook_url: "http://nginx-back:80/api/v1/fire-alert"
   token: "the-alert-rule-token"
-  instance: "arvan-bamdad-sentinel"
-  retry_interval: 10s     # Retry alerting if first attempt fails
+  retry_interval: 10s
 
-runtime:
-  min_uptime: 30s         # Do not send alerts immediately after restart
-  state_file: "/var/lib/skylogs-sentinel/state.json"  # Persistent state to survive restarts
-
-logging:
-  level: "info"           # Logging level: debug / info / warn / error
-  file: "/var/log/skylogs-sentinel.log" # Optional log file path
 security:
-  shared_secret: "maivupei6azifae3uju1cahneewahiT3hia4ahY4ki2ieWee8p"
+  shared_secret: "change-me"
   allowed_drift: 10s

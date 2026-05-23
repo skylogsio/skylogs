@@ -59,12 +59,12 @@ func (s *State) TimeSinceLastSeen() time.Duration {
 
 	return time.Since(s.LastSeen)
 }
-func (s *State) Snapshot() Snapshot {
+func (s *State) Snapshot(staleAfter time.Duration) Snapshot {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	status := "healthy"
-	if time.Since(s.LastSeen) > 10*time.Second {
+	if staleAfter > 0 && time.Since(s.LastSeen) > staleAfter {
 		status = "unhealthy"
 	}
 
