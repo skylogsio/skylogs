@@ -10,6 +10,7 @@ use App\Models\AlertRule;
 use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
 use App\Models\VictoriaLogsCheck;
+use App\Services\AlertRuleBehaviorRuleService;
 use App\Services\AlertRuleService;
 use App\Services\EndpointService;
 use App\Services\SendNotifyService;
@@ -17,6 +18,7 @@ use App\Services\UserService;
 use App\Services\ZabbixService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Str;
 
@@ -84,7 +86,7 @@ class AlertingController extends Controller
         });
         $total = ! empty($total) ? $total[0]['total'] : 0;
 
-        $paginatedData = new \Illuminate\Pagination\LengthAwarePaginator(
+        $paginatedData = new LengthAwarePaginator(
             $data,
             $total,
             $perPage,
@@ -392,6 +394,7 @@ class AlertingController extends Controller
         $alert->is_silent = $isSilent;
         $alert->countEndpoints = $this->endpointService->countUserEndpointAlert($currentUser, $alert);
         $alert->count_endpoints = $alert->countEndpoints;
+        $alert->rules = app(AlertRuleBehaviorRuleService::class)->formatRulesForApi($alert->rules ?? []);
 
         return response()->json($alert);
     }
