@@ -4,6 +4,7 @@ use App\Enums\Constants;
 use App\Http\Controllers\Cluster\SyncController;
 use App\Http\Controllers\V1\AlertRule\AccessUserController;
 use App\Http\Controllers\V1\AlertRule\AlertingController;
+use App\Http\Controllers\V1\AlertRule\BehaviorRuleController;
 use App\Http\Controllers\V1\AlertRule\CreateDataController;
 use App\Http\Controllers\V1\AlertRule\GroupActionController;
 use App\Http\Controllers\V1\AlertRule\NotifyController;
@@ -212,6 +213,17 @@ Route::prefix('v1')->group(function () {
                 Route::get('/{id}', 'Create');
                 Route::put('/{id}', 'Store');
             });
+        Route::prefix('/alert-rule-behavior-rule')
+            ->controller(BehaviorRuleController::class)
+            ->group(function () {
+                Route::get('/{alertRuleId}', 'Index')->where('alertRuleId', '[0-9a-fA-F]{24}');
+                Route::post('/{alertRuleId}', 'Store')->where('alertRuleId', '[0-9a-fA-F]{24}');
+                Route::put('/{alertRuleId}/{ruleId}', 'Update')
+                    ->where(['alertRuleId' => '[0-9a-fA-F]{24}', 'ruleId' => '[0-9a-fA-F\\-]{36}']);
+                Route::delete('/{alertRuleId}/{ruleId}', 'Delete')
+                    ->where(['alertRuleId' => '[0-9a-fA-F]{24}', 'ruleId' => '[0-9a-fA-F\\-]{36}']);
+            });
+
         Route::prefix('/alert-rule-notify')
             ->controller(NotifyController::class)
             ->group(function () {
