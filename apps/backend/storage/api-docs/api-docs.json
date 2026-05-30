@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8000",
+            "url": "http://localhost:9000",
             "description": "Skylogs local server"
         }
     ],
@@ -18,6 +18,7 @@
                     "AlertRule"
                 ],
                 "summary": "List alert rules",
+                "description": "Returns a paginated list of alert rules visible to the authenticated user. Pinned rules appear first.",
                 "operationId": "getAlertRules",
                 "parameters": [
                     {
@@ -40,6 +41,7 @@
                     {
                         "name": "alertname",
                         "in": "query",
+                        "description": "Filter by alert rule name (case-insensitive partial match)",
                         "schema": {
                             "type": "string"
                         }
@@ -47,6 +49,7 @@
                     {
                         "name": "userId",
                         "in": "query",
+                        "description": "Filter by owner or shared user id",
                         "schema": {
                             "type": "string"
                         }
@@ -54,25 +57,84 @@
                     {
                         "name": "types",
                         "in": "query",
-                        "description": "separate types that you want to filter via , ",
+                        "description": "Comma-separated alert types",
                         "schema": {
                             "type": "string"
                         },
-                        "example": "api,prometheus"
+                        "example": "api,prometheus,elastic"
                     },
                     {
                         "name": "tags",
                         "in": "query",
-                        "description": "separate types that you want to filter via , ",
+                        "description": "Comma-separated tags (all must match)",
                         "schema": {
                             "type": "string"
                         },
-                        "example": "api,prometheus"
+                        "example": "production,critical"
+                    },
+                    {
+                        "name": "silentStatus",
+                        "in": "query",
+                        "description": "Filter by silence state for the current user",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "silent",
+                                "active"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "endpointId",
+                        "in": "query",
+                        "description": "Filter by linked endpoint id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by alert state",
+                        "schema": {
+                            "type": "string",
+                            "example": "critical"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Paginated alert rules",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AlertRuleListItem"
+                                            }
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
                     }
                 },
                 "security": [
@@ -85,94 +147,48 @@
                 "tags": [
                     "AlertRule"
                 ],
-                "summary": "Create elastic alert rule",
-                "operationId": "createAlertRuleElastic",
+                "summary": "Create alert rule",
+                "description": "Creates an alert rule. Required and optional fields depend on the `type` value.",
+                "operationId": "createAlertRule",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "properties": {
-                                    "name": {
-                                        "type": "string",
-                                        "example": "High CPU usage"
-                                    },
-                                    "type": {
-                                        "type": "string",
-                                        "example": "elastic"
-                                    },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Alert when CPU > 80%"
-                                    },
-                                    "dataSourceId": {
-                                        "type": "string",
-                                        "example": "1"
-                                    },
-                                    "queryString": {
-                                        "type": "string",
-                                        "example": "OriginStatus:>=400 name:myName"
-                                    },
-                                    "userIds": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "teamIds": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "endpointIds": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "tags": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "dataviewName": {
-                                        "type": "string",
-                                        "example": "My dataview"
-                                    },
-                                    "dataviewTitle": {
-                                        "type": "string",
-                                        "example": "responses*"
-                                    },
-                                    "conditionType": {
-                                        "type": "string",
-                                        "enum": [
-                                            "greaterOrEqual",
-                                            "lessOrEqual"
-                                        ],
-                                        "example": "greaterOrEqual"
-                                    },
-                                    "countDocument": {
-                                        "type": "integer",
-                                        "example": 5
-                                    },
-                                    "minutes": {
-                                        "type": "integer",
-                                        "example": 5
-                                    }
-                                },
-                                "type": "object"
+                                "$ref": "#/components/schemas/AlertRuleStoreInput"
                             }
                         }
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "Created"
+                    "200": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
                     },
                     "422": {
-                        "description": "Validation error"
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -196,13 +212,23 @@
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "example": "64b59f1a..."
+                            "pattern": "^[0-9a-fA-F]{24}$"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Alert rule details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AlertRuleDetail"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
                     },
                     "404": {
                         "description": "Not Found"
@@ -219,6 +245,7 @@
                     "AlertRule"
                 ],
                 "summary": "Update alert rule",
+                "description": "Updates an alert rule. Updatable fields depend on the alert type. Non-admin users can only update their own rules.",
                 "operationId": "updateAlertRule",
                 "parameters": [
                     {
@@ -227,7 +254,7 @@
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "example": "64b59f1a..."
+                            "pattern": "^[0-9a-fA-F]{24}$"
                         }
                     }
                 ],
@@ -236,58 +263,24 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "properties": {
-                                    "name": {
-                                        "type": "string",
-                                        "example": "High CPU usage"
-                                    },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Alert when CPU > 80%"
-                                    },
-                                    "dataSourceIds": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "dataSourceAlertName": {
-                                        "type": "string",
-                                        "example": "CPU Alert"
-                                    },
-                                    "expression": {
-                                        "type": "string",
-                                        "example": "avg(rate(cpu_usage[5m])) > 80"
-                                    },
-                                    "enableAutoResolve": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
-                                    "autoResolveMinutes": {
-                                        "type": "integer",
-                                        "example": 30
-                                    },
-                                    "userIds": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "teamIds": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    }
-                                },
-                                "type": "object"
+                                "$ref": "#/components/schemas/AlertRuleUpdateInput"
                             }
                         }
                     }
                 },
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
                     },
                     "404": {
                         "description": "Not Found"
@@ -304,6 +297,7 @@
                     "AlertRule"
                 ],
                 "summary": "Delete alert rule",
+                "description": "Deletes the alert rule for admins/owners, or removes the current user access and endpoints for shared users.",
                 "operationId": "deleteAlertRule",
                 "parameters": [
                     {
@@ -312,13 +306,20 @@
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "example": "64b59f1a..."
+                            "pattern": "^[0-9a-fA-F]{24}$"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Deleted"
+                        "description": "Deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not Found"
@@ -344,13 +345,30 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Pin toggled",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "isPin": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -373,13 +391,24 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Acknowledged",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
                     }
                 },
                 "security": [
@@ -402,13 +431,30 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Acknowledged or already acknowledged",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -418,7 +464,7 @@
                 "tags": [
                     "AlertRule"
                 ],
-                "summary": "Resolve alert",
+                "summary": "Manually resolve alert",
                 "operationId": "resolveAlertRule",
                 "parameters": [
                     {
@@ -426,13 +472,24 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Resolved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
                     }
                 },
                 "security": [
@@ -442,70 +499,43 @@
                 ]
             }
         },
-        "/api/v1/alert-rule/silent": {
+        "/api/v1/alert-rule/silent/{id}": {
             "post": {
                 "tags": [
                     "AlertRule"
                 ],
-                "summary": "Mark alert as silent (accepts userIds / minutes)",
-                "operationId": "silentAlertRule",
-                "requestBody": {
-                    "required": false,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "alertId": {
-                                        "type": "string"
-                                    },
-                                    "userIds": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
+                "summary": "Toggle silence for current user on a single alert rule",
+                "operationId": "toggleSilentAlertRule",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Silence toggled",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "isSilent": {
+                                            "type": "boolean"
                                         }
                                     },
-                                    "minutes": {
-                                        "type": "integer",
-                                        "example": 60
-                                    }
-                                },
-                                "type": "object"
+                                    "type": "object"
+                                }
                             }
                         }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/v1/alert-rule/unsilent": {
-            "post": {
-                "tags": [
-                    "AlertRule"
-                ],
-                "summary": "Remove silence",
-                "operationId": "unsilentAlertRule",
-                "requestBody": {
-                    "required": false,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "OK"
                     }
                 },
                 "security": [
@@ -524,7 +554,7 @@
                 "operationId": "filterEndpoints",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Selectable endpoints"
                     }
                 },
                 "security": [
@@ -543,9 +573,38 @@
                 "operationId": "getAlertRuleTypes",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Alert rule type enum values",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                        "enum": [
+                                            "api",
+                                            "notification",
+                                            "prometheus",
+                                            "sentry",
+                                            "grafana",
+                                            "pmm",
+                                            "zabbix",
+                                            "splunk",
+                                            "elastic",
+                                            "health",
+                                            "metabase",
+                                            "victoria_logs"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/v1/alert-rule/history/{id}": {
@@ -561,13 +620,48 @@
                         "in": "path",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 50
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "Start datetime (Y-m-d H:i)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2026-01-01 00:00"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "End datetime (Y-m-d H:i)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2026-01-31 23:59"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Paginated alert history"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
                     }
                 },
                 "security": [
@@ -590,13 +684,1432 @@
                         "in": "path",
                         "required": true,
                         "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fired alert instances or check data"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/create-data": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get form data for creating an alert rule",
+                "operationId": "getAlertRuleCreateData",
+                "responses": {
+                    "200": {
+                        "description": "Endpoints and selectable users",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "endpoints": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "users": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/create-data/data-source/{type}": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get data sources by type for alert rule creation",
+                "operationId": "getAlertRuleDataSources",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "prometheus",
+                                "sentry",
+                                "grafana",
+                                "pmm",
+                                "zabbix",
+                                "splunk",
+                                "elastic",
+                                "victoria_logs"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Data sources",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "string"
+                                            },
+                                            "name": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/create-data/zabbix": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get Zabbix hosts, actions, and severities",
+                "operationId": "getAlertRuleZabbixData",
+                "responses": {
+                    "200": {
+                        "description": "Zabbix metadata",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "hosts": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "actions": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "severities": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/create-data/rules": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get external alert rule names (Prometheus/Grafana)",
+                "operationId": "getAlertRuleExternalRules",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "prometheus",
+                                "grafana"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "dataSourceId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
                             "type": "string"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "External rule names"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/create-data/labels": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get Prometheus labels",
+                "operationId": "getAlertRulePrometheusLabels",
+                "responses": {
+                    "200": {
+                        "description": "Prometheus labels"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/create-data/label-values/{label}": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get Prometheus label values",
+                "operationId": "getAlertRulePrometheusLabelValues",
+                "parameters": [
+                    {
+                        "name": "label",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Label values"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/group-action/silent": {
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Silence filtered alert rules for current user",
+                "description": "Uses the same query filters as the alert rule list endpoint.",
+                "operationId": "groupSilentAlertRules",
+                "parameters": [
+                    {
+                        "name": "alertname",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "userId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "types",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tags",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "silentStatus",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "silent",
+                                "active"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "endpointId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rules silenced",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/group-action/unsilent": {
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Remove silence from filtered alert rules for current user",
+                "operationId": "groupUnsilentAlertRules",
+                "parameters": [
+                    {
+                        "name": "alertname",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "userId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "types",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tags",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "silentStatus",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "silent",
+                                "active"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "endpointId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Silence removed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/group-action/delete": {
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Delete filtered alert rules",
+                "operationId": "groupDeleteAlertRules",
+                "parameters": [
+                    {
+                        "name": "alertname",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "userId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "types",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tags",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "endpointId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rules deleted or access removed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/group-action/add-user-notify": {
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Add users, teams, or endpoints to filtered alert rules",
+                "operationId": "groupAddUserNotifyAlertRules",
+                "parameters": [
+                    {
+                        "name": "alertname",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "userId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "types",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tags",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "endpointId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "userIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "teamIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "endpointIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Access or notifications updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule-tag": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "List all alert rule tags",
+                "operationId": "getAllAlertRuleTags",
+                "responses": {
+                    "200": {
+                        "description": "All tags"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule-tag/{id}": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get tags for an alert rule",
+                "operationId": "getAlertRuleTags",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Alert rule tags",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Update tags for an alert rule",
+                "operationId": "updateAlertRuleTags",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "tags": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Tags updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule-behavior-rule/{alertRuleId}": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "List behavior rules for an alert rule",
+                "operationId": "getAlertRuleBehaviorRules",
+                "parameters": [
+                    {
+                        "name": "alertRuleId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Behavior rules",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "rules": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AlertRuleBehaviorRule"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Create a notification behavior rule",
+                "operationId": "createAlertRuleBehaviorRule",
+                "parameters": [
+                    {
+                        "name": "alertRuleId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "type",
+                                    "filters",
+                                    "endpointIds"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "notification"
+                                        ]
+                                    },
+                                    "filters": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "key",
+                                                "value"
+                                            ],
+                                            "properties": {
+                                                "key": {
+                                                    "type": "string"
+                                                },
+                                                "value": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "endpointIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Behavior rule created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "rule": {
+                                            "$ref": "#/components/schemas/AlertRuleBehaviorRule"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule-behavior-rule/{alertRuleId}/{ruleId}": {
+            "put": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Update a notification behavior rule",
+                "operationId": "updateAlertRuleBehaviorRule",
+                "parameters": [
+                    {
+                        "name": "alertRuleId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "ruleId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "filters": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "key": {
+                                                    "type": "string"
+                                                },
+                                                "value": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "endpointIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Behavior rule updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "rule": {
+                                            "$ref": "#/components/schemas/AlertRuleBehaviorRule"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Delete a behavior rule",
+                "operationId": "deleteAlertRuleBehaviorRule",
+                "parameters": [
+                    {
+                        "name": "alertRuleId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "ruleId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Behavior rule deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule-notify/{id}": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get notification endpoints for an alert rule",
+                "operationId": "getAlertRuleNotifyData",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Current and selectable endpoints",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "alertEndpoints": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "selectableEndpoints": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Add notification endpoints to an alert rule",
+                "operationId": "updateAlertRuleNotify",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "endpointIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Endpoints added",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule-notify/{alertId}/{endpointId}": {
+            "delete": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Remove a notification endpoint from an alert rule",
+                "operationId": "deleteAlertRuleNotifyEndpoint",
+                "parameters": [
+                    {
+                        "name": "alertId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "endpointId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Endpoint removed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule-notify/test/{id}": {
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Send a test notification for an alert rule",
+                "operationId": "testAlertRuleNotify",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Test notification queued",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule-notify/batchAlert": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get selectable endpoints for batch notification assignment",
+                "operationId": "getBatchAlertRuleNotifyData",
+                "responses": {
+                    "200": {
+                        "description": "Selectable endpoints",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "selectableEndpoints": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Add endpoints to multiple alert rules",
+                "operationId": "updateBatchAlertRuleNotify",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "alertIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "endpoints": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Batch update completed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule-user/{id}": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get user and team access data for an alert rule",
+                "operationId": "getAlertRuleUserAccessData",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Users and teams",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "alertUsers": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "selectableUsers": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "alertTeams": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "selectableTeams": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Add users or teams to an alert rule",
+                "operationId": "updateAlertRuleUserAccess",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "userIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "teamIds": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Access updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule-user/{alertId}/{userId}": {
+            "delete": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Remove a user or team from an alert rule",
+                "operationId": "deleteAlertRuleUserAccess",
+                "parameters": [
+                    {
+                        "name": "alertId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Access removed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
                     }
                 },
                 "security": [
@@ -743,6 +2256,100 @@
                     },
                     "401": {
                         "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/pass": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Change the authenticated user password",
+                "operationId": "changePasswordCurrentUser",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "currentPassword",
+                                    "newPassword",
+                                    "confirmPassword"
+                                ],
+                                "properties": {
+                                    "currentPassword": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "OldPassword123!"
+                                    },
+                                    "newPassword": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "NewPassword123!"
+                                    },
+                                    "confirmPassword": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "NewPassword123!"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password changed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "example": "{\"_id\": \"507f1f77bcf86cd799439011\", \"name\": \"John Doe\", \"email\": \"john@example.com\"}"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error or incorrect current password",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Current password is incorrect"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "422": {
+                        "description": "Validation failed"
                     }
                 },
                 "security": [
@@ -1699,6 +3306,7 @@
                                     },
                                     "type": {
                                         "type": "string",
+                                        "example": "prometheus",
                                         "enum": [
                                             "prometheus",
                                             "sentry",
@@ -1707,8 +3315,7 @@
                                             "zabbix",
                                             "splunk",
                                             "elastic"
-                                        ],
-                                        "example": "prometheus"
+                                        ]
                                     },
                                     "url": {
                                         "type": "string",
@@ -2034,6 +3641,7 @@
                                     },
                                     "type": {
                                         "type": "string",
+                                        "example": "sms",
                                         "enum": [
                                             "sms",
                                             "call",
@@ -2042,8 +3650,7 @@
                                             "teams",
                                             "matter-most",
                                             "flow"
-                                        ],
-                                        "example": "sms"
+                                        ]
                                     },
                                     "value": {
                                         "type": "string",
@@ -2292,6 +3899,7 @@
                                     },
                                     "type": {
                                         "type": "string",
+                                        "example": "telegram",
                                         "enum": [
                                             "sms",
                                             "call",
@@ -2300,8 +3908,7 @@
                                             "teams",
                                             "matter-most",
                                             "flow"
-                                        ],
-                                        "example": "telegram"
+                                        ]
                                     },
                                     "value": {
                                         "type": "string",
@@ -2466,12 +4073,12 @@
                                 "properties": {
                                     "type": {
                                         "type": "string",
+                                        "example": "sms",
                                         "enum": [
                                             "sms",
                                             "call",
                                             "email"
-                                        ],
-                                        "example": "sms"
+                                        ]
                                     },
                                     "value": {
                                         "type": "string",
@@ -2861,6 +4468,456 @@
     },
     "components": {
         "schemas": {
+            "StatusResponse": {
+                "properties": {
+                    "status": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleExtraField": {
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleListItem": {
+                "properties": {
+                    "_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "teamIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "showAcknowledgeBtn": {
+                        "type": "boolean"
+                    },
+                    "hasActionAccess": {
+                        "type": "boolean"
+                    },
+                    "statusLabel": {
+                        "type": "string",
+                        "example": "critical"
+                    },
+                    "status_label": {
+                        "type": "string"
+                    },
+                    "statusCount": {
+                        "type": "integer"
+                    },
+                    "isSilent": {
+                        "type": "boolean"
+                    },
+                    "is_silent": {
+                        "type": "boolean"
+                    },
+                    "isPinned": {
+                        "type": "boolean"
+                    },
+                    "countEndpoints": {
+                        "type": "integer"
+                    },
+                    "count_endpoints": {
+                        "type": "integer"
+                    },
+                    "extraField": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertRuleExtraField"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleDetail": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleListItem"
+                    },
+                    {
+                        "properties": {
+                            "ownerName": {
+                                "type": "string"
+                            },
+                            "dataSourceLabels": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "nullable": true
+                            },
+                            "dataSourceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "nullable": true
+                            },
+                            "dataSourceId": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "dataSourceAlertName": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "queryType": {
+                                "type": "string",
+                                "nullable": true,
+                                "enum": [
+                                    "dynamic",
+                                    "textQuery"
+                                ]
+                            },
+                            "queryText": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "queryObject": {
+                                "type": "object",
+                                "nullable": true
+                            },
+                            "enableAutoResolve": {
+                                "type": "boolean",
+                                "nullable": true
+                            },
+                            "autoResolveMinutes": {
+                                "type": "integer",
+                                "nullable": true
+                            },
+                            "rules": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/AlertRuleBehaviorRule"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStoreInput": {
+                "required": [
+                    "name",
+                    "type"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "High CPU usage"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "api",
+                            "notification",
+                            "prometheus",
+                            "sentry",
+                            "grafana",
+                            "pmm",
+                            "zabbix",
+                            "splunk",
+                            "elastic",
+                            "victoria_logs",
+                            "metabase"
+                        ]
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "showAcknowledgeBtn": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "userIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "teamIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "endpointIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "dataSourceIds": {
+                        "description": "Required for sentry, splunk, metabase, zabbix, and dynamic grafana/prometheus/pmm rules",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "dataSourceAlertName": {
+                        "description": "Required for sentry, splunk, metabase, and dynamic grafana/prometheus/pmm rules",
+                        "type": "string"
+                    },
+                    "dataSourceId": {
+                        "description": "Required for elastic and victoria_logs",
+                        "type": "string"
+                    },
+                    "queryType": {
+                        "description": "For grafana, pmm, prometheus",
+                        "type": "string",
+                        "enum": [
+                            "dynamic",
+                            "textQuery"
+                        ]
+                    },
+                    "queryText": {
+                        "type": "string"
+                    },
+                    "queryObject": {
+                        "type": "object"
+                    },
+                    "extraField": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertRuleExtraField"
+                        }
+                    },
+                    "hosts": {
+                        "description": "Zabbix only",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "actions": {
+                        "description": "Zabbix only",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "severities": {
+                        "description": "Zabbix only",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "enableAutoResolve": {
+                        "description": "API type only",
+                        "type": "boolean"
+                    },
+                    "autoResolveMinutes": {
+                        "description": "API type only",
+                        "type": "integer"
+                    },
+                    "dataviewName": {
+                        "description": "Elastic only",
+                        "type": "string"
+                    },
+                    "dataviewTitle": {
+                        "description": "Elastic only",
+                        "type": "string"
+                    },
+                    "queryString": {
+                        "description": "Elastic and victoria_logs",
+                        "type": "string"
+                    },
+                    "conditionType": {
+                        "description": "Elastic and victoria_logs",
+                        "type": "string",
+                        "enum": [
+                            "greaterOrEqual",
+                            "lessOrEqual"
+                        ]
+                    },
+                    "countDocument": {
+                        "description": "Elastic and victoria_logs",
+                        "type": "integer"
+                    },
+                    "minutes": {
+                        "description": "Elastic and victoria_logs",
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleUpdateInput": {
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "showAcknowledgeBtn": {
+                        "type": "boolean"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "userIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "teamIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "endpointIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "dataSourceIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "dataSourceAlertName": {
+                        "type": "string"
+                    },
+                    "dataSourceId": {
+                        "type": "string"
+                    },
+                    "queryType": {
+                        "type": "string",
+                        "enum": [
+                            "dynamic",
+                            "textQuery"
+                        ]
+                    },
+                    "queryText": {
+                        "type": "string"
+                    },
+                    "queryObject": {
+                        "type": "object"
+                    },
+                    "extraField": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertRuleExtraField"
+                        }
+                    },
+                    "hosts": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "actions": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "severities": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "enableAutoResolve": {
+                        "type": "boolean"
+                    },
+                    "autoResolveMinutes": {
+                        "type": "integer"
+                    },
+                    "dataviewName": {
+                        "type": "string"
+                    },
+                    "dataviewTitle": {
+                        "type": "string"
+                    },
+                    "queryString": {
+                        "type": "string"
+                    },
+                    "conditionType": {
+                        "type": "string",
+                        "enum": [
+                            "greaterOrEqual",
+                            "lessOrEqual"
+                        ]
+                    },
+                    "countDocument": {
+                        "type": "integer"
+                    },
+                    "minutes": {
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleBehaviorRule": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "notification"
+                        ]
+                    },
+                    "filters": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertRuleExtraField"
+                        }
+                    },
+                    "endpointIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "type": "object"
+            },
             "KaveNegarConfig": {
                 "title": "Kave Negar Call Config",
                 "required": [
@@ -2876,10 +4933,10 @@
                     },
                     "provider": {
                         "type": "string",
+                        "example": "kaveNegar",
                         "enum": [
                             "kaveNegar"
-                        ],
-                        "example": "kaveNegar"
+                        ]
                     },
                     "apiToken": {
                         "type": "string",
@@ -2903,10 +4960,10 @@
                     },
                     "provider": {
                         "type": "string",
+                        "example": "kaveNegar",
                         "enum": [
                             "kaveNegar"
-                        ],
-                        "example": "kaveNegar"
+                        ]
                     },
                     "apiToken": {
                         "type": "string",
@@ -3257,7 +5314,7 @@
     "tags": [
         {
             "name": "AlertRule",
-            "description": "Manage alert rules"
+            "description": "Manage alert rules, notifications, access, tags, and behavior rules"
         },
         {
             "name": "Authentication",
