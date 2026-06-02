@@ -21,22 +21,18 @@ import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGenera
 import type { ModalContainerProps } from "@/components/Modal/types";
 
 const zabbixAlertRuleSchema = z.object({
-  name: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
+  name: z.string().trim().min(1, "This field is Required."),
   type: z.literal("zabbix"),
-  endpointIds: z.array(z.string()).optional().default([]),
-  userIds: z.array(z.string()).optional().default([]),
-  teamIds: z.array(z.string()).optional().default([]),
-  tags: z.array(z.string()).optional().default([]),
-  actions: z.array(z.string()).optional().default([]),
-  hosts: z.array(z.string()).optional().default([]),
-  severities: z.array(z.string()).optional().default([]),
+  endpointIds: z.array(z.string()),
+  userIds: z.array(z.string()),
+  teamIds: z.array(z.string()),
+  tags: z.array(z.string()),
+  actions: z.array(z.string()),
+  hosts: z.array(z.string()),
+  severities: z.array(z.string()),
   dataSourceIds: z.array(z.string()).min(1, "This field is Required."),
-  description: z.string().optional().default(""),
-  showAcknowledgeBtn: z.boolean().optional().default(false)
+  description: z.string(),
+  showAcknowledgeBtn: z.boolean()
 });
 
 type ZabbixFromType = z.infer<typeof zabbixAlertRuleSchema>;
@@ -45,7 +41,7 @@ type ZabbixAlertRuleModalProps = Pick<ModalContainerProps, "onClose"> & {
   onSubmit: () => void;
 };
 
-const defaultValues: ZabbixFromType = {
+const emptyFormValues: ZabbixFromType = {
   name: "",
   type: "zabbix",
   userIds: [],
@@ -59,6 +55,14 @@ const defaultValues: ZabbixFromType = {
   description: "",
   showAcknowledgeBtn: false
 };
+
+function getFormValues(data: CreateUpdateModal<IAlertRule>): ZabbixFromType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return data as unknown as ZabbixFromType;
+}
 
 export default function ZabbixAlertRuleForm({
   data,
@@ -76,7 +80,8 @@ export default function ZabbixAlertRuleForm({
     formState: { errors }
   } = useForm<ZabbixFromType>({
     resolver: zodResolver(zabbixAlertRuleSchema),
-    defaultValues
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
 
   const [{ data: dataSourceList }, { data: createData }] = useQueries({
@@ -124,28 +129,35 @@ export default function ZabbixAlertRuleForm({
   }
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else if (data) {
-      reset(data as unknown as ZabbixFromType);
-    }
+    reset(getFormValues(data));
   }, [reset, data]);
 
   return (
     <Stack
       component="form"
-      height="100%"
       onSubmit={handleSubmit(handleSubmitForm)}
-      padding={2}
-      flex={1}
+      sx={{
+        height: "100%",
+        padding: 2,
+        flex: 1
+      }}
     >
-      <Grid container spacing={2} flex={1} alignContent="flex-start">
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          flex: 1,
+          alignContent: "flex-start"
+        }}
+      >
         <Typography
           variant="h6"
           color="textPrimary"
-          textTransform="capitalize"
-          fontWeight="bold"
           component="div"
+          sx={{
+            textTransform: "capitalize",
+            fontWeight: "bold"
+          }}
         >
           {data === "NEW" ? "Create" : "Update"} Zabbix Alert
         </Typography>
@@ -177,19 +189,20 @@ export default function ZabbixAlertRuleForm({
                 );
               }}
               isOptionEqualToValue={(option, value) => option.id === value.id}
-              renderTags={(value, getTagProps) =>
+              renderValue={(value, getItemProps) =>
                 value.map((option, index) => {
-                  const { key, ...tagProps } = getTagProps({ index });
-                  return <Chip key={key} size="small" label={option.name} {...tagProps} />;
+                  const { key, ...itemProps } = getItemProps({ index });
+                  return <Chip key={key} size="small" label={option.name} {...itemProps} />;
                 })
               }
               renderInput={(params) => (
                 <TextField
                   {...params}
                   slotProps={{
-                    input: params.InputProps,
-                    inputLabel: params.InputLabelProps,
-                    htmlInput: params.inputProps
+                    ...params.slotProps,
+                    input: params.slotProps.input,
+                    inputLabel: params.slotProps.inputLabel,
+                    htmlInput: params.slotProps.htmlInput
                   }}
                   variant="filled"
                   label="Data Source"
@@ -209,19 +222,20 @@ export default function ZabbixAlertRuleForm({
                 setValue("severities", newValue);
               }}
               isOptionEqualToValue={(option, value) => option === value}
-              renderTags={(value, getTagProps) =>
+              renderValue={(value, getItemProps) =>
                 value.map((option, index) => {
-                  const { key, ...tagProps } = getTagProps({ index });
-                  return <Chip key={key} size="small" label={option} {...tagProps} />;
+                  const { key, ...itemProps } = getItemProps({ index });
+                  return <Chip key={key} size="small" label={option} {...itemProps} />;
                 })
               }
               renderInput={(params) => (
                 <TextField
                   {...params}
                   slotProps={{
-                    input: params.InputProps,
-                    inputLabel: params.InputLabelProps,
-                    htmlInput: params.inputProps
+                    ...params.slotProps,
+                    input: params.slotProps.input,
+                    inputLabel: params.slotProps.inputLabel,
+                    htmlInput: params.slotProps.htmlInput
                   }}
                   variant="filled"
                   label="Severity"
@@ -241,19 +255,20 @@ export default function ZabbixAlertRuleForm({
                 setValue("actions", newValue);
               }}
               isOptionEqualToValue={(option, value) => option === value}
-              renderTags={(value, getTagProps) =>
+              renderValue={(value, getItemProps) =>
                 value.map((option, index) => {
-                  const { key, ...tagProps } = getTagProps({ index });
-                  return <Chip key={key} size="small" label={option} {...tagProps} />;
+                  const { key, ...itemProps } = getItemProps({ index });
+                  return <Chip key={key} size="small" label={option} {...itemProps} />;
                 })
               }
               renderInput={(params) => (
                 <TextField
                   {...params}
                   slotProps={{
-                    input: params.InputProps,
-                    inputLabel: params.InputLabelProps,
-                    htmlInput: params.inputProps
+                    ...params.slotProps,
+                    input: params.slotProps.input,
+                    inputLabel: params.slotProps.inputLabel,
+                    htmlInput: params.slotProps.htmlInput
                   }}
                   variant="filled"
                   label="Actions"
@@ -273,19 +288,20 @@ export default function ZabbixAlertRuleForm({
                 setValue("hosts", newValue);
               }}
               isOptionEqualToValue={(option, value) => option === value}
-              renderTags={(value, getTagProps) =>
+              renderValue={(value, getItemProps) =>
                 value.map((option, index) => {
-                  const { key, ...tagProps } = getTagProps({ index });
-                  return <Chip key={key} size="small" label={option} {...tagProps} />;
+                  const { key, ...itemProps } = getItemProps({ index });
+                  return <Chip key={key} size="small" label={option} {...itemProps} />;
                 })
               }
               renderInput={(params) => (
                 <TextField
                   {...params}
                   slotProps={{
-                    input: params.InputProps,
-                    inputLabel: params.InputLabelProps,
-                    htmlInput: params.inputProps
+                    ...params.slotProps,
+                    input: params.slotProps.input,
+                    inputLabel: params.slotProps.inputLabel,
+                    htmlInput: params.slotProps.htmlInput
                   }}
                   variant="filled"
                   label="Hosts"
@@ -297,7 +313,14 @@ export default function ZabbixAlertRuleForm({
           </Grid>
         </AlertRuleGeneralFields>
       </Grid>
-      <Stack direction="row" justifyContent="flex-end" spacing={2} paddingTop={2}>
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          justifyContent: "flex-end",
+          paddingTop: 2
+        }}
+      >
         <Button variant="outlined" disabled={isCreating || isUpdating} onClick={onClose}>
           Cancel
         </Button>

@@ -36,31 +36,23 @@ const QUERY_TYPE = ["dynamic", "textQuery"] as const;
 const ALERT_RULE_TYPES = ["prometheus", "pmm", "grafana"] as const;
 
 const extraFieldSchema = z.object({
-  key: z.string().refine((data) => data.trim() !== "", {
-    message: "This field is Required."
-  }),
-  value: z.string().refine((data) => data.trim() !== "", {
-    message: "This field is Required."
-  })
+  key: z.string().trim().min(1, "This field is Required."),
+  value: z.string().trim().min(1, "This field is Required.")
 });
 
 const generalAlertRuleSchema = z.object({
-  name: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
+  name: z.string().trim().min(1, "This field is Required."),
   type: z.enum(ALERT_RULE_TYPES),
-  endpointIds: z.array(z.string()).optional().default([]),
-  userIds: z.array(z.string()).optional().default([]),
-  teamIds: z.array(z.string()).optional().default([]),
-  extraField: z.array(extraFieldSchema).optional().default([]),
-  tags: z.array(z.string()).optional().default([]),
+  endpointIds: z.array(z.string()),
+  userIds: z.array(z.string()),
+  teamIds: z.array(z.string()),
+  extraField: z.array(extraFieldSchema),
+  tags: z.array(z.string()),
   dataSourceIds: z.array(z.string()).min(1, "Select at least one Data Source."),
   queryType: z.enum(QUERY_TYPE),
-  dataSourceAlertName: z.optional(z.string()).nullable(),
-  description: z.string().optional().default(""),
-  showAcknowledgeBtn: z.boolean().optional().default(false)
+  dataSourceAlertName: z.string().nullable().optional(),
+  description: z.string(),
+  showAcknowledgeBtn: z.boolean()
 });
 
 type GeneralAlertRuleType = z.infer<typeof generalAlertRuleSchema>;
@@ -72,7 +64,7 @@ type GeneralAlertRuleModalProps = Pick<ModalContainerProps, "onClose"> & {
 
 const defaultKeyValue = { key: "", value: "" };
 
-const defaultValues: GeneralAlertRuleType = {
+const emptyFormValues: GeneralAlertRuleType = {
   name: "",
   type: "prometheus",
   userIds: [],
@@ -86,6 +78,17 @@ const defaultValues: GeneralAlertRuleType = {
   description: "",
   showAcknowledgeBtn: false
 };
+
+function getFormValues(
+  data: CreateUpdateModal<IAlertRule>,
+  alertType: GeneralAlertRuleModalProps["type"]
+): GeneralAlertRuleType {
+  if (!data || data === "NEW") {
+    return { ...emptyFormValues, type: alertType };
+  }
+
+  return data as unknown as GeneralAlertRuleType;
+}
 
 export default function GeneralAlertRuleForm({
   data,
@@ -104,7 +107,8 @@ export default function GeneralAlertRuleForm({
     formState: { errors }
   } = useForm<GeneralAlertRuleType>({
     resolver: zodResolver(generalAlertRuleSchema),
-    defaultValues
+    defaultValues: getFormValues(data, type),
+    mode: "onSubmit"
   });
   const {
     fields,
@@ -160,12 +164,8 @@ export default function GeneralAlertRuleForm({
   }
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else if (data) {
-      reset(data as unknown as GeneralAlertRuleType);
-    }
-  }, [reset, data]);
+    reset(getFormValues(data, type));
+  }, [reset, data, type]);
 
   useEffect(() => {
     if (ALERT_RULE_TYPES.includes(type)) {
@@ -180,18 +180,29 @@ export default function GeneralAlertRuleForm({
   return (
     <Stack
       component="form"
-      height="100%"
       onSubmit={handleSubmit(handleSubmitForm)}
-      padding={2}
-      flex={1}
+      sx={{
+        height: "100%",
+        padding: 2,
+        flex: 1
+      }}
     >
-      <Grid container spacing={2} flex={1} alignContent="flex-start">
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          flex: 1,
+          alignContent: "flex-start"
+        }}
+      >
         <Typography
           variant="h6"
           color="textPrimary"
-          textTransform="capitalize"
-          fontWeight="bold"
           component="div"
+          sx={{
+            textTransform: "capitalize",
+            fontWeight: "bold"
+          }}
         >
           {data === "NEW" ? "Create" : "Update"} {type} Alert
         </Typography>
@@ -208,7 +219,13 @@ export default function GeneralAlertRuleForm({
           methods={{ control, getValues, setValue, watch }}
           errors={errors}
         >
-          <Grid size={12} display="flex" justifyContent="center">
+          <Grid
+            size={12}
+            sx={{
+              display: "flex",
+              justifyContent: "center"
+            }}
+          >
             <ToggleButtonGroup
               exclusive
               value={watch("queryType")}
@@ -241,19 +258,20 @@ export default function GeneralAlertRuleForm({
                     );
                   }}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
-                  renderTags={(value, getTagProps) =>
+                  renderValue={(value, getItemProps) =>
                     value.map((option, index) => {
-                      const { key, ...tagProps } = getTagProps({ index });
-                      return <Chip key={key} size="small" label={option.name} {...tagProps} />;
+                      const { key, ...itemProps } = getItemProps({ index });
+                      return <Chip key={key} size="small" label={option.name} {...itemProps} />;
                     })
                   }
                   renderInput={(params) => (
                     <TextField
                       {...params}
                       slotProps={{
-                        input: params.InputProps,
-                        inputLabel: params.InputLabelProps,
-                        htmlInput: params.inputProps
+                        ...params.slotProps,
+                        input: params.slotProps.input,
+                        inputLabel: params.slotProps.inputLabel,
+                        htmlInput: params.slotProps.htmlInput
                       }}
                       variant="filled"
                       label="Data Source"
@@ -271,19 +289,14 @@ export default function GeneralAlertRuleForm({
                   value={watch("dataSourceAlertName")}
                   onChange={(_, value) => setValue("dataSourceAlertName", value ?? "")}
                   autoSelect={type !== "prometheus"}
-                  renderTags={(value: readonly string[], getItemProps) =>
-                    value.map((option: string, index: number) => {
-                      const { key, ...itemProps } = getItemProps({ index });
-                      return <Chip variant="filled" label={option} key={key} {...itemProps} />;
-                    })
-                  }
                   renderInput={(params) => (
                     <TextField
                       {...params}
                       slotProps={{
-                        input: params.InputProps,
-                        inputLabel: params.InputLabelProps,
-                        htmlInput: params.inputProps
+                        ...params.slotProps,
+                        input: params.slotProps.input,
+                        inputLabel: params.slotProps.inputLabel,
+                        htmlInput: params.slotProps.htmlInput
                       }}
                       error={!!errors.dataSourceAlertName}
                       helperText={errors.dataSourceAlertName?.message}
@@ -327,7 +340,14 @@ export default function GeneralAlertRuleForm({
           )}
         </AlertRuleGeneralFields>
       </Grid>
-      <Stack direction="row" justifyContent="flex-end" spacing={2} paddingY={2}>
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          justifyContent: "flex-end",
+          paddingY: 2
+        }}
+      >
         <Button variant="outlined" disabled={isCreating || isUpdating} onClick={onClose}>
           Cancel
         </Button>

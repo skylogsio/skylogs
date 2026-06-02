@@ -15,23 +15,16 @@ import type { ModalContainerProps } from "@/components/Modal/types";
 
 const clientApiSchema = z
   .object({
-    name: z
-      .string({ required_error: "This field is Required." })
-      .refine((data) => data.trim() !== "", {
-        message: "This field is Required."
-      }),
-    type: z.literal("api").default("api"),
-    enableAutoResolve: z.boolean().default(false),
-    autoResolveMinutes: z.number({
-      required_error: "This field is Required.",
-      invalid_type_error: "This field is Required."
-    }),
-    endpointIds: z.array(z.string()).optional().default([]),
-    userIds: z.array(z.string()).optional().default([]),
-    teamIds: z.array(z.string()).optional().default([]),
-    description: z.string().optional().default(""),
-    tags: z.array(z.string()).optional().default([]),
-    showAcknowledgeBtn: z.boolean().optional().default(false)
+    name: z.string().trim().min(1, "This field is Required."),
+    type: z.literal("api"),
+    enableAutoResolve: z.boolean(),
+    autoResolveMinutes: z.number("This field is Required."),
+    endpointIds: z.array(z.string()),
+    userIds: z.array(z.string()),
+    teamIds: z.array(z.string()),
+    description: z.string(),
+    tags: z.array(z.string()),
+    showAcknowledgeBtn: z.boolean()
   })
   .superRefine((data, ctx) => {
     if (data.enableAutoResolve) {
@@ -57,7 +50,7 @@ type ClientAPIModalProps = Pick<ModalContainerProps, "onClose"> & {
   onSubmit: () => void;
 };
 
-const defaultValues: ClientAPIFormType = {
+const emptyFormValues: ClientAPIFormType = {
   name: "",
   type: "api",
   userIds: [],
@@ -69,6 +62,14 @@ const defaultValues: ClientAPIFormType = {
   description: "",
   showAcknowledgeBtn: false
 };
+
+function getFormValues(data: CreateUpdateModal<IAlertRule>): ClientAPIFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return data as unknown as ClientAPIFormType;
+}
 
 export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModalProps) {
   const {
@@ -83,7 +84,8 @@ export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModa
     formState: { errors }
   } = useForm<ClientAPIFormType>({
     resolver: zodResolver(clientApiSchema),
-    defaultValues
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
 
   const { mutate: createClientAPIMutation, isPending: isCreating } = useMutation({
@@ -94,9 +96,6 @@ export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModa
         onSubmit();
         onClose?.();
       }
-    },
-    onError: (error) => {
-      console.log(error);
     }
   });
 
@@ -129,17 +128,34 @@ export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModa
   }
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else if (data) {
-      reset(data as unknown as ClientAPIFormType);
-    }
+    reset(getFormValues(data));
   }, [reset, data]);
 
   return (
-    <Stack component="form" height="100%" onSubmit={handleSubmit(handleSubmitForm)} padding={2}>
-      <Grid container spacing={2} flex={1} alignContent="flex-start">
-        <Typography variant="h6" color="textPrimary" fontWeight="bold" component="div">
+    <Stack
+      component="form"
+      onSubmit={handleSubmit(handleSubmitForm)}
+      sx={{
+        height: "100%",
+        padding: 2
+      }}
+    >
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          flex: 1,
+          alignContent: "flex-start"
+        }}
+      >
+        <Typography
+          variant="h6"
+          color="textPrimary"
+          component="div"
+          sx={{
+            fontWeight: "bold"
+          }}
+        >
           {data === "NEW" ? "Create" : "Update"} Client API Alert
         </Typography>
         <Grid size={12}>
@@ -156,7 +172,14 @@ export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModa
           errors={errors}
         >
           <Grid size={6}>
-            <Stack height="100%" direction="row" spacing={1} sx={{ alignItems: "center" }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                height: "100%",
+                alignItems: "center"
+              }}
+            >
               <Typography>Auto Resolve</Typography>
               <Switch checked={watch("enableAutoResolve")} onChange={handleAutoResolve} />
             </Stack>
@@ -177,7 +200,14 @@ export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModa
           </Grid>
         </AlertRuleGeneralFields>
       </Grid>
-      <Stack direction="row" justifyContent="flex-end" spacing={2} marginTop={2}>
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          justifyContent: "flex-end",
+          marginTop: 2
+        }}
+      >
         <Button disabled={isCreating || isUpdating} variant="outlined" onClick={onClose}>
           Cancel
         </Button>

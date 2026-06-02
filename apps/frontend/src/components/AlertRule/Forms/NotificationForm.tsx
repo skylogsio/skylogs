@@ -13,28 +13,24 @@ import { createAlertRule, updateAlertRule } from "@/api/alertRule";
 import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGeneralFields";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
-const clientApiSchema = z.object({
-  name: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
-  type: z.literal("notification").default("notification"),
-  endpointIds: z.array(z.string()).optional().default([]),
-  userIds: z.array(z.string()).optional().default([]),
-  teamIds: z.array(z.string()).optional().default([]),
-  tags: z.array(z.string()).optional().default([]),
-  description: z.string().optional().default(""),
-  showAcknowledgeBtn: z.boolean().optional().default(false)
+const notificationSchema = z.object({
+  name: z.string().trim().min(1, "This field is Required."),
+  type: z.literal("notification"),
+  endpointIds: z.array(z.string()),
+  userIds: z.array(z.string()),
+  teamIds: z.array(z.string()),
+  tags: z.array(z.string()),
+  description: z.string(),
+  showAcknowledgeBtn: z.boolean()
 });
 
-type NotificationFormType = z.infer<typeof clientApiSchema>;
+type NotificationFormType = z.infer<typeof notificationSchema>;
 type NotificationModalProps = Pick<ModalContainerProps, "onClose"> & {
   data: CreateUpdateModal<IAlertRule>;
   onSubmit: () => void;
 };
 
-const defaultValues: NotificationFormType = {
+const emptyFormValues: NotificationFormType = {
   name: "",
   type: "notification",
   userIds: [],
@@ -44,6 +40,14 @@ const defaultValues: NotificationFormType = {
   description: "",
   showAcknowledgeBtn: false
 };
+
+function getFormValues(data: CreateUpdateModal<IAlertRule>): NotificationFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return data as unknown as NotificationFormType;
+}
 
 export default function NotificationForm({ onClose, onSubmit, data }: NotificationModalProps) {
   const {
@@ -56,8 +60,9 @@ export default function NotificationForm({ onClose, onSubmit, data }: Notificati
     reset,
     formState: { errors }
   } = useForm<NotificationFormType>({
-    resolver: zodResolver(clientApiSchema),
-    defaultValues
+    resolver: zodResolver(notificationSchema),
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
 
   const { mutate: createNotificationMutation, isPending: isCreating } = useMutation({
@@ -92,23 +97,35 @@ export default function NotificationForm({ onClose, onSubmit, data }: Notificati
   }
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else if (data) {
-      reset(data as unknown as NotificationFormType);
-    }
+    reset(getFormValues(data));
   }, [reset, data]);
 
   return (
     <Stack
       component="form"
-      width="100%"
-      height="100%"
       onSubmit={handleSubmit(handleSubmitForm)}
-      padding={2}
+      sx={{
+        width: "100%",
+        height: "100%",
+        padding: 2
+      }}
     >
-      <Grid container spacing={2} flex={1} alignContent="flex-start">
-        <Typography variant="h6" color="textPrimary" fontWeight="bold" component="div">
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          flex: 1,
+          alignContent: "flex-start"
+        }}
+      >
+        <Typography
+          variant="h6"
+          color="textPrimary"
+          component="div"
+          sx={{
+            fontWeight: "bold"
+          }}
+        >
           {data === "NEW" ? "Create" : "Update"} Notification Alert
         </Typography>
         <Grid size={12}>
@@ -125,7 +142,14 @@ export default function NotificationForm({ onClose, onSubmit, data }: Notificati
           errors={errors}
         />
       </Grid>
-      <Stack direction="row" justifyContent="flex-end" spacing={2} marginTop={2}>
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          justifyContent: "flex-end",
+          marginTop: 2
+        }}
+      >
         <Button disabled={isCreating || isUpdating} variant="outlined" onClick={onClose}>
           Cancel
         </Button>

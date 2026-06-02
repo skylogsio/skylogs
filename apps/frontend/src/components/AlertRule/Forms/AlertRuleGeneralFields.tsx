@@ -64,8 +64,18 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
 
   return (
     <>
-      <Stack direction="row" spacing={2} width="100%">
-        <Box width="50%">
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          width: "100%"
+        }}
+      >
+        <Box
+          sx={{
+            width: "50%"
+          }}
+        >
           <Controller
             control={control}
             name={"endpointIds" as Path<T>}
@@ -84,19 +94,20 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
                     field.onChange(newValue.map((ep) => ep.id) as PathValue<T, Path<T>>);
                   }}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
-                  renderTags={(value, getTagProps) =>
+                  renderValue={(value, getItemProps) =>
                     value.map((option, index) => {
-                      const { key, ...tagProps } = getTagProps({ index });
-                      return <Chip key={key} label={option.name} size="small" {...tagProps} />;
+                      const { key, ...itemProps } = getItemProps({ index });
+                      return <Chip key={key} label={option.name} size="small" {...itemProps} />;
                     })
                   }
                   renderInput={(params) => (
                     <TextField
                       {...params}
                       slotProps={{
-                        input: params.InputProps,
-                        inputLabel: params.InputLabelProps,
-                        htmlInput: params.inputProps
+                        ...params.slotProps,
+                        input: params.slotProps.input,
+                        inputLabel: params.slotProps.inputLabel,
+                        htmlInput: params.slotProps.htmlInput
                       }}
                       variant="filled"
                       label="Endpoints"
@@ -109,7 +120,11 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
             }}
           />
         </Box>
-        <Box width="50%">
+        <Box
+          sx={{
+            width: "50%"
+          }}
+        >
           <AccessUsersAndTeams
             selectedTeamIds={watch("teamIds" as Path<T>) as string[]}
             selectedUserIds={watch("userIds" as Path<T>) as string[]}
@@ -131,19 +146,20 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
           freeSolo
           value={(watch("tags" as Path<T>) as string[]) ?? []}
           onChange={(_, value) => setValue("tags" as Path<T>, value as PathValue<T, Path<T>>)}
-          renderTags={(value: readonly string[], getItemProps) =>
+          renderValue={(value: readonly string[], getItemProps) =>
             value.map((option: string, index: number) => {
               const { key, ...itemProps } = getItemProps({ index });
-              return <Chip variant="filled" label={option} key={key} size="small" {...itemProps} />;
+              return <Chip key={key} variant="filled" label={option} size="small" {...itemProps} />;
             })
           }
           renderInput={(params) => (
             <TextField
               {...params}
               slotProps={{
-                input: params.InputProps,
-                inputLabel: params.InputLabelProps,
-                htmlInput: params.inputProps
+                ...params.slotProps,
+                input: params.slotProps.input,
+                inputLabel: params.slotProps.inputLabel,
+                htmlInput: params.slotProps.htmlInput
               }}
               variant="filled"
               label="Tags"
@@ -155,7 +171,14 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
         control={control}
         name={"showAcknowledgeBtn" as Path<T>}
         render={({ field }) => (
-          <Stack direction="row" alignItems="center" spacing={1} width="100%">
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              alignItems: "center",
+              width: "100%"
+            }}
+          >
             <FormControlLabel
               control={
                 <Checkbox
@@ -183,7 +206,6 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
           </Stack>
         )}
       />
-
       <Controller
         control={control}
         name={"description" as Path<T>}
