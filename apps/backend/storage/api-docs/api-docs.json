@@ -2,12 +2,12 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Skylogs API",
-        "description": "Skylogs backend API documentation",
+        "description": "Skylogs backend REST API.\n\n**Frontend quick start**\n1. Authenticate via `POST /api/v1/auth/login` and send `Authorization: Bearer {accessToken}` on protected routes.\n2. Browse by tag: AlertRule, Endpoints, Users, Teams, Data Sources, Status, etc.\n3. Alert rule **create** uses one URL with different bodies — pick the schema via the `type` discriminator on `POST /api/v1/alert-rule`.\n4. Public status page data: `GET /api/v1/status/all` (no auth).\n5. Webhook tag documents server-to-server callbacks (API token or URL token), not the SPA JWT.\n\nRegenerate after backend changes: `php artisan l5-swagger:generate`",
         "version": "1.0.0"
     },
     "servers": [
         {
-            "url": "http://localhost:9000",
+            "url": "http://localhost:8000",
             "description": "Skylogs local server"
         }
     ],
@@ -95,10 +95,9 @@
                     {
                         "name": "status",
                         "in": "query",
-                        "description": "Filter by alert state",
+                        "description": "Filter by alert `state` field",
                         "schema": {
-                            "type": "string",
-                            "example": "critical"
+                            "$ref": "#/components/schemas/AlertRuleState"
                         }
                     }
                 ],
@@ -148,14 +147,64 @@
                     "AlertRule"
                 ],
                 "summary": "Create alert rule",
-                "description": "Creates an alert rule. Required and optional fields depend on the `type` value.",
+                "description": "Creates an alert rule. All types use this endpoint; set `type` to select the request body shape (see schema oneOf / discriminator). Prometheus, Grafana, and PMM additionally use `queryType` (`dynamic` vs `textQuery`).",
                 "operationId": "createAlertRule",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/AlertRuleStoreInput"
+                                "discriminator": {
+                                    "propertyName": "type",
+                                    "mapping": {
+                                        "api": "#/components/schemas/AlertRuleStoreApi",
+                                        "notification": "#/components/schemas/AlertRuleStoreNotification",
+                                        "prometheus": "#/components/schemas/AlertRuleStorePrometheus",
+                                        "grafana": "#/components/schemas/AlertRuleStoreGrafana",
+                                        "pmm": "#/components/schemas/AlertRuleStorePmm",
+                                        "sentry": "#/components/schemas/AlertRuleStoreSentry",
+                                        "splunk": "#/components/schemas/AlertRuleStoreSplunk",
+                                        "metabase": "#/components/schemas/AlertRuleStoreMetabase",
+                                        "zabbix": "#/components/schemas/AlertRuleStoreZabbix",
+                                        "elastic": "#/components/schemas/AlertRuleStoreElastic",
+                                        "victoria_logs": "#/components/schemas/AlertRuleStoreVictoriaLogs"
+                                    }
+                                },
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleStoreApi"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleStoreNotification"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleStorePrometheus"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleStoreGrafana"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleStorePmm"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleStoreSentry"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleStoreSplunk"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleStoreMetabase"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleStoreZabbix"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleStoreElastic"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleStoreVictoriaLogs"
+                                    }
+                                ]
                             }
                         }
                     }
@@ -245,7 +294,7 @@
                     "AlertRule"
                 ],
                 "summary": "Update alert rule",
-                "description": "Updates an alert rule. Updatable fields depend on the alert type. Non-admin users can only update their own rules.",
+                "description": "Updates an alert rule. Send the payload for the rule's existing type (type cannot be changed). Non-admin users can only update rules they own.",
                 "operationId": "updateAlertRule",
                 "parameters": [
                     {
@@ -263,7 +312,41 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/AlertRuleUpdateInput"
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleUpdateApi"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleUpdateNotification"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleUpdatePrometheus"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleUpdateGrafana"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleUpdatePmm"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleUpdateSentry"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleUpdateSplunk"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleUpdateMetabase"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleUpdateZabbix"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleUpdateElastic"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/AlertRuleUpdateVictoriaLogs"
+                                    }
+                                ]
                             }
                         }
                     }
@@ -580,6 +663,7 @@
                                     "type": "array",
                                     "items": {
                                         "type": "string",
+                                        "example": "prometheus",
                                         "enum": [
                                             "api",
                                             "notification",
@@ -613,6 +697,7 @@
                     "AlertRule"
                 ],
                 "summary": "Get history for an alert rule",
+                "description": "Returns paginated state-change history. Shape depends on alert type (API instances, Prometheus/Grafana checks, Elastic/VictoriaLogs checks, etc.).",
                 "operationId": "getAlertHistory",
                 "parameters": [
                     {
@@ -627,6 +712,7 @@
                     {
                         "name": "perPage",
                         "in": "query",
+                        "description": "Items per page",
                         "schema": {
                             "type": "integer",
                             "default": 50
@@ -638,7 +724,6 @@
                         "description": "Start datetime (Y-m-d H:i)",
                         "schema": {
                             "type": "string",
-                            "format": "date-time",
                             "example": "2026-01-01 00:00"
                         }
                     },
@@ -648,14 +733,34 @@
                         "description": "End datetime (Y-m-d H:i)",
                         "schema": {
                             "type": "string",
-                            "format": "date-time",
                             "example": "2026-01-31 23:59"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Paginated alert history"
+                        "description": "Paginated history records",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "403": {
                         "description": "Forbidden"
@@ -677,6 +782,7 @@
                     "AlertRule"
                 ],
                 "summary": "Get triggered/fired alerts for an alert rule",
+                "description": "Returns currently firing data: API `AlertInstance` rows, Prometheus/Grafana alert arrays, Zabbix webhook events, or Elastic/VictoriaLogs check documents depending on type.",
                 "operationId": "getTriggeredAlerts",
                 "parameters": [
                     {
@@ -691,7 +797,20 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Fired alert instances or check data"
+                        "description": "Fired instances or active check payload",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
                     }
                 },
                 "security": [
@@ -991,8 +1110,9 @@
                     {
                         "name": "status",
                         "in": "query",
+                        "description": "Filter by alert state",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/components/schemas/AlertRuleState"
                         }
                     }
                 ],
@@ -1072,8 +1192,9 @@
                     {
                         "name": "status",
                         "in": "query",
+                        "description": "Filter by alert state",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/components/schemas/AlertRuleState"
                         }
                     }
                 ],
@@ -1142,8 +1263,9 @@
                     {
                         "name": "status",
                         "in": "query",
+                        "description": "Filter by alert state",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/components/schemas/AlertRuleState"
                         }
                     }
                 ],
@@ -1212,8 +1334,9 @@
                     {
                         "name": "status",
                         "in": "query",
+                        "description": "Filter by alert state",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/components/schemas/AlertRuleState"
                         }
                     }
                 ],
@@ -2978,6 +3101,70 @@
                 }
             }
         },
+        "/api/v1/config/skylogs/cluster": {
+            "get": {
+                "tags": [
+                    "ConfigSkylogs"
+                ],
+                "summary": "Get cluster configuration",
+                "description": "Returns saved config or defaults (`type: main`, empty source URL/token).",
+                "operationId": "getSkylogsClusterConfig",
+                "responses": {
+                    "200": {
+                        "description": "Cluster config",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SkylogsClusterConfig"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "ConfigSkylogs"
+                ],
+                "summary": "Save cluster configuration",
+                "operationId": "storeSkylogsClusterConfig",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SkylogsClusterConfigInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Saved config",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SkylogsClusterConfig"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/config/sms": {
             "get": {
                 "tags": [
@@ -3222,6 +3409,251 @@
                         "description": "OK"
                     }
                 }
+            }
+        },
+        "/api/v1/config/telegram": {
+            "get": {
+                "tags": [
+                    "ConfigTelegram"
+                ],
+                "summary": "List Telegram proxy configs",
+                "description": "Ordered with active config first.",
+                "operationId": "getConfigTelegramList",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Filter by name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Telegram configs",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ConfigTelegram"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "ConfigTelegram"
+                ],
+                "summary": "Create Telegram proxy config",
+                "operationId": "createConfigTelegram",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConfigTelegramInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Created (inactive until activated)"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/config/telegram/{id}": {
+            "get": {
+                "tags": [
+                    "ConfigTelegram"
+                ],
+                "summary": "Get Telegram config by id",
+                "operationId": "getConfigTelegram",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ConfigTelegram"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "ConfigTelegram"
+                ],
+                "summary": "Update Telegram proxy config",
+                "operationId": "updateConfigTelegram",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConfigTelegramInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "ConfigTelegram"
+                ],
+                "summary": "Delete Telegram proxy config",
+                "operationId": "deleteConfigTelegram",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/config/telegram/activate/{id}": {
+            "post": {
+                "tags": [
+                    "ConfigTelegram"
+                ],
+                "summary": "Activate a Telegram config",
+                "description": "Deactivates any other active config.",
+                "operationId": "activateConfigTelegram",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Activated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ConfigTelegram"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/config/telegram/deactivate": {
+            "post": {
+                "tags": [
+                    "ConfigTelegram"
+                ],
+                "summary": "Deactivate current Telegram config",
+                "operationId": "deactivateConfigTelegram",
+                "responses": {
+                    "200": {
+                        "description": "Deactivated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/v1/data-source": {
@@ -4194,6 +4626,873 @@
                 ]
             }
         },
+        "/api/v1/profile/asset": {
+            "get": {
+                "tags": [
+                    "ProfileAsset"
+                ],
+                "summary": "List profile assets (paginated)",
+                "operationId": "getProfileAssets",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated profile assets with `user` relation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedProfileAssets"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "ProfileAsset"
+                ],
+                "summary": "Create profile asset and provision alert rules",
+                "description": "Creates alert rules from `config` via ProfileService and stores their ids in `createdAlertRuleIds`.",
+                "operationId": "createProfileAsset",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProfileAssetInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ProfileAsset"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/profile/asset/{id}": {
+            "get": {
+                "tags": [
+                    "ProfileAsset"
+                ],
+                "summary": "Get profile asset by id",
+                "operationId": "getProfileAsset",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Profile asset",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProfileAsset"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "ProfileAsset"
+                ],
+                "summary": "Update profile asset",
+                "operationId": "updateProfileAsset",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProfileAssetInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "ProfileAsset"
+                ],
+                "summary": "Delete profile asset",
+                "description": "Deletes linked alert rules via ProfileService.",
+                "operationId": "deleteProfileAsset",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted asset"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/prometheus/rules": {
+            "get": {
+                "tags": [
+                    "Prometheus"
+                ],
+                "summary": "Get Prometheus alert rule names",
+                "operationId": "getPrometheusRules",
+                "parameters": [
+                    {
+                        "name": "data_source_id",
+                        "in": "query",
+                        "description": "Prometheus data source id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "External rule names (cached)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/prometheus/labels": {
+            "get": {
+                "tags": [
+                    "Prometheus"
+                ],
+                "summary": "Get Prometheus label names",
+                "operationId": "getPrometheusLabels",
+                "responses": {
+                    "200": {
+                        "description": "Label names",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/prometheus/label-values/{label}": {
+            "get": {
+                "tags": [
+                    "Prometheus"
+                ],
+                "summary": "Get values for a Prometheus label",
+                "operationId": "getPrometheusLabelValues",
+                "parameters": [
+                    {
+                        "name": "label",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Label values",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/prometheus/triggered": {
+            "get": {
+                "tags": [
+                    "Prometheus"
+                ],
+                "summary": "Get currently firing Prometheus alerts",
+                "operationId": "getPrometheusTriggeredAlerts",
+                "responses": {
+                    "200": {
+                        "description": "Triggered alerts from Prometheus (cached ~5s)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/skylogs-instance": {
+            "get": {
+                "tags": [
+                    "SkylogsInstance"
+                ],
+                "summary": "List Skylogs instances (paginated)",
+                "description": "Owner role only.",
+                "operationId": "getSkylogsInstances",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Filter by name (partial match)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated instances (token hidden)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedSkylogsInstances"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "SkylogsInstance"
+                ],
+                "summary": "Create Skylogs instance",
+                "description": "Generates a unique `token` for agent authentication. Owner role only.",
+                "operationId": "createSkylogsInstance",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SkylogsInstanceInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/SkylogsInstance"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/skylogs-instance/all": {
+            "get": {
+                "tags": [
+                    "SkylogsInstance"
+                ],
+                "summary": "List all Skylogs instances",
+                "operationId": "getAllSkylogsInstances",
+                "responses": {
+                    "200": {
+                        "description": "All instances without pagination",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/SkylogsInstance"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/skylogs-instance/status/{id}": {
+            "get": {
+                "tags": [
+                    "SkylogsInstance"
+                ],
+                "summary": "Check if instance is connected",
+                "operationId": "getSkylogsInstanceConnectionStatus",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Connection status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "isConnected": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/skylogs-instance/{id}": {
+            "get": {
+                "tags": [
+                    "SkylogsInstance"
+                ],
+                "summary": "Get Skylogs instance by id",
+                "description": "Owner role only.",
+                "operationId": "getSkylogsInstance",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Instance",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SkylogsInstance"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "SkylogsInstance"
+                ],
+                "summary": "Update Skylogs instance",
+                "operationId": "updateSkylogsInstance",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SkylogsInstanceInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/SkylogsInstance"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "SkylogsInstance"
+                ],
+                "summary": "Delete Skylogs instance",
+                "description": "Also removes related health cluster data. Owner role only.",
+                "operationId": "deleteSkylogsInstance",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted instance"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/status/all": {
+            "get": {
+                "tags": [
+                    "Status"
+                ],
+                "summary": "List all status pages (public)",
+                "description": "No JWT required. Used by public status dashboards.",
+                "operationId": "getPublicStatusList",
+                "responses": {
+                    "200": {
+                        "description": "All status records",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/StatusPage"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/status": {
+            "get": {
+                "tags": [
+                    "Status"
+                ],
+                "summary": "List status pages (paginated)",
+                "operationId": "getStatusPages",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated status pages",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedStatusPages"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Status"
+                ],
+                "summary": "Create status page",
+                "operationId": "createStatusPage",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StatusPageInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/status/{id}": {
+            "get": {
+                "tags": [
+                    "Status"
+                ],
+                "summary": "Get status page by id",
+                "operationId": "getStatusPage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status page",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusPage"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Status"
+                ],
+                "summary": "Update status page",
+                "operationId": "updateStatusPage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StatusPageInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Status"
+                ],
+                "summary": "Delete status page",
+                "operationId": "deleteStatusPage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/team": {
             "get": {
                 "tags": [
@@ -4464,10 +5763,1903 @@
                     }
                 ]
             }
+        },
+        "/api/v1/user": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "List users (paginated)",
+                "description": "Requires owner or manager role.",
+                "operationId": "getUsers",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "username",
+                        "in": "query",
+                        "description": "Filter by username (partial match)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated users; each item includes `roles` string array",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaginatedUsers"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Create user",
+                "operationId": "createUser",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/user/all": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "List all users",
+                "description": "Unpaginated list for dropdowns and sharing UI.",
+                "operationId": "getAllUsers",
+                "responses": {
+                    "200": {
+                        "description": "All users",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/User"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/user/{id}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get user by id",
+                "operationId": "getUser",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update user",
+                "operationId": "updateUser",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "username",
+                                    "name",
+                                    "role"
+                                ],
+                                "properties": {
+                                    "username": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "role": {
+                                        "type": "string",
+                                        "enum": [
+                                            "owner",
+                                            "manager",
+                                            "member"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/User"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Delete user",
+                "description": "Reassigns owned endpoints and alert rules to the system admin user. Cannot delete `admin`.",
+                "operationId": "deleteUser",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted user record"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/user/pass/{id}": {
+            "put": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Change user password (admin)",
+                "operationId": "changeUserPassword",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "password",
+                                    "confirmPassword"
+                                ],
+                                "properties": {
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "confirmPassword": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password updated"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/user/changeOwner": {
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Transfer alert rules and endpoints between users",
+                "description": "Owner role only. Moves all alert rules and endpoints from `fromUser` to `toUser`.",
+                "operationId": "changeUserOwnership",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "fromUser",
+                                    "toUser"
+                                ],
+                                "properties": {
+                                    "fromUser": {
+                                        "description": "Source user id",
+                                        "type": "string"
+                                    },
+                                    "toUser": {
+                                        "description": "Target user id",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Ownership transferred",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/fire-alert": {
+            "post": {
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Fire an API alert",
+                "description": "Authenticated with API alert token (see `ApiAlertAuth` middleware), not bearer JWT.",
+                "operationId": "webhookFireApiAlert",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "description": "Alert payload fields depend on integration",
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Accepted"
+                    },
+                    "401": {
+                        "description": "Invalid token"
+                    },
+                    "429": {
+                        "description": "Rate limited"
+                    }
+                }
+            }
+        },
+        "/api/v1/resolve-alert": {
+            "post": {
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Resolve an API alert",
+                "operationId": "webhookResolveApiAlert",
+                "responses": {
+                    "200": {
+                        "description": "Accepted"
+                    },
+                    "401": {
+                        "description": "Invalid token"
+                    }
+                }
+            }
+        },
+        "/api/v1/stop-alert": {
+            "post": {
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Stop an API alert (alias of resolve)",
+                "operationId": "webhookStopApiAlert",
+                "responses": {
+                    "200": {
+                        "description": "Accepted"
+                    }
+                }
+            }
+        },
+        "/api/v1/status-alert": {
+            "post": {
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Post API alert status update",
+                "operationId": "webhookStatusApiAlert",
+                "responses": {
+                    "200": {
+                        "description": "Accepted"
+                    }
+                }
+            }
+        },
+        "/api/v1/notification-alert": {
+            "post": {
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Post notification-type alert payload",
+                "operationId": "webhookNotificationAlert",
+                "responses": {
+                    "200": {
+                        "description": "Accepted"
+                    }
+                }
+            }
+        },
+        "/api/v1/sentry-alert/{token}": {
+            "post": {
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Sentry webhook",
+                "operationId": "webhookSentryAlert",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "description": "Data source webhook token",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Accepted"
+                    },
+                    "401": {
+                        "description": "Invalid token"
+                    }
+                }
+            }
+        },
+        "/api/v1/splunk-alert/{token}": {
+            "post": {
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Splunk webhook",
+                "operationId": "webhookSplunkAlert",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Accepted"
+                    }
+                }
+            }
+        },
+        "/api/v1/zabbix-alert/{token}": {
+            "post": {
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Zabbix webhook",
+                "operationId": "webhookZabbixAlert",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Accepted"
+                    }
+                }
+            }
+        },
+        "/api/v1/grafana-alert/{token}": {
+            "post": {
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Grafana webhook",
+                "operationId": "webhookGrafanaAlert",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Accepted"
+                    }
+                }
+            }
+        },
+        "/api/v1/pmm-alert/{token}": {
+            "post": {
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "PMM webhook",
+                "operationId": "webhookPmmAlert",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Accepted"
+                    }
+                }
+            }
         }
     },
     "components": {
         "schemas": {
+            "AlertRuleState": {
+                "description": "Alert rule state stored in `state` and exposed as `statusLabel` / `status_label` on list and detail responses.",
+                "type": "string",
+                "example": "critical",
+                "enum": [
+                    "unknown",
+                    "warning",
+                    "critical",
+                    "triggered",
+                    "resolved"
+                ]
+            },
+            "AlertRuleStoreCommonFields": {
+                "description": "Fields shared by every alert rule type on create.",
+                "properties": {
+                    "name": {
+                        "description": "Unique alert rule name",
+                        "type": "string",
+                        "example": "High CPU usage"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Fires when CPU exceeds threshold"
+                    },
+                    "showAcknowledgeBtn": {
+                        "description": "Show acknowledge action in notification messages",
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "example": [
+                            "production",
+                            "cpu"
+                        ]
+                    },
+                    "userIds": {
+                        "description": "Additional users granted access (MongoDB user ids)",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "teamIds": {
+                        "description": "Teams granted access",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "endpointIds": {
+                        "description": "Notification endpoints to attach",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleStoreApi": {
+                "title": "API alert rule",
+                "description": "Inbound webhook alert (fire, resolve, status). Server generates `apiToken` after create.",
+                "required": [
+                    "name",
+                    "type"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "api"
+                                ]
+                            },
+                            "enableAutoResolve": {
+                                "description": "Automatically resolve firing instances after a period",
+                                "type": "boolean",
+                                "example": true
+                            },
+                            "autoResolveMinutes": {
+                                "description": "Minutes until auto-resolve when enableAutoResolve is true",
+                                "type": "integer",
+                                "example": 5
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStoreNotification": {
+                "title": "Notification alert rule",
+                "description": "Receives generic notification webhooks. Server generates `apiToken` after create.",
+                "required": [
+                    "name",
+                    "type"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "notification"
+                                ]
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStorePrometheusDynamic": {
+                "title": "Prometheus (dynamic)",
+                "description": "Match alerts by external rule name, data sources, and optional label filters.",
+                "required": [
+                    "name",
+                    "type",
+                    "queryType",
+                    "dataSourceAlertName"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "prometheus"
+                                ]
+                            },
+                            "queryType": {
+                                "type": "string",
+                                "enum": [
+                                    "dynamic"
+                                ]
+                            },
+                            "dataSourceIds": {
+                                "description": "Prometheus data source ids (may be empty)",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dataSourceAlertName": {
+                                "description": "Alert name in the external Prometheus/Grafana ruler",
+                                "type": "string",
+                                "example": "HighMemory"
+                            },
+                            "extraField": {
+                                "description": "Label key/value filters",
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/AlertRuleExtraField"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStorePrometheusTextQuery": {
+                "title": "Prometheus (text query)",
+                "description": "Evaluate a raw PromQL query object instead of matching external alert names.",
+                "required": [
+                    "name",
+                    "type",
+                    "queryType",
+                    "queryText"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "prometheus"
+                                ]
+                            },
+                            "queryType": {
+                                "type": "string",
+                                "enum": [
+                                    "textQuery"
+                                ]
+                            },
+                            "queryText": {
+                                "description": "PromQL expression string",
+                                "type": "string"
+                            },
+                            "queryObject": {
+                                "description": "Structured query payload used by the checker",
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStorePrometheus": {
+                "description": "Prometheus alert rule — choose dynamic or textQuery variant.",
+                "discriminator": {
+                    "propertyName": "queryType",
+                    "mapping": {
+                        "dynamic": "#/components/schemas/AlertRuleStorePrometheusDynamic",
+                        "textQuery": "#/components/schemas/AlertRuleStorePrometheusTextQuery"
+                    }
+                },
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStorePrometheusDynamic"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStorePrometheusTextQuery"
+                    }
+                ]
+            },
+            "AlertRuleStoreGrafanaDynamic": {
+                "title": "Grafana (dynamic)",
+                "required": [
+                    "name",
+                    "type",
+                    "queryType",
+                    "dataSourceAlertName"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "grafana"
+                                ]
+                            },
+                            "queryType": {
+                                "type": "string",
+                                "enum": [
+                                    "dynamic"
+                                ]
+                            },
+                            "dataSourceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dataSourceAlertName": {
+                                "type": "string"
+                            },
+                            "extraField": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/AlertRuleExtraField"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStoreGrafanaTextQuery": {
+                "title": "Grafana (text query)",
+                "required": [
+                    "name",
+                    "type",
+                    "queryType",
+                    "queryText"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "grafana"
+                                ]
+                            },
+                            "queryType": {
+                                "type": "string",
+                                "enum": [
+                                    "textQuery"
+                                ]
+                            },
+                            "queryText": {
+                                "type": "string"
+                            },
+                            "queryObject": {
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStoreGrafana": {
+                "description": "Grafana alert rule — choose dynamic or textQuery variant.",
+                "discriminator": {
+                    "propertyName": "queryType",
+                    "mapping": {
+                        "dynamic": "#/components/schemas/AlertRuleStoreGrafanaDynamic",
+                        "textQuery": "#/components/schemas/AlertRuleStoreGrafanaTextQuery"
+                    }
+                },
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreGrafanaDynamic"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreGrafanaTextQuery"
+                    }
+                ]
+            },
+            "AlertRuleStorePmmDynamic": {
+                "title": "PMM (dynamic)",
+                "required": [
+                    "name",
+                    "type",
+                    "queryType",
+                    "dataSourceAlertName"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "pmm"
+                                ]
+                            },
+                            "queryType": {
+                                "type": "string",
+                                "enum": [
+                                    "dynamic"
+                                ]
+                            },
+                            "dataSourceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dataSourceAlertName": {
+                                "type": "string"
+                            },
+                            "extraField": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/AlertRuleExtraField"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStorePmmTextQuery": {
+                "title": "PMM (text query)",
+                "required": [
+                    "name",
+                    "type",
+                    "queryType",
+                    "queryText"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "pmm"
+                                ]
+                            },
+                            "queryType": {
+                                "type": "string",
+                                "enum": [
+                                    "textQuery"
+                                ]
+                            },
+                            "queryText": {
+                                "type": "string"
+                            },
+                            "queryObject": {
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStorePmm": {
+                "description": "Percona PMM alert rule — choose dynamic or textQuery variant.",
+                "discriminator": {
+                    "propertyName": "queryType",
+                    "mapping": {
+                        "dynamic": "#/components/schemas/AlertRuleStorePmmDynamic",
+                        "textQuery": "#/components/schemas/AlertRuleStorePmmTextQuery"
+                    }
+                },
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStorePmmDynamic"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStorePmmTextQuery"
+                    }
+                ]
+            },
+            "AlertRuleStoreSentry": {
+                "title": "Sentry alert rule",
+                "description": "Webhook-driven Sentry issue alerts.",
+                "required": [
+                    "name",
+                    "type",
+                    "dataSourceIds",
+                    "dataSourceAlertName"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "sentry"
+                                ]
+                            },
+                            "dataSourceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dataSourceAlertName": {
+                                "description": "Sentry project or alert identifier configured in Skylogs",
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStoreSplunk": {
+                "title": "Splunk alert rule",
+                "required": [
+                    "name",
+                    "type",
+                    "dataSourceIds",
+                    "dataSourceAlertName"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "splunk"
+                                ]
+                            },
+                            "dataSourceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dataSourceAlertName": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStoreMetabase": {
+                "title": "Metabase alert rule",
+                "required": [
+                    "name",
+                    "type",
+                    "dataSourceIds",
+                    "dataSourceAlertName"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "metabase"
+                                ]
+                            },
+                            "dataSourceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dataSourceAlertName": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStoreZabbix": {
+                "title": "Zabbix alert rule",
+                "description": "Filter Zabbix webhooks by hosts, actions, and severities (0–5 as strings, or omit for all).",
+                "required": [
+                    "name",
+                    "type",
+                    "dataSourceIds"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "zabbix"
+                                ]
+                            },
+                            "dataSourceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "hosts": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "web-01"
+                                ]
+                            },
+                            "actions": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "example": [
+                                    "Action1"
+                                ]
+                            },
+                            "severities": {
+                                "description": "Zabbix severity codes 0 (not classified) through 5 (disaster)",
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "0",
+                                        "1",
+                                        "2",
+                                        "3",
+                                        "4",
+                                        "5"
+                                    ]
+                                },
+                                "example": [
+                                    "5"
+                                ]
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStoreElastic": {
+                "title": "Elastic alert rule",
+                "description": "Document-count threshold on an Elastic data view.",
+                "required": [
+                    "name",
+                    "type",
+                    "dataSourceId",
+                    "dataviewName",
+                    "dataviewTitle",
+                    "queryString",
+                    "minutes",
+                    "conditionType",
+                    "countDocument"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "elastic"
+                                ]
+                            },
+                            "dataSourceId": {
+                                "type": "string"
+                            },
+                            "dataviewName": {
+                                "type": "string",
+                                "example": "responses"
+                            },
+                            "dataviewTitle": {
+                                "type": "string",
+                                "example": "responses*"
+                            },
+                            "queryString": {
+                                "type": "string",
+                                "example": "OriginStatus:>=400"
+                            },
+                            "minutes": {
+                                "description": "Look-back window in minutes",
+                                "type": "integer",
+                                "example": 15
+                            },
+                            "conditionType": {
+                                "type": "string",
+                                "enum": [
+                                    "greaterOrEqual",
+                                    "lessOrEqual"
+                                ]
+                            },
+                            "countDocument": {
+                                "description": "Document count threshold",
+                                "type": "integer",
+                                "example": 5
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStoreVictoriaLogs": {
+                "title": "VictoriaLogs alert rule",
+                "description": "Log line count threshold on a VictoriaLogs data source.",
+                "required": [
+                    "name",
+                    "type",
+                    "dataSourceId",
+                    "queryString",
+                    "minutes",
+                    "conditionType",
+                    "countDocument"
+                ],
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "victoria_logs"
+                                ]
+                            },
+                            "dataSourceId": {
+                                "type": "string"
+                            },
+                            "queryString": {
+                                "type": "string"
+                            },
+                            "minutes": {
+                                "type": "integer",
+                                "example": 15
+                            },
+                            "conditionType": {
+                                "type": "string",
+                                "enum": [
+                                    "greaterOrEqual",
+                                    "lessOrEqual"
+                                ]
+                            },
+                            "countDocument": {
+                                "type": "integer",
+                                "example": 5
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleStoreInput": {
+                "description": "Create alert rule. The `type` field selects the payload shape (same URL for all types).",
+                "discriminator": {
+                    "propertyName": "type",
+                    "mapping": {
+                        "api": "#/components/schemas/AlertRuleStoreApi",
+                        "notification": "#/components/schemas/AlertRuleStoreNotification",
+                        "prometheus": "#/components/schemas/AlertRuleStorePrometheus",
+                        "grafana": "#/components/schemas/AlertRuleStoreGrafana",
+                        "pmm": "#/components/schemas/AlertRuleStorePmm",
+                        "sentry": "#/components/schemas/AlertRuleStoreSentry",
+                        "splunk": "#/components/schemas/AlertRuleStoreSplunk",
+                        "metabase": "#/components/schemas/AlertRuleStoreMetabase",
+                        "zabbix": "#/components/schemas/AlertRuleStoreZabbix",
+                        "elastic": "#/components/schemas/AlertRuleStoreElastic",
+                        "victoria_logs": "#/components/schemas/AlertRuleStoreVictoriaLogs"
+                    }
+                },
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreApi"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreNotification"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStorePrometheus"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreGrafana"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStorePmm"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreSentry"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreSplunk"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreMetabase"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreZabbix"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreElastic"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleStoreVictoriaLogs"
+                    }
+                ]
+            },
+            "AlertRuleUpdateCommonFields": {
+                "description": "Fields that can be updated on any alert rule type.",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "showAcknowledgeBtn": {
+                        "type": "boolean"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "userIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "teamIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "endpointIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleUpdateApi": {
+                "title": "Update API alert rule",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "enableAutoResolve": {
+                                "type": "boolean"
+                            },
+                            "autoResolveMinutes": {
+                                "type": "integer"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleUpdateNotification": {
+                "title": "Update notification alert rule",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateCommonFields"
+                    }
+                ]
+            },
+            "AlertRuleUpdatePrometheusDynamic": {
+                "title": "Update Prometheus (dynamic)",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "queryType": {
+                                "type": "string",
+                                "enum": [
+                                    "dynamic"
+                                ]
+                            },
+                            "dataSourceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dataSourceAlertName": {
+                                "type": "string"
+                            },
+                            "extraField": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/AlertRuleExtraField"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleUpdatePrometheusTextQuery": {
+                "title": "Update Prometheus (text query)",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "queryType": {
+                                "type": "string",
+                                "enum": [
+                                    "textQuery"
+                                ]
+                            },
+                            "queryText": {
+                                "type": "string"
+                            },
+                            "queryObject": {
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleUpdatePrometheus": {
+                "discriminator": {
+                    "propertyName": "queryType",
+                    "mapping": {
+                        "dynamic": "#/components/schemas/AlertRuleUpdatePrometheusDynamic",
+                        "textQuery": "#/components/schemas/AlertRuleUpdatePrometheusTextQuery"
+                    }
+                },
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdatePrometheusDynamic"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdatePrometheusTextQuery"
+                    }
+                ]
+            },
+            "AlertRuleUpdateGrafanaDynamic": {
+                "title": "Update Grafana (dynamic)",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "queryType": {
+                                "type": "string",
+                                "enum": [
+                                    "dynamic"
+                                ]
+                            },
+                            "dataSourceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dataSourceAlertName": {
+                                "type": "string"
+                            },
+                            "extraField": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/AlertRuleExtraField"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleUpdateGrafanaTextQuery": {
+                "title": "Update Grafana (text query)",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "queryType": {
+                                "type": "string",
+                                "enum": [
+                                    "textQuery"
+                                ]
+                            },
+                            "queryText": {
+                                "type": "string"
+                            },
+                            "queryObject": {
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleUpdateGrafana": {
+                "discriminator": {
+                    "propertyName": "queryType",
+                    "mapping": {
+                        "dynamic": "#/components/schemas/AlertRuleUpdateGrafanaDynamic",
+                        "textQuery": "#/components/schemas/AlertRuleUpdateGrafanaTextQuery"
+                    }
+                },
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateGrafanaDynamic"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateGrafanaTextQuery"
+                    }
+                ]
+            },
+            "AlertRuleUpdatePmmDynamic": {
+                "title": "Update PMM (dynamic)",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "queryType": {
+                                "type": "string",
+                                "enum": [
+                                    "dynamic"
+                                ]
+                            },
+                            "dataSourceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dataSourceAlertName": {
+                                "type": "string"
+                            },
+                            "extraField": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/AlertRuleExtraField"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleUpdatePmmTextQuery": {
+                "title": "Update PMM (text query)",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "queryType": {
+                                "type": "string",
+                                "enum": [
+                                    "textQuery"
+                                ]
+                            },
+                            "queryText": {
+                                "type": "string"
+                            },
+                            "queryObject": {
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleUpdatePmm": {
+                "discriminator": {
+                    "propertyName": "queryType",
+                    "mapping": {
+                        "dynamic": "#/components/schemas/AlertRuleUpdatePmmDynamic",
+                        "textQuery": "#/components/schemas/AlertRuleUpdatePmmTextQuery"
+                    }
+                },
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdatePmmDynamic"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdatePmmTextQuery"
+                    }
+                ]
+            },
+            "AlertRuleUpdateSentry": {
+                "title": "Update Sentry alert rule",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "dataSourceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dataSourceAlertName": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleUpdateSplunk": {
+                "title": "Update Splunk alert rule",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "dataSourceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dataSourceAlertName": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleUpdateMetabase": {
+                "title": "Update Metabase alert rule",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "dataSourceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dataSourceAlertName": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleUpdateZabbix": {
+                "title": "Update Zabbix alert rule",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "dataSourceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "hosts": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "actions": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "severities": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "0",
+                                        "1",
+                                        "2",
+                                        "3",
+                                        "4",
+                                        "5"
+                                    ]
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleUpdateElastic": {
+                "title": "Update Elastic alert rule",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "dataSourceId": {
+                                "type": "string"
+                            },
+                            "dataviewName": {
+                                "type": "string"
+                            },
+                            "dataviewTitle": {
+                                "type": "string"
+                            },
+                            "queryString": {
+                                "type": "string"
+                            },
+                            "minutes": {
+                                "type": "integer"
+                            },
+                            "conditionType": {
+                                "type": "string",
+                                "enum": [
+                                    "greaterOrEqual",
+                                    "lessOrEqual"
+                                ]
+                            },
+                            "countDocument": {
+                                "type": "integer"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleUpdateVictoriaLogs": {
+                "title": "Update VictoriaLogs alert rule",
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateCommonFields"
+                    },
+                    {
+                        "properties": {
+                            "dataSourceId": {
+                                "type": "string"
+                            },
+                            "queryString": {
+                                "type": "string"
+                            },
+                            "minutes": {
+                                "type": "integer"
+                            },
+                            "conditionType": {
+                                "type": "string",
+                                "enum": [
+                                    "greaterOrEqual",
+                                    "lessOrEqual"
+                                ]
+                            },
+                            "countDocument": {
+                                "type": "integer"
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "AlertRuleUpdateInput": {
+                "description": "Update alert rule. Send the variant that matches the rule's existing type (type cannot be changed via this endpoint).",
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateApi"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateNotification"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdatePrometheus"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateGrafana"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdatePmm"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateSentry"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateSplunk"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateMetabase"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateZabbix"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateElastic"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleUpdateVictoriaLogs"
+                    }
+                ]
+            },
             "StatusResponse": {
                 "properties": {
                     "status": {
@@ -4525,11 +7717,18 @@
                         "type": "boolean"
                     },
                     "statusLabel": {
-                        "type": "string",
-                        "example": "critical"
+                        "$ref": "#/components/schemas/AlertRuleState"
                     },
                     "status_label": {
-                        "type": "string"
+                        "$ref": "#/components/schemas/AlertRuleState"
+                    },
+                    "state": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/AlertRuleState"
+                            }
+                        ],
+                        "nullable": true
                     },
                     "statusCount": {
                         "type": "integer"
@@ -4625,273 +7824,6 @@
                     }
                 ]
             },
-            "AlertRuleStoreInput": {
-                "required": [
-                    "name",
-                    "type"
-                ],
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "example": "High CPU usage"
-                    },
-                    "type": {
-                        "type": "string",
-                        "enum": [
-                            "api",
-                            "notification",
-                            "prometheus",
-                            "sentry",
-                            "grafana",
-                            "pmm",
-                            "zabbix",
-                            "splunk",
-                            "elastic",
-                            "victoria_logs",
-                            "metabase"
-                        ]
-                    },
-                    "description": {
-                        "type": "string"
-                    },
-                    "showAcknowledgeBtn": {
-                        "type": "boolean",
-                        "default": false
-                    },
-                    "tags": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "userIds": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "teamIds": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "endpointIds": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "dataSourceIds": {
-                        "description": "Required for sentry, splunk, metabase, zabbix, and dynamic grafana/prometheus/pmm rules",
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "dataSourceAlertName": {
-                        "description": "Required for sentry, splunk, metabase, and dynamic grafana/prometheus/pmm rules",
-                        "type": "string"
-                    },
-                    "dataSourceId": {
-                        "description": "Required for elastic and victoria_logs",
-                        "type": "string"
-                    },
-                    "queryType": {
-                        "description": "For grafana, pmm, prometheus",
-                        "type": "string",
-                        "enum": [
-                            "dynamic",
-                            "textQuery"
-                        ]
-                    },
-                    "queryText": {
-                        "type": "string"
-                    },
-                    "queryObject": {
-                        "type": "object"
-                    },
-                    "extraField": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/AlertRuleExtraField"
-                        }
-                    },
-                    "hosts": {
-                        "description": "Zabbix only",
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "actions": {
-                        "description": "Zabbix only",
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "severities": {
-                        "description": "Zabbix only",
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "enableAutoResolve": {
-                        "description": "API type only",
-                        "type": "boolean"
-                    },
-                    "autoResolveMinutes": {
-                        "description": "API type only",
-                        "type": "integer"
-                    },
-                    "dataviewName": {
-                        "description": "Elastic only",
-                        "type": "string"
-                    },
-                    "dataviewTitle": {
-                        "description": "Elastic only",
-                        "type": "string"
-                    },
-                    "queryString": {
-                        "description": "Elastic and victoria_logs",
-                        "type": "string"
-                    },
-                    "conditionType": {
-                        "description": "Elastic and victoria_logs",
-                        "type": "string",
-                        "enum": [
-                            "greaterOrEqual",
-                            "lessOrEqual"
-                        ]
-                    },
-                    "countDocument": {
-                        "description": "Elastic and victoria_logs",
-                        "type": "integer"
-                    },
-                    "minutes": {
-                        "description": "Elastic and victoria_logs",
-                        "type": "integer"
-                    }
-                },
-                "type": "object"
-            },
-            "AlertRuleUpdateInput": {
-                "properties": {
-                    "name": {
-                        "type": "string"
-                    },
-                    "description": {
-                        "type": "string"
-                    },
-                    "showAcknowledgeBtn": {
-                        "type": "boolean"
-                    },
-                    "tags": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "userIds": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "teamIds": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "endpointIds": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "dataSourceIds": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "dataSourceAlertName": {
-                        "type": "string"
-                    },
-                    "dataSourceId": {
-                        "type": "string"
-                    },
-                    "queryType": {
-                        "type": "string",
-                        "enum": [
-                            "dynamic",
-                            "textQuery"
-                        ]
-                    },
-                    "queryText": {
-                        "type": "string"
-                    },
-                    "queryObject": {
-                        "type": "object"
-                    },
-                    "extraField": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/AlertRuleExtraField"
-                        }
-                    },
-                    "hosts": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "actions": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "severities": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "enableAutoResolve": {
-                        "type": "boolean"
-                    },
-                    "autoResolveMinutes": {
-                        "type": "integer"
-                    },
-                    "dataviewName": {
-                        "type": "string"
-                    },
-                    "dataviewTitle": {
-                        "type": "string"
-                    },
-                    "queryString": {
-                        "type": "string"
-                    },
-                    "conditionType": {
-                        "type": "string",
-                        "enum": [
-                            "greaterOrEqual",
-                            "lessOrEqual"
-                        ]
-                    },
-                    "countDocument": {
-                        "type": "integer"
-                    },
-                    "minutes": {
-                        "type": "integer"
-                    }
-                },
-                "type": "object"
-            },
             "AlertRuleBehaviorRule": {
                 "properties": {
                     "id": {
@@ -4945,6 +7877,54 @@
                 },
                 "type": "object"
             },
+            "SkylogsClusterConfig": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "cluster"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "main",
+                            "agent"
+                        ]
+                    },
+                    "sourceUrl": {
+                        "description": "Parent Skylogs URL when type is agent",
+                        "type": "string"
+                    },
+                    "sourceToken": {
+                        "description": "Parent cluster token when type is agent",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "SkylogsClusterConfigInput": {
+                "required": [
+                    "type"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "main",
+                            "agent"
+                        ]
+                    },
+                    "sourceUrl": {
+                        "description": "Required when type is agent",
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "sourceToken": {
+                        "description": "Required when type is agent",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
             "KaveNegarConfigSMS": {
                 "title": "Kave Negar SMS Config",
                 "required": [
@@ -4972,6 +7952,72 @@
                     "senderNumber": {
                         "type": "string",
                         "example": "10008000800"
+                    }
+                },
+                "type": "object"
+            },
+            "ConfigTelegram": {
+                "properties": {
+                    "_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "http",
+                            "socks5"
+                        ]
+                    },
+                    "host": {
+                        "type": "string"
+                    },
+                    "port": {
+                        "type": "string"
+                    },
+                    "username": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "active": {
+                        "type": "boolean"
+                    }
+                },
+                "type": "object"
+            },
+            "ConfigTelegramInput": {
+                "required": [
+                    "name",
+                    "type",
+                    "host",
+                    "port"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "http",
+                            "socks5"
+                        ]
+                    },
+                    "host": {
+                        "type": "string"
+                    },
+                    "port": {
+                        "type": "string"
+                    },
+                    "username": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string"
                     }
                 },
                 "type": "object"
@@ -5245,6 +8291,187 @@
                 },
                 "type": "object"
             },
+            "ProfileAsset": {
+                "properties": {
+                    "_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "ownerId": {
+                        "type": "string"
+                    },
+                    "config": {
+                        "description": "Profile template configuration object",
+                        "type": "object"
+                    },
+                    "createdAlertRuleIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "ProfileAssetInput": {
+                "required": [
+                    "name",
+                    "ownerId",
+                    "config"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "ownerId": {
+                        "type": "string"
+                    },
+                    "config": {
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "PaginatedProfileAssets": {
+                "properties": {
+                    "current_page": {
+                        "type": "integer"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProfileAsset"
+                        }
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
+            "SkylogsInstance": {
+                "properties": {
+                    "_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string",
+                        "example": "https://remote.example.com"
+                    },
+                    "token": {
+                        "description": "Agent auth token (omitted in list/all responses)",
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "SkylogsInstanceInput": {
+                "required": [
+                    "name",
+                    "type",
+                    "url"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "url": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "PaginatedSkylogsInstances": {
+                "properties": {
+                    "current_page": {
+                        "type": "integer"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SkylogsInstance"
+                        }
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
+            "StatusPage": {
+                "properties": {
+                    "_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "criticalCount": {
+                        "type": "integer"
+                    },
+                    "warningCount": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/AlertRuleState"
+                    }
+                },
+                "type": "object"
+            },
+            "StatusPageInput": {
+                "required": [
+                    "name",
+                    "tags"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "tags": {
+                        "description": "Non-empty array of tag names to aggregate alerts",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "PaginatedStatusPages": {
+                "properties": {
+                    "current_page": {
+                        "type": "integer"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/StatusPage"
+                        }
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
             "Team": {
                 "properties": {
                     "id": {
@@ -5300,6 +8527,88 @@
                     }
                 },
                 "type": "object"
+            },
+            "User": {
+                "properties": {
+                    "_id": {
+                        "type": "string"
+                    },
+                    "username": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "roles": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "owner",
+                                "manager",
+                                "member"
+                            ]
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "UserInput": {
+                "required": [
+                    "username",
+                    "name",
+                    "password",
+                    "confirmPassword",
+                    "role"
+                ],
+                "properties": {
+                    "username": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string",
+                        "format": "password"
+                    },
+                    "confirmPassword": {
+                        "type": "string",
+                        "format": "password"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "owner",
+                            "manager",
+                            "member"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "PaginatedUsers": {
+                "properties": {
+                    "current_page": {
+                        "type": "integer"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/User"
+                        }
+                    },
+                    "last_page": {
+                        "type": "integer"
+                    },
+                    "per_page": {
+                        "type": "integer"
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -5329,8 +8638,16 @@
             "description": "Manage email configuration"
         },
         {
+            "name": "ConfigSkylogs",
+            "description": "Skylogs cluster mode: main server or agent linked to a parent. Owner role only."
+        },
+        {
             "name": "ConfigSms",
             "description": "Manage sms configuration"
+        },
+        {
+            "name": "ConfigTelegram",
+            "description": "Telegram bot proxy configuration (HTTP/SOCKS5). Owner role only. Only one config can be active at a time."
         },
         {
             "name": "Data Sources",
@@ -5341,8 +8658,32 @@
             "description": "Manage notification endpoints (SMS, Email, Telegram, Teams, etc.)"
         },
         {
+            "name": "ProfileAsset",
+            "description": "Profile assets: bundled alert-rule templates applied for a user. Owner role only."
+        },
+        {
+            "name": "Prometheus",
+            "description": "Prometheus helper endpoints for alert-rule UI (rules, labels, fired alerts). Prefer `/alert-rule/create-data/*` when building create forms."
+        },
+        {
+            "name": "SkylogsInstance",
+            "description": "Remote Skylogs cluster instances used for health monitoring. CRUD requires owner role; `all` and `status` are available to any authenticated user."
+        },
+        {
+            "name": "Status",
+            "description": "Status pages grouped by tags with aggregated alert counts. Requires owner or manager for CRUD."
+        },
+        {
             "name": "Teams",
             "description": "Manage Teams"
+        },
+        {
+            "name": "Users",
+            "description": "User accounts and roles (owner, manager, member). Manager/owner routes require elevated roles."
+        },
+        {
+            "name": "Webhooks",
+            "description": "Inbound integrations (no JWT). API alerts use `apiToken` header; external systems use webhook tokens in the URL path."
         }
     ]
 }
