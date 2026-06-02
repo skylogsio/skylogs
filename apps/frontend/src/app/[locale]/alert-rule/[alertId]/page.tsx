@@ -163,13 +163,15 @@ export default function ViewAlertRule() {
 
   return (
     <>
-      <Stack width="100%" alignItems="center" spacing={1}>
-        <Stack width="100%" bgcolor={palette.background.paper} borderRadius={3} padding={3}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-            <Stack direction="row" alignItems="center" spacing={2}>
+      <Stack spacing={1} sx={{ width: "100%", alignItems: "center" }}>
+        <Stack
+          sx={{ width: "100%", bgcolor: palette.background.paper, borderRadius: 3, padding: 3 }}
+        >
+          <Stack direction="row" sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
               <Icon color={defaultColor} size="4rem" />
-              <Stack alignItems="flex-start" spacing={0.5}>
-                <Typography variant="h6" fontWeight="bold">
+              <Stack spacing={0.5} sx={{ alignItems: "flex-start" }}>
+                <Typography variant="h6" sx={{ fontWeight: "bold" }}>
                   {data.name}
                 </Typography>
                 <AlertRuleStatusIndicator
@@ -180,7 +182,7 @@ export default function ViewAlertRule() {
                 />
               </Stack>
             </Stack>
-            <Stack spacing={1} alignItems="flex-end">
+            <Stack spacing={1} sx={{ alignItems: "flex-end" }}>
               <Stack direction="row-reverse" spacing={1}>
                 <Button
                   startIcon={<HiTrash />}
@@ -241,15 +243,17 @@ export default function ViewAlertRule() {
               {data.apiToken && (
                 <Stack
                   direction="row"
-                  alignItems="center"
-                  bgcolor={alpha(palette.secondary.light, 0.1)}
-                  borderRadius={2}
-                  paddingLeft={1}
-                  paddingY={0.5}
-                  paddingRight={0.5}
                   spacing={1}
-                  border="1px solid"
-                  borderColor={alpha(palette.secondary.light, 0.4)}
+                  sx={{
+                    alignItems: "center",
+                    bgcolor: alpha(palette.secondary.light, 0.1),
+                    borderRadius: 2,
+                    paddingY: 0.5,
+                    paddingLeft: 1,
+                    paddingRight: 0.5,
+                    border: 1,
+                    borderColor: alpha(palette.secondary.light, 0.4)
+                  }}
                 >
                   <Typography
                     variant="caption"
@@ -270,19 +274,19 @@ export default function ViewAlertRule() {
               )}
             </Stack>
           </Stack>
-          <Stack direction="row" rowGap={1} flexWrap="wrap" marginTop={3}>
-            <Stack direction="row" alignItems="center" spacing={1} width="50%">
-              <Typography variant="subtitle1" fontWeight="bold">
+          <Stack direction="row" sx={{ marginTop: 3, rowGap: 1, flexWrap: "wrap" }}>
+            <Stack direction="row" spacing={1} sx={{ width: "50%", alignItems: "center" }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                 Owner:
               </Typography>
               <Typography>{data.ownerName}</Typography>
             </Stack>
             {data.dataSourceLabels && (
-              <Stack direction="row" alignItems="center" spacing={1} width="50%">
-                <Typography variant="subtitle1" fontWeight="bold">
+              <Stack direction="row" spacing={1} sx={{ width: "50%", alignItems: "center" }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                   DataSources:
                 </Typography>
-                <Stack paddingX={1} direction="row" gap={1} flexWrap="wrap">
+                <Stack direction="row" sx={{ paddingX: 1, flexWrap: "wrap", gap: 1 }}>
                   {data.dataSourceLabels.map((label, index) => (
                     <Chip key={index} variant="filled" label={label} size="small" />
                   ))}
@@ -290,19 +294,19 @@ export default function ViewAlertRule() {
               </Stack>
             )}
             {data.dataSourceAlertName && (
-              <Stack direction="row" alignItems="center" spacing={1} width="50%">
-                <Typography variant="subtitle1" fontWeight="bold">
+              <Stack direction="row" spacing={1} sx={{ width: "50%", alignItems: "center" }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                   DataSource Alert Names:
                 </Typography>
                 <Typography>{data.dataSourceAlertName}</Typography>
               </Stack>
             )}
             {((data as IZabbixAlertRule)?.severities?.length ?? 0) > 0 && (
-              <Stack direction="row" alignItems="center" spacing={1} width="50%">
-                <Typography variant="subtitle1" fontWeight="bold">
+              <Stack direction="row" spacing={1} sx={{ width: "50%", alignItems: "center" }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                   Severity:
                 </Typography>
-                <Stack paddingX={1} direction="row" gap={1} flexWrap="wrap">
+                <Stack direction="row" sx={{ paddingX: 1, flexWrap: "wrap", gap: 1 }}>
                   {(data as IZabbixAlertRule).severities?.map((severity) => (
                     <Chip key={severity} variant="filled" label={severity} size="small" />
                   ))}
@@ -310,11 +314,11 @@ export default function ViewAlertRule() {
               </Stack>
             )}
             {((data as IZabbixAlertRule)?.actions?.length ?? 0) > 0 && (
-              <Stack direction="row" alignItems="center" spacing={1} width="50%">
-                <Typography variant="subtitle1" fontWeight="bold">
+              <Stack direction="row" spacing={1} sx={{ width: "50%", alignItems: "center" }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                   Actions:
                 </Typography>
-                <Stack paddingX={1} direction="row" gap={1} flexWrap="wrap">
+                <Stack direction="row" sx={{ paddingX: 1, flexWrap: "wrap", gap: 1 }}>
                   {(data as IZabbixAlertRule).actions?.map((action) => (
                     <Chip key={action} variant="filled" label={action} size="small" />
                   ))}
@@ -322,22 +326,22 @@ export default function ViewAlertRule() {
               </Stack>
             )}
             {((data as IZabbixAlertRule)?.hosts?.length ?? 0) > 0 && (
-              <Stack direction="row" alignItems="center" spacing={1} width="50%">
-                <Typography variant="subtitle1" fontWeight="bold">
+              <Stack direction="row" spacing={1} sx={{ width: "50%", alignItems: "center" }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                   Hosts:
                 </Typography>
-                <Stack paddingX={1} direction="row" gap={1} flexWrap="wrap">
+                <Stack direction="row" sx={{ paddingX: 1, flexWrap: "wrap", gap: 1 }}>
                   {(data as IZabbixAlertRule).hosts?.map((host) => (
                     <Chip key={host} variant="filled" label={host} size="small" />
                   ))}
                 </Stack>
               </Stack>
             )}
-            <Stack direction="row" alignItems="center" spacing={1} width="100%">
-              <Typography variant="subtitle1" fontWeight="bold">
+            <Stack direction="row" spacing={1} sx={{ width: "100%", alignItems: "center" }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                 Tags:
               </Typography>
-              <Stack padding={1} direction="row" gap={1} flexWrap="wrap">
+              <Stack direction="row" sx={{ padding: 1, flexWrap: "wrap", gap: 1 }}>
                 {data.tags.map((tag, index) => (
                   <Chip key={index} variant="filled" label={tag} size="small" />
                 ))}
@@ -348,9 +352,8 @@ export default function ViewAlertRule() {
         <Stack
           direction="row"
           spacing={1}
-          borderRadius={3}
-          padding={2}
           sx={{
+            borderRadius: 3,
             backgroundColor: palette.background.paper,
             padding: `${spacing(1)}!important`,
             marginTop: `${spacing(1)}!important`
@@ -358,7 +361,9 @@ export default function ViewAlertRule() {
         >
           {TABS.map((tab) => renderTab(tab))}
         </Stack>
-        <Stack width="100%" bgcolor={palette.background.paper} borderRadius={3} padding={3}>
+        <Stack
+          sx={{ width: "100%", bgcolor: palette.background.paper, borderRadius: 3, padding: 3 }}
+        >
           {renderSections()}
         </Stack>
       </Stack>
@@ -392,7 +397,7 @@ export default function ViewAlertRule() {
           horizontal: "center"
         }}
       >
-        <Stack spacing={3} padding={2}>
+        <Stack spacing={3} sx={{ padding: 2 }}>
           <Typography variant="subtitle1">
             Are you sure about <strong>Testing</strong> this Alert?
           </Typography>
