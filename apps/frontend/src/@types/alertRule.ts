@@ -78,6 +78,38 @@ export interface IApiAndNotificationAlertRuleHistory {
   id: string;
 }
 
+export interface IElasticAlertHistory {
+  alertRuleId: string;
+  alertRuleName: string;
+  dataSourceId: string;
+  dataviewName: string;
+  dataviewTitle: string;
+  queryString: string;
+  minutes: number;
+  countDocument: number;
+  currentCountDocument: number;
+  state: number;
+  updatedAt: string;
+  createdAt: string;
+  id: string;
+}
+
+export interface IVictoriaLogsAlertHistory {
+  alertRuleId: string;
+  alertRuleName: string;
+  dataSourceId: string;
+  dataviewName: string;
+  dataviewTitle: string;
+  queryString: string;
+  minutes: number;
+  countDocument: number;
+  currentCountDocument: number;
+  state: number;
+  updatedAt: string;
+  createdAt: string;
+  id: string;
+}
+
 export interface IApiAlertRuleInstance {
   alertRuleId: string;
   alertRuleName: string;
