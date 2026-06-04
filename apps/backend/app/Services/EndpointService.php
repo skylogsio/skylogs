@@ -16,7 +16,10 @@ use Illuminate\Support\Facades\Cache;
 
 class EndpointService
 {
-    public function __construct(protected TeamService $teamService) {}
+    public function __construct(
+        protected TeamService $teamService,
+        protected AlertRuleService $alertRuleService,
+    ) {}
 
     public function selectableUserEndpoint(User $user, ?AlertRule $alert = null)
     {
@@ -26,23 +29,34 @@ class EndpointService
                 ->rememberForever('endpoint:admin', fn () => Endpoint::get());
         }
 
-        if (! $alert || $alert->userId == $user->_id) {
-            return Cache::tags(['endpoint', $user->id])
-                ->rememberForever("endpoint:global:$user->id", function () use ($user) {
-                    $teamIds = $this->teamService->userTeams($user)->pluck('id')->toArray();
+        if (
+            ! $alert
+            || $this->alertRuleService->userOwnsAlert($user, $alert)
+        ) {
+            return $this->rememberGlobalSelectableEndpoints($user);
+        }
 
-                    return Endpoint::where('userId', $user->_id)
-                        ->orWhereIn('accessUserIds', [$user->id])
-                        ->orWhereIn('accessTeamIds', $teamIds)
-                        ->get();
-                });
-        } elseif (in_array($user->_id, $alert->userIds)) {
+        if ($this->alertRuleService->userIsListedOnAlert($user, $alert)
+            || $this->alertRuleService->hasTeamAccessAlert($user, $alert)) {
             return Cache::tags(['endpoint', $user->id])
                 ->rememberForever("endpoint:user:$user->id", fn () => Endpoint::where('userId', $user->_id)->get());
         }
 
         return collect();
 
+    }
+
+    public function rememberGlobalSelectableEndpoints(User $user)
+    {
+        return Cache::tags(['endpoint', $user->id])
+            ->rememberForever("endpoint:global:$user->id", function () use ($user) {
+                $teamIds = $this->teamService->userTeams($user)->pluck('id')->toArray();
+
+                return Endpoint::where('userId', $user->id)
+                    ->orWhereIn('accessUserIds', [$user->id])
+                    ->orWhereIn('accessTeamIds', $teamIds)
+                    ->get();
+            });
     }
 
     public function hasActionAccess(User $user, Endpoint $endpoint)

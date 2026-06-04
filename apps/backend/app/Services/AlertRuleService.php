@@ -661,16 +661,28 @@ class AlertRuleService
         $this->flushCache();
     }
 
-    public function hasAdminAccessAlert(User $user, AlertRule $alert)
+    public function hasAdminAccessAlert(User $user, AlertRule $alert): bool
     {
         if ($user->isAdmin()) {
             return true;
         }
-        if ($user->_id == $alert->userId) {
-            return true;
+
+        return $this->userOwnsAlert($user, $alert);
+    }
+
+    public function hasTeamAccessAlert(User $user, AlertRule $alert): bool
+    {
+        $alertTeamIds = $alert->teamIds ?? [];
+        if ($alertTeamIds === []) {
+            return false;
         }
 
-        return false;
+        $userTeamIds = $this->teamService->userTeams($user)->pluck('id')->toArray();
+        if ($userTeamIds === []) {
+            return false;
+        }
+
+        return collect($alertTeamIds)->intersect($userTeamIds)->isNotEmpty();
     }
 
     public function hasUserAccessAlert(User $user, AlertRule $alert): bool
@@ -678,17 +690,24 @@ class AlertRuleService
         if ($this->hasAdminAccessAlert($user, $alert)) {
             return true;
         }
+
+        if ($this->userIsListedOnAlert($user, $alert)) {
+            return true;
+        }
+
+        return $this->hasTeamAccessAlert($user, $alert);
+    }
+
+    public function userOwnsAlert(User $user, AlertRule $alert): bool
+    {
+        return $user->id == $alert->userId || $user->_id == $alert->userId;
+    }
+
+    public function userIsListedOnAlert(User $user, AlertRule $alert): bool
+    {
         $userIds = $alert->userIds ?? [];
-        if (in_array($user->_id, $userIds)) {
-            return true;
-        }
 
-        $teamIds = $this->teamService->userTeams($user)->pluck('id')->toArray();
-        if (! empty($teamIds) && ! empty($user->teamIds) && collect($user->teamIds)->intersect($teamIds)->isNotEmpty()) {
-            return true;
-        }
-
-        return false;
+        return in_array($user->id, $userIds, true) || in_array($user->_id, $userIds, true);
     }
 
     public function getAlerts(AlertRuleType|array|null $type = null)

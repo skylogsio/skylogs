@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\AlertRule;
-use App\Models\Endpoint;
 use App\Models\Notify;
 use App\Models\User;
 use App\Services\AlertRuleBehaviorRuleService;
@@ -43,18 +42,6 @@ describe('SendNotifyService notification behavior rules', function () {
         $userService = Mockery::mock(UserService::class);
         $userService->shouldReceive('admin')->andReturn($admin);
         app()->instance(UserService::class, $userService);
-
-        $endpointQuery = Mockery::mock();
-        $endpointQuery->shouldReceive('whereNotIn')
-            ->with('userId', [])
-            ->andReturnSelf();
-        $endpointQuery->shouldReceive('get')->andReturn(collect());
-
-        Mockery::mock('alias:'.Endpoint::class)
-            ->shouldReceive('whereIn')
-            ->once()
-            ->with('_id', ['default-endpoint', 'mysql-endpoint'])
-            ->andReturn($endpointQuery);
 
         SendNotifyService::SendMessage($notify);
 
