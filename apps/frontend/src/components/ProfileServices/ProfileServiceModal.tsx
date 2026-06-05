@@ -1,10 +1,21 @@
+"use client";
 import { useEffect, useMemo } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { alpha, Box, Button, Grid, MenuItem, TextField, Typography } from "@mui/material";
+import {
+  alpha,
+  Box,
+  Button,
+  Grid,
+  MenuItem,
+  TextField,
+  Typography,
+  useColorScheme
+} from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Editor } from "prism-react-editor";
 import { BasicSetup } from "prism-react-editor/setups";
+import { loadTheme } from "prism-react-editor/themes";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { z } from "zod";
@@ -18,7 +29,6 @@ import type { ModalContainerProps } from "@/components/Modal/types";
 import "prism-react-editor/prism/languages/json";
 import "prism-react-editor/languages/json";
 import "prism-react-editor/layout.css";
-import "prism-react-editor/themes/vs-code-light.css";
 import "prism-react-editor/search.css";
 
 const profileServiceSchema = z.object({
@@ -74,6 +84,7 @@ export default function ProfileServiceModal({
   data,
   onSubmit
 }: ProfileServiceModalProps) {
+  const { systemMode, mode } = useColorScheme();
   const {
     register,
     handleSubmit,
@@ -124,6 +135,15 @@ export default function ProfileServiceModal({
   useEffect(() => {
     reset(getFormValues(data));
   }, [data, open, reset]);
+
+  useEffect(() => {
+    const isDark = (systemMode || mode) === "dark";
+    const style = document.querySelector("style");
+
+    loadTheme(isDark ? "vs-code-dark" : "vs-code-light").then((theme) => {
+      if (style && style.textContent) style.textContent = theme ?? "";
+    });
+  }, [systemMode, mode]);
 
   return (
     <ModalContainer

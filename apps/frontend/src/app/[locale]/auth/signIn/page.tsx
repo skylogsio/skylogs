@@ -92,7 +92,7 @@ export default function AuthenticationPage() {
     >
       <Stack
         sx={{
-          backgroundColor: palette.background.paper,
+          backgroundColor: palette.background.default,
           padding: 6,
           borderRadius: 4,
           marginY: "auto"
