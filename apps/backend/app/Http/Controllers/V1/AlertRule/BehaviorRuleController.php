@@ -39,6 +39,7 @@ class BehaviorRuleController extends Controller
                 Rule::in([
                     AlertRuleBehaviorRuleType::NOTIFICATION->value,
                     AlertRuleBehaviorRuleType::TEMPLATE->value,
+                    AlertRuleBehaviorRuleType::SILENT->value,
                 ]),
             ],
             'filters' => [
@@ -48,8 +49,27 @@ class BehaviorRuleController extends Controller
             ],
             'filters.*.key' => ['required_with:filters', 'string'],
             'filters.*.value' => ['required_with:filters', 'string'],
-            'endpointIds' => ['required', 'array', 'min:1'],
-            'endpointIds.*' => ['required', 'string'],
+            'endpointIds' => [
+                Rule::requiredIf(fn () => in_array($request->input('type'), [
+                    AlertRuleBehaviorRuleType::NOTIFICATION->value,
+                    AlertRuleBehaviorRuleType::TEMPLATE->value,
+                ], true)),
+                Rule::prohibitedIf(fn () => $request->input('type') === AlertRuleBehaviorRuleType::SILENT->value),
+                'array',
+                'min:1',
+            ],
+            'endpointIds.*' => ['required_with:endpointIds', 'string'],
+            'dependsOnAlertRuleIds' => [
+                Rule::requiredIf(fn () => $request->input('type') === AlertRuleBehaviorRuleType::SILENT->value),
+                'array',
+                'min:1',
+            ],
+            'dependsOnAlertRuleIds.*' => ['required_with:dependsOnAlertRuleIds', 'string'],
+            'triggerState' => [
+                Rule::requiredIf(fn () => $request->input('type') === AlertRuleBehaviorRuleType::SILENT->value),
+                'string',
+                Rule::in([AlertRule::RESOlVED, AlertRule::CRITICAL]),
+            ],
             'template' => [
                 Rule::requiredIf(fn () => $request->input('type') === AlertRuleBehaviorRuleType::TEMPLATE->value),
                 'string',
@@ -57,10 +77,13 @@ class BehaviorRuleController extends Controller
             ],
         ]);
 
-        $this->assertSelectableEndpoints($alertRule, $validated['endpointIds']);
+        if (! empty($validated['endpointIds'])) {
+            $this->assertSelectableEndpoints($alertRule, $validated['endpointIds']);
+        }
 
         $rule = match ($validated['type']) {
             AlertRuleBehaviorRuleType::TEMPLATE->value => $this->behaviorRuleService->createTemplateRule($alertRule, $validated),
+            AlertRuleBehaviorRuleType::SILENT->value => $this->behaviorRuleService->createSilentRule($alertRule, $validated),
             default => $this->behaviorRuleService->createNotificationRule($alertRule, $validated),
         };
 
@@ -80,23 +103,33 @@ class BehaviorRuleController extends Controller
         }
 
         $isTemplate = ($existingRule['type'] ?? null) === AlertRuleBehaviorRuleType::TEMPLATE->value;
+        $isSilent = ($existingRule['type'] ?? null) === AlertRuleBehaviorRuleType::SILENT->value;
 
         $validated = $request->validate([
-            'filters' => [$isTemplate ? 'prohibited' : 'sometimes', 'array', 'min:1'],
+            'filters' => [$isTemplate || $isSilent ? 'prohibited' : 'sometimes', 'array', 'min:1'],
             'filters.*.key' => ['required_with:filters', 'string'],
             'filters.*.value' => ['required_with:filters', 'string'],
-            'endpointIds' => ['sometimes', 'array', 'min:1'],
-            'endpointIds.*' => ['required', 'string'],
+            'endpointIds' => [$isSilent ? 'prohibited' : 'sometimes', 'array', 'min:1'],
+            'endpointIds.*' => ['required_with:endpointIds', 'string'],
             'template' => [$isTemplate ? 'sometimes' : 'prohibited', 'string', 'min:1'],
+            'dependsOnAlertRuleIds' => [$isSilent ? 'sometimes' : 'prohibited', 'array', 'min:1'],
+            'dependsOnAlertRuleIds.*' => ['required_with:dependsOnAlertRuleIds', 'string'],
+            'triggerState' => [
+                $isSilent ? 'sometimes' : 'prohibited',
+                'string',
+                Rule::in([AlertRule::RESOlVED, AlertRule::CRITICAL]),
+            ],
         ]);
 
         if (! empty($validated['endpointIds'])) {
             $this->assertSelectableEndpoints($alertRule, $validated['endpointIds']);
         }
 
-        $rule = $isTemplate
-            ? $this->behaviorRuleService->updateTemplateRule($alertRule, $ruleId, $validated)
-            : $this->behaviorRuleService->updateNotificationRule($alertRule, $ruleId, $validated);
+        $rule = match (true) {
+            $isTemplate => $this->behaviorRuleService->updateTemplateRule($alertRule, $ruleId, $validated),
+            $isSilent => $this->behaviorRuleService->updateSilentRule($alertRule, $ruleId, $validated),
+            default => $this->behaviorRuleService->updateNotificationRule($alertRule, $ruleId, $validated),
+        };
 
         if ($rule === null) {
             abort(404);

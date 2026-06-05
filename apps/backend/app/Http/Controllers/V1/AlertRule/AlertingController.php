@@ -105,6 +105,8 @@ class AlertingController extends Controller
             $isSilent = $alert->isSilent();
             $alert->isSilent = $isSilent;
             $alert->is_silent = $isSilent;
+            $isSilentByBehavior = app(AlertRuleBehaviorRuleService::class)->resolveIsSilent($alert);
+            $alert->isSilentByBehavior = $isSilentByBehavior;
             $alert->countEndpoints = $this->endpointService->countUserEndpointAlert($currentUser, $alert);
             $alert->count_endpoints = $alert->countEndpoints;
             $alert->showAcknowledgeBtn = $alert->showAcknowledgeBtn ?? false;
@@ -392,6 +394,8 @@ class AlertingController extends Controller
         $isSilent = $alert->isSilent();
         $alert->isSilent = $isSilent;
         $alert->is_silent = $isSilent;
+        $isSilentByBehavior = app(AlertRuleBehaviorRuleService::class)->resolveIsSilent($alert);
+        $alert->isSilentByBehavior = $isSilentByBehavior;
         $alert->countEndpoints = $this->endpointService->countUserEndpointAlert($currentUser, $alert);
         $alert->count_endpoints = $alert->countEndpoints;
         $alert->rules = app(AlertRuleBehaviorRuleService::class)->formatRulesForApi($alert->rules ?? []);

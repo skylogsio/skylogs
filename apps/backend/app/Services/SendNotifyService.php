@@ -83,7 +83,16 @@ class SendNotifyService
             return;
         }
 
-        $endpointIds = app(AlertRuleBehaviorRuleService::class)->resolveEndpointIds(
+        $behaviorRuleService = app(AlertRuleBehaviorRuleService::class);
+
+        if (! $isTest && $behaviorRuleService->resolveIsSilent($notify->alertRule)) {
+            $notify->status = Notify::STATUS_SILENT;
+            $notify->save();
+
+            return;
+        }
+
+        $endpointIds = $behaviorRuleService->resolveEndpointIds(
             $notify->alertRule,
             is_array($notify->alert) ? $notify->alert : [],
         );
