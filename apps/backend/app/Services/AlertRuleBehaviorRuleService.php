@@ -182,12 +182,16 @@ class AlertRuleBehaviorRuleService
             if ($dependsOnAlertRuleIds === []) {
                 continue;
             }
-
+            $isAllMatched = true;
             foreach ($this->findDependentAlertRules($dependsOnAlertRuleIds) as $dependentAlertRule) {
                 [$dependentState] = $dependentAlertRule->getStatus();
-                if ($dependentState === $triggerState) {
-                    return true;
+                if ($dependentState !== $triggerState) {
+                    $isAllMatched = false;
                 }
+            }
+
+            if ($isAllMatched) {
+                return true;
             }
         }
 
