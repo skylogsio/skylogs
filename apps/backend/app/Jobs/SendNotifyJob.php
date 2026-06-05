@@ -92,13 +92,13 @@ class SendNotifyJob implements ShouldQueue
             case self::ZABBIX_WEBHOOK:
             case self::PROMETHEUS_RESOLVE:
             case self::PROMETHEUS_FIRE:
-                SendNotifyService::SendMessage($this->notify);
+                app(SendNotifyService::class)->SendMessage($this->notify);
                 break;
             case self::ALERT_RULE_TEST:
-                SendNotifyService::SendMessage($this->notify, isTest: true);
+                app(SendNotifyService::class)->SendMessage($this->notify, isTest: true);
                 break;
             case self::ALERT_RULE_ACKNOWLEDGED:
-                SendNotifyService::SendMessage($this->notify, isAcknowledged: true);
+                app(SendNotifyService::class)->SendMessage($this->notify, isAcknowledged: true);
                 break;
         }
         $this->notify->status = Notify::STATUS_DONE;

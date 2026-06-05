@@ -358,6 +358,85 @@ describe('AlertRuleBehaviorRuleService', function () {
         expect($this->service->deleteRule($alertRule, 'missing'))->toBeFalse();
     });
 
+    it('resolves endpoint templates from template rules', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'rules' => [
+                [
+                    'id' => 'template-1',
+                    'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
+                    'endpointIds' => ['endpoint-a', 'endpoint-b'],
+                    'template' => 'Alert: {{name}}',
+                ],
+                [
+                    'id' => 'template-2',
+                    'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
+                    'endpointIds' => ['endpoint-c'],
+                    'template' => 'Other: {{name}}',
+                ],
+            ],
+        ]);
+
+        expect($this->service->resolveEndpointTemplates($alertRule))->toBe([
+            'endpoint-a' => 'Alert: {{name}}',
+            'endpoint-b' => 'Alert: {{name}}',
+            'endpoint-c' => 'Other: {{name}}',
+        ]);
+    });
+
+    it('creates a template rule on the alert rule', function () {
+        $alertRule = mockAlertRuleForPersistence(['rules' => []]);
+
+        $rule = $this->service->createTemplateRule($alertRule, [
+            'endpointIds' => ['endpoint-a', 'endpoint-a'],
+            'template' => 'Hello {{name}}',
+        ]);
+
+        expect($rule['type'])->toBe(AlertRuleBehaviorRuleType::TEMPLATE->value)
+            ->and($rule['template'])->toBe('Hello {{name}}')
+            ->and($rule['endpointIds'])->toBe(['endpoint-a'])
+            ->and($alertRule->rules)->toHaveCount(1);
+    });
+
+    it('updates an existing template rule', function () {
+        $alertRule = mockAlertRuleForPersistence([
+            'rules' => [
+                [
+                    'id' => 'template-rule-id',
+                    'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
+                    'endpointIds' => ['old-endpoint'],
+                    'template' => 'Old text',
+                ],
+            ],
+        ]);
+
+        $updated = $this->service->updateTemplateRule($alertRule, 'template-rule-id', [
+            'endpointIds' => ['new-endpoint'],
+            'template' => 'New text',
+        ]);
+
+        expect($updated)->not->toBeNull()
+            ->and($updated['template'])->toBe('New text')
+            ->and($updated['endpointIds'])->toBe(['new-endpoint']);
+    });
+
+    it('formats template rules for api response', function () {
+        $formatted = $this->service->formatRulesForApi([
+            [
+                'id' => 'template-1',
+                'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
+                'endpointIds' => ['endpoint-a'],
+                'template' => 'Hi {{name}}',
+            ],
+        ]);
+
+        expect($formatted[0])->toMatchArray([
+            'id' => 'template-1',
+            'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
+            'endpointIds' => ['endpoint-a'],
+            'template' => 'Hi {{name}}',
+        ])->and($formatted[0])->not->toHaveKey('filters');
+    });
+
     it('filters only notification rules from mixed rule types', function () {
         $alertRule = AlertRuleFactory::unsaved([
             'rules' => [
@@ -365,7 +444,6 @@ describe('AlertRuleBehaviorRuleService', function () {
                     'id' => 'silent-1',
                     'type' => AlertRuleBehaviorRuleType::SILENT->value,
                     'filters' => ['db_name' => 'mysql01'],
-                    'endpointIds' => ['silent-endpoint'],
                 ],
                 [
                     'id' => 'notify-1',
@@ -378,6 +456,120 @@ describe('AlertRuleBehaviorRuleService', function () {
 
         expect($this->service->notificationRules($alertRule))->toHaveCount(1)
             ->and($this->service->notificationRules($alertRule)->first()['id'])->toBe('notify-1');
+    });
+
+    it('filters only silent rules from mixed rule types', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'dependsOnAlertRuleIds' => ['dep-1'],
+                    'triggerState' => AlertRule::RESOlVED,
+                ],
+                [
+                    'id' => 'notify-1',
+                    'type' => AlertRuleBehaviorRuleType::NOTIFICATION->value,
+                    'filters' => ['db_name' => 'mysql01'],
+                    'endpointIds' => ['notify-endpoint'],
+                ],
+            ],
+        ]);
+
+        expect($this->service->silentRules($alertRule))->toHaveCount(1)
+            ->and($this->service->silentRules($alertRule)->first()['id'])->toBe('silent-1');
+    });
+
+    it('resolves silent when a dependent alert rule is resolved', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::PROMETHEUS,
+            'endpointIds' => [],
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'dependsOnAlertRuleIds' => ['dep-1'],
+                    'triggerState' => AlertRule::RESOlVED,
+                ],
+            ],
+        ]);
+
+        $dependentAlert = Mockery::mock(AlertRule::class);
+        $dependentAlert->shouldReceive('getStatus')->andReturn([AlertRule::RESOlVED, 0]);
+
+        $service = Mockery::mock(AlertRuleBehaviorRuleService::class)->makePartial();
+        $service->shouldAllowMockingProtectedMethods();
+        $service->shouldReceive('findDependentAlertRules')
+            ->with(['dep-1'])
+            ->andReturn(collect([$dependentAlert]));
+
+        expect($service->resolveIsSilent($alertRule))->toBeTrue();
+    });
+
+    it('resolves silent when a dependent alert rule is critical', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::PROMETHEUS,
+            'endpointIds' => [],
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'dependsOnAlertRuleIds' => ['dep-1'],
+                    'triggerState' => AlertRule::CRITICAL,
+                ],
+            ],
+        ]);
+
+        $dependentAlert = Mockery::mock(AlertRule::class);
+        $dependentAlert->shouldReceive('getStatus')->andReturn([AlertRule::CRITICAL, 0]);
+
+        $service = Mockery::mock(AlertRuleBehaviorRuleService::class)->makePartial();
+        $service->shouldAllowMockingProtectedMethods();
+        $service->shouldReceive('findDependentAlertRules')
+            ->with(['dep-1'])
+            ->andReturn(collect([$dependentAlert]));
+
+        expect($service->resolveIsSilent($alertRule))->toBeTrue();
+    });
+
+    it('returns false when no dependent alert rule matches trigger state', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::PROMETHEUS,
+            'endpointIds' => [],
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'dependsOnAlertRuleIds' => ['dep-1'],
+                    'triggerState' => AlertRule::RESOlVED,
+                ],
+            ],
+        ]);
+
+        $dependentAlert = Mockery::mock(AlertRule::class);
+        $dependentAlert->shouldReceive('getStatus')->andReturn([AlertRule::CRITICAL, 0]);
+
+        $service = Mockery::mock(AlertRuleBehaviorRuleService::class)->makePartial();
+        $service->shouldAllowMockingProtectedMethods();
+        $service->shouldReceive('findDependentAlertRules')
+            ->with(['dep-1'])
+            ->andReturn(collect([$dependentAlert]));
+
+        expect($service->resolveIsSilent($alertRule))->toBeFalse();
+    });
+
+    it('returns false when there are no silent rules', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::PROMETHEUS,
+            'endpointIds' => [],
+            'rules' => [],
+        ]);
+
+        $service = Mockery::mock(AlertRuleBehaviorRuleService::class)->makePartial();
+        $service->shouldAllowMockingProtectedMethods();
+        $service->shouldNotReceive('findDependentAlertRules');
+
+        expect($service->resolveIsSilent($alertRule))->toBeFalse();
     });
 });
 

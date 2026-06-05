@@ -12,6 +12,15 @@ use Illuminate\Support\Str;
 class AlertRuleBehaviorRuleService
 {
     /**
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function silentRules(AlertRule $alertRule): Collection
+    {
+        return collect($alertRule->rules ?? [])
+            ->filter(fn (array $rule) => ($rule['type'] ?? null) === AlertRuleBehaviorRuleType::SILENT->value);
+    }
+
+    /**
      * Default alert-rule endpoints plus notification-rule endpoints when filters match.
      *
      * @param  array<string, mixed>  $notifyAlert
@@ -49,6 +58,36 @@ class AlertRuleBehaviorRuleService
     {
         return collect($alertRule->rules ?? [])
             ->filter(fn (array $rule) => ($rule['type'] ?? null) === AlertRuleBehaviorRuleType::NOTIFICATION->value);
+    }
+
+    /**
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function templateRules(AlertRule $alertRule): Collection
+    {
+        return collect($alertRule->rules ?? [])
+            ->filter(fn (array $rule) => ($rule['type'] ?? null) === AlertRuleBehaviorRuleType::TEMPLATE->value);
+    }
+
+    /**
+     * @return array<string, string> endpoint id => template text
+     */
+    public function resolveEndpointTemplates(AlertRule $alertRule): array
+    {
+        $endpointTemplates = [];
+
+        foreach ($this->templateRules($alertRule) as $rule) {
+            $template = trim((string) ($rule['template'] ?? ''));
+            if ($template === '') {
+                continue;
+            }
+
+            foreach ($rule['endpointIds'] ?? [] as $endpointId) {
+                $endpointTemplates[(string) $endpointId] = $template;
+            }
+        }
+
+        return $endpointTemplates;
     }
 
     /**
@@ -99,6 +138,24 @@ class AlertRuleBehaviorRuleService
     public function formatRulesForApi(array $rules): array
     {
         return collect($rules)->map(function (array $rule) {
+            $rule['endpointIds'] = array_values($rule['endpointIds'] ?? []);
+
+            if (($rule['type'] ?? null) === AlertRuleBehaviorRuleType::SILENT->value) {
+                $rule['triggerState'] = trim((string) ($rule['triggerState'] ?? ''));
+                $rule['dependsOnAlertRuleIds'] = array_values($rule['dependsOnAlertRuleIds'] ?? []);
+
+                unset($rule['filters'], $rule['template'], $rule['endpointIds']);
+
+                return $rule;
+            }
+
+            if (($rule['type'] ?? null) === AlertRuleBehaviorRuleType::TEMPLATE->value) {
+                $rule['template'] = (string) ($rule['template'] ?? '');
+                unset($rule['filters']);
+
+                return $rule;
+            }
+
             $filters = [];
             foreach ($this->normalizeFilters($rule['filters'] ?? []) as $key => $value) {
                 $filters[] = [
@@ -108,10 +165,60 @@ class AlertRuleBehaviorRuleService
             }
 
             $rule['filters'] = $filters;
-            $rule['endpointIds'] = array_values($rule['endpointIds'] ?? []);
 
             return $rule;
         })->values()->all();
+    }
+
+    public function resolveIsSilent(AlertRule $alertRule): bool
+    {
+        foreach ($this->silentRules($alertRule) as $silentRule) {
+            $triggerState = $this->normalizeTriggerState((string) ($silentRule['triggerState'] ?? ''));
+            if ($triggerState === null) {
+                continue;
+            }
+
+            $dependsOnAlertRuleIds = array_values(array_unique($silentRule['dependsOnAlertRuleIds'] ?? []));
+            if ($dependsOnAlertRuleIds === []) {
+                continue;
+            }
+            $isAllMatched = true;
+            foreach ($this->findDependentAlertRules($dependsOnAlertRuleIds) as $dependentAlertRule) {
+                [$dependentState] = $dependentAlertRule->getStatus();
+                if ($dependentState !== $triggerState) {
+                    $isAllMatched = false;
+                }
+            }
+
+            if ($isAllMatched) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return Collection<int, AlertRule>
+     */
+    protected function findDependentAlertRules(array $dependsOnAlertRuleIds): Collection
+    {
+        return AlertRule::whereIn('_id', $dependsOnAlertRuleIds)->get();
+    }
+
+    private function normalizeTriggerState(string $triggerState): ?string
+    {
+        $normalized = trim(mb_strtolower($triggerState));
+
+        if ($normalized === AlertRule::RESOlVED) {
+            return AlertRule::RESOlVED;
+        }
+
+        if ($normalized === AlertRule::CRITICAL) {
+            return AlertRule::CRITICAL;
+        }
+
+        return null;
     }
 
     /**
@@ -284,6 +391,131 @@ class AlertRuleBehaviorRuleService
     /**
      * @param  array<string, mixed>  $ruleData
      */
+    public function createTemplateRule(AlertRule $alertRule, array $ruleData): array
+    {
+        $rules = $alertRule->rules ?? [];
+
+        $rule = [
+            'id' => (string) Str::uuid(),
+            'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
+            'endpointIds' => array_values(array_unique($ruleData['endpointIds'] ?? [])),
+            'template' => trim((string) ($ruleData['template'] ?? '')),
+        ];
+
+        $rules[] = $rule;
+        $alertRule->rules = $rules;
+        $alertRule->save();
+
+        return $rule;
+    }
+
+    /**
+     * @param  array<string, mixed>  $ruleData
+     */
+    public function createSilentRule(AlertRule $alertRule, array $ruleData): array
+    {
+        $rules = $alertRule->rules ?? [];
+
+        $rule = [
+            'id' => (string) Str::uuid(),
+            'type' => AlertRuleBehaviorRuleType::SILENT->value,
+            'dependsOnAlertRuleIds' => array_values(array_unique($ruleData['dependsOnAlertRuleIds'] ?? [])),
+            'triggerState' => trim((string) ($ruleData['triggerState'] ?? '')),
+        ];
+
+        $rules[] = $rule;
+        $alertRule->rules = $rules;
+        $alertRule->save();
+
+        return $rule;
+    }
+
+    /**
+     * @param  array<string, mixed>  $ruleData
+     */
+    public function updateTemplateRule(AlertRule $alertRule, string $ruleId, array $ruleData): ?array
+    {
+        $rules = $alertRule->rules ?? [];
+        $updatedRule = null;
+
+        foreach ($rules as $index => $rule) {
+            if (($rule['id'] ?? null) !== $ruleId) {
+                continue;
+            }
+
+            if (($rule['type'] ?? null) !== AlertRuleBehaviorRuleType::TEMPLATE->value) {
+                return null;
+            }
+
+            $rules[$index] = [
+                'id' => $ruleId,
+                'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
+                'endpointIds' => array_values(array_unique($ruleData['endpointIds'] ?? $rule['endpointIds'] ?? [])),
+                'template' => trim((string) ($ruleData['template'] ?? $rule['template'] ?? '')),
+            ];
+            $updatedRule = $rules[$index];
+            break;
+        }
+
+        if ($updatedRule === null) {
+            return null;
+        }
+
+        $alertRule->rules = $rules;
+        $alertRule->save();
+
+        return $updatedRule;
+    }
+
+    /**
+     * @param  array<string, mixed>  $ruleData
+     */
+    public function updateSilentRule(AlertRule $alertRule, string $ruleId, array $ruleData): ?array
+    {
+        $rules = $alertRule->rules ?? [];
+        $updatedRule = null;
+
+        foreach ($rules as $index => $rule) {
+            if (($rule['id'] ?? null) !== $ruleId) {
+                continue;
+            }
+
+            if (($rule['type'] ?? null) !== AlertRuleBehaviorRuleType::SILENT->value) {
+                return null;
+            }
+
+            $rules[$index] = [
+                'id' => $ruleId,
+                'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                'dependsOnAlertRuleIds' => array_values(array_unique($ruleData['dependsOnAlertRuleIds'] ?? $rule['dependsOnAlertRuleIds'] ?? [])),
+                'triggerState' => trim((string) ($ruleData['triggerState'] ?? $rule['triggerState'] ?? '')),
+            ];
+
+            $updatedRule = $rules[$index];
+            break;
+        }
+
+        if ($updatedRule === null) {
+            return null;
+        }
+
+        $alertRule->rules = $rules;
+        $alertRule->save();
+
+        return $updatedRule;
+    }
+
+    public function findRule(AlertRule $alertRule, string $ruleId): ?array
+    {
+        foreach ($alertRule->rules ?? [] as $rule) {
+            if (($rule['id'] ?? null) === $ruleId) {
+                return $rule;
+            }
+        }
+
+        return null;
+    }
+
     public function updateNotificationRule(AlertRule $alertRule, string $ruleId, array $ruleData): ?array
     {
         $rules = $alertRule->rules ?? [];

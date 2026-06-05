@@ -36,7 +36,7 @@ class ApiService
             $alert->touch();
             $alert->save();
 
-            SendNotifyService::CreateNotify(SendNotifyJob::API_FIRE, $alert, $alertRule->_id);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::API_FIRE, $alert, $alertRule->_id);
 
             $this->refreshStatus($alert->alertRule);
             $apiHistory = $alert->createHistory();
@@ -62,7 +62,7 @@ class ApiService
 
             $model->save();
 
-            SendNotifyService::CreateNotify(SendNotifyJob::API_FIRE, $model, $alertRule->_id);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::API_FIRE, $model, $alertRule->_id);
             $this->refreshStatus($model->alertRule);
             $apiHistory = $model->createHistory();
             $model->createStatusHistory($apiHistory);
@@ -94,7 +94,7 @@ class ApiService
                 $alert->touch();
 
                 $alert->save();
-                SendNotifyService::CreateNotify(SendNotifyJob::API_RESOLVE, $alert, $alert->alertRule->_id);
+                app(SendNotifyService::class)->createNotify(SendNotifyJob::API_RESOLVE, $alert, $alert->alertRule->_id);
 
                 $this->refreshStatus($alert->alertRule);
                 $apiHistory = $alert->createHistory();
@@ -183,7 +183,7 @@ class ApiService
         $alert->touch();
         $alert->save();
 
-        SendNotifyService::CreateNotify(SendNotifyJob::API_NOTIFICATION, $alert, $alertRule->_id);
+        app(SendNotifyService::class)->createNotify(SendNotifyJob::API_NOTIFICATION, $alert, $alertRule->_id);
 
         $alert->createHistory();
 

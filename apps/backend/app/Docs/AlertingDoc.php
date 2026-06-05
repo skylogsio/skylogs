@@ -29,7 +29,7 @@ class AlertingDoc
             new OA\Parameter(name: 'tags', description: 'Comma-separated tags (all must match)', in: 'query', schema: new OA\Schema(type: 'string'), example: 'production,critical'),
             new OA\Parameter(name: 'silentStatus', description: 'Filter by silence state for the current user', in: 'query', schema: new OA\Schema(type: 'string', enum: ['silent', 'active'])),
             new OA\Parameter(name: 'endpointId', description: 'Filter by linked endpoint id', in: 'query', schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'status', description: 'Filter by alert state', in: 'query', schema: new OA\Schema(type: 'string', example: 'critical')),
+            new OA\Parameter(name: 'status', description: 'Filter by alert `state` field', in: 'query', schema: new OA\Schema(ref: '#/components/schemas/AlertRuleState')),
         ],
         responses: [
             new OA\Response(
@@ -81,11 +81,41 @@ class AlertingDoc
         path: '/api/v1/alert-rule',
         operationId: 'createAlertRule',
         summary: 'Create alert rule',
-        description: 'Creates an alert rule. Required and optional fields depend on the `type` value.',
+        description: 'Creates an alert rule. All types use this endpoint; set `type` to select the request body shape (see schema oneOf / discriminator). Prometheus, Grafana, and PMM additionally use `queryType` (`dynamic` vs `textQuery`).',
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(ref: '#/components/schemas/AlertRuleStoreInput')
+            content: new OA\JsonContent(
+                discriminator: new OA\Discriminator(
+                    propertyName: 'type',
+                    mapping: [
+                        'api' => '#/components/schemas/AlertRuleStoreApi',
+                        'notification' => '#/components/schemas/AlertRuleStoreNotification',
+                        'prometheus' => '#/components/schemas/AlertRuleStorePrometheus',
+                        'grafana' => '#/components/schemas/AlertRuleStoreGrafana',
+                        'pmm' => '#/components/schemas/AlertRuleStorePmm',
+                        'sentry' => '#/components/schemas/AlertRuleStoreSentry',
+                        'splunk' => '#/components/schemas/AlertRuleStoreSplunk',
+                        'metabase' => '#/components/schemas/AlertRuleStoreMetabase',
+                        'zabbix' => '#/components/schemas/AlertRuleStoreZabbix',
+                        'elastic' => '#/components/schemas/AlertRuleStoreElastic',
+                        'victoria_logs' => '#/components/schemas/AlertRuleStoreVictoriaLogs',
+                    ]
+                ),
+                oneOf: [
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleStoreApi'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleStoreNotification'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleStorePrometheus'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleStoreGrafana'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleStorePmm'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleStoreSentry'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleStoreSplunk'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleStoreMetabase'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleStoreZabbix'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleStoreElastic'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleStoreVictoriaLogs'),
+                ]
+            )
         ),
         tags: ['AlertRule'],
         responses: [
@@ -115,11 +145,25 @@ class AlertingDoc
         path: '/api/v1/alert-rule/{id}',
         operationId: 'updateAlertRule',
         summary: 'Update alert rule',
-        description: 'Updates an alert rule. Updatable fields depend on the alert type. Non-admin users can only update their own rules.',
+        description: 'Updates an alert rule. Send the payload for the rule\'s existing type (type cannot be changed). Non-admin users can only update rules they own.',
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(ref: '#/components/schemas/AlertRuleUpdateInput')
+            content: new OA\JsonContent(
+                oneOf: [
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleUpdateApi'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleUpdateNotification'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleUpdatePrometheus'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleUpdateGrafana'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleUpdatePmm'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleUpdateSentry'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleUpdateSplunk'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleUpdateMetabase'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleUpdateZabbix'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleUpdateElastic'),
+                    new OA\Schema(ref: '#/components/schemas/AlertRuleUpdateVictoriaLogs'),
+                ]
+            )
         ),
         tags: ['AlertRule'],
         parameters: [
@@ -317,10 +361,14 @@ class AlertingDoc
                 description: 'Alert rule type enum values',
                 content: new OA\JsonContent(
                     type: 'array',
-                    items: new OA\Items(type: 'string', enum: [
-                        'api', 'notification', 'prometheus', 'sentry', 'grafana', 'pmm',
-                        'zabbix', 'splunk', 'elastic', 'health', 'metabase', 'victoria_logs',
-                    ])
+                    items: new OA\Items(
+                        type: 'string',
+                        enum: [
+                            'api', 'notification', 'prometheus', 'sentry', 'grafana', 'pmm',
+                            'zabbix', 'splunk', 'elastic', 'health', 'metabase', 'victoria_logs',
+                        ],
+                        example: 'prometheus'
+                    )
                 )
             ),
         ]
@@ -334,16 +382,27 @@ class AlertingDoc
         path: '/api/v1/alert-rule/history/{id}',
         operationId: 'getAlertHistory',
         summary: 'Get history for an alert rule',
+        description: 'Returns paginated state-change history. Shape depends on alert type (API instances, Prometheus/Grafana checks, Elastic/VictoriaLogs checks, etc.).',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
-            new OA\Parameter(name: 'perPage', in: 'query', schema: new OA\Schema(type: 'integer', default: 50)),
-            new OA\Parameter(name: 'from', description: 'Start datetime (Y-m-d H:i)', in: 'query', schema: new OA\Schema(type: 'string', format: 'date-time', example: '2026-01-01 00:00')),
-            new OA\Parameter(name: 'to', description: 'End datetime (Y-m-d H:i)', in: 'query', schema: new OA\Schema(type: 'string', format: 'date-time', example: '2026-01-31 23:59')),
+            new OA\Parameter(name: 'perPage', description: 'Items per page', in: 'query', schema: new OA\Schema(type: 'integer', default: 50)),
+            new OA\Parameter(name: 'from', description: 'Start datetime (Y-m-d H:i)', in: 'query', schema: new OA\Schema(type: 'string', example: '2026-01-01 00:00')),
+            new OA\Parameter(name: 'to', description: 'End datetime (Y-m-d H:i)', in: 'query', schema: new OA\Schema(type: 'string', example: '2026-01-31 23:59')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated alert history'),
+            new OA\Response(
+                response: 200,
+                description: 'Paginated history records',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'current_page', type: 'integer'),
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')),
+                        new OA\Property(property: 'total', type: 'integer'),
+                    ]
+                )
+            ),
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'Not Found'),
         ]
@@ -357,13 +416,19 @@ class AlertingDoc
         path: '/api/v1/alert-rule/triggered/{id}',
         operationId: 'getTriggeredAlerts',
         summary: 'Get triggered/fired alerts for an alert rule',
+        description: 'Returns currently firing data: API `AlertInstance` rows, Prometheus/Grafana alert arrays, Zabbix webhook events, or Elastic/VictoriaLogs check documents depending on type.',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Fired alert instances or check data'),
+            new OA\Response(
+                response: 200,
+                description: 'Fired instances or active check payload',
+                content: new OA\JsonContent(type: 'array', items: new OA\Items(type: 'object'))
+            ),
+            new OA\Response(response: 404, description: 'Not Found'),
         ]
     )]
     public function firedAlerts() {}
@@ -508,7 +573,7 @@ class AlertingDoc
             new OA\Parameter(name: 'tags', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'silentStatus', in: 'query', schema: new OA\Schema(type: 'string', enum: ['silent', 'active'])),
             new OA\Parameter(name: 'endpointId', in: 'query', schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'status', description: 'Filter by alert state', in: 'query', schema: new OA\Schema(ref: '#/components/schemas/AlertRuleState')),
         ],
         responses: [
             new OA\Response(
@@ -533,7 +598,7 @@ class AlertingDoc
             new OA\Parameter(name: 'tags', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'silentStatus', in: 'query', schema: new OA\Schema(type: 'string', enum: ['silent', 'active'])),
             new OA\Parameter(name: 'endpointId', in: 'query', schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'status', description: 'Filter by alert state', in: 'query', schema: new OA\Schema(ref: '#/components/schemas/AlertRuleState')),
         ],
         responses: [
             new OA\Response(
@@ -557,7 +622,7 @@ class AlertingDoc
             new OA\Parameter(name: 'types', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'tags', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'endpointId', in: 'query', schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'status', description: 'Filter by alert state', in: 'query', schema: new OA\Schema(ref: '#/components/schemas/AlertRuleState')),
         ],
         responses: [
             new OA\Response(
@@ -581,7 +646,7 @@ class AlertingDoc
             new OA\Parameter(name: 'types', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'tags', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'endpointId', in: 'query', schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'status', description: 'Filter by alert state', in: 'query', schema: new OA\Schema(ref: '#/components/schemas/AlertRuleState')),
         ],
         requestBody: new OA\RequestBody(
             required: true,
@@ -667,16 +732,17 @@ class AlertingDoc
     public function tagsUpdate() {}
 
     // ----------------------------
-    // Behavior rule endpoints
+    // Behavior rule endpoints (schemas: AlertRuleBehaviorRuleSchemasDoc)
     // ----------------------------
     #[OA\Get(
         path: '/api/v1/alert-rule-behavior-rule/{alertRuleId}',
         operationId: 'getAlertRuleBehaviorRules',
-        summary: 'List behavior rules for an alert rule',
+        summary: 'List behavior rules',
+        description: 'Returns notification, template, and silent rules for the alert rule. Each item shape depends on `type` (see `AlertRuleBehaviorRule` schema).',
         security: [['bearerAuth' => []]],
-        tags: ['AlertRule'],
+        tags: ['AlertRule Behavior Rules'],
         parameters: [
-            new OA\Parameter(name: 'alertRuleId', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+            new OA\Parameter(name: 'alertRuleId', description: 'Alert rule MongoDB `_id`', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
         ],
         responses: [
             new OA\Response(
@@ -689,6 +755,7 @@ class AlertingDoc
                 )
             ),
             new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Alert rule not found'),
         ]
     )]
     public function behaviorRulesIndex() {}
@@ -696,32 +763,16 @@ class AlertingDoc
     #[OA\Post(
         path: '/api/v1/alert-rule-behavior-rule/{alertRuleId}',
         operationId: 'createAlertRuleBehaviorRule',
-        summary: 'Create a notification behavior rule',
+        summary: 'Create a behavior rule',
+        description: 'One endpoint for all behavior rule types. Set `type` in the body and use the matching schema (`notification`, `template`, or `silent`). Requires admin access on the alert rule.',
         security: [['bearerAuth' => []]],
-        tags: ['AlertRule'],
+        tags: ['AlertRule Behavior Rules'],
         parameters: [
-            new OA\Parameter(name: 'alertRuleId', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+            new OA\Parameter(name: 'alertRuleId', description: 'Alert rule MongoDB `_id`', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
         ],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(
-                required: ['type', 'filters', 'endpointIds'],
-                properties: [
-                    new OA\Property(property: 'type', type: 'string', enum: ['notification']),
-                    new OA\Property(
-                        property: 'filters',
-                        type: 'array',
-                        items: new OA\Items(
-                            required: ['key', 'value'],
-                            properties: [
-                                new OA\Property(property: 'key', type: 'string'),
-                                new OA\Property(property: 'value', type: 'string'),
-                            ]
-                        )
-                    ),
-                    new OA\Property(property: 'endpointIds', type: 'array', items: new OA\Items(type: 'string')),
-                ]
-            )
+            content: new OA\JsonContent(ref: '#/components/schemas/AlertRuleBehaviorRuleStoreInput')
         ),
         responses: [
             new OA\Response(
@@ -743,30 +794,17 @@ class AlertingDoc
     #[OA\Put(
         path: '/api/v1/alert-rule-behavior-rule/{alertRuleId}/{ruleId}',
         operationId: 'updateAlertRuleBehaviorRule',
-        summary: 'Update a notification behavior rule',
+        summary: 'Update a behavior rule',
+        description: 'Send only fields allowed for the existing rule type. The rule `type` cannot be changed. `ruleId` is the UUID returned when the rule was created.',
         security: [['bearerAuth' => []]],
-        tags: ['AlertRule'],
+        tags: ['AlertRule Behavior Rules'],
         parameters: [
-            new OA\Parameter(name: 'alertRuleId', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
-            new OA\Parameter(name: 'ruleId', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'alertRuleId', description: 'Alert rule MongoDB `_id`', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+            new OA\Parameter(name: 'ruleId', description: 'Behavior rule UUID', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(
-                        property: 'filters',
-                        type: 'array',
-                        items: new OA\Items(
-                            properties: [
-                                new OA\Property(property: 'key', type: 'string'),
-                                new OA\Property(property: 'value', type: 'string'),
-                            ]
-                        )
-                    ),
-                    new OA\Property(property: 'endpointIds', type: 'array', items: new OA\Items(type: 'string')),
-                ]
-            )
+            content: new OA\JsonContent(ref: '#/components/schemas/AlertRuleBehaviorRuleUpdateInput')
         ),
         responses: [
             new OA\Response(
@@ -781,6 +819,7 @@ class AlertingDoc
             ),
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'Not Found'),
+            new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
     public function behaviorRulesUpdate() {}
@@ -789,11 +828,12 @@ class AlertingDoc
         path: '/api/v1/alert-rule-behavior-rule/{alertRuleId}/{ruleId}',
         operationId: 'deleteAlertRuleBehaviorRule',
         summary: 'Delete a behavior rule',
+        description: 'Removes any behavior rule (notification, template, or silent) by its UUID.',
         security: [['bearerAuth' => []]],
-        tags: ['AlertRule'],
+        tags: ['AlertRule Behavior Rules'],
         parameters: [
-            new OA\Parameter(name: 'alertRuleId', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
-            new OA\Parameter(name: 'ruleId', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'alertRuleId', description: 'Alert rule MongoDB `_id`', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+            new OA\Parameter(name: 'ruleId', description: 'Behavior rule UUID', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
             new OA\Response(
@@ -1056,11 +1096,14 @@ class AlertRuleExtraFieldSchema {}
         new OA\Property(property: 'teamIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'showAcknowledgeBtn', type: 'boolean'),
         new OA\Property(property: 'hasActionAccess', type: 'boolean'),
-        new OA\Property(property: 'statusLabel', type: 'string', example: 'critical'),
-        new OA\Property(property: 'status_label', type: 'string'),
+        new OA\Property(property: 'statusLabel', ref: '#/components/schemas/AlertRuleState'),
+        new OA\Property(property: 'status_label', ref: '#/components/schemas/AlertRuleState'),
+        new OA\Property(property: 'state', ref: '#/components/schemas/AlertRuleState', nullable: true),
         new OA\Property(property: 'statusCount', type: 'integer'),
-        new OA\Property(property: 'isSilent', type: 'boolean'),
+        new OA\Property(property: 'isSilent', description: 'Manual per-user silence (toggle via POST /api/v1/alert-rule/silent/{id})', type: 'boolean'),
         new OA\Property(property: 'is_silent', type: 'boolean'),
+        new OA\Property(property: 'isSilentByBehavior', description: 'Read-only: true when a silent behavior rule currently suppresses notifications', type: 'boolean'),
+        new OA\Property(property: 'is_silent_by_behavior', type: 'boolean'),
         new OA\Property(property: 'isPinned', type: 'boolean'),
         new OA\Property(property: 'countEndpoints', type: 'integer'),
         new OA\Property(property: 'count_endpoints', type: 'integer'),
@@ -1091,84 +1134,3 @@ class AlertRuleListItemSchema {}
     ]
 )]
 class AlertRuleDetailSchema {}
-
-#[OA\Schema(
-    schema: 'AlertRuleStoreInput',
-    required: ['name', 'type'],
-    properties: [
-        new OA\Property(property: 'name', type: 'string', example: 'High CPU usage'),
-        new OA\Property(
-            property: 'type',
-            type: 'string',
-            enum: ['api', 'notification', 'prometheus', 'sentry', 'grafana', 'pmm', 'zabbix', 'splunk', 'elastic', 'victoria_logs', 'metabase']
-        ),
-        new OA\Property(property: 'description', type: 'string'),
-        new OA\Property(property: 'showAcknowledgeBtn', type: 'boolean', default: false),
-        new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'userIds', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'teamIds', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'endpointIds', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'dataSourceIds', description: 'Required for sentry, splunk, metabase, zabbix, and dynamic grafana/prometheus/pmm rules', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'dataSourceAlertName', description: 'Required for sentry, splunk, metabase, and dynamic grafana/prometheus/pmm rules', type: 'string'),
-        new OA\Property(property: 'dataSourceId', description: 'Required for elastic and victoria_logs', type: 'string'),
-        new OA\Property(property: 'queryType', description: 'For grafana, pmm, prometheus', type: 'string', enum: ['dynamic', 'textQuery']),
-        new OA\Property(property: 'queryText', type: 'string'),
-        new OA\Property(property: 'queryObject', type: 'object'),
-        new OA\Property(property: 'extraField', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleExtraField')),
-        new OA\Property(property: 'hosts', description: 'Zabbix only', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'actions', description: 'Zabbix only', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'severities', description: 'Zabbix only', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'enableAutoResolve', description: 'API type only', type: 'boolean'),
-        new OA\Property(property: 'autoResolveMinutes', description: 'API type only', type: 'integer'),
-        new OA\Property(property: 'dataviewName', description: 'Elastic only', type: 'string'),
-        new OA\Property(property: 'dataviewTitle', description: 'Elastic only', type: 'string'),
-        new OA\Property(property: 'queryString', description: 'Elastic and victoria_logs', type: 'string'),
-        new OA\Property(property: 'conditionType', description: 'Elastic and victoria_logs', type: 'string', enum: ['greaterOrEqual', 'lessOrEqual']),
-        new OA\Property(property: 'countDocument', description: 'Elastic and victoria_logs', type: 'integer'),
-        new OA\Property(property: 'minutes', description: 'Elastic and victoria_logs', type: 'integer'),
-    ]
-)]
-class AlertRuleStoreInputSchema {}
-
-#[OA\Schema(
-    schema: 'AlertRuleUpdateInput',
-    properties: [
-        new OA\Property(property: 'name', type: 'string'),
-        new OA\Property(property: 'description', type: 'string'),
-        new OA\Property(property: 'showAcknowledgeBtn', type: 'boolean'),
-        new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'userIds', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'teamIds', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'endpointIds', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'dataSourceIds', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'dataSourceAlertName', type: 'string'),
-        new OA\Property(property: 'dataSourceId', type: 'string'),
-        new OA\Property(property: 'queryType', type: 'string', enum: ['dynamic', 'textQuery']),
-        new OA\Property(property: 'queryText', type: 'string'),
-        new OA\Property(property: 'queryObject', type: 'object'),
-        new OA\Property(property: 'extraField', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleExtraField')),
-        new OA\Property(property: 'hosts', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'actions', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'severities', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'enableAutoResolve', type: 'boolean'),
-        new OA\Property(property: 'autoResolveMinutes', type: 'integer'),
-        new OA\Property(property: 'dataviewName', type: 'string'),
-        new OA\Property(property: 'dataviewTitle', type: 'string'),
-        new OA\Property(property: 'queryString', type: 'string'),
-        new OA\Property(property: 'conditionType', type: 'string', enum: ['greaterOrEqual', 'lessOrEqual']),
-        new OA\Property(property: 'countDocument', type: 'integer'),
-        new OA\Property(property: 'minutes', type: 'integer'),
-    ]
-)]
-class AlertRuleUpdateInputSchema {}
-
-#[OA\Schema(
-    schema: 'AlertRuleBehaviorRule',
-    properties: [
-        new OA\Property(property: 'id', type: 'string'),
-        new OA\Property(property: 'type', type: 'string', enum: ['notification']),
-        new OA\Property(property: 'filters', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleExtraField')),
-        new OA\Property(property: 'endpointIds', type: 'array', items: new OA\Items(type: 'string')),
-    ]
-)]
-class AlertRuleBehaviorRuleSchema {}

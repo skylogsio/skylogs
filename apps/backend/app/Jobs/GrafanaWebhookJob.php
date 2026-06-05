@@ -72,7 +72,7 @@ class GrafanaWebhookJob implements ShouldQueue
                     $model->alertRuleId = $alertRule->_id;
 
                     if ($model->customSave($alert)) {
-                        SendNotifyService::CreateNotify(SendNotifyJob::GRAFANA_WEBHOOK, $model, $model->alertRuleId);
+                        app(SendNotifyService::class)->createNotify(SendNotifyJob::GRAFANA_WEBHOOK, $model, $model->alertRuleId);
                     }
 
                 }

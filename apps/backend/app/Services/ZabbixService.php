@@ -169,7 +169,7 @@ class ZabbixService
                     $model->alertRuleName = $includedAlert->name;
                     $model->save();
 
-                    SendNotifyService::CreateNotify(SendNotifyJob::ZABBIX_WEBHOOK, $model, $includedAlert->id);
+                    app(SendNotifyService::class)->createNotify(SendNotifyJob::ZABBIX_WEBHOOK, $model, $includedAlert->id);
 
                     $includedAlert->notifyAt = time();
                     $includedAlert->save();

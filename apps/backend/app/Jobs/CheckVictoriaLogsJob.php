@@ -76,7 +76,7 @@ class CheckVictoriaLogsJob implements ShouldQueue
                     'state' => VictoriaLogsCheck::FIRE,
                 ]);
 
-                SendNotifyService::CreateNotify(SendNotifyJob::VICTORIA_LOGS_CHECK, $check, $this->alert->_id);
+                app(SendNotifyService::class)->createNotify(SendNotifyJob::VICTORIA_LOGS_CHECK, $check, $this->alert->_id);
             } elseif ($check->currentCountDocument !== $countDocuments) {
                 $check->currentCountDocument = $countDocuments;
                 $check->save();
@@ -105,7 +105,7 @@ class CheckVictoriaLogsJob implements ShouldQueue
                     'state' => VictoriaLogsCheck::RESOLVED,
                 ]);
 
-                SendNotifyService::CreateNotify(SendNotifyJob::VICTORIA_LOGS_CHECK, $check, $this->alert->_id);
+                app(SendNotifyService::class)->createNotify(SendNotifyJob::VICTORIA_LOGS_CHECK, $check, $this->alert->_id);
 
             }
         }

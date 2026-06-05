@@ -81,7 +81,7 @@ class CheckElasticJob implements ShouldQueue
                     'state' => ElasticCheck::FIRE,
                 ]);
 
-                SendNotifyService::CreateNotify(SendNotifyJob::ELASTIC_CHECK, $check, $this->alert->_id);
+                app(SendNotifyService::class)->createNotify(SendNotifyJob::ELASTIC_CHECK, $check, $this->alert->_id);
             } elseif ($check->currentCountDocument !== $countDocuments) {
                 $check->currentCountDocument = $countDocuments;
                 $check->save();
@@ -112,7 +112,7 @@ class CheckElasticJob implements ShouldQueue
                     'state' => ElasticCheck::RESOLVED,
                 ]);
 
-                SendNotifyService::CreateNotify(SendNotifyJob::ELASTIC_CHECK, $check, $this->alert->_id);
+                app(SendNotifyService::class)->createNotify(SendNotifyJob::ELASTIC_CHECK, $check, $this->alert->_id);
 
             }
         }

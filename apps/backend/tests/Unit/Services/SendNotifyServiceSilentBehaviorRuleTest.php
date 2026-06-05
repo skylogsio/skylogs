@@ -1,27 +1,35 @@
 <?php
 
+use App\Enums\AlertRuleBehaviorRuleType;
 use App\Models\AlertRule;
 use App\Models\Notify;
-use App\Models\User;
 use App\Services\AlertRuleBehaviorRuleService;
 use App\Services\SendNotifyService;
-use App\Services\UserService;
 use Tests\Support\Factories\AlertRuleFactory;
 
-describe('SendNotifyService notification behavior rules', function () {
-    it('resolves endpoint ids from alert payload via behavior rule service', function () {
+describe('SendNotifyService silent behavior rules', function () {
+    it('sets notify status to silent when behavior silent triggers', function () {
         $alertRule = AlertRuleFactory::unsaved([
             'endpointIds' => ['default-endpoint'],
             'userId' => 1,
             'silentUserIds' => [],
             'state' => AlertRule::RESOlVED,
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'dependsOnAlertRuleIds' => ['dep-1'],
+                    'triggerState' => AlertRule::CRITICAL,
+                ],
+            ],
         ]);
 
         $notify = Mockery::mock(Notify::class)->makePartial();
+        $notify->status = Notify::STATUS_CREATED;
         $notify->shouldReceive('save')->andReturnTrue();
+
         $notify->alert = [
             'instance' => 'mysql01',
-            'labels' => ['db_name' => 'mysql01'],
         ];
         $notify->setRelation('alertRule', $alertRule);
 
@@ -29,26 +37,13 @@ describe('SendNotifyService notification behavior rules', function () {
         $behaviorRuleService->shouldReceive('resolveIsSilent')
             ->once()
             ->with($alertRule)
-            ->andReturnFalse();
-        $behaviorRuleService->shouldReceive('resolveEndpointIds')
-            ->once()
-            ->with(
-                Mockery::on(fn (AlertRule $rule) => $rule->endpointIds === ['default-endpoint']),
-                $notify->alert,
-            )
-            ->andReturn(['default-endpoint', 'mysql-endpoint']);
+            ->andReturnTrue();
+        $behaviorRuleService->shouldNotReceive('resolveEndpointIds');
 
         app()->instance(AlertRuleBehaviorRuleService::class, $behaviorRuleService);
 
-        $admin = new User;
-        $admin->id = 999;
-
-        $userService = Mockery::mock(UserService::class);
-        $userService->shouldReceive('admin')->andReturn($admin);
-        app()->instance(UserService::class, $userService);
-
         app(SendNotifyService::class)->SendMessage($notify);
 
-        expect($notify->endpointIds)->toBe(['default-endpoint', 'mysql-endpoint']);
+        expect($notify->status)->toBe(Notify::STATUS_SILENT);
     });
 });
