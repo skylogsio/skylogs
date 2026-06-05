@@ -732,16 +732,17 @@ class AlertingDoc
     public function tagsUpdate() {}
 
     // ----------------------------
-    // Behavior rule endpoints
+    // Behavior rule endpoints (schemas: AlertRuleBehaviorRuleSchemasDoc)
     // ----------------------------
     #[OA\Get(
         path: '/api/v1/alert-rule-behavior-rule/{alertRuleId}',
         operationId: 'getAlertRuleBehaviorRules',
-        summary: 'List behavior rules for an alert rule',
+        summary: 'List behavior rules',
+        description: 'Returns notification, template, and silent rules for the alert rule. Each item shape depends on `type` (see `AlertRuleBehaviorRule` schema).',
         security: [['bearerAuth' => []]],
-        tags: ['AlertRule'],
+        tags: ['AlertRule Behavior Rules'],
         parameters: [
-            new OA\Parameter(name: 'alertRuleId', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+            new OA\Parameter(name: 'alertRuleId', description: 'Alert rule MongoDB `_id`', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
         ],
         responses: [
             new OA\Response(
@@ -754,6 +755,7 @@ class AlertingDoc
                 )
             ),
             new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Alert rule not found'),
         ]
     )]
     public function behaviorRulesIndex() {}
@@ -761,33 +763,16 @@ class AlertingDoc
     #[OA\Post(
         path: '/api/v1/alert-rule-behavior-rule/{alertRuleId}',
         operationId: 'createAlertRuleBehaviorRule',
-        summary: 'Create a notification behavior rule',
+        summary: 'Create a behavior rule',
+        description: 'One endpoint for all behavior rule types. Set `type` in the body and use the matching schema (`notification`, `template`, or `silent`). Requires admin access on the alert rule.',
         security: [['bearerAuth' => []]],
-        tags: ['AlertRule'],
+        tags: ['AlertRule Behavior Rules'],
         parameters: [
-            new OA\Parameter(name: 'alertRuleId', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+            new OA\Parameter(name: 'alertRuleId', description: 'Alert rule MongoDB `_id`', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
         ],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(
-                required: ['type', 'filters', 'endpointIds'],
-                properties: [
-                    new OA\Property(property: 'type', type: 'string', enum: ['notification', 'template']),
-                    new OA\Property(
-                        property: 'filters',
-                        type: 'array',
-                        items: new OA\Items(
-                            required: ['key', 'value'],
-                            properties: [
-                                new OA\Property(property: 'key', type: 'string'),
-                                new OA\Property(property: 'value', type: 'string'),
-                            ]
-                        )
-                    ),
-                    new OA\Property(property: 'endpointIds', type: 'array', items: new OA\Items(type: 'string')),
-                    new OA\Property(property: 'template', type: 'string', description: 'Required when type is template'),
-                ]
-            )
+            content: new OA\JsonContent(ref: '#/components/schemas/AlertRuleBehaviorRuleStoreInput')
         ),
         responses: [
             new OA\Response(
@@ -809,30 +794,17 @@ class AlertingDoc
     #[OA\Put(
         path: '/api/v1/alert-rule-behavior-rule/{alertRuleId}/{ruleId}',
         operationId: 'updateAlertRuleBehaviorRule',
-        summary: 'Update a notification behavior rule',
+        summary: 'Update a behavior rule',
+        description: 'Send only fields allowed for the existing rule type. The rule `type` cannot be changed. `ruleId` is the UUID returned when the rule was created.',
         security: [['bearerAuth' => []]],
-        tags: ['AlertRule'],
+        tags: ['AlertRule Behavior Rules'],
         parameters: [
-            new OA\Parameter(name: 'alertRuleId', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
-            new OA\Parameter(name: 'ruleId', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'alertRuleId', description: 'Alert rule MongoDB `_id`', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+            new OA\Parameter(name: 'ruleId', description: 'Behavior rule UUID', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(
-                        property: 'filters',
-                        type: 'array',
-                        items: new OA\Items(
-                            properties: [
-                                new OA\Property(property: 'key', type: 'string'),
-                                new OA\Property(property: 'value', type: 'string'),
-                            ]
-                        )
-                    ),
-                    new OA\Property(property: 'endpointIds', type: 'array', items: new OA\Items(type: 'string')),
-                ]
-            )
+            content: new OA\JsonContent(ref: '#/components/schemas/AlertRuleBehaviorRuleUpdateInput')
         ),
         responses: [
             new OA\Response(
@@ -847,6 +819,7 @@ class AlertingDoc
             ),
             new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'Not Found'),
+            new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
     public function behaviorRulesUpdate() {}
@@ -855,11 +828,12 @@ class AlertingDoc
         path: '/api/v1/alert-rule-behavior-rule/{alertRuleId}/{ruleId}',
         operationId: 'deleteAlertRuleBehaviorRule',
         summary: 'Delete a behavior rule',
+        description: 'Removes any behavior rule (notification, template, or silent) by its UUID.',
         security: [['bearerAuth' => []]],
-        tags: ['AlertRule'],
+        tags: ['AlertRule Behavior Rules'],
         parameters: [
-            new OA\Parameter(name: 'alertRuleId', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
-            new OA\Parameter(name: 'ruleId', in: 'path', required: true, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'alertRuleId', description: 'Alert rule MongoDB `_id`', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+            new OA\Parameter(name: 'ruleId', description: 'Behavior rule UUID', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
             new OA\Response(
@@ -1126,8 +1100,10 @@ class AlertRuleExtraFieldSchema {}
         new OA\Property(property: 'status_label', ref: '#/components/schemas/AlertRuleState'),
         new OA\Property(property: 'state', ref: '#/components/schemas/AlertRuleState', nullable: true),
         new OA\Property(property: 'statusCount', type: 'integer'),
-        new OA\Property(property: 'isSilent', type: 'boolean'),
+        new OA\Property(property: 'isSilent', description: 'Manual per-user silence (toggle via POST /api/v1/alert-rule/silent/{id})', type: 'boolean'),
         new OA\Property(property: 'is_silent', type: 'boolean'),
+        new OA\Property(property: 'isSilentByBehavior', description: 'Read-only: true when a silent behavior rule currently suppresses notifications', type: 'boolean'),
+        new OA\Property(property: 'is_silent_by_behavior', type: 'boolean'),
         new OA\Property(property: 'isPinned', type: 'boolean'),
         new OA\Property(property: 'countEndpoints', type: 'integer'),
         new OA\Property(property: 'count_endpoints', type: 'integer'),
@@ -1158,15 +1134,3 @@ class AlertRuleListItemSchema {}
     ]
 )]
 class AlertRuleDetailSchema {}
-
-#[OA\Schema(
-    schema: 'AlertRuleBehaviorRule',
-    properties: [
-        new OA\Property(property: 'id', type: 'string'),
-        new OA\Property(property: 'type', type: 'string', enum: ['notification', 'template']),
-        new OA\Property(property: 'filters', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleExtraField'), nullable: true),
-        new OA\Property(property: 'endpointIds', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'template', type: 'string', nullable: true, description: 'Single message template for all channels (template rules only)'),
-    ]
-)]
-class AlertRuleBehaviorRuleSchema {}

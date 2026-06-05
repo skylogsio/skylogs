@@ -56,6 +56,28 @@ function normalizeRouteUriToOpenApiPath(string $uri): string
     return '/'.ltrim($uri, '/');
 }
 
+it('documents behavior rule create payloads per type with discriminator', function () {
+    $docsPath = storage_path('api-docs/api-docs.json');
+
+    $docs = json_decode(file_get_contents($docsPath), true, flags: JSON_THROW_ON_ERROR);
+
+    $create = $docs['components']['schemas']['AlertRuleBehaviorRuleStoreInput'];
+
+    expect($create['discriminator']['propertyName'])->toBe('type')
+        ->and($create['discriminator']['mapping'])->toHaveKeys([
+            'notification',
+            'template',
+            'silent',
+        ]);
+
+    expect($docs['components']['schemas']['AlertRuleBehaviorRuleSilent']['properties']['triggerState']['enum'])->toBe([
+        'resolved',
+        'critical',
+    ]);
+
+    expect($docs['paths']['/api/v1/alert-rule-behavior-rule/{alertRuleId}']['get']['tags'])->toBe(['AlertRule Behavior Rules']);
+});
+
 it('documents alert rule create payloads per type with discriminator', function () {
     $docsPath = storage_path('api-docs/api-docs.json');
 

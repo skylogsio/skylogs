@@ -2,12 +2,12 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Skylogs API",
-        "description": "Skylogs backend REST API.\n\n**Frontend quick start**\n1. Authenticate via `POST /api/v1/auth/login` and send `Authorization: Bearer {accessToken}` on protected routes.\n2. Browse by tag: AlertRule, Endpoints, Users, Teams, Data Sources, Status, etc.\n3. Alert rule **create** uses one URL with different bodies — pick the schema via the `type` discriminator on `POST /api/v1/alert-rule`.\n4. Public status page data: `GET /api/v1/status/all` (no auth).\n5. Webhook tag documents server-to-server callbacks (API token or URL token), not the SPA JWT.\n\nRegenerate after backend changes: `php artisan l5-swagger:generate`",
+        "description": "Skylogs backend REST API.\n\n**Frontend quick start**\n1. Authenticate via `POST /api/v1/auth/login` and send `Authorization: Bearer {accessToken}` on protected routes.\n2. Browse by tag: AlertRule, Endpoints, Users, Teams, Data Sources, Status, etc.\n3. Alert rule **create** uses one URL with different bodies — pick the schema via the `type` discriminator on `POST /api/v1/alert-rule`.\n4. **Behavior rules** (notification / template / silent) use the same pattern on `POST /api/v1/alert-rule-behavior-rule/{alertRuleId}` — see tag **AlertRule Behavior Rules**.\n5. Public status page data: `GET /api/v1/status/all` (no auth).\n6. Webhook tag documents server-to-server callbacks (API token or URL token), not the SPA JWT.\n\nRegenerate after backend changes: `php artisan l5-swagger:generate`",
         "version": "1.0.0"
     },
     "servers": [
         {
-            "url": "http://localhost:8000",
+            "url": "http://localhost:9000",
             "description": "Skylogs local server"
         }
     ],
@@ -1510,14 +1510,16 @@
         "/api/v1/alert-rule-behavior-rule/{alertRuleId}": {
             "get": {
                 "tags": [
-                    "AlertRule"
+                    "AlertRule Behavior Rules"
                 ],
-                "summary": "List behavior rules for an alert rule",
+                "summary": "List behavior rules",
+                "description": "Returns notification, template, and silent rules for the alert rule. Each item shape depends on `type` (see `AlertRuleBehaviorRule` schema).",
                 "operationId": "getAlertRuleBehaviorRules",
                 "parameters": [
                     {
                         "name": "alertRuleId",
                         "in": "path",
+                        "description": "Alert rule MongoDB `_id`",
                         "required": true,
                         "schema": {
                             "type": "string",
@@ -1546,6 +1548,9 @@
                     },
                     "403": {
                         "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Alert rule not found"
                     }
                 },
                 "security": [
@@ -1556,14 +1561,16 @@
             },
             "post": {
                 "tags": [
-                    "AlertRule"
+                    "AlertRule Behavior Rules"
                 ],
-                "summary": "Create a notification behavior rule",
+                "summary": "Create a behavior rule",
+                "description": "One endpoint for all behavior rule types. Set `type` in the body and use the matching schema (`notification`, `template`, or `silent`). Requires admin access on the alert rule.",
                 "operationId": "createAlertRuleBehaviorRule",
                 "parameters": [
                     {
                         "name": "alertRuleId",
                         "in": "path",
+                        "description": "Alert rule MongoDB `_id`",
                         "required": true,
                         "schema": {
                             "type": "string",
@@ -1576,44 +1583,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "type",
-                                    "filters",
-                                    "endpointIds"
-                                ],
-                                "properties": {
-                                    "type": {
-                                        "type": "string",
-                                        "enum": [
-                                            "notification"
-                                        ]
-                                    },
-                                    "filters": {
-                                        "type": "array",
-                                        "items": {
-                                            "required": [
-                                                "key",
-                                                "value"
-                                            ],
-                                            "properties": {
-                                                "key": {
-                                                    "type": "string"
-                                                },
-                                                "value": {
-                                                    "type": "string"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "endpointIds": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    }
-                                },
-                                "type": "object"
+                                "$ref": "#/components/schemas/AlertRuleBehaviorRuleStoreInput"
                             }
                         }
                     }
@@ -1655,14 +1625,16 @@
         "/api/v1/alert-rule-behavior-rule/{alertRuleId}/{ruleId}": {
             "put": {
                 "tags": [
-                    "AlertRule"
+                    "AlertRule Behavior Rules"
                 ],
-                "summary": "Update a notification behavior rule",
+                "summary": "Update a behavior rule",
+                "description": "Send only fields allowed for the existing rule type. The rule `type` cannot be changed. `ruleId` is the UUID returned when the rule was created.",
                 "operationId": "updateAlertRuleBehaviorRule",
                 "parameters": [
                     {
                         "name": "alertRuleId",
                         "in": "path",
+                        "description": "Alert rule MongoDB `_id`",
                         "required": true,
                         "schema": {
                             "type": "string",
@@ -1672,9 +1644,11 @@
                     {
                         "name": "ruleId",
                         "in": "path",
+                        "description": "Behavior rule UUID",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "uuid"
                         }
                     }
                 ],
@@ -1683,29 +1657,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "properties": {
-                                    "filters": {
-                                        "type": "array",
-                                        "items": {
-                                            "properties": {
-                                                "key": {
-                                                    "type": "string"
-                                                },
-                                                "value": {
-                                                    "type": "string"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "endpointIds": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    }
-                                },
-                                "type": "object"
+                                "$ref": "#/components/schemas/AlertRuleBehaviorRuleUpdateInput"
                             }
                         }
                     }
@@ -1735,6 +1687,9 @@
                     },
                     "404": {
                         "description": "Not Found"
+                    },
+                    "422": {
+                        "description": "Validation error"
                     }
                 },
                 "security": [
@@ -1745,14 +1700,16 @@
             },
             "delete": {
                 "tags": [
-                    "AlertRule"
+                    "AlertRule Behavior Rules"
                 ],
                 "summary": "Delete a behavior rule",
+                "description": "Removes any behavior rule (notification, template, or silent) by its UUID.",
                 "operationId": "deleteAlertRuleBehaviorRule",
                 "parameters": [
                     {
                         "name": "alertRuleId",
                         "in": "path",
+                        "description": "Alert rule MongoDB `_id`",
                         "required": true,
                         "schema": {
                             "type": "string",
@@ -1762,9 +1719,11 @@
                     {
                         "name": "ruleId",
                         "in": "path",
+                        "description": "Behavior rule UUID",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "uuid"
                         }
                     }
                 ],
@@ -6377,6 +6336,349 @@
     },
     "components": {
         "schemas": {
+            "AlertRuleBehaviorRuleFilter": {
+                "description": "Label or annotation filter. Values support wildcards (e.g. `mysql*`). All filters must match.",
+                "required": [
+                    "key",
+                    "value"
+                ],
+                "properties": {
+                    "key": {
+                        "description": "Label or annotation key. For API alerts use `instance`.",
+                        "type": "string",
+                        "example": "db_name"
+                    },
+                    "value": {
+                        "description": "Pattern to match against the alert value",
+                        "type": "string",
+                        "example": "mysql*"
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleBehaviorRuleNotification": {
+                "title": "Notification behavior rule",
+                "description": "Adds the listed endpoints when every filter matches the firing alert.",
+                "required": [
+                    "id",
+                    "type",
+                    "filters",
+                    "endpointIds"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "notification"
+                        ]
+                    },
+                    "filters": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertRuleBehaviorRuleFilter"
+                        }
+                    },
+                    "endpointIds": {
+                        "description": "Extra endpoints to notify (in addition to the alert rule defaults)",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleBehaviorRuleTemplate": {
+                "title": "Template behavior rule",
+                "description": "Uses a single custom template for messages sent to the listed endpoints. Placeholders such as `{{name}}` are supported.",
+                "required": [
+                    "id",
+                    "type",
+                    "endpointIds",
+                    "template"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "template"
+                        ]
+                    },
+                    "endpointIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "template": {
+                        "type": "string",
+                        "example": "Alert {{name}} fired on {{instance}}"
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleBehaviorRuleSilent": {
+                "title": "Silent behavior rule",
+                "description": "While any listed alert rule has the given `triggerState`, notifications for this alert rule are suppressed. Does not affect the manual `isSilent` toggle.",
+                "required": [
+                    "id",
+                    "type",
+                    "dependsOnAlertRuleIds",
+                    "triggerState"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "silent"
+                        ]
+                    },
+                    "dependsOnAlertRuleIds": {
+                        "description": "MongoDB `_id` values of other alert rules to watch",
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        },
+                        "example": [
+                            "507f1f77bcf86cd799439011"
+                        ]
+                    },
+                    "triggerState": {
+                        "description": "When any dependent rule reaches this status, this alert becomes silent",
+                        "type": "string",
+                        "example": "resolved",
+                        "enum": [
+                            "resolved",
+                            "critical"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleBehaviorRule": {
+                "description": "A behavior rule returned from list, create, update, or alert rule detail (`rules` array). Shape depends on `type`.",
+                "discriminator": {
+                    "propertyName": "type",
+                    "mapping": {
+                        "notification": "#/components/schemas/AlertRuleBehaviorRuleNotification",
+                        "template": "#/components/schemas/AlertRuleBehaviorRuleTemplate",
+                        "silent": "#/components/schemas/AlertRuleBehaviorRuleSilent"
+                    }
+                },
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleBehaviorRuleNotification"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleBehaviorRuleTemplate"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleBehaviorRuleSilent"
+                    }
+                ]
+            },
+            "AlertRuleBehaviorRuleStoreNotification": {
+                "title": "Create notification rule",
+                "required": [
+                    "type",
+                    "filters",
+                    "endpointIds"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "notification"
+                        ]
+                    },
+                    "filters": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertRuleBehaviorRuleFilter"
+                        },
+                        "minItems": 1
+                    },
+                    "endpointIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleBehaviorRuleStoreTemplate": {
+                "title": "Create template rule",
+                "required": [
+                    "type",
+                    "endpointIds",
+                    "template"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "template"
+                        ]
+                    },
+                    "endpointIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1
+                    },
+                    "template": {
+                        "type": "string",
+                        "example": "Disk alert: {{name}}",
+                        "minLength": 1
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleBehaviorRuleStoreSilent": {
+                "title": "Create silent rule",
+                "required": [
+                    "type",
+                    "dependsOnAlertRuleIds",
+                    "triggerState"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "silent"
+                        ]
+                    },
+                    "dependsOnAlertRuleIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        },
+                        "minItems": 1
+                    },
+                    "triggerState": {
+                        "type": "string",
+                        "enum": [
+                            "resolved",
+                            "critical"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleBehaviorRuleStoreInput": {
+                "description": "Create a behavior rule. Set `type` to pick the payload shape (same URL for all types). Requires alert rule admin access.",
+                "discriminator": {
+                    "propertyName": "type",
+                    "mapping": {
+                        "notification": "#/components/schemas/AlertRuleBehaviorRuleStoreNotification",
+                        "template": "#/components/schemas/AlertRuleBehaviorRuleStoreTemplate",
+                        "silent": "#/components/schemas/AlertRuleBehaviorRuleStoreSilent"
+                    }
+                },
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleBehaviorRuleStoreNotification"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleBehaviorRuleStoreTemplate"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleBehaviorRuleStoreSilent"
+                    }
+                ]
+            },
+            "AlertRuleBehaviorRuleUpdateNotification": {
+                "title": "Update notification rule",
+                "description": "Only `filters` and `endpointIds` can be changed. `type` is fixed after create.",
+                "properties": {
+                    "filters": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertRuleBehaviorRuleFilter"
+                        },
+                        "minItems": 1
+                    },
+                    "endpointIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleBehaviorRuleUpdateTemplate": {
+                "title": "Update template rule",
+                "properties": {
+                    "endpointIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1
+                    },
+                    "template": {
+                        "type": "string",
+                        "minLength": 1
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleBehaviorRuleUpdateSilent": {
+                "title": "Update silent rule",
+                "description": "`filters`, `endpointIds`, and `template` are not allowed on silent rules.",
+                "properties": {
+                    "dependsOnAlertRuleIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        },
+                        "minItems": 1
+                    },
+                    "triggerState": {
+                        "type": "string",
+                        "enum": [
+                            "resolved",
+                            "critical"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleBehaviorRuleUpdateInput": {
+                "description": "Update a behavior rule. Send the variant that matches the rule's existing type (identified by `ruleId` in the path).",
+                "oneOf": [
+                    {
+                        "$ref": "#/components/schemas/AlertRuleBehaviorRuleUpdateNotification"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleBehaviorRuleUpdateTemplate"
+                    },
+                    {
+                        "$ref": "#/components/schemas/AlertRuleBehaviorRuleUpdateSilent"
+                    }
+                ]
+            },
             "AlertRuleState": {
                 "description": "Alert rule state stored in `state` and exposed as `statusLabel` / `status_label` on list and detail responses.",
                 "type": "string",
@@ -7734,9 +8036,17 @@
                         "type": "integer"
                     },
                     "isSilent": {
+                        "description": "Manual per-user silence (toggle via POST /api/v1/alert-rule/silent/{id})",
                         "type": "boolean"
                     },
                     "is_silent": {
+                        "type": "boolean"
+                    },
+                    "isSilentByBehavior": {
+                        "description": "Read-only: true when a silent behavior rule currently suppresses notifications",
+                        "type": "boolean"
+                    },
+                    "is_silent_by_behavior": {
                         "type": "boolean"
                     },
                     "isPinned": {
@@ -7823,32 +8133,6 @@
                         "type": "object"
                     }
                 ]
-            },
-            "AlertRuleBehaviorRule": {
-                "properties": {
-                    "id": {
-                        "type": "string"
-                    },
-                    "type": {
-                        "type": "string",
-                        "enum": [
-                            "notification"
-                        ]
-                    },
-                    "filters": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/AlertRuleExtraField"
-                        }
-                    },
-                    "endpointIds": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "type": "object"
             },
             "KaveNegarConfig": {
                 "title": "Kave Negar Call Config",
@@ -8621,6 +8905,10 @@
         }
     },
     "tags": [
+        {
+            "name": "AlertRule Behavior Rules",
+            "description": "Optional rules attached to an alert rule that change notification behavior.\n\n| Type | Purpose |\n|------|---------|\n| `notification` | Add extra endpoints when incoming alert labels match filters |\n| `template` | Override message text for specific endpoints |\n| `silent` | Suppress all notifications while another alert rule is `resolved` or `critical` |\n\n**Create:** one URL — set `type` and send the matching body (see discriminator on POST).\n\n**Silence on the list page:** `isSilent` is the per-user manual toggle (`POST /api/v1/alert-rule/silent/{id}`).\n`isSilentByBehavior` is computed from silent behavior rules and is read-only in the UI."
+        },
         {
             "name": "AlertRule",
             "description": "Manage alert rules, notifications, access, tags, and behavior rules"
