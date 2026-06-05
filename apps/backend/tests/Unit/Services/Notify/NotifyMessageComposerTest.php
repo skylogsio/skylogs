@@ -25,7 +25,7 @@ describe('NotifyMessageComposer', function () {
         ]);
     });
 
-    it('delegates to fromMessageable when alert rule is null', function () {
+    it('delegates buildMessages to fromMessageable when alert rule is null', function () {
         $alert = new PlainTextMessageable('no-rule');
 
         $messages = NotifyMessageComposer::buildMessages(null, $alert);
@@ -34,11 +34,10 @@ describe('NotifyMessageComposer', function () {
             ->and($messages['defaultMessage'])->toBe('no-rule');
     });
 
-    it('delegates to fromMessageable when notifyTemplates is empty', function () {
+    it('delegates buildMessages to fromMessageable for alert rules', function () {
         $rule = AlertRuleFactory::unsaved([
             'name' => 'R1',
             'state' => AlertRule::CRITICAL,
-            'notifyTemplates' => [],
         ]);
         $alert = new PlainTextMessageable('fallback');
 
@@ -47,51 +46,50 @@ describe('NotifyMessageComposer', function () {
         expect($messages['smsMessage'])->toBe('fallback');
     });
 
-    it('replaces placeholders from rule and alert payload', function () {
+    it('applies one template string to every channel message key', function () {
         $rule = AlertRuleFactory::unsaved([
             'name' => 'CPU High',
             'state' => AlertRule::CRITICAL,
             'fireCount' => 3,
-            'notifyTemplates' => [
-                'sms' => '{{name}}|{{state}}|{{fireCount}}|{{alert.instance}}',
-                'default' => '{{name}}-end',
-            ],
         ]);
         $alert = new StructuredPayloadMessageable('worker-7');
 
-        $messages = NotifyMessageComposer::buildMessages($rule, $alert);
+        $messages = NotifyMessageComposer::composeFromSingleTemplate(
+            $rule,
+            $alert,
+            '{{name}}|{{state}}|{{fireCount}}|{{alert.instance}}',
+        );
 
         expect($messages['smsMessage'])->toBe('CPU High|critical|3|worker-7')
-            ->and($messages['defaultMessage'])->toBe('CPU High-end')
-            ->and($messages['matterMostMessage'])->toBe('m');
+            ->and($messages['teamsMessage'])->toBe('CPU High|critical|3|worker-7')
+            ->and($messages['emailMessage'])->toBe('CPU High|critical|3|worker-7')
+            ->and($messages['defaultMessage'])->toBe('CPU High|critical|3|worker-7');
     });
 
     it('renders unknown placeholders as empty', function () {
         $rule = AlertRuleFactory::unsaved([
             'name' => 'N',
             'state' => AlertRule::CRITICAL,
-            'notifyTemplates' => [
-                'sms' => '{{name}}{{not_a_real_key}}',
-            ],
         ]);
         $alert = new PlainTextMessageable('x');
 
-        $messages = NotifyMessageComposer::buildMessages($rule, $alert);
+        $messages = NotifyMessageComposer::composeFromSingleTemplate(
+            $rule,
+            $alert,
+            '{{name}}{{not_a_real_key}}',
+        );
 
         expect($messages['smsMessage'])->toBe('N');
     });
 
-    it('applies telegram template when telegram() returns a string', function () {
+    it('applies template text to telegram when telegram() returns a string', function () {
         $rule = AlertRuleFactory::unsaved([
             'name' => 'RuleA',
             'state' => AlertRule::CRITICAL,
-            'notifyTemplates' => [
-                'telegram' => 'TG:{{name}}',
-            ],
         ]);
         $alert = new PlainTextMessageable('ignored-for-telegram-channel');
 
-        $messages = NotifyMessageComposer::buildMessages($rule, $alert);
+        $messages = NotifyMessageComposer::composeFromSingleTemplate($rule, $alert, 'TG:{{name}}');
 
         expect($messages['telegram'])->toBe('TG:RuleA');
     });
@@ -100,13 +98,10 @@ describe('NotifyMessageComposer', function () {
         $rule = AlertRuleFactory::unsaved([
             'name' => 'GrafanaLike',
             'state' => AlertRule::CRITICAL,
-            'notifyTemplates' => [
-                'telegram' => 'Firing: {{name}}',
-            ],
         ]);
         $alert = new TelegramInlineKeyboardMessageable('old-body');
 
-        $messages = NotifyMessageComposer::buildMessages($rule, $alert);
+        $messages = NotifyMessageComposer::composeFromSingleTemplate($rule, $alert, 'Firing: {{name}}');
 
         expect($messages['telegram'])->toBeArray()
             ->and($messages['telegram']['message'])->toBe('Firing: GrafanaLike')

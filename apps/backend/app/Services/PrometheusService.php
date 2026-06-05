@@ -279,7 +279,7 @@ class PrometheusService
             //                new SendNotifyJob(SendNotifyJob::PROMETHEUS_FIRE, $check),
             //                new RefreshPrometheusCheckJob,
             //            ])->dispatch();
-            SendNotifyService::CreateNotify(SendNotifyJob::PROMETHEUS_FIRE, $check, $alertRule->_id);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::PROMETHEUS_FIRE, $check, $alertRule->_id);
 
         }
 

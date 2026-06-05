@@ -67,7 +67,7 @@ class WebhookAlertsController extends Controller
 
         if ($model->CustomSave($dataSource, $alertRules, $post)) {
 
-            SendNotifyService::CreateNotify(SendNotifyJob::SENTRY_WEBHOOK, $model, $model->alertRuleId);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::SENTRY_WEBHOOK, $model, $model->alertRuleId);
 
             return [
                 'status' => true,
@@ -114,7 +114,7 @@ class WebhookAlertsController extends Controller
 
         //        if ($model->CustomSave($post)) {
 
-        //            SendNotifyService::CreateNotify(SendNotifyJob::SPLUNK_WEBHOOK, $model, $model->alert_rule_id);
+        //            app(SendNotifyService::class)->createNotify(SendNotifyJob::SPLUNK_WEBHOOK, $model, $model->alert_rule_id);
 
         //            return [
         //                "status" => true,
@@ -138,7 +138,7 @@ class WebhookAlertsController extends Controller
 
         if ($model->CustomSave($post)) {
 
-            SendNotifyService::CreateNotify(SendNotifyJob::METABASE_WEBHOOK, $model, $model->alertRuleId);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::METABASE_WEBHOOK, $model, $model->alertRuleId);
 
             return [
                 'status' => true,

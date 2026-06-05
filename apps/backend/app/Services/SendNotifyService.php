@@ -11,15 +11,17 @@ use App\Helpers\MatterMost;
 use App\Helpers\SMS;
 use App\Helpers\Teams;
 use App\Helpers\Telegram;
+use App\Interfaces\Messageable;
 use App\Jobs\NotifyFlowEndpointJob;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\Notify;
+use Illuminate\Support\Collection;
 
 class SendNotifyService
 {
-    public static function CreateNotify($type, $alert, $alertRuleId = 0)
+    public function createNotify($type, $alert, $alertRuleId = 0)
     {
         $notify = new Notify;
         $notify->type = $type;
@@ -74,7 +76,7 @@ class SendNotifyService
         return $notify;
     }
 
-    public static function SendMessage(Notify $notify, $isTest = false, $isAcknowledged = false)
+    public function SendMessage(Notify $notify, $isTest = false, $isAcknowledged = false)
     {
 
         if (empty($notify->alertRule) || ! ($notify->alertRule instanceof AlertRule)) {
@@ -114,13 +116,6 @@ class SendNotifyService
         }
         $endpoints = $endpointsQuery->get();
 
-        $phones = $endpoints->where('type', EndpointType::SMS->value)->pluck('value');
-        $phonesCalls = $endpoints->where('type', EndpointType::CALL->value)->pluck('value');
-        $teamsUrls = $endpoints->where('type', EndpointType::TEAMS->value)->pluck('value');
-        $discordsUrls = $endpoints->where('type', EndpointType::DISCORD->value)->pluck('value');
-        $matterMostUrls = $endpoints->where('type', EndpointType::MATTER_MOST->value)->pluck('value');
-        $emails = $endpoints->where('type', EndpointType::EMAIL->value)->pluck('value')->toArray();
-        $telegrams = $endpoints->where('type', EndpointType::TELEGRAM->value)->toArray();
         $flows = $endpoints->where('type', EndpointType::FLOW->value);
 
         if (! $isAcknowledged && $flows->isNotEmpty()) {
@@ -144,53 +139,13 @@ class SendNotifyService
             $notify->resultFlows = $resultFlows;
         }
 
-        if ($phones->isNotEmpty()) {
-            $result = SMS::sendAlert($phones,
-                $notify);
-            $notify->resultSms = $result;
-        }
-
-        if ($phonesCalls->isNotEmpty()) {
-            $result = Call::sendAlert($phonesCalls,
-                $notify,
-            );
-            $notify->resultCall = $result;
-        }
-
-        if ($teamsUrls->isNotEmpty()) {
-            $result = Teams::sendMessageAlert($teamsUrls,
-                $notify,
-            );
-            $notify->resultTeams = $result;
-        }
-
-        if ($discordsUrls->isNotEmpty()) {
-            $result = Discord::sendMessageAlert($discordsUrls,
-                $notify,
-            );
-            $notify->resultDiscords = $result;
-        }
-
-        if ($matterMostUrls->isNotEmpty()) {
-            $result = MatterMost::sendMessageAlert($matterMostUrls,
-                $notify,
-            );
-            $notify->resultMatterMost = $result;
-        }
-
-        if (! empty($telegrams)) {
-            $result = Telegram::sendMessageAlert($telegrams,
-                $notify
-            );
-            $notify->resultTelegram = $result;
-        }
-
-        if (! empty($emails)) {
-            $result = Email::sendMessageAlert($emails,
-                $notify
-            );
-            $notify->resultEmail = $result;
-        }
+        $notify->resultSms = $this->sendSmsAlerts($endpoints->where('type', EndpointType::SMS->value), $notify);
+        $notify->resultCall = $this->sendCallAlerts($endpoints->where('type', EndpointType::CALL->value), $notify);
+        $notify->resultTeams = $this->sendTeamsAlerts($endpoints->where('type', EndpointType::TEAMS->value), $notify);
+        $notify->resultDiscords = $this->sendDiscordAlerts($endpoints->where('type', EndpointType::DISCORD->value), $notify);
+        $notify->resultMatterMost = $this->sendMatterMostAlerts($endpoints->where('type', EndpointType::MATTER_MOST->value), $notify);
+        $notify->resultTelegram = $this->sendTelegramAlerts($endpoints->where('type', EndpointType::TELEGRAM->value), $notify);
+        $notify->resultEmail = $this->sendEmailAlerts($endpoints->where('type', EndpointType::EMAIL->value), $notify);
 
         $notify->save();
     }
@@ -206,62 +161,34 @@ class SendNotifyService
 
         $endpoints = $endpointsQuery->get();
 
-        $phones = $endpoints->where('type', EndpointType::SMS->value)->pluck('value');
-        $phonesCalls = $endpoints->where('type', EndpointType::CALL->value)->pluck('value');
-        $teamsUrls = $endpoints->where('type', EndpointType::TEAMS->value)->pluck('value');
-        $discordsUrls = $endpoints->where('type', EndpointType::DISCORD->value)->pluck('value');
-        $matterMostUrls = $endpoints->where('type', EndpointType::MATTER_MOST->value)->pluck('value');
-        $emails = $endpoints->where('type', EndpointType::EMAIL->value)->pluck('value')->toArray();
-        $telegrams = $endpoints->where('type', EndpointType::TELEGRAM->value)->toArray();
-
         $resultStep = [];
 
-        if ($phones->isNotEmpty()) {
-            $result = SMS::sendAlert($phones,
-                $notify);
-            $resultStep['resultSms'] = $result;
+        if ($smsResult = $this->sendSmsAlerts($endpoints->where('type', EndpointType::SMS->value), $notify)) {
+            $resultStep['resultSms'] = $smsResult;
         }
 
-        if ($phonesCalls->isNotEmpty()) {
-            $result = Call::sendAlert($phonesCalls,
-                $notify,
-            );
-            $resultStep['resultCall'] = $result;
+        if ($callResult = $this->sendCallAlerts($endpoints->where('type', EndpointType::CALL->value), $notify)) {
+            $resultStep['resultCall'] = $callResult;
         }
 
-        if ($teamsUrls->isNotEmpty()) {
-            $result = Teams::sendMessageAlert($teamsUrls,
-                $notify,
-            );
-            $resultStep['resultTeams'] = $result;
+        if ($teamsResult = $this->sendTeamsAlerts($endpoints->where('type', EndpointType::TEAMS->value), $notify)) {
+            $resultStep['resultTeams'] = $teamsResult;
         }
 
-        if ($discordsUrls->isNotEmpty()) {
-            $result = Discord::sendMessageAlert($discordsUrls,
-                $notify,
-            );
-            $resultStep['resultDiscords'] = $result;
+        if ($discordResult = $this->sendDiscordAlerts($endpoints->where('type', EndpointType::DISCORD->value), $notify)) {
+            $resultStep['resultDiscords'] = $discordResult;
         }
 
-        if ($matterMostUrls->isNotEmpty()) {
-            $result = MatterMost::sendMessageAlert($matterMostUrls,
-                $notify,
-            );
-            $resultStep['resultMatterMost'] = $result;
+        if ($matterMostResult = $this->sendMatterMostAlerts($endpoints->where('type', EndpointType::MATTER_MOST->value), $notify)) {
+            $resultStep['resultMatterMost'] = $matterMostResult;
         }
 
-        if (! empty($telegrams)) {
-            $result = Telegram::sendMessageAlert($telegrams,
-                $notify
-            );
-            $resultStep['resultTelegram'] = $result;
+        if ($telegramResult = $this->sendTelegramAlerts($endpoints->where('type', EndpointType::TELEGRAM->value), $notify)) {
+            $resultStep['resultTelegram'] = $telegramResult;
         }
 
-        if (! empty($emails)) {
-            $result = Email::sendMessageAlert($emails,
-                $notify
-            );
-            $resultStep['resultEmail'] = $result;
+        if ($emailResult = $this->sendEmailAlerts($endpoints->where('type', EndpointType::EMAIL->value), $notify)) {
+            $resultStep['resultEmail'] = $emailResult;
         }
 
         $resultFlows = $notify->resultFlows ?? [];
@@ -273,6 +200,130 @@ class SendNotifyService
         $notify->resultFlows = $resultFlows;
 
         $notify->save();
+    }
+
+    /**
+     * @param  Collection<int, Endpoint>  $endpoints
+     */
+    private function sendSmsAlerts(Collection $endpoints, Notify $notify): mixed
+    {
+        return $this->sendChannelAlerts(
+            $endpoints,
+            $notify,
+            fn (Collection $group, Messageable $messageable) => SMS::sendAlert($group->pluck('value'), $messageable),
+        );
+    }
+
+    /**
+     * @param  Collection<int, Endpoint>  $endpoints
+     */
+    private function sendCallAlerts(Collection $endpoints, Notify $notify): mixed
+    {
+        return $this->sendChannelAlerts(
+            $endpoints,
+            $notify,
+            fn (Collection $group, Messageable $messageable) => Call::sendAlert($group->pluck('value'), $messageable),
+        );
+    }
+
+    /**
+     * @param  Collection<int, Endpoint>  $endpoints
+     */
+    private function sendTeamsAlerts(Collection $endpoints, Notify $notify): mixed
+    {
+        return $this->sendChannelAlerts(
+            $endpoints,
+            $notify,
+            fn (Collection $group, Messageable $messageable) => Teams::sendMessageAlert($group->pluck('value'), $messageable),
+        );
+    }
+
+    /**
+     * @param  Collection<int, Endpoint>  $endpoints
+     */
+    private function sendDiscordAlerts(Collection $endpoints, Notify $notify): mixed
+    {
+        return $this->sendChannelAlerts(
+            $endpoints,
+            $notify,
+            fn (Collection $group, Messageable $messageable) => Discord::sendMessageAlert($group->pluck('value'), $messageable),
+        );
+    }
+
+    /**
+     * @param  Collection<int, Endpoint>  $endpoints
+     */
+    private function sendMatterMostAlerts(Collection $endpoints, Notify $notify): mixed
+    {
+        return $this->sendChannelAlerts(
+            $endpoints,
+            $notify,
+            fn (Collection $group, Messageable $messageable) => MatterMost::sendMessageAlert($group->pluck('value'), $messageable),
+        );
+    }
+
+    /**
+     * @param  Collection<int, Endpoint>  $endpoints
+     */
+    private function sendTelegramAlerts(Collection $endpoints, Notify $notify): mixed
+    {
+        return $this->sendChannelAlerts(
+            $endpoints,
+            $notify,
+            fn (Collection $group, Messageable $messageable) => Telegram::sendMessageAlert($group->values()->all(), $messageable),
+        );
+    }
+
+    /**
+     * @param  Collection<int, Endpoint>  $endpoints
+     */
+    private function sendEmailAlerts(Collection $endpoints, Notify $notify): mixed
+    {
+        return $this->sendChannelAlerts(
+            $endpoints,
+            $notify,
+            fn (Collection $group, Messageable $messageable) => Email::sendMessageAlert($group->pluck('value')->toArray(), $messageable),
+        );
+    }
+
+    /**
+     * @param  Collection<int, Endpoint>  $endpoints
+     * @param  callable(Collection<int, Endpoint>, Messageable): mixed  $sender
+     */
+    private function sendChannelAlerts(Collection $endpoints, Notify $notify, callable $sender): mixed
+    {
+        if ($endpoints->isEmpty()) {
+            return null;
+        }
+
+        $endpointTemplates = app(AlertRuleBehaviorRuleService::class)
+            ->resolveEndpointTemplates($notify->alertRule);
+
+        $results = [];
+
+        $endpoints
+            ->groupBy(fn (Endpoint $endpoint) => $endpointTemplates[(string) ($endpoint->id ?? $endpoint->_id)] ?? '')
+            ->each(function (Collection $group, string $template) use ($notify, $sender, &$results) {
+                $messageable = $this->messageableForTemplate($notify, $template);
+                $results[] = $sender($group, $messageable);
+            });
+
+        if ($results === []) {
+            return null;
+        }
+
+        return count($results) === 1 ? $results[0] : $results;
+    }
+
+    private function messageableForTemplate(Notify $notify, string $template): Messageable
+    {
+        if ($template === '' || ! ($notify->alertRule instanceof AlertRule)) {
+            return $notify;
+        }
+
+        return new NotifyMessagesAdapter(
+            NotifyMessageComposer::composeFromSingleTemplate($notify->alertRule, $notify, $template)
+        );
     }
 
     public function processStep(Notify $notify, $endpointId, int $currentStepIndex = 0)

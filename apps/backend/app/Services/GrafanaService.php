@@ -176,7 +176,7 @@ class GrafanaService
             }
             $model->save();
             self::updateAlertRuleStatus($alertRule, $alerts);
-            SendNotifyService::CreateNotify(SendNotifyJob::GRAFANA_WEBHOOK, $model, $alertRule->_id);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::GRAFANA_WEBHOOK, $model, $alertRule->_id);
 
         }
 

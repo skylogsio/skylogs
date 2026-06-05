@@ -947,7 +947,7 @@ class AlertRuleService
         }
         $alert->removeAcknowledge();
         if ($sendResolve) {
-            SendNotifyService::CreateNotify(SendNotifyJob::RESOLVED_MANUALLY, $alert, $alert->_id);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::RESOLVED_MANUALLY, $alert, $alert->_id);
         }
 
     }

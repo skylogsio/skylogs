@@ -34,17 +34,35 @@ class BehaviorRuleController extends Controller
         $alertRule = $this->authorizedAlertRule($alertRuleId, requireAdmin: true);
 
         $validated = $request->validate([
-            'type' => ['required', Rule::in([AlertRuleBehaviorRuleType::NOTIFICATION->value])],
-            'filters' => ['required', 'array', 'min:1'],
+            'type' => [
+                'required',
+                Rule::in([
+                    AlertRuleBehaviorRuleType::NOTIFICATION->value,
+                    AlertRuleBehaviorRuleType::TEMPLATE->value,
+                ]),
+            ],
+            'filters' => [
+                Rule::requiredIf(fn () => $request->input('type') === AlertRuleBehaviorRuleType::NOTIFICATION->value),
+                'array',
+                'min:1',
+            ],
             'filters.*.key' => ['required_with:filters', 'string'],
             'filters.*.value' => ['required_with:filters', 'string'],
             'endpointIds' => ['required', 'array', 'min:1'],
             'endpointIds.*' => ['required', 'string'],
+            'template' => [
+                Rule::requiredIf(fn () => $request->input('type') === AlertRuleBehaviorRuleType::TEMPLATE->value),
+                'string',
+                'min:1',
+            ],
         ]);
 
         $this->assertSelectableEndpoints($alertRule, $validated['endpointIds']);
 
-        $rule = $this->behaviorRuleService->createNotificationRule($alertRule, $validated);
+        $rule = match ($validated['type']) {
+            AlertRuleBehaviorRuleType::TEMPLATE->value => $this->behaviorRuleService->createTemplateRule($alertRule, $validated),
+            default => $this->behaviorRuleService->createNotificationRule($alertRule, $validated),
+        };
 
         return response()->json([
             'status' => true,
@@ -56,19 +74,29 @@ class BehaviorRuleController extends Controller
     {
         $alertRule = $this->authorizedAlertRule($alertRuleId, requireAdmin: true);
 
+        $existingRule = $this->behaviorRuleService->findRule($alertRule, $ruleId);
+        if ($existingRule === null) {
+            abort(404);
+        }
+
+        $isTemplate = ($existingRule['type'] ?? null) === AlertRuleBehaviorRuleType::TEMPLATE->value;
+
         $validated = $request->validate([
-            'filters' => ['sometimes', 'array', 'min:1'],
+            'filters' => [$isTemplate ? 'prohibited' : 'sometimes', 'array', 'min:1'],
             'filters.*.key' => ['required_with:filters', 'string'],
             'filters.*.value' => ['required_with:filters', 'string'],
             'endpointIds' => ['sometimes', 'array', 'min:1'],
             'endpointIds.*' => ['required', 'string'],
+            'template' => [$isTemplate ? 'sometimes' : 'prohibited', 'string', 'min:1'],
         ]);
 
         if (! empty($validated['endpointIds'])) {
             $this->assertSelectableEndpoints($alertRule, $validated['endpointIds']);
         }
 
-        $rule = $this->behaviorRuleService->updateNotificationRule($alertRule, $ruleId, $validated);
+        $rule = $isTemplate
+            ? $this->behaviorRuleService->updateTemplateRule($alertRule, $ruleId, $validated)
+            : $this->behaviorRuleService->updateNotificationRule($alertRule, $ruleId, $validated);
 
         if ($rule === null) {
             abort(404);

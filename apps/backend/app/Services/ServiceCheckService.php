@@ -155,7 +155,7 @@ class ServiceCheckService
                     $check->state = ServiceCheck::UP;
                     $check->notifyAt = time();
                     $check->save();
-                    SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check, $check->alertRuleId);
+                    app(SendNotifyService::class)->createNotify(SendNotifyJob::HEALTH_CHECK, $check, $check->alertRuleId);
 
                     /*        HealthHistory::create(
                         [
@@ -184,7 +184,7 @@ class ServiceCheckService
                     $check->state = ServiceCheck::DOWN;
                     $check->notifyAt = time();
                     $check->save();
-                    SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check, $check->alertRuleId);
+                    app(SendNotifyService::class)->createNotify(SendNotifyJob::HEALTH_CHECK, $check, $check->alertRuleId);
 
                     /*    HealthHistory::create(
                             [

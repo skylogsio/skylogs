@@ -358,6 +358,85 @@ describe('AlertRuleBehaviorRuleService', function () {
         expect($this->service->deleteRule($alertRule, 'missing'))->toBeFalse();
     });
 
+    it('resolves endpoint templates from template rules', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'rules' => [
+                [
+                    'id' => 'template-1',
+                    'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
+                    'endpointIds' => ['endpoint-a', 'endpoint-b'],
+                    'template' => 'Alert: {{name}}',
+                ],
+                [
+                    'id' => 'template-2',
+                    'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
+                    'endpointIds' => ['endpoint-c'],
+                    'template' => 'Other: {{name}}',
+                ],
+            ],
+        ]);
+
+        expect($this->service->resolveEndpointTemplates($alertRule))->toBe([
+            'endpoint-a' => 'Alert: {{name}}',
+            'endpoint-b' => 'Alert: {{name}}',
+            'endpoint-c' => 'Other: {{name}}',
+        ]);
+    });
+
+    it('creates a template rule on the alert rule', function () {
+        $alertRule = mockAlertRuleForPersistence(['rules' => []]);
+
+        $rule = $this->service->createTemplateRule($alertRule, [
+            'endpointIds' => ['endpoint-a', 'endpoint-a'],
+            'template' => 'Hello {{name}}',
+        ]);
+
+        expect($rule['type'])->toBe(AlertRuleBehaviorRuleType::TEMPLATE->value)
+            ->and($rule['template'])->toBe('Hello {{name}}')
+            ->and($rule['endpointIds'])->toBe(['endpoint-a'])
+            ->and($alertRule->rules)->toHaveCount(1);
+    });
+
+    it('updates an existing template rule', function () {
+        $alertRule = mockAlertRuleForPersistence([
+            'rules' => [
+                [
+                    'id' => 'template-rule-id',
+                    'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
+                    'endpointIds' => ['old-endpoint'],
+                    'template' => 'Old text',
+                ],
+            ],
+        ]);
+
+        $updated = $this->service->updateTemplateRule($alertRule, 'template-rule-id', [
+            'endpointIds' => ['new-endpoint'],
+            'template' => 'New text',
+        ]);
+
+        expect($updated)->not->toBeNull()
+            ->and($updated['template'])->toBe('New text')
+            ->and($updated['endpointIds'])->toBe(['new-endpoint']);
+    });
+
+    it('formats template rules for api response', function () {
+        $formatted = $this->service->formatRulesForApi([
+            [
+                'id' => 'template-1',
+                'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
+                'endpointIds' => ['endpoint-a'],
+                'template' => 'Hi {{name}}',
+            ],
+        ]);
+
+        expect($formatted[0])->toMatchArray([
+            'id' => 'template-1',
+            'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
+            'endpointIds' => ['endpoint-a'],
+            'template' => 'Hi {{name}}',
+        ])->and($formatted[0])->not->toHaveKey('filters');
+    });
+
     it('filters only notification rules from mixed rule types', function () {
         $alertRule = AlertRuleFactory::unsaved([
             'rules' => [

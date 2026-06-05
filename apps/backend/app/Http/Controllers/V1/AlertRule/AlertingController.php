@@ -149,7 +149,7 @@ class AlertingController extends Controller
         }
 
         $alert->acknowledge($user);
-        SendNotifyService::CreateNotify(SendNotifyJob::ALERT_RULE_ACKNOWLEDGED, $alert, $alert->_id);
+        app(SendNotifyService::class)->createNotify(SendNotifyJob::ALERT_RULE_ACKNOWLEDGED, $alert, $alert->_id);
 
         return response()->json(['status' => true]);
     }
@@ -162,7 +162,7 @@ class AlertingController extends Controller
             return response()->json(['status' => false, 'message' => 'Alert rule Already Acknowledged.']);
         }
         $alert->acknowledge($user);
-        SendNotifyService::CreateNotify(SendNotifyJob::ALERT_RULE_ACKNOWLEDGED, $alert, $alert->_id);
+        app(SendNotifyService::class)->createNotify(SendNotifyJob::ALERT_RULE_ACKNOWLEDGED, $alert, $alert->_id);
 
         return response()->json(['status' => true]);
     }

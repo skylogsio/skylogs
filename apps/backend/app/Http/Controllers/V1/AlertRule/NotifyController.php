@@ -48,7 +48,7 @@ class NotifyController extends Controller
         if (! $access) {
             abort(403);
         }
-        SendNotifyService::CreateNotify(SendNotifyJob::ALERT_RULE_TEST, $alert, $alert->_id);
+        app(SendNotifyService::class)->createNotify(SendNotifyJob::ALERT_RULE_TEST, $alert, $alert->_id);
 
         return response()->json(['status' => true]);
     }

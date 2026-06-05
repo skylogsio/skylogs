@@ -43,7 +43,7 @@ describe('SendNotifyService notification behavior rules', function () {
         $userService->shouldReceive('admin')->andReturn($admin);
         app()->instance(UserService::class, $userService);
 
-        SendNotifyService::SendMessage($notify);
+        app(SendNotifyService::class)->SendMessage($notify);
 
         expect($notify->endpointIds)->toBe(['default-endpoint', 'mysql-endpoint']);
     });

@@ -79,7 +79,7 @@ class HealthService
                         $alert->save();
                         $alert->removeAcknowledge();
 
-                        SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check, $alert->id);
+                        app(SendNotifyService::class)->createNotify(SendNotifyJob::HEALTH_CHECK, $check, $alert->id);
                         HealthHistory::create(
                             [
                                 'alertRuleId' => $alert->_id,
@@ -114,7 +114,7 @@ class HealthService
                     $check->save();
                     $alert->state = AlertRule::CRITICAL;
                     $alert->save();
-                    SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check, $alert->id);
+                    app(SendNotifyService::class)->createNotify(SendNotifyJob::HEALTH_CHECK, $check, $alert->id);
 
                     HealthHistory::create(
                         [

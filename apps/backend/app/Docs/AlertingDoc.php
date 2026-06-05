@@ -772,7 +772,7 @@ class AlertingDoc
             content: new OA\JsonContent(
                 required: ['type', 'filters', 'endpointIds'],
                 properties: [
-                    new OA\Property(property: 'type', type: 'string', enum: ['notification']),
+                    new OA\Property(property: 'type', type: 'string', enum: ['notification', 'template']),
                     new OA\Property(
                         property: 'filters',
                         type: 'array',
@@ -785,6 +785,7 @@ class AlertingDoc
                         )
                     ),
                     new OA\Property(property: 'endpointIds', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(property: 'template', type: 'string', description: 'Required when type is template'),
                 ]
             )
         ),
@@ -1162,9 +1163,10 @@ class AlertRuleDetailSchema {}
     schema: 'AlertRuleBehaviorRule',
     properties: [
         new OA\Property(property: 'id', type: 'string'),
-        new OA\Property(property: 'type', type: 'string', enum: ['notification']),
-        new OA\Property(property: 'filters', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleExtraField')),
+        new OA\Property(property: 'type', type: 'string', enum: ['notification', 'template']),
+        new OA\Property(property: 'filters', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleExtraField'), nullable: true),
         new OA\Property(property: 'endpointIds', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'template', type: 'string', nullable: true, description: 'Single message template for all channels (template rules only)'),
     ]
 )]
 class AlertRuleBehaviorRuleSchema {}
