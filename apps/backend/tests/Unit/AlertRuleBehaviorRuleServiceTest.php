@@ -272,6 +272,7 @@ describe('AlertRuleBehaviorRuleService', function () {
         $formatted = $this->service->formatRulesForApi([
             [
                 'id' => 'rule-1',
+                'name' => 'MySQL endpoints',
                 'type' => AlertRuleBehaviorRuleType::NOTIFICATION->value,
                 'filters' => ['db_name' => 'mysql01'],
                 'endpointIds' => ['endpoint-a'],
@@ -281,6 +282,7 @@ describe('AlertRuleBehaviorRuleService', function () {
         expect($formatted)->toBe([
             [
                 'id' => 'rule-1',
+                'name' => 'MySQL endpoints',
                 'type' => AlertRuleBehaviorRuleType::NOTIFICATION->value,
                 'filters' => [
                     ['key' => 'db_name', 'value' => 'mysql01'],
@@ -290,15 +292,30 @@ describe('AlertRuleBehaviorRuleService', function () {
         ]);
     });
 
+    it('defaults missing rule names to empty string in api response', function () {
+        $formatted = $this->service->formatRulesForApi([
+            [
+                'id' => 'rule-1',
+                'type' => AlertRuleBehaviorRuleType::NOTIFICATION->value,
+                'filters' => ['db_name' => 'mysql01'],
+                'endpointIds' => ['endpoint-a'],
+            ],
+        ]);
+
+        expect($formatted[0]['name'])->toBe('');
+    });
+
     it('creates a notification rule on the alert rule', function () {
         $alertRule = mockAlertRuleForPersistence(['rules' => []]);
 
         $rule = $this->service->createNotificationRule($alertRule, [
+            'name' => 'MySQL endpoints',
             'filters' => [['key' => 'db_name', 'value' => 'mysql01']],
             'endpointIds' => ['endpoint-a', 'endpoint-a'],
         ]);
 
-        expect($rule['type'])->toBe(AlertRuleBehaviorRuleType::NOTIFICATION->value)
+        expect($rule['name'])->toBe('MySQL endpoints')
+            ->and($rule['type'])->toBe(AlertRuleBehaviorRuleType::NOTIFICATION->value)
             ->and($rule['filters'])->toBe(['db_name' => 'mysql01'])
             ->and($rule['endpointIds'])->toBe(['endpoint-a'])
             ->and($alertRule->rules)->toHaveCount(1)
@@ -318,11 +335,13 @@ describe('AlertRuleBehaviorRuleService', function () {
         ]);
 
         $updated = $this->service->updateNotificationRule($alertRule, 'existing-rule-id', [
+            'name' => 'Updated rule name',
             'filters' => [['key' => 'db_name', 'value' => 'mysql02']],
             'endpointIds' => ['new-endpoint'],
         ]);
 
         expect($updated)->not->toBeNull()
+            ->and($updated['name'])->toBe('Updated rule name')
             ->and($updated['filters'])->toBe(['db_name' => 'mysql02'])
             ->and($updated['endpointIds'])->toBe(['new-endpoint'])
             ->and($alertRule->rules[0]['endpointIds'])->toBe(['new-endpoint']);
@@ -387,11 +406,13 @@ describe('AlertRuleBehaviorRuleService', function () {
         $alertRule = mockAlertRuleForPersistence(['rules' => []]);
 
         $rule = $this->service->createTemplateRule($alertRule, [
+            'name' => 'Custom template',
             'endpointIds' => ['endpoint-a', 'endpoint-a'],
             'template' => 'Hello {{name}}',
         ]);
 
-        expect($rule['type'])->toBe(AlertRuleBehaviorRuleType::TEMPLATE->value)
+        expect($rule['name'])->toBe('Custom template')
+            ->and($rule['type'])->toBe(AlertRuleBehaviorRuleType::TEMPLATE->value)
             ->and($rule['template'])->toBe('Hello {{name}}')
             ->and($rule['endpointIds'])->toBe(['endpoint-a'])
             ->and($alertRule->rules)->toHaveCount(1);
@@ -423,6 +444,7 @@ describe('AlertRuleBehaviorRuleService', function () {
         $formatted = $this->service->formatRulesForApi([
             [
                 'id' => 'template-1',
+                'name' => 'Custom template',
                 'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
                 'endpointIds' => ['endpoint-a'],
                 'template' => 'Hi {{name}}',
@@ -431,6 +453,7 @@ describe('AlertRuleBehaviorRuleService', function () {
 
         expect($formatted[0])->toMatchArray([
             'id' => 'template-1',
+            'name' => 'Custom template',
             'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
             'endpointIds' => ['endpoint-a'],
             'template' => 'Hi {{name}}',

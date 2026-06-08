@@ -6361,6 +6361,7 @@
                 "description": "Adds the listed endpoints when every filter matches the firing alert.",
                 "required": [
                     "id",
+                    "name",
                     "type",
                     "filters",
                     "endpointIds"
@@ -6370,6 +6371,11 @@
                         "type": "string",
                         "format": "uuid",
                         "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                    },
+                    "name": {
+                        "description": "Display name for this behavior rule",
+                        "type": "string",
+                        "example": "MySQL production endpoints"
                     },
                     "type": {
                         "type": "string",
@@ -6398,6 +6404,7 @@
                 "description": "Uses a single custom template for messages sent to the listed endpoints. Placeholders such as `{{name}}` are supported.",
                 "required": [
                     "id",
+                    "name",
                     "type",
                     "endpointIds",
                     "template"
@@ -6406,6 +6413,11 @@
                     "id": {
                         "type": "string",
                         "format": "uuid"
+                    },
+                    "name": {
+                        "description": "Display name for this behavior rule",
+                        "type": "string",
+                        "example": "Disk alert template"
                     },
                     "type": {
                         "type": "string",
@@ -6431,6 +6443,7 @@
                 "description": "While any listed alert rule has the given `triggerState`, notifications for this alert rule are suppressed. Does not affect the manual `isSilent` toggle.",
                 "required": [
                     "id",
+                    "name",
                     "type",
                     "dependsOnAlertRuleIds",
                     "triggerState"
@@ -6439,6 +6452,11 @@
                     "id": {
                         "type": "string",
                         "format": "uuid"
+                    },
+                    "name": {
+                        "description": "Display name for this behavior rule",
+                        "type": "string",
+                        "example": "Silence during maintenance"
                     },
                     "type": {
                         "type": "string",
@@ -6494,11 +6512,19 @@
             "AlertRuleBehaviorRuleStoreNotification": {
                 "title": "Create notification rule",
                 "required": [
+                    "name",
                     "type",
                     "filters",
                     "endpointIds"
                 ],
                 "properties": {
+                    "name": {
+                        "description": "Display name for this behavior rule",
+                        "type": "string",
+                        "example": "MySQL production endpoints",
+                        "maxLength": 255,
+                        "minLength": 1
+                    },
                     "type": {
                         "type": "string",
                         "enum": [
@@ -6525,11 +6551,19 @@
             "AlertRuleBehaviorRuleStoreTemplate": {
                 "title": "Create template rule",
                 "required": [
+                    "name",
                     "type",
                     "endpointIds",
                     "template"
                 ],
                 "properties": {
+                    "name": {
+                        "description": "Display name for this behavior rule",
+                        "type": "string",
+                        "example": "Disk alert template",
+                        "maxLength": 255,
+                        "minLength": 1
+                    },
                     "type": {
                         "type": "string",
                         "enum": [
@@ -6554,11 +6588,19 @@
             "AlertRuleBehaviorRuleStoreSilent": {
                 "title": "Create silent rule",
                 "required": [
+                    "name",
                     "type",
                     "dependsOnAlertRuleIds",
                     "triggerState"
                 ],
                 "properties": {
+                    "name": {
+                        "description": "Display name for this behavior rule",
+                        "type": "string",
+                        "example": "Silence during maintenance",
+                        "maxLength": 255,
+                        "minLength": 1
+                    },
                     "type": {
                         "type": "string",
                         "enum": [
@@ -6607,8 +6649,13 @@
             },
             "AlertRuleBehaviorRuleUpdateNotification": {
                 "title": "Update notification rule",
-                "description": "Only `filters` and `endpointIds` can be changed. `type` is fixed after create.",
+                "description": "Only `name`, `filters`, and `endpointIds` can be changed. `type` is fixed after create.",
                 "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 1
+                    },
                     "filters": {
                         "type": "array",
                         "items": {
@@ -6629,6 +6676,11 @@
             "AlertRuleBehaviorRuleUpdateTemplate": {
                 "title": "Update template rule",
                 "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 1
+                    },
                     "endpointIds": {
                         "type": "array",
                         "items": {
@@ -6647,6 +6699,11 @@
                 "title": "Update silent rule",
                 "description": "`filters`, `endpointIds`, and `template` are not allowed on silent rules.",
                 "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 1
+                    },
                     "dependsOnAlertRuleIds": {
                         "type": "array",
                         "items": {

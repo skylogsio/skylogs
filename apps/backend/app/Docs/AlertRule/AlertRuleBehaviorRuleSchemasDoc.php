@@ -43,9 +43,10 @@ DESC
     schema: 'AlertRuleBehaviorRuleNotification',
     title: 'Notification behavior rule',
     description: 'Adds the listed endpoints when every filter matches the firing alert.',
-    required: ['id', 'type', 'filters', 'endpointIds'],
+    required: ['id', 'name', 'type', 'filters', 'endpointIds'],
     properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid', example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+        new OA\Property(property: 'name', description: 'Display name for this behavior rule', type: 'string', example: 'MySQL production endpoints'),
         new OA\Property(property: 'type', type: 'string', enum: ['notification']),
         new OA\Property(property: 'filters', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleFilter')),
         new OA\Property(property: 'endpointIds', description: 'Extra endpoints to notify (in addition to the alert rule defaults)', type: 'array', items: new OA\Items(type: 'string')),
@@ -56,9 +57,10 @@ DESC
     schema: 'AlertRuleBehaviorRuleTemplate',
     title: 'Template behavior rule',
     description: 'Uses a single custom template for messages sent to the listed endpoints. Placeholders such as `{{name}}` are supported.',
-    required: ['id', 'type', 'endpointIds', 'template'],
+    required: ['id', 'name', 'type', 'endpointIds', 'template'],
     properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'name', description: 'Display name for this behavior rule', type: 'string', example: 'Disk alert template'),
         new OA\Property(property: 'type', type: 'string', enum: ['template']),
         new OA\Property(property: 'endpointIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'template', type: 'string', example: 'Alert {{name}} fired on {{instance}}'),
@@ -69,9 +71,10 @@ DESC
     schema: 'AlertRuleBehaviorRuleSilent',
     title: 'Silent behavior rule',
     description: 'While any listed alert rule has the given `triggerState`, notifications for this alert rule are suppressed. Does not affect the manual `isSilent` toggle.',
-    required: ['id', 'type', 'dependsOnAlertRuleIds', 'triggerState'],
+    required: ['id', 'name', 'type', 'dependsOnAlertRuleIds', 'triggerState'],
     properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'name', description: 'Display name for this behavior rule', type: 'string', example: 'Silence during maintenance'),
         new OA\Property(property: 'type', type: 'string', enum: ['silent']),
         new OA\Property(
             property: 'dependsOnAlertRuleIds',
@@ -111,8 +114,9 @@ DESC
 #[OA\Schema(
     schema: 'AlertRuleBehaviorRuleStoreNotification',
     title: 'Create notification rule',
-    required: ['type', 'filters', 'endpointIds'],
+    required: ['name', 'type', 'filters', 'endpointIds'],
     properties: [
+        new OA\Property(property: 'name', description: 'Display name for this behavior rule', type: 'string', minLength: 1, maxLength: 255, example: 'MySQL production endpoints'),
         new OA\Property(property: 'type', type: 'string', enum: ['notification']),
         new OA\Property(property: 'filters', type: 'array', minItems: 1, items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleFilter')),
         new OA\Property(property: 'endpointIds', type: 'array', minItems: 1, items: new OA\Items(type: 'string')),
@@ -122,8 +126,9 @@ DESC
 #[OA\Schema(
     schema: 'AlertRuleBehaviorRuleStoreTemplate',
     title: 'Create template rule',
-    required: ['type', 'endpointIds', 'template'],
+    required: ['name', 'type', 'endpointIds', 'template'],
     properties: [
+        new OA\Property(property: 'name', description: 'Display name for this behavior rule', type: 'string', minLength: 1, maxLength: 255, example: 'Disk alert template'),
         new OA\Property(property: 'type', type: 'string', enum: ['template']),
         new OA\Property(property: 'endpointIds', type: 'array', minItems: 1, items: new OA\Items(type: 'string')),
         new OA\Property(property: 'template', type: 'string', minLength: 1, example: 'Disk alert: {{name}}'),
@@ -133,8 +138,9 @@ DESC
 #[OA\Schema(
     schema: 'AlertRuleBehaviorRuleStoreSilent',
     title: 'Create silent rule',
-    required: ['type', 'dependsOnAlertRuleIds', 'triggerState'],
+    required: ['name', 'type', 'dependsOnAlertRuleIds', 'triggerState'],
     properties: [
+        new OA\Property(property: 'name', description: 'Display name for this behavior rule', type: 'string', minLength: 1, maxLength: 255, example: 'Silence during maintenance'),
         new OA\Property(property: 'type', type: 'string', enum: ['silent']),
         new OA\Property(property: 'dependsOnAlertRuleIds', type: 'array', minItems: 1, items: new OA\Items(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
         new OA\Property(property: 'triggerState', type: 'string', enum: ['resolved', 'critical']),
@@ -162,8 +168,9 @@ DESC
 #[OA\Schema(
     schema: 'AlertRuleBehaviorRuleUpdateNotification',
     title: 'Update notification rule',
-    description: 'Only `filters` and `endpointIds` can be changed. `type` is fixed after create.',
+    description: 'Only `name`, `filters`, and `endpointIds` can be changed. `type` is fixed after create.',
     properties: [
+        new OA\Property(property: 'name', type: 'string', minLength: 1, maxLength: 255),
         new OA\Property(property: 'filters', type: 'array', minItems: 1, items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleFilter')),
         new OA\Property(property: 'endpointIds', type: 'array', minItems: 1, items: new OA\Items(type: 'string')),
     ]
@@ -173,6 +180,7 @@ DESC
     schema: 'AlertRuleBehaviorRuleUpdateTemplate',
     title: 'Update template rule',
     properties: [
+        new OA\Property(property: 'name', type: 'string', minLength: 1, maxLength: 255),
         new OA\Property(property: 'endpointIds', type: 'array', minItems: 1, items: new OA\Items(type: 'string')),
         new OA\Property(property: 'template', type: 'string', minLength: 1),
     ]
@@ -183,6 +191,7 @@ DESC
     title: 'Update silent rule',
     description: '`filters`, `endpointIds`, and `template` are not allowed on silent rules.',
     properties: [
+        new OA\Property(property: 'name', type: 'string', minLength: 1, maxLength: 255),
         new OA\Property(property: 'dependsOnAlertRuleIds', type: 'array', minItems: 1, items: new OA\Items(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
         new OA\Property(property: 'triggerState', type: 'string', enum: ['resolved', 'critical']),
     ]

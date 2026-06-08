@@ -34,6 +34,7 @@ class BehaviorRuleController extends Controller
         $alertRule = $this->authorizedAlertRule($alertRuleId, requireAdmin: true);
 
         $validated = $request->validate([
+            'name' => ['required', 'string', 'min:1', 'max:255'],
             'type' => [
                 'required',
                 Rule::in([
@@ -106,6 +107,7 @@ class BehaviorRuleController extends Controller
         $isSilent = ($existingRule['type'] ?? null) === AlertRuleBehaviorRuleType::SILENT->value;
 
         $validated = $request->validate([
+            'name' => ['sometimes', 'string', 'min:1', 'max:255'],
             'filters' => [$isTemplate || $isSilent ? 'prohibited' : 'sometimes', 'array', 'min:1'],
             'filters.*.key' => ['required_with:filters', 'string'],
             'filters.*.value' => ['required_with:filters', 'string'],
