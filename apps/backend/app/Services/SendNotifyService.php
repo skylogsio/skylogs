@@ -17,6 +17,7 @@ use App\Jobs\SendNotifyJob;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\Notify;
+use App\Support\NotifyMessagePayload;
 use Illuminate\Support\Collection;
 
 class SendNotifyService
@@ -34,28 +35,10 @@ class SendNotifyService
         }
 
         if ($type == SendNotifyJob::ALERT_RULE_TEST) {
-            $messages = [
-                'matterMostMessage' => $notify->alertRule->testMessage(),
-                'telegram' => $notify->alertRule->testMessage(),
-                'teamsMessage' => $notify->alertRule->testMessage(),
-                'emailMessage' => $notify->alertRule->testMessage(),
-                'smsMessage' => $notify->alertRule->testMessage(),
-                'discordMessage' => $notify->alertRule->testMessage(),
-                'callMessage' => $notify->alertRule->testMessage(),
-                'defaultMessage' => $notify->alertRule->testMessage(),
-            ];
+            $messages = NotifyMessagePayload::fromBody($notify->alertRule->testMessage())->toArray();
 
         } elseif ($type == SendNotifyJob::ALERT_RULE_ACKNOWLEDGED) {
-            $messages = [
-                'matterMostMessage' => $notify->alertRule->acknowledgedMessage(),
-                'telegram' => $notify->alertRule->acknowledgedMessage(),
-                'teamsMessage' => $notify->alertRule->acknowledgedMessage(),
-                'emailMessage' => $notify->alertRule->acknowledgedMessage(),
-                'smsMessage' => $notify->alertRule->acknowledgedMessage(),
-                'discordMessage' => $notify->alertRule->acknowledgedMessage(),
-                'callMessage' => $notify->alertRule->acknowledgedMessage(),
-                'defaultMessage' => $notify->alertRule->acknowledgedMessage(),
-            ];
+            $messages = NotifyMessagePayload::fromBody($notify->alertRule->acknowledgedMessage())->toArray();
 
         } else {
             $alertRule = $alertRuleId
@@ -330,9 +313,7 @@ class SendNotifyService
             return $notify;
         }
 
-        return new NotifyMessagesAdapter(
-            NotifyMessageComposer::composeFromSingleTemplate($notify->alertRule, $notify, $template)
-        );
+        return NotifyMessageComposer::composeFromSingleTemplate($notify->alertRule, $notify, $template);
     }
 
     public function processStep(Notify $notify, $endpointId, int $currentStepIndex = 0)

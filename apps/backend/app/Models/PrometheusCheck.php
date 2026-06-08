@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\ProvidesDefaultChannelMessages;
 use App\Interfaces\Messageable;
 use App\Models\DataSource\DataSource;
 use MongoDB\Laravel\Relations\BelongsTo;
@@ -9,6 +10,8 @@ use Morilog\Jalali\Jalalian;
 
 class PrometheusCheck extends BaseModel implements Messageable
 {
+    use ProvidesDefaultChannelMessages;
+
     public $timestamps = true;
 
     protected $guarded = ['id', '_id'];
@@ -154,33 +157,6 @@ class PrometheusCheck extends BaseModel implements Messageable
         }
 
         return $result;
-    }
-
-    public function matterMostMessage()
-    {
-        return $this->defaultMessage();
-    }
-
-    public function teamsMessage(): string
-    {
-        return $this->defaultMessage();
-
-    }
-
-    public function emailMessage(): string
-    {
-        return $this->defaultMessage();
-
-    }
-
-    public function smsMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function discordMessage(): string
-    {
-        return $this->defaultMessage();
     }
 
     public function callMessage(): string

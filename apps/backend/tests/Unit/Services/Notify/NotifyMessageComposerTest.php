@@ -2,27 +2,60 @@
 
 use App\Models\AlertRule;
 use App\Services\NotifyMessageComposer;
+use App\Support\NotifyMessagePayload;
 use Tests\Support\Factories\AlertRuleFactory;
 use Tests\Support\Messageables\PlainTextMessageable;
 use Tests\Support\Messageables\StructuredPayloadMessageable;
 use Tests\Support\Messageables\TelegramInlineKeyboardMessageable;
 
+describe('NotifyMessagePayload', function () {
+    it('stores a canonical body with channel overrides', function () {
+        $payload = NotifyMessagePayload::fromBody('hello', [
+            'telegram' => ['message' => 'hello', 'meta' => []],
+            'call' => 'Alert fired',
+        ]);
+
+        expect($payload->toArray())->toBe([
+            'body' => 'hello',
+            'overrides' => [
+                'telegram' => ['message' => 'hello', 'meta' => []],
+                'call' => 'Alert fired',
+            ],
+        ])
+            ->and($payload->smsMessage())->toBe('hello')
+            ->and($payload->callMessage())->toBe('Alert fired');
+    });
+
+    it('reads legacy eight-key stored messages', function () {
+        $payload = NotifyMessagePayload::fromStored([
+            'defaultMessage' => 'full body',
+            'telegram' => [
+                'message' => 'full body',
+                'meta' => [['text' => 'Acknowledge', 'url' => 'https://example.test/ack']],
+            ],
+            'callMessage' => 'Alert fired',
+            'smsMessage' => 'full body',
+        ]);
+
+        expect($payload->defaultMessage())->toBe('full body')
+            ->and($payload->telegram())->toBeArray()
+            ->and($payload->callMessage())->toBe('Alert fired')
+            ->and($payload->smsMessage())->toBe('full body');
+    });
+});
+
 describe('NotifyMessageComposer', function () {
-    it('maps all channel keys from fromMessageable', function () {
+    it('builds compact payload from fromMessageable', function () {
         $alert = new PlainTextMessageable('hello-world');
 
-        $messages = NotifyMessageComposer::fromMessageable($alert);
+        $payload = NotifyMessageComposer::fromMessageable($alert);
 
-        expect($messages)->toBe([
-            'matterMostMessage' => 'hello-world',
-            'telegram' => 'hello-world',
-            'teamsMessage' => 'hello-world',
-            'emailMessage' => 'hello-world',
-            'smsMessage' => 'hello-world',
-            'discordMessage' => 'hello-world',
-            'callMessage' => 'hello-world',
-            'defaultMessage' => 'hello-world',
-        ]);
+        expect($payload->toArray())->toBe([
+            'body' => 'hello-world',
+            'overrides' => [],
+        ])
+            ->and($payload->smsMessage())->toBe('hello-world')
+            ->and($payload->telegram())->toBe('hello-world');
     });
 
     it('delegates buildMessages to fromMessageable when alert rule is null', function () {
@@ -30,8 +63,10 @@ describe('NotifyMessageComposer', function () {
 
         $messages = NotifyMessageComposer::buildMessages(null, $alert);
 
-        expect($messages['smsMessage'])->toBe('no-rule')
-            ->and($messages['defaultMessage'])->toBe('no-rule');
+        expect($messages)->toBe([
+            'body' => 'no-rule',
+            'overrides' => [],
+        ]);
     });
 
     it('delegates buildMessages to fromMessageable for alert rules', function () {
@@ -43,10 +78,10 @@ describe('NotifyMessageComposer', function () {
 
         $messages = NotifyMessageComposer::buildMessages($rule, $alert);
 
-        expect($messages['smsMessage'])->toBe('fallback');
+        expect($messages['body'])->toBe('fallback');
     });
 
-    it('applies one template string to every channel message key', function () {
+    it('applies one template string to the canonical body', function () {
         $rule = AlertRuleFactory::unsaved([
             'name' => 'CPU High',
             'state' => AlertRule::CRITICAL,
@@ -54,16 +89,15 @@ describe('NotifyMessageComposer', function () {
         ]);
         $alert = new StructuredPayloadMessageable('worker-7');
 
-        $messages = NotifyMessageComposer::composeFromSingleTemplate(
+        $payload = NotifyMessageComposer::composeFromSingleTemplate(
             $rule,
             $alert,
             '{{name}}|{{state}}|{{fireCount}}|{{alert.instance}}',
         );
 
-        expect($messages['smsMessage'])->toBe('CPU High|critical|3|worker-7')
-            ->and($messages['teamsMessage'])->toBe('CPU High|critical|3|worker-7')
-            ->and($messages['emailMessage'])->toBe('CPU High|critical|3|worker-7')
-            ->and($messages['defaultMessage'])->toBe('CPU High|critical|3|worker-7');
+        expect($payload->defaultMessage())->toBe('CPU High|critical|3|worker-7')
+            ->and($payload->smsMessage())->toBe('CPU High|critical|3|worker-7')
+            ->and($payload->teamsMessage())->toBe('CPU High|critical|3|worker-7');
     });
 
     it('renders unknown placeholders as empty', function () {
@@ -73,25 +107,25 @@ describe('NotifyMessageComposer', function () {
         ]);
         $alert = new PlainTextMessageable('x');
 
-        $messages = NotifyMessageComposer::composeFromSingleTemplate(
+        $payload = NotifyMessageComposer::composeFromSingleTemplate(
             $rule,
             $alert,
             '{{name}}{{not_a_real_key}}',
         );
 
-        expect($messages['smsMessage'])->toBe('N');
+        expect($payload->smsMessage())->toBe('N');
     });
 
-    it('applies template text to telegram when telegram() returns a string', function () {
+    it('uses template text for telegram when telegram() returns a string', function () {
         $rule = AlertRuleFactory::unsaved([
             'name' => 'RuleA',
             'state' => AlertRule::CRITICAL,
         ]);
         $alert = new PlainTextMessageable('ignored-for-telegram-channel');
 
-        $messages = NotifyMessageComposer::composeFromSingleTemplate($rule, $alert, 'TG:{{name}}');
+        $payload = NotifyMessageComposer::composeFromSingleTemplate($rule, $alert, 'TG:{{name}}');
 
-        expect($messages['telegram'])->toBe('TG:RuleA');
+        expect($payload->telegram())->toBe('TG:RuleA');
     });
 
     it('preserves telegram inline keyboard meta when applying template', function () {
@@ -101,12 +135,22 @@ describe('NotifyMessageComposer', function () {
         ]);
         $alert = new TelegramInlineKeyboardMessageable('old-body');
 
-        $messages = NotifyMessageComposer::composeFromSingleTemplate($rule, $alert, 'Firing: {{name}}');
+        $payload = NotifyMessageComposer::composeFromSingleTemplate($rule, $alert, 'Firing: {{name}}');
 
-        expect($messages['telegram'])->toBeArray()
-            ->and($messages['telegram']['message'])->toBe('Firing: GrafanaLike')
-            ->and($messages['telegram'])->toHaveKey('meta')
-            ->and($messages['telegram']['meta'][0]['text'] ?? null)->toBe('Acknowledge')
-            ->and($messages['telegram']['meta'][0]['url'] ?? null)->toBe('https://example.test/ack/1');
+        expect($payload->telegram())->toBeArray()
+            ->and($payload->telegram()['message'])->toBe('Firing: GrafanaLike')
+            ->and($payload->telegram())->toHaveKey('meta')
+            ->and($payload->telegram()['meta'][0]['text'] ?? null)->toBe('Acknowledge')
+            ->and($payload->telegram()['meta'][0]['url'] ?? null)->toBe('https://example.test/ack/1');
+    });
+
+    it('captures call and telegram overrides from messageable alerts', function () {
+        $alert = new TelegramInlineKeyboardMessageable('old-body');
+
+        $payload = NotifyMessagePayload::fromMessageable($alert);
+
+        expect($payload->defaultMessage())->toBe('default')
+            ->and($payload->telegram())->toBeArray()
+            ->and($payload->callMessage())->toBe('default');
     });
 });

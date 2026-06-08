@@ -2,6 +2,7 @@
 
 namespace Tests\Support\Messageables;
 
+use App\Concerns\ProvidesDefaultChannelMessages;
 use App\Interfaces\Messageable;
 
 /**
@@ -9,46 +10,13 @@ use App\Interfaces\Messageable;
  */
 final class PlainTextMessageable implements Messageable
 {
+    use ProvidesDefaultChannelMessages;
+
     public function __construct(
         private readonly string $text = 'plain-body',
     ) {}
 
     public function defaultMessage(): string
-    {
-        return $this->text;
-    }
-
-    public function telegram(): array|string
-    {
-        return $this->text;
-    }
-
-    public function matterMostMessage(): string
-    {
-        return $this->text;
-    }
-
-    public function teamsMessage(): string
-    {
-        return $this->text;
-    }
-
-    public function smsMessage(): string
-    {
-        return $this->text;
-    }
-
-    public function discordMessage(): string
-    {
-        return $this->text;
-    }
-
-    public function callMessage(): string
-    {
-        return $this->text;
-    }
-
-    public function emailMessage(): string
     {
         return $this->text;
     }
