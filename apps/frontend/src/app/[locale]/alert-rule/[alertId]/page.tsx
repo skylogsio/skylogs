@@ -26,6 +26,7 @@ import type { IZabbixAlertRule, IAlertRule } from "@/@types/alertRule";
 import { getAlertRuleById, silenceAlertRule, testAlertRule } from "@/api/alertRule";
 import AlertRuleModal from "@/app/[locale]/alert-rule/AlertRuleModal";
 import DeleteAlertRuleModal from "@/app/[locale]/alert-rule/DeleteAlertRuleModal";
+import AdvancePage from "@/components/AlertRule/advance/AdvanceSection";
 import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndicator";
 import AlertRuleFiredInstances from "@/components/AlertRule/FiredInstances/AlertRuleFiredInstances";
 import AlertRuleHistory from "@/components/AlertRule/History/AlertRuleHistory";
@@ -33,7 +34,7 @@ import AlertRuleNotifyManager from "@/components/AlertRule/Notify/AlertRuleNotif
 import AlertRuleAccessManager from "@/components/AlertRule/Users/AlertRuleAccessManager";
 import { ALERT_RULE_VARIANTS } from "@/utils/alertRuleUtils";
 
-const TABS = ["fire", "users", "history", "notify"];
+const TABS = ["fire", "users", "history", "notify", "advance"];
 type TabType = (typeof TABS)[number];
 
 const TABS_ICON: { [key: TabType]: ReactElement } = {
@@ -146,6 +147,8 @@ export default function ViewAlertRule() {
         return <AlertRuleNotifyManager alertId={alertId} />;
       case "fire":
         return <AlertRuleFiredInstances alertId={alertId} type={data!.type} />;
+      case "advance":
+        return <AdvancePage  />;
       default:
         return null;
     }
