@@ -138,6 +138,7 @@ class AlertRuleBehaviorRuleService
     public function formatRulesForApi(array $rules): array
     {
         return collect($rules)->map(function (array $rule) {
+            $rule['name'] = trim((string) ($rule['name'] ?? ''));
             $rule['endpointIds'] = array_values($rule['endpointIds'] ?? []);
 
             if (($rule['type'] ?? null) === AlertRuleBehaviorRuleType::SILENT->value) {
@@ -376,6 +377,7 @@ class AlertRuleBehaviorRuleService
 
         $rule = [
             'id' => (string) Str::uuid(),
+            'name' => trim((string) ($ruleData['name'] ?? '')),
             'type' => AlertRuleBehaviorRuleType::NOTIFICATION->value,
             'filters' => $this->normalizeFilters($ruleData['filters'] ?? []),
             'endpointIds' => array_values(array_unique($ruleData['endpointIds'] ?? [])),
@@ -397,6 +399,7 @@ class AlertRuleBehaviorRuleService
 
         $rule = [
             'id' => (string) Str::uuid(),
+            'name' => trim((string) ($ruleData['name'] ?? '')),
             'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
             'endpointIds' => array_values(array_unique($ruleData['endpointIds'] ?? [])),
             'template' => trim((string) ($ruleData['template'] ?? '')),
@@ -418,6 +421,7 @@ class AlertRuleBehaviorRuleService
 
         $rule = [
             'id' => (string) Str::uuid(),
+            'name' => trim((string) ($ruleData['name'] ?? '')),
             'type' => AlertRuleBehaviorRuleType::SILENT->value,
             'dependsOnAlertRuleIds' => array_values(array_unique($ruleData['dependsOnAlertRuleIds'] ?? [])),
             'triggerState' => trim((string) ($ruleData['triggerState'] ?? '')),
@@ -449,6 +453,7 @@ class AlertRuleBehaviorRuleService
 
             $rules[$index] = [
                 'id' => $ruleId,
+                'name' => trim((string) ($ruleData['name'] ?? $rule['name'] ?? '')),
                 'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
                 'endpointIds' => array_values(array_unique($ruleData['endpointIds'] ?? $rule['endpointIds'] ?? [])),
                 'template' => trim((string) ($ruleData['template'] ?? $rule['template'] ?? '')),
@@ -486,6 +491,7 @@ class AlertRuleBehaviorRuleService
 
             $rules[$index] = [
                 'id' => $ruleId,
+                'name' => trim((string) ($ruleData['name'] ?? $rule['name'] ?? '')),
                 'type' => AlertRuleBehaviorRuleType::SILENT->value,
                 'dependsOnAlertRuleIds' => array_values(array_unique($ruleData['dependsOnAlertRuleIds'] ?? $rule['dependsOnAlertRuleIds'] ?? [])),
                 'triggerState' => trim((string) ($ruleData['triggerState'] ?? $rule['triggerState'] ?? '')),
@@ -532,6 +538,7 @@ class AlertRuleBehaviorRuleService
 
             $rules[$index] = [
                 'id' => $ruleId,
+                'name' => trim((string) ($ruleData['name'] ?? $rule['name'] ?? '')),
                 'type' => AlertRuleBehaviorRuleType::NOTIFICATION->value,
                 'filters' => $this->normalizeFilters($ruleData['filters'] ?? $rule['filters'] ?? []),
                 'endpointIds' => array_values(array_unique($ruleData['endpointIds'] ?? $rule['endpointIds'] ?? [])),
