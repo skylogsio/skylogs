@@ -15,8 +15,9 @@ const allowedRoutes = new Set([
   "pmm-alert"
 ]);
 
-export async function POST(req: NextRequest, { params }: { params: { slug: string[] } }) {
-  const slugParts = params.slug || [];
+export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
+  const { slug } = await params;
+  const slugParts = slug || [];
 
   if (slugParts.length === 0) {
     return NextResponse.json({ message: "Route not found" }, { status: 404 });
