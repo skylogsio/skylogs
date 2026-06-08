@@ -216,6 +216,8 @@ Route::prefix('v1')->group(function () {
         Route::prefix('/alert-rule-behavior-rule')
             ->controller(BehaviorRuleController::class)
             ->group(function () {
+                Route::get('/selectable-alert-rules/{alertRuleId}', 'SelectableAlertRules')
+                    ->where('alertRuleId', '[0-9a-fA-F]{24}');
                 Route::get('/{alertRuleId}', 'Index')->where('alertRuleId', '[0-9a-fA-F]{24}');
                 Route::post('/{alertRuleId}', 'Store')->where('alertRuleId', '[0-9a-fA-F]{24}');
                 Route::put('/{alertRuleId}/{ruleId}', 'Update')

@@ -199,6 +199,18 @@ DESC
 )]
 
 #[OA\Schema(
+    schema: 'AlertRuleBehaviorRuleSelectableAlert',
+    description: 'Alert rule that can be selected as a silent-rule dependency (status supports resolved or critical).',
+    required: ['id', 'name', 'type', 'state'],
+    properties: [
+        new OA\Property(property: 'id', description: 'Alert rule MongoDB `_id`', type: 'string', pattern: '^[0-9a-fA-F]{24}$'),
+        new OA\Property(property: 'name', description: 'Alert rule display name', type: 'string', example: 'MySQL replication lag'),
+        new OA\Property(property: 'type', description: 'Alert rule type', type: 'string', example: 'prometheus'),
+        new OA\Property(property: 'state', description: 'Current status from `getStatus()`', type: 'string', enum: ['unknown', 'warning', 'critical', 'triggered', 'resolved']),
+    ]
+)]
+
+#[OA\Schema(
     schema: 'AlertRuleBehaviorRuleUpdateSilent',
     title: 'Update silent rule',
     description: '`filters`, `endpointIds`, and `template` are not allowed on silent rules.',

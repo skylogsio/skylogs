@@ -33,6 +33,7 @@ use Cache;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
 
 class AlertRuleService
@@ -105,6 +106,75 @@ class AlertRuleService
         });
 
         return $data;
+    }
+
+    /**
+     * Alert rule types whose status can be resolved or critical (used by silent behavior rules).
+     *
+     * @return list<AlertRuleType>
+     */
+    public function silentDependencySupportedTypes(): array
+    {
+        return [
+            AlertRuleType::API,
+            AlertRuleType::PROMETHEUS,
+            AlertRuleType::GRAFANA,
+            AlertRuleType::PMM,
+            AlertRuleType::SENTRY,
+            AlertRuleType::METABASE,
+            AlertRuleType::ZABBIX,
+            AlertRuleType::ELASTIC,
+            AlertRuleType::HEALTH,
+            AlertRuleType::VICTORIA_LOGS,
+        ];
+    }
+
+    /**
+     * @return Collection<int, AlertRule>
+     */
+    public function selectableAlertRulesForSilentDependency(?AlertRule $excludeAlertRule = null)
+    {
+        $match = [];
+        $this->getMatchFilterArray(Request::create('/'), $match);
+
+        $typeValues = array_map(
+            fn (AlertRuleType $type) => $type->value,
+            $this->silentDependencySupportedTypes(),
+        );
+        $match['type'] = ['$in' => $typeValues];
+
+        if ($excludeAlertRule !== null) {
+            $match['_id'] = ['$ne' => $excludeAlertRule->_id ?? $excludeAlertRule->id];
+        }
+
+        $pipeline = [['$match' => $match], ['$sort' => ['name' => 1]]];
+
+        return AlertRule::raw(function ($collection) use ($pipeline) {
+            return $collection->aggregate($pipeline);
+        });
+    }
+
+    /**
+     * @param  iterable<int, AlertRule>  $alertRules
+     * @return list<array{id: string, name: string, type: string, state: string}>
+     */
+    public function formatSelectableAlertRulesForApi(iterable $alertRules): array
+    {
+        $formatted = [];
+
+        foreach ($alertRules as $alertRule) {
+            /** @var AlertRule $alertRule */
+            [$state] = $alertRule->getStatus();
+
+            $formatted[] = [
+                'id' => (string) ($alertRule->_id ?? $alertRule->id),
+                'name' => (string) ($alertRule->name ?? ''),
+                'type' => $alertRule->type instanceof AlertRuleType ? $alertRule->type->value : (string) $alertRule->type,
+                'state' => $state,
+            ];
+        }
+
+        return $formatted;
     }
 
     public function getMatchFilterArray($request, &$match)

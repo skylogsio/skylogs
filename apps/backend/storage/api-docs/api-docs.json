@@ -1507,6 +1507,54 @@
                 ]
             }
         },
+        "/api/v1/alert-rule-behavior-rule/selectable-alert-rules/{alertRuleId}": {
+            "get": {
+                "tags": [
+                    "AlertRule Behavior Rules"
+                ],
+                "summary": "List selectable alert rules for silent behavior rules",
+                "description": "Returns alert rules the user can access whose type supports resolved/critical status. Excludes the current alert rule. Use the returned `id` values in `dependsOnAlertRuleIds` when creating or updating a silent behavior rule.",
+                "operationId": "getSelectableAlertRulesForBehaviorRule",
+                "parameters": [
+                    {
+                        "name": "alertRuleId",
+                        "in": "path",
+                        "description": "Alert rule MongoDB `_id` being configured",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Selectable alert rules",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AlertRuleBehaviorRuleSelectableAlert"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Alert rule not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/alert-rule-behavior-rule/{alertRuleId}": {
             "get": {
                 "tags": [
@@ -6727,6 +6775,44 @@
                     "template": {
                         "type": "string",
                         "minLength": 1
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleBehaviorRuleSelectableAlert": {
+                "description": "Alert rule that can be selected as a silent-rule dependency (status supports resolved or critical).",
+                "required": [
+                    "id",
+                    "name",
+                    "type",
+                    "state"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "Alert rule MongoDB `_id`",
+                        "type": "string",
+                        "pattern": "^[0-9a-fA-F]{24}$"
+                    },
+                    "name": {
+                        "description": "Alert rule display name",
+                        "type": "string",
+                        "example": "MySQL replication lag"
+                    },
+                    "type": {
+                        "description": "Alert rule type",
+                        "type": "string",
+                        "example": "prometheus"
+                    },
+                    "state": {
+                        "description": "Current status from `getStatus()`",
+                        "type": "string",
+                        "enum": [
+                            "unknown",
+                            "warning",
+                            "critical",
+                            "triggered",
+                            "resolved"
+                        ]
                     }
                 },
                 "type": "object"
