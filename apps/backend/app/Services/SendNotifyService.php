@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\EndpointType;
 use App\Enums\FlowEndpointStepType;
+use App\Helpers\Bale;
 use App\Helpers\Call;
 use App\Helpers\Discord;
 use App\Helpers\Email;
@@ -137,6 +138,7 @@ class SendNotifyService
         $notify->resultDiscords = $this->sendDiscordAlerts($endpoints->where('type', EndpointType::DISCORD->value), $notify);
         $notify->resultMatterMost = $this->sendMatterMostAlerts($endpoints->where('type', EndpointType::MATTER_MOST->value), $notify);
         $notify->resultTelegram = $this->sendTelegramAlerts($endpoints->where('type', EndpointType::TELEGRAM->value), $notify);
+        $notify->resultBale = $this->sendBaleAlerts($endpoints->where('type', EndpointType::BALE->value), $notify);
         $notify->resultEmail = $this->sendEmailAlerts($endpoints->where('type', EndpointType::EMAIL->value), $notify);
 
         $notify->save();
@@ -177,6 +179,10 @@ class SendNotifyService
 
         if ($telegramResult = $this->sendTelegramAlerts($endpoints->where('type', EndpointType::TELEGRAM->value), $notify)) {
             $resultStep['resultTelegram'] = $telegramResult;
+        }
+
+        if ($baleResult = $this->sendBaleAlerts($endpoints->where('type', EndpointType::BALE->value), $notify)) {
+            $resultStep['resultBale'] = $baleResult;
         }
 
         if ($emailResult = $this->sendEmailAlerts($endpoints->where('type', EndpointType::EMAIL->value), $notify)) {
@@ -263,6 +269,18 @@ class SendNotifyService
             $endpoints,
             $notify,
             fn (Collection $group, Messageable $messageable) => Telegram::sendMessageAlert($group->values()->all(), $messageable),
+        );
+    }
+
+    /**
+     * @param  Collection<int, Endpoint>  $endpoints
+     */
+    private function sendBaleAlerts(Collection $endpoints, Notify $notify): mixed
+    {
+        return $this->sendChannelAlerts(
+            $endpoints,
+            $notify,
+            fn (Collection $group, Messageable $messageable) => Bale::sendMessageAlert($group->values()->all(), $messageable),
         );
     }
 

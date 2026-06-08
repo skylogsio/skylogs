@@ -124,6 +124,20 @@ class EndpointService
                 ]);
                 break;
 
+            case EndpointType::BALE->value:
+
+                $model = Endpoint::create([
+                    'userId' => \Auth::id(),
+                    'name' => $request->name,
+                    'type' => $request->type,
+                    'accessUserIds' => $accessUserIds,
+                    'accessTeamIds' => $accessTeamIds,
+                    'chatId' => $value,
+                    'botToken' => $request->botToken,
+                    'isPublic' => $isPublic,
+                ]);
+                break;
+
             case EndpointType::FLOW->value:
                 $this->validateFlowEndpointData($request);
 
@@ -194,6 +208,19 @@ class EndpointService
                     'accessTeamIds' => $accessTeamIds,
                     'chatId' => $value,
                     'threadId' => $request->threadId,
+                    'botToken' => $request->botToken,
+                    'isPublic' => $isPublic,
+                ]);
+                break;
+
+            case EndpointType::BALE->value:
+
+                $model = $endpoint->update([
+                    'name' => $request->name,
+                    'type' => $request->type,
+                    'accessUserIds' => $accessUserIds,
+                    'accessTeamIds' => $accessTeamIds,
+                    'chatId' => $value,
                     'botToken' => $request->botToken,
                     'isPublic' => $isPublic,
                 ]);

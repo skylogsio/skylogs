@@ -152,6 +152,9 @@ class ClusterService
                     $endpointModel->chatId = $endpoint['chatId'] ?? '';
                     $endpointModel->threadId = $endpoint['threadId'] ?? '';
                     $endpointModel->botToken = $endpoint['botToken'] ?? '';
+                } elseif ($endpoint['type'] == EndpointType::BALE->value) {
+                    $endpointModel->chatId = $endpoint['chatId'] ?? '';
+                    $endpointModel->botToken = $endpoint['botToken'] ?? '';
                 } else {
                     $endpointModel->value = $endpoint['value'];
                 }
