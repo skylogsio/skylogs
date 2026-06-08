@@ -288,7 +288,32 @@ describe('AlertRuleBehaviorRuleService', function () {
                     ['key' => 'db_name', 'value' => 'mysql01'],
                 ],
                 'endpointIds' => ['endpoint-a'],
+                'endpoints' => [
+                    ['id' => 'endpoint-a', 'name' => ''],
+                ],
             ],
+        ]);
+    });
+
+    it('includes resolved endpoint names in api response', function () {
+        $service = Mockery::mock(AlertRuleBehaviorRuleService::class)->makePartial();
+        $service->shouldAllowMockingProtectedMethods();
+        $service->shouldReceive('endpointNamesByIds')
+            ->with(['endpoint-a'])
+            ->andReturn(['endpoint-a' => 'Ops email']);
+
+        $formatted = $service->formatRulesForApi([
+            [
+                'id' => 'rule-1',
+                'name' => 'MySQL endpoints',
+                'type' => AlertRuleBehaviorRuleType::NOTIFICATION->value,
+                'filters' => ['db_name' => 'mysql01'],
+                'endpointIds' => ['endpoint-a'],
+            ],
+        ]);
+
+        expect($formatted[0]['endpoints'])->toBe([
+            ['id' => 'endpoint-a', 'name' => 'Ops email'],
         ]);
     });
 
@@ -456,6 +481,9 @@ describe('AlertRuleBehaviorRuleService', function () {
             'name' => 'Custom template',
             'type' => AlertRuleBehaviorRuleType::TEMPLATE->value,
             'endpointIds' => ['endpoint-a'],
+            'endpoints' => [
+                ['id' => 'endpoint-a', 'name' => ''],
+            ],
             'template' => 'Hi {{name}}',
         ])->and($formatted[0])->not->toHaveKey('filters');
     });

@@ -6,6 +6,7 @@ use App\Enums\AlertRuleBehaviorRuleType;
 use App\Enums\AlertRuleType;
 use App\Helpers\Utilities;
 use App\Models\AlertRule;
+use App\Models\Endpoint;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -137,9 +138,16 @@ class AlertRuleBehaviorRuleService
      */
     public function formatRulesForApi(array $rules): array
     {
-        return collect($rules)->map(function (array $rule) {
+        $endpointIds = collect($rules)
+            ->flatMap(fn (array $rule) => $rule['endpointIds'] ?? [])
+            ->unique()
+            ->values()
+            ->all();
+
+        $endpointNameById = $this->endpointNamesByIds($endpointIds);
+
+        return collect($rules)->map(function (array $rule) use ($endpointNameById) {
             $rule['name'] = trim((string) ($rule['name'] ?? ''));
-            $rule['endpointIds'] = array_values($rule['endpointIds'] ?? []);
 
             if (($rule['type'] ?? null) === AlertRuleBehaviorRuleType::SILENT->value) {
                 $rule['triggerState'] = trim((string) ($rule['triggerState'] ?? ''));
@@ -149,6 +157,9 @@ class AlertRuleBehaviorRuleService
 
                 return $rule;
             }
+
+            $rule['endpointIds'] = array_values($rule['endpointIds'] ?? []);
+            $rule['endpoints'] = $this->formatEndpointsForApi($rule['endpointIds'], $endpointNameById);
 
             if (($rule['type'] ?? null) === AlertRuleBehaviorRuleType::TEMPLATE->value) {
                 $rule['template'] = (string) ($rule['template'] ?? '');
@@ -169,6 +180,41 @@ class AlertRuleBehaviorRuleService
 
             return $rule;
         })->values()->all();
+    }
+
+    /**
+     * @param  list<string>  $endpointIds
+     * @return array<string, string>
+     */
+    protected function endpointNamesByIds(array $endpointIds): array
+    {
+        if ($endpointIds === []) {
+            return [];
+        }
+
+        return Endpoint::query()
+            ->whereIn('_id', $endpointIds)
+            ->get(['_id', 'name'])
+            ->mapWithKeys(fn (Endpoint $endpoint) => [
+                (string) $endpoint->_id => trim((string) ($endpoint->name ?? '')),
+            ])
+            ->all();
+    }
+
+    /**
+     * @param  list<string>  $endpointIds
+     * @param  array<string, string>  $endpointNameById
+     * @return list<array{id: string, name: string}>
+     */
+    protected function formatEndpointsForApi(array $endpointIds, array $endpointNameById): array
+    {
+        return collect($endpointIds)
+            ->map(fn (string $endpointId) => [
+                'id' => $endpointId,
+                'name' => $endpointNameById[$endpointId] ?? '',
+            ])
+            ->values()
+            ->all();
     }
 
     public function resolveIsSilent(AlertRule $alertRule): bool

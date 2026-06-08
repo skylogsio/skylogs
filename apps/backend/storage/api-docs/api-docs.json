@@ -6336,6 +6336,26 @@
     },
     "components": {
         "schemas": {
+            "AlertRuleBehaviorRuleEndpoint": {
+                "description": "Endpoint reference included in behavior rule API responses.",
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "description": "Endpoint MongoDB `_id`",
+                        "type": "string",
+                        "pattern": "^[0-9a-fA-F]{24}$"
+                    },
+                    "name": {
+                        "description": "Endpoint display name",
+                        "type": "string",
+                        "example": "Ops email"
+                    }
+                },
+                "type": "object"
+            },
             "AlertRuleBehaviorRuleFilter": {
                 "description": "Label or annotation filter. Values support wildcards (e.g. `mysql*`). All filters must match.",
                 "required": [
@@ -6364,7 +6384,8 @@
                     "name",
                     "type",
                     "filters",
-                    "endpointIds"
+                    "endpointIds",
+                    "endpoints"
                 ],
                 "properties": {
                     "id": {
@@ -6395,6 +6416,13 @@
                         "items": {
                             "type": "string"
                         }
+                    },
+                    "endpoints": {
+                        "description": "Resolved endpoint id and name pairs for `endpointIds`",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertRuleBehaviorRuleEndpoint"
+                        }
                     }
                 },
                 "type": "object"
@@ -6407,6 +6435,7 @@
                     "name",
                     "type",
                     "endpointIds",
+                    "endpoints",
                     "template"
                 ],
                 "properties": {
@@ -6429,6 +6458,13 @@
                         "type": "array",
                         "items": {
                             "type": "string"
+                        }
+                    },
+                    "endpoints": {
+                        "description": "Resolved endpoint id and name pairs for `endpointIds`",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertRuleBehaviorRuleEndpoint"
                         }
                     },
                     "template": {

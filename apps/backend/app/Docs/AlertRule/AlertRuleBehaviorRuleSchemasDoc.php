@@ -30,6 +30,16 @@ DESC
 )]
 
 #[OA\Schema(
+    schema: 'AlertRuleBehaviorRuleEndpoint',
+    description: 'Endpoint reference included in behavior rule API responses.',
+    required: ['id', 'name'],
+    properties: [
+        new OA\Property(property: 'id', description: 'Endpoint MongoDB `_id`', type: 'string', pattern: '^[0-9a-fA-F]{24}$'),
+        new OA\Property(property: 'name', description: 'Endpoint display name', type: 'string', example: 'Ops email'),
+    ]
+)]
+
+#[OA\Schema(
     schema: 'AlertRuleBehaviorRuleFilter',
     description: 'Label or annotation filter. Values support wildcards (e.g. `mysql*`). All filters must match.',
     required: ['key', 'value'],
@@ -43,13 +53,14 @@ DESC
     schema: 'AlertRuleBehaviorRuleNotification',
     title: 'Notification behavior rule',
     description: 'Adds the listed endpoints when every filter matches the firing alert.',
-    required: ['id', 'name', 'type', 'filters', 'endpointIds'],
+    required: ['id', 'name', 'type', 'filters', 'endpointIds', 'endpoints'],
     properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid', example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
         new OA\Property(property: 'name', description: 'Display name for this behavior rule', type: 'string', example: 'MySQL production endpoints'),
         new OA\Property(property: 'type', type: 'string', enum: ['notification']),
         new OA\Property(property: 'filters', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleFilter')),
         new OA\Property(property: 'endpointIds', description: 'Extra endpoints to notify (in addition to the alert rule defaults)', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'endpoints', description: 'Resolved endpoint id and name pairs for `endpointIds`', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleEndpoint')),
     ]
 )]
 
@@ -57,12 +68,13 @@ DESC
     schema: 'AlertRuleBehaviorRuleTemplate',
     title: 'Template behavior rule',
     description: 'Uses a single custom template for messages sent to the listed endpoints. Placeholders such as `{{name}}` are supported.',
-    required: ['id', 'name', 'type', 'endpointIds', 'template'],
+    required: ['id', 'name', 'type', 'endpointIds', 'endpoints', 'template'],
     properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'name', description: 'Display name for this behavior rule', type: 'string', example: 'Disk alert template'),
         new OA\Property(property: 'type', type: 'string', enum: ['template']),
         new OA\Property(property: 'endpointIds', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'endpoints', description: 'Resolved endpoint id and name pairs for `endpointIds`', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleEndpoint')),
         new OA\Property(property: 'template', type: 'string', example: 'Alert {{name}} fired on {{instance}}'),
     ]
 )]
