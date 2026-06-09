@@ -365,8 +365,8 @@ class AlertRuleBehaviorRuleService
     public function getFilterValue(AlertRule $alertRule, array $context, string $key): ?string
     {
         return match ($alertRule->type) {
-            AlertRuleType::API, AlertRuleType::NOTIFICATION => $context['instance'] !== ''
-                ? $context['instance']
+            AlertRuleType::API, AlertRuleType::NOTIFICATION => $key === 'instance'
+                ? ($context['instance'] !== '' ? $context['instance'] : null)
                 : null,
             default => $this->labelFilterValue($context, $key),
         };

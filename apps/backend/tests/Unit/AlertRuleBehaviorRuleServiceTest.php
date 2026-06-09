@@ -94,6 +94,34 @@ describe('AlertRuleBehaviorRuleService', function () {
         expect($endpointIds)->toContain('web-endpoint');
     });
 
+    it('does not match api notification rules when filter key is not instance', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::API,
+            'endpointIds' => [],
+            'rules' => [
+                [
+                    'id' => 'rule-1',
+                    'type' => AlertRuleBehaviorRuleType::NOTIFICATION->value,
+                    'filters' => ['dtest' => 'test'],
+                    'endpointIds' => ['wrong-endpoint'],
+                ],
+                [
+                    'id' => 'rule-2',
+                    'type' => AlertRuleBehaviorRuleType::NOTIFICATION->value,
+                    'filters' => ['instance' => 'test'],
+                    'endpointIds' => ['matched-endpoint'],
+                ],
+            ],
+        ]);
+
+        $endpointIds = $this->service->resolveEndpointIds($alertRule, [
+            'instance' => 'test',
+        ]);
+
+        expect($endpointIds)->toBe(['matched-endpoint'])
+            ->not->toContain('wrong-endpoint');
+    });
+
     it('supports wildcard filter patterns', function () {
         $alertRule = AlertRuleFactory::unsaved([
             'type' => AlertRuleType::GRAFANA,
