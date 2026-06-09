@@ -21,34 +21,31 @@ import { HiOutlinePlusSm, HiOutlineSearch } from "react-icons/hi";
 
 import { getBehaviorRuleOfAlertRule } from "@/api/alertRule";
 
-import AdvanceCard from "./AdvanceCard";
-import AdvanceChip from "./AdvanceChip";
-import { AdvanceType } from "./AdvanceUtils";
+import BehaviorCard from "./BehaviorRuleCard";
+import BehaviorRuleChip from "./BehaviorRuleChip";
+import type { BehaviorRuleFilterType, BehaviorRuleType } from "./BehaviorRuleType";
 import NotificationRuleModal from "./NotificationRule";
-
-type FilterType = "all" | AdvanceType;
 
 export default function AdvanceSection() {
   const { alertId } = useParams<{ alertId: string }>();
   const { palette } = useTheme();
-  const [filter, setFilter] = useState<FilterType>("all");
+  const [filter, setFilter] = useState<BehaviorRuleFilterType>("all");
   const [createMenuAnchor, setCreateMenuAnchor] = useState<null | HTMLElement>(null);
-  const [selectedModal, setSelectedModal] = useState<AdvanceType | null>(null);
+  const [selectedModal, setSelectedModal] = useState<BehaviorRuleType | null>(null);
   const [modalData, setModalData] = useState<"NEW" | never>();
 
   const { data } = useQuery({
     queryKey: ["get-behavior-rule", alertId],
     queryFn: () => getBehaviorRuleOfAlertRule(alertId)
   });
-  console.log("🚀 ~ AdvanceSection ~ data:", data);
 
-  function handleOpenModal(type: AdvanceType) {
+  function handleOpenModal(type: BehaviorRuleType) {
     setCreateMenuAnchor(null);
     setModalData("NEW");
     setSelectedModal(type);
   }
 
-  const filters: FilterType[] = ["all", "template", "notification", "silent"];
+  const filters: BehaviorRuleFilterType[] = ["all", "template", "notification", "silent"];
 
   if (!data) return null;
 
@@ -131,7 +128,7 @@ export default function AdvanceSection() {
 
         <Stack direction="row" spacing={0.5} sx={{ mb: 3 }}>
           {filters.map((item) => (
-            <AdvanceChip
+            <BehaviorRuleChip
               key={item}
               label={item}
               clickable
@@ -144,7 +141,7 @@ export default function AdvanceSection() {
         <Grid container spacing={2}>
           {filtered.map((item: any) => (
             <Grid key={item.id} size={{ xs: 12, sm: 6, lg: 4 }}>
-              <AdvanceCard
+              <BehaviorCard
                 item={item}
                 onEdit={() => {
                   setSelectedModal(item.type);

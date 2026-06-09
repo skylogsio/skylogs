@@ -3,10 +3,10 @@ import { AiFillNotification } from "react-icons/ai";
 import { IoNotificationsOff } from "react-icons/io5";
 import { MdSms } from "react-icons/md";
 
-export type AdvanceType = "template" | "notification" | "silent";
+import type { BehaviorRuleType } from "./BehaviorRuleType";
 
-export const ADVANCE_TYPE_CONFIG: Record<
-  AdvanceType,
+export const BEHAVIOR_RULE_TYPE_CONFIG: Record<
+  BehaviorRuleType,
   { color: string; bgColor: string; icon: React.ReactNode; cardIconBg: string }
 > = {
   template: {

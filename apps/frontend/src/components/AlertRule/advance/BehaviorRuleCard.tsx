@@ -14,35 +14,21 @@ import {
 } from "@mui/material";
 import { HiDotsVertical, HiPencil, HiTrash, HiOutlineDuplicate } from "react-icons/hi";
 
-import AdvanceChip from "./AdvanceChip";
-import { ADVANCE_TYPE_CONFIG } from "./AdvanceUtils";
+import BehaviorRuleChip from "./BehaviorRuleChip";
+import type { NotificationRuleItem } from "./BehaviorRuleType";
+import { BEHAVIOR_RULE_TYPE_CONFIG } from "./BehaviorRuleUtils";
 
-interface NotificationItem {
-  id: string;
-  name: string;
-  type: "notification";
-  filters: Array<{
-    key: string;
-    value: string;
-  }>;
-  endpointIds: string[];
-  endpoints: Array<{
-    id: string;
-    name: string;
-  }>;
-}
+type BehaviorRuleItem = NotificationRuleItem;
 
-type AdvanceItem = NotificationItem;
-
-interface AdvanceCardProps {
-  item: AdvanceItem;
+interface BehaviorRuleCardProps {
+  item: BehaviorRuleItem;
   onEdit: () => void;
 }
 
-export default function AdvanceCard({ item, onEdit }: AdvanceCardProps) {
+export default function BehaviorCard({ item, onEdit }: BehaviorRuleCardProps) {
   const { palette } = useTheme();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const config = ADVANCE_TYPE_CONFIG[item.type];
+  const config = BEHAVIOR_RULE_TYPE_CONFIG[item.type];
 
   function handleEdit() {
     onEdit();
@@ -92,7 +78,7 @@ export default function AdvanceCard({ item, onEdit }: AdvanceCardProps) {
             <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
               {item.name}
             </Typography>
-            <AdvanceChip label={item.type} size="small" />
+            <BehaviorRuleChip label={item.type} size="small" />
           </Box>
         </Stack>
         <IconButton
