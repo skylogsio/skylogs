@@ -166,6 +166,66 @@ describe('AlertRuleBehaviorRuleService', function () {
             ->and($notMatching)->toBe([]);
     });
 
+    it('requires every filter entry to match including duplicate keys', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::PROMETHEUS,
+            'endpointIds' => [],
+            'rules' => [
+                [
+                    'id' => 'rule-1',
+                    'type' => AlertRuleBehaviorRuleType::NOTIFICATION->value,
+                    'filters' => [
+                        ['key' => 'instance', 'value' => 'web-*'],
+                        ['key' => 'instance', 'value' => '*-prod'],
+                    ],
+                    'endpointIds' => ['matched-endpoint'],
+                ],
+            ],
+        ]);
+
+        $matching = $this->service->resolveEndpointIds($alertRule, [
+            'alerts' => [
+                ['labels' => ['instance' => 'web-server-prod']],
+            ],
+        ]);
+
+        $notMatching = $this->service->resolveEndpointIds($alertRule, [
+            'alerts' => [
+                ['labels' => ['instance' => 'web-server-dev']],
+            ],
+        ]);
+
+        expect($matching)->toBe(['matched-endpoint'])
+            ->and($notMatching)->toBe([]);
+    });
+
+    it('does not add notification rule endpoints when only one filter in a list matches', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::PROMETHEUS,
+            'endpointIds' => ['default-endpoint'],
+            'rules' => [
+                [
+                    'id' => 'rule-1',
+                    'type' => AlertRuleBehaviorRuleType::NOTIFICATION->value,
+                    'filters' => [
+                        ['key' => 'db_name', 'value' => 'mysql01'],
+                        ['key' => 'env', 'value' => 'prod'],
+                    ],
+                    'endpointIds' => ['matched-endpoint'],
+                ],
+            ],
+        ]);
+
+        $endpointIds = $this->service->resolveEndpointIds($alertRule, [
+            'alerts' => [
+                ['labels' => ['db_name' => 'mysql01', 'env' => 'staging']],
+            ],
+        ]);
+
+        expect($endpointIds)->toBe(['default-endpoint'])
+            ->not->toContain('matched-endpoint');
+    });
+
     it('matches annotation values for label-based alert types', function () {
         $alertRule = AlertRuleFactory::unsaved([
             'type' => AlertRuleType::GRAFANA,
@@ -341,7 +401,9 @@ describe('AlertRuleBehaviorRuleService', function () {
 
         expect($rule['name'])->toBe('MySQL endpoints')
             ->and($rule['type'])->toBe(AlertRuleBehaviorRuleType::NOTIFICATION->value)
-            ->and($rule['filters'])->toBe(['db_name' => 'mysql01'])
+            ->and($rule['filters'])->toBe([
+                ['key' => 'db_name', 'value' => 'mysql01'],
+            ])
             ->and($rule['endpointIds'])->toBe(['endpoint-a'])
             ->and($alertRule->rules)->toHaveCount(1)
             ->and($alertRule->rules[0]['id'])->not->toBeEmpty();
@@ -367,7 +429,9 @@ describe('AlertRuleBehaviorRuleService', function () {
 
         expect($updated)->not->toBeNull()
             ->and($updated['name'])->toBe('Updated rule name')
-            ->and($updated['filters'])->toBe(['db_name' => 'mysql02'])
+            ->and($updated['filters'])->toBe([
+                ['key' => 'db_name', 'value' => 'mysql02'],
+            ])
             ->and($updated['endpointIds'])->toBe(['new-endpoint'])
             ->and($alertRule->rules[0]['endpointIds'])->toBe(['new-endpoint']);
     });

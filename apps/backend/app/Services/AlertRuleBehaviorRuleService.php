@@ -39,12 +39,12 @@ class AlertRuleBehaviorRuleService
         $contexts = $this->extractAlertContexts($alertRule, $notifyAlert);
 
         foreach ($notificationRules as $rule) {
-            $filters = $this->normalizeFilters($rule['filters'] ?? []);
-            if ($filters === []) {
+            $filterEntries = $this->normalizeFilterEntries($rule['filters'] ?? []);
+            if ($filterEntries === []) {
                 continue;
             }
 
-            if ($this->anyContextMatches($alertRule, $filters, $contexts)) {
+            if ($this->notificationRuleMatches($alertRule, $filterEntries, $contexts)) {
                 $endpointIds = $endpointIds->merge($rule['endpointIds'] ?? []);
             }
         }
@@ -93,16 +93,17 @@ class AlertRuleBehaviorRuleService
 
     /**
      * @param  array<int, array<string, mixed>>|array<string, mixed>  $filters
-     * @return array<string, string>
+     * @return list<array{key: string, value: string}>
      */
-    public function normalizeFilters(array $filters): array
+    public function normalizeFilterEntries(array $filters): array
     {
         if ($filters === []) {
             return [];
         }
 
-        if (array_is_list($filters)) {
-            $normalized = [];
+        if ($this->isFilterEntryList($filters)) {
+            $entries = [];
+
             foreach ($filters as $filter) {
                 if (! is_array($filter)) {
                     continue;
@@ -112,21 +113,47 @@ class AlertRuleBehaviorRuleService
                 $value = trim((string) ($filter['value'] ?? ''));
 
                 if ($key !== '' && $value !== '') {
-                    $normalized[$key] = $value;
+                    $entries[] = [
+                        'key' => $key,
+                        'value' => $value,
+                    ];
                 }
             }
 
-            return $normalized;
+            return $entries;
         }
 
-        $normalized = [];
+        $entries = [];
+
         foreach ($filters as $key => $value) {
+            if (is_array($value)) {
+                continue;
+            }
+
             $key = trim((string) $key);
             $value = trim((string) $value);
 
             if ($key !== '' && $value !== '') {
-                $normalized[$key] = $value;
+                $entries[] = [
+                    'key' => $key,
+                    'value' => $value,
+                ];
             }
+        }
+
+        return $entries;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>|array<string, mixed>  $filters
+     * @return array<string, string>
+     */
+    public function normalizeFilters(array $filters): array
+    {
+        $normalized = [];
+
+        foreach ($this->normalizeFilterEntries($filters) as $entry) {
+            $normalized[$entry['key']] = $entry['value'];
         }
 
         return $normalized;
@@ -168,15 +195,7 @@ class AlertRuleBehaviorRuleService
                 return $rule;
             }
 
-            $filters = [];
-            foreach ($this->normalizeFilters($rule['filters'] ?? []) as $key => $value) {
-                $filters[] = [
-                    'key' => $key,
-                    'value' => $value,
-                ];
-            }
-
-            $rule['filters'] = $filters;
+            $rule['filters'] = $this->normalizeFilterEntries($rule['filters'] ?? []);
 
             return $rule;
         })->values()->all();
@@ -283,17 +302,17 @@ class AlertRuleBehaviorRuleService
     }
 
     /**
-     * @param  array<string, string>  $filters
+     * @param  list<array{key: string, value: string}>  $filterEntries
      * @param  list<array{labels: array<string, mixed>, annotations: array<string, mixed>, instance: string}>  $contexts
      */
-    public function anyContextMatches(AlertRule $alertRule, array $filters, array $contexts): bool
+    public function notificationRuleMatches(AlertRule $alertRule, array $filterEntries, array $contexts): bool
     {
-        if ($contexts === []) {
+        if ($contexts === [] || $filterEntries === []) {
             return false;
         }
 
         foreach ($contexts as $context) {
-            if ($this->matchesFilters($alertRule, $filters, $context)) {
+            if ($this->matchesFilters($alertRule, $filterEntries, $context)) {
                 return true;
             }
         }
@@ -302,15 +321,37 @@ class AlertRuleBehaviorRuleService
     }
 
     /**
-     * @param  array<string, string>  $filters
+     * @param  list<array{key: string, value: string}>  $filterEntries
      * @param  array{labels: array<string, mixed>, annotations: array<string, mixed>, instance: string}  $context
      */
-    public function matchesFilters(AlertRule $alertRule, array $filters, array $context): bool
+    public function matchesFilters(AlertRule $alertRule, array $filterEntries, array $context): bool
     {
-        foreach ($filters as $key => $pattern) {
-            $value = $this->getFilterValue($alertRule, $context, $key);
+        if ($filterEntries === []) {
+            return false;
+        }
 
-            if ($value === null || $value === '' || ! Utilities::CheckPatternsString($pattern, $value)) {
+        foreach ($filterEntries as $filter) {
+            $value = $this->getFilterValue($alertRule, $context, $filter['key']);
+
+            if ($value === null || $value === '' || ! Utilities::CheckPatternsString($filter['value'], $value)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $filters
+     */
+    private function isFilterEntryList(array $filters): bool
+    {
+        if ($filters === [] || ! array_is_list($filters)) {
+            return false;
+        }
+
+        foreach ($filters as $filter) {
+            if (! is_array($filter) || ! array_key_exists('key', $filter)) {
                 return false;
             }
         }
@@ -425,7 +466,7 @@ class AlertRuleBehaviorRuleService
             'id' => (string) Str::uuid(),
             'name' => trim((string) ($ruleData['name'] ?? '')),
             'type' => AlertRuleBehaviorRuleType::NOTIFICATION->value,
-            'filters' => $this->normalizeFilters($ruleData['filters'] ?? []),
+            'filters' => $this->normalizeFilterEntries($ruleData['filters'] ?? []),
             'endpointIds' => array_values(array_unique($ruleData['endpointIds'] ?? [])),
         ];
 
@@ -586,7 +627,7 @@ class AlertRuleBehaviorRuleService
                 'id' => $ruleId,
                 'name' => trim((string) ($ruleData['name'] ?? $rule['name'] ?? '')),
                 'type' => AlertRuleBehaviorRuleType::NOTIFICATION->value,
-                'filters' => $this->normalizeFilters($ruleData['filters'] ?? $rule['filters'] ?? []),
+                'filters' => $this->normalizeFilterEntries($ruleData['filters'] ?? $rule['filters'] ?? []),
                 'endpointIds' => array_values(array_unique($ruleData['endpointIds'] ?? $rule['endpointIds'] ?? [])),
             ];
             $updatedRule = $rules[$index];
