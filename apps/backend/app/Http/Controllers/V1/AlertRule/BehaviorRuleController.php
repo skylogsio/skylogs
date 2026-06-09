@@ -29,6 +29,17 @@ class BehaviorRuleController extends Controller
         ]);
     }
 
+    public function SelectableAlertRules(string $alertRuleId)
+    {
+        $alertRule = $this->authorizedAlertRule($alertRuleId);
+
+        $alertRules = $this->alertRuleService->selectableAlertRulesForSilentDependency($alertRule);
+
+        return response()->json(
+            $this->alertRuleService->formatSelectableAlertRulesForApi($alertRules)
+        );
+    }
+
     public function Store(Request $request, string $alertRuleId)
     {
         $alertRule = $this->authorizedAlertRule($alertRuleId, requireAdmin: true);
@@ -82,6 +93,10 @@ class BehaviorRuleController extends Controller
             $this->assertSelectableEndpoints($alertRule, $validated['endpointIds']);
         }
 
+        if (! empty($validated['dependsOnAlertRuleIds'])) {
+            $this->assertSelectableAlertRules($alertRule, $validated['dependsOnAlertRuleIds']);
+        }
+
         $rule = match ($validated['type']) {
             AlertRuleBehaviorRuleType::TEMPLATE->value => $this->behaviorRuleService->createTemplateRule($alertRule, $validated),
             AlertRuleBehaviorRuleType::SILENT->value => $this->behaviorRuleService->createSilentRule($alertRule, $validated),
@@ -125,6 +140,10 @@ class BehaviorRuleController extends Controller
 
         if (! empty($validated['endpointIds'])) {
             $this->assertSelectableEndpoints($alertRule, $validated['endpointIds']);
+        }
+
+        if (! empty($validated['dependsOnAlertRuleIds'])) {
+            $this->assertSelectableAlertRules($alertRule, $validated['dependsOnAlertRuleIds']);
         }
 
         $rule = match (true) {
@@ -181,6 +200,24 @@ class BehaviorRuleController extends Controller
 
         foreach ($endpointIds as $endpointId) {
             if (! $selectableEndpointIds->contains($endpointId)) {
+                abort(403);
+            }
+        }
+    }
+
+    /**
+     * @param  list<string>  $dependsOnAlertRuleIds
+     */
+    private function assertSelectableAlertRules(AlertRule $alertRule, array $dependsOnAlertRuleIds): void
+    {
+        $selectableAlertRuleIds = collect(
+            $this->alertRuleService->formatSelectableAlertRulesForApi(
+                $this->alertRuleService->selectableAlertRulesForSilentDependency($alertRule)
+            )
+        )->pluck('id');
+
+        foreach ($dependsOnAlertRuleIds as $dependsOnAlertRuleId) {
+            if (! $selectableAlertRuleIds->contains($dependsOnAlertRuleId)) {
                 abort(403);
             }
         }

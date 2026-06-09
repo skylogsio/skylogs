@@ -30,6 +30,16 @@ DESC
 )]
 
 #[OA\Schema(
+    schema: 'AlertRuleBehaviorRuleEndpoint',
+    description: 'Endpoint reference included in behavior rule API responses.',
+    required: ['id', 'name'],
+    properties: [
+        new OA\Property(property: 'id', description: 'Endpoint MongoDB `_id`', type: 'string', pattern: '^[0-9a-fA-F]{24}$'),
+        new OA\Property(property: 'name', description: 'Endpoint display name', type: 'string', example: 'Ops email'),
+    ]
+)]
+
+#[OA\Schema(
     schema: 'AlertRuleBehaviorRuleFilter',
     description: 'Label or annotation filter. Values support wildcards (e.g. `mysql*`). All filters must match.',
     required: ['key', 'value'],
@@ -43,13 +53,14 @@ DESC
     schema: 'AlertRuleBehaviorRuleNotification',
     title: 'Notification behavior rule',
     description: 'Adds the listed endpoints when every filter matches the firing alert.',
-    required: ['id', 'name', 'type', 'filters', 'endpointIds'],
+    required: ['id', 'name', 'type', 'filters', 'endpointIds', 'endpoints'],
     properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid', example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
         new OA\Property(property: 'name', description: 'Display name for this behavior rule', type: 'string', example: 'MySQL production endpoints'),
         new OA\Property(property: 'type', type: 'string', enum: ['notification']),
         new OA\Property(property: 'filters', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleFilter')),
         new OA\Property(property: 'endpointIds', description: 'Extra endpoints to notify (in addition to the alert rule defaults)', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'endpoints', description: 'Resolved endpoint id and name pairs for `endpointIds`', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleEndpoint')),
     ]
 )]
 
@@ -57,12 +68,13 @@ DESC
     schema: 'AlertRuleBehaviorRuleTemplate',
     title: 'Template behavior rule',
     description: 'Uses a single custom template for messages sent to the listed endpoints. Placeholders such as `{{name}}` are supported.',
-    required: ['id', 'name', 'type', 'endpointIds', 'template'],
+    required: ['id', 'name', 'type', 'endpointIds', 'endpoints', 'template'],
     properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'name', description: 'Display name for this behavior rule', type: 'string', example: 'Disk alert template'),
         new OA\Property(property: 'type', type: 'string', enum: ['template']),
         new OA\Property(property: 'endpointIds', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'endpoints', description: 'Resolved endpoint id and name pairs for `endpointIds`', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleEndpoint')),
         new OA\Property(property: 'template', type: 'string', example: 'Alert {{name}} fired on {{instance}}'),
     ]
 )]
@@ -183,6 +195,18 @@ DESC
         new OA\Property(property: 'name', type: 'string', minLength: 1, maxLength: 255),
         new OA\Property(property: 'endpointIds', type: 'array', minItems: 1, items: new OA\Items(type: 'string')),
         new OA\Property(property: 'template', type: 'string', minLength: 1),
+    ]
+)]
+
+#[OA\Schema(
+    schema: 'AlertRuleBehaviorRuleSelectableAlert',
+    description: 'Alert rule that can be selected as a silent-rule dependency (status supports resolved or critical).',
+    required: ['id', 'name', 'type', 'state'],
+    properties: [
+        new OA\Property(property: 'id', description: 'Alert rule MongoDB `_id`', type: 'string', pattern: '^[0-9a-fA-F]{24}$'),
+        new OA\Property(property: 'name', description: 'Alert rule display name', type: 'string', example: 'MySQL replication lag'),
+        new OA\Property(property: 'type', description: 'Alert rule type', type: 'string', example: 'prometheus'),
+        new OA\Property(property: 'state', description: 'Current status from `getStatus()`', type: 'string', enum: ['unknown', 'warning', 'critical', 'triggered', 'resolved']),
     ]
 )]
 

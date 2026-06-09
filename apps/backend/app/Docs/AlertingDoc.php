@@ -735,6 +735,31 @@ class AlertingDoc
     // Behavior rule endpoints (schemas: AlertRuleBehaviorRuleSchemasDoc)
     // ----------------------------
     #[OA\Get(
+        path: '/api/v1/alert-rule-behavior-rule/selectable-alert-rules/{alertRuleId}',
+        operationId: 'getSelectableAlertRulesForBehaviorRule',
+        summary: 'List selectable alert rules for silent behavior rules',
+        description: 'Returns alert rules the user can access whose type supports resolved/critical status. Excludes the current alert rule. Use the returned `id` values in `dependsOnAlertRuleIds` when creating or updating a silent behavior rule.',
+        security: [['bearerAuth' => []]],
+        tags: ['AlertRule Behavior Rules'],
+        parameters: [
+            new OA\Parameter(name: 'alertRuleId', description: 'Alert rule MongoDB `_id` being configured', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Selectable alert rules',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleSelectableAlert')
+                )
+            ),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Alert rule not found'),
+        ]
+    )]
+    public function behaviorRulesSelectableAlertRules() {}
+
+    #[OA\Get(
         path: '/api/v1/alert-rule-behavior-rule/{alertRuleId}',
         operationId: 'getAlertRuleBehaviorRules',
         summary: 'List behavior rules',
