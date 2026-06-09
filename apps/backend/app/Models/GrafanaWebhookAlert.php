@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Concerns\ProvidesDefaultChannelMessages;
 use App\Interfaces\Messageable;
 use MongoDB\Laravel\Relations\BelongsTo;
 use Morilog\Jalali\Jalalian;
 
 class GrafanaWebhookAlert extends BaseModel implements Messageable
 {
+    use ProvidesDefaultChannelMessages;
+
     public $timestamps = true;
 
     protected $guarded = ['id', '_id'];
@@ -126,21 +129,6 @@ class GrafanaWebhookAlert extends BaseModel implements Messageable
         return $result;
     }
 
-    public function matterMostMessage()
-    {
-        return $this->defaultMessage();
-    }
-
-    public function smsMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function discordMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
     public function callMessage(): string
     {
         $alert = $this->alertRule;
@@ -154,15 +142,5 @@ class GrafanaWebhookAlert extends BaseModel implements Messageable
         };
 
         return $text;
-    }
-
-    public function teamsMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function emailMessage(): string
-    {
-        return $this->defaultMessage();
     }
 }

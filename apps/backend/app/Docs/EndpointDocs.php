@@ -178,7 +178,7 @@ class EndpointDocs
                     new OA\Property(
                         property: 'type',
                         type: 'string',
-                        enum: ['sms', 'call', 'email', 'telegram', 'teams', 'matter-most', 'flow'],
+                        enum: ['sms', 'call', 'email', 'telegram', 'bale', 'teams', 'matter-most', 'flow'],
                         example: 'sms'
                     ),
                     new OA\Property(property: 'value', type: 'string', example: '09000000000'),
@@ -262,7 +262,7 @@ class EndpointDocs
                     new OA\Property(
                         property: 'type',
                         type: 'string',
-                        enum: ['sms', 'call', 'email', 'telegram', 'teams', 'matter-most', 'flow'],
+                        enum: ['sms', 'call', 'email', 'telegram', 'bale', 'teams', 'matter-most', 'flow'],
                         example: 'telegram'
                     ),
                     new OA\Property(property: 'value', type: 'string', example: '09000000000'),
@@ -415,7 +415,7 @@ class EndpointDocs
             property: 'type',
             description: 'Type of the endpoint',
             type: 'string',
-            enum: ['sms', 'call', 'email', 'telegram', 'teams', 'matter-most', 'flow']
+            enum: ['sms', 'call', 'email', 'telegram', 'bale', 'teams', 'matter-most', 'flow']
         ),
         new OA\Property(property: 'value', description: 'Primary value (phone number, email address, etc.) - used for most types except telegram and flow', type: 'string'),
         new OA\Property(property: 'accessUserIds', type: 'array', items: new OA\Items(type: 'string')),
@@ -483,7 +483,7 @@ class EndpointSchema {}
             property: 'type',
             description: 'Type of the endpoint',
             type: 'string',
-            enum: ['sms', 'call', 'email', 'telegram', 'teams', 'matter-most', 'flow']
+            enum: ['sms', 'call', 'email', 'telegram', 'bale', 'teams', 'matter-most', 'flow']
         ),
         new OA\Property(property: 'value', description: 'Primary value (phone number, email address, etc.) - required for most types', type: 'string'),
         new OA\Property(property: 'accessUserIds', type: 'array', items: new OA\Items(type: 'string')),

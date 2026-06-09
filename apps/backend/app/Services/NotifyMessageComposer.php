@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Interfaces\Messageable;
 use App\Models\AlertRule;
+use App\Support\NotifyMessagePayload;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
@@ -11,73 +12,37 @@ use Illuminate\Support\Str;
 class NotifyMessageComposer
 {
     /**
-     * @return array<string, mixed>
+     * @return array{body: string, overrides: array<string, mixed>}
      */
     public static function buildMessages(?AlertRule $alertRule, Messageable $alert): array
     {
-        return self::fromMessageable($alert);
+        return self::fromMessageable($alert)->toArray();
     }
 
-    /**
-     * Render one template string into all channel message keys.
-     *
-     * @return array<string, mixed>
-     */
-    public static function composeFromSingleTemplate(AlertRule $alertRule, Messageable $alert, string $template): array
+    public static function fromMessageable(Messageable $alert): NotifyMessagePayload
+    {
+        return NotifyMessagePayload::fromMessageable($alert);
+    }
+
+    public static function composeFromSingleTemplate(AlertRule $alertRule, Messageable $alert, string $template): NotifyMessagePayload
     {
         $context = self::buildContext($alertRule, $alert);
         $body = self::replacePlaceholders($template, $context);
 
-        return self::applyBodyToAllChannels($alert, $body);
-    }
+        $overrides = [];
+        $telegramBase = $alert->telegram();
 
-    /**
-     * @return array<string, mixed>
-     */
-    public static function fromMessageable(Messageable $alert): array
-    {
-        return [
-            'matterMostMessage' => $alert->matterMostMessage(),
-            'telegram' => $alert->telegram(),
-            'teamsMessage' => $alert->teamsMessage(),
-            'emailMessage' => $alert->emailMessage(),
-            'smsMessage' => $alert->smsMessage(),
-            'discordMessage' => $alert->discordMessage(),
-            'callMessage' => $alert->callMessage(),
-            'defaultMessage' => $alert->defaultMessage(),
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private static function applyBodyToAllChannels(Messageable $alert, string $body): array
-    {
-        return [
-            'matterMostMessage' => $body,
-            'telegram' => self::applyTelegramBody($alert, $body),
-            'teamsMessage' => $body,
-            'emailMessage' => $body,
-            'smsMessage' => $body,
-            'discordMessage' => $body,
-            'callMessage' => $body,
-            'defaultMessage' => $body,
-        ];
-    }
-
-    private static function applyTelegramBody(Messageable $alert, string $body): array|string
-    {
-        $base = $alert->telegram();
-
-        if (is_array($base)) {
-            $base['message'] = $body;
-
-            return $base;
+        if (is_array($telegramBase)) {
+            $telegramBase['message'] = $body;
+            $overrides['telegram'] = $telegramBase;
         }
 
-        return $body;
+        return NotifyMessagePayload::fromBody($body, $overrides);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private static function buildContext(AlertRule $alertRule, Messageable $alert): array
     {
         $ctx = [];

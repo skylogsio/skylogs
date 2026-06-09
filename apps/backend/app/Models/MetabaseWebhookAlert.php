@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Concerns\ProvidesDefaultChannelMessages;
 use App\Helpers\Constants;
 use App\Interfaces\Messageable;
 use Morilog\Jalali\Jalalian;
 
 class MetabaseWebhookAlert extends BaseModel implements Messageable
 {
+    use ProvidesDefaultChannelMessages;
+
     public $timestamps = true;
 
     protected $guarded = ['id', '_id'];
@@ -56,40 +59,5 @@ class MetabaseWebhookAlert extends BaseModel implements Messageable
         $text .= "\nDate: ".Jalalian::now()->format('Y/m/d');
 
         return $text;
-    }
-
-    public function telegram()
-    {
-        return $this->defaultMessage();
-    }
-
-    public function teamsMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function matterMostMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function emailMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function smsMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function discordMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function callMessage(): string
-    {
-        return $this->defaultMessage();
     }
 }

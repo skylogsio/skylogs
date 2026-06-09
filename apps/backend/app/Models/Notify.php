@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Interfaces\Messageable;
+use App\Support\NotifyMessagePayload;
 use MongoDB\Laravel\Relations\BelongsTo;
 
 class Notify extends BaseModel implements Messageable
@@ -32,41 +33,46 @@ class Notify extends BaseModel implements Messageable
 
     public function defaultMessage(): string
     {
-        return $this->messages['defaultMessage'];
+        return $this->messagePayload()->defaultMessage();
     }
 
-    public function telegram()
+    public function telegram(): mixed
     {
-        return $this->messages['telegram'];
+        return $this->messagePayload()->telegram();
     }
 
-    public function matterMostMessage()
+    public function matterMostMessage(): mixed
     {
-        return $this->messages['matterMostMessage'];
+        return $this->messagePayload()->matterMostMessage();
     }
 
-    public function teamsMessage()
+    public function teamsMessage(): mixed
     {
-        return $this->messages['teamsMessage'];
+        return $this->messagePayload()->teamsMessage();
     }
 
-    public function emailMessage()
+    public function emailMessage(): mixed
     {
-        return $this->messages['emailMessage'];
+        return $this->messagePayload()->emailMessage();
     }
 
-    public function smsMessage()
+    public function smsMessage(): mixed
     {
-        return $this->messages['smsMessage'];
+        return $this->messagePayload()->smsMessage();
     }
 
-    public function discordMessage()
+    public function discordMessage(): mixed
     {
-        return $this->messages['discordMessage'];
+        return $this->messagePayload()->discordMessage();
     }
 
-    public function callMessage()
+    public function callMessage(): mixed
     {
-        return $this->messages['callMessage'];
+        return $this->messagePayload()->callMessage();
+    }
+
+    protected function messagePayload(): NotifyMessagePayload
+    {
+        return NotifyMessagePayload::fromStored(is_array($this->messages) ? $this->messages : []);
     }
 }
