@@ -3,15 +3,7 @@
 import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Autocomplete,
-  Button,
-  Grid2 as Grid,
-  MenuItem,
-  Stack,
-  TextField,
-  Typography
-} from "@mui/material";
+import { Autocomplete, Button, Grid, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
@@ -30,25 +22,21 @@ import type { ModalContainerProps } from "@/components/Modal/types";
 const CONDITION_TYPES = ["greaterOrEqual", "lessOrEqual"] as const;
 
 const elasticAlertRuleSchema = z.object({
-  name: z.string().trim().nonempty("This field is Required."),
+  name: z.string().trim().min(1, "This field is Required."),
   type: z.literal("elastic"),
-  endpointIds: z.array(z.string()).optional().default([]),
-  userIds: z.array(z.string()).optional().default([]),
-  teamIds: z.array(z.string()).optional().default([]),
-  tags: z.array(z.string()).optional().default([]),
-  dataSourceId: z.string().trim().nonempty("This field is Required."),
-  queryString: z.string().trim().nonempty("This field is Required."),
-  dataviewName: z.string().trim().nonempty("This field is Required."),
-  dataviewTitle: z.string().trim().nonempty("This field is Required."),
+  endpointIds: z.array(z.string()),
+  userIds: z.array(z.string()),
+  teamIds: z.array(z.string()),
+  tags: z.array(z.string()),
+  dataSourceId: z.string().trim().min(1, "This field is Required."),
+  queryString: z.string().trim().min(1, "This field is Required."),
+  dataviewName: z.string().trim().min(1, "This field is Required."),
+  dataviewTitle: z.string().trim().min(1, "This field is Required."),
   conditionType: z.enum(CONDITION_TYPES),
-  countDocument: z.coerce
-    .number({ required_error: "This field is Required." })
-    .min(1, "Must be at least 1"),
-  minutes: z.coerce
-    .number({ required_error: "This field is Required." })
-    .min(1, "Must be at least 1"),
-  description: z.string().optional().default(""),
-  showAcknowledgeBtn: z.boolean().optional().default(false)
+  countDocument: z.number("This field is Required.").min(1, "Must be at least 1"),
+  minutes: z.number("This field is Required.").min(1, "Must be at least 1"),
+  description: z.string(),
+  showAcknowledgeBtn: z.boolean()
 });
 
 type ElasticFormType = z.infer<typeof elasticAlertRuleSchema>;
@@ -57,7 +45,7 @@ type ElasticAlertRuleModalProps = Pick<ModalContainerProps, "onClose"> & {
   onSubmit: () => void;
 };
 
-const defaultValues: ElasticFormType = {
+const emptyFormValues: ElasticFormType = {
   name: "",
   type: "elastic",
   userIds: [],
@@ -75,6 +63,14 @@ const defaultValues: ElasticFormType = {
   showAcknowledgeBtn: false
 };
 
+function getFormValues(data: CreateUpdateModal<IAlertRule>): ElasticFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return data as unknown as ElasticFormType;
+}
+
 export default function ElasticAlertRuleForm({
   data,
   onSubmit,
@@ -91,7 +87,8 @@ export default function ElasticAlertRuleForm({
     formState: { errors }
   } = useForm<ElasticFormType>({
     resolver: zodResolver(elasticAlertRuleSchema),
-    defaultValues
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
 
   const { data: dataSourceList } = useQuery({
@@ -131,28 +128,35 @@ export default function ElasticAlertRuleForm({
   }
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else if (data) {
-      reset(data as unknown as ElasticFormType);
-    }
+    reset(getFormValues(data));
   }, [reset, data]);
 
   return (
     <Stack
       component="form"
-      height="100%"
       onSubmit={handleSubmit(handleSubmitForm)}
-      padding={2}
-      overflow="auto"
+      sx={{
+        height: "100%",
+        padding: 2,
+        overflow: "auto"
+      }}
     >
-      <Grid container spacing={2} flex={1} alignContent="flex-start">
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          flex: 1,
+          alignContent: "flex-start"
+        }}
+      >
         <Typography
           variant="h6"
           color="textPrimary"
-          textTransform="capitalize"
-          fontWeight="bold"
           component="div"
+          sx={{
+            textTransform: "capitalize",
+            fontWeight: "bold"
+          }}
         >
           {data === "NEW" ? "Create" : "Update"} Elastic Alert
         </Typography>
@@ -182,9 +186,10 @@ export default function ElasticAlertRuleForm({
                 <TextField
                   {...params}
                   slotProps={{
-                    input: params.InputProps,
-                    inputLabel: params.InputLabelProps,
-                    htmlInput: params.inputProps
+                    ...params.slotProps,
+                    input: params.slotProps.input,
+                    inputLabel: params.slotProps.inputLabel,
+                    htmlInput: params.slotProps.htmlInput
                   }}
                   variant="filled"
                   label="Data Source"
@@ -248,7 +253,7 @@ export default function ElasticAlertRuleForm({
               type="number"
               error={!!errors.countDocument}
               helperText={errors.countDocument?.message}
-              {...register("countDocument")}
+              {...register("countDocument", { valueAsNumber: true })}
             />
           </Grid>
           <Grid size={4}>
@@ -258,12 +263,19 @@ export default function ElasticAlertRuleForm({
               type="number"
               error={!!errors.minutes}
               helperText={errors.minutes?.message}
-              {...register("minutes")}
+              {...register("minutes", { valueAsNumber: true })}
             />
           </Grid>
         </AlertRuleGeneralFields>
       </Grid>
-      <Stack direction="row" justifyContent="flex-end" spacing={2} paddingTop={2}>
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          justifyContent: "flex-end",
+          paddingTop: 2
+        }}
+      >
         <Button variant="outlined" disabled={isCreating || isUpdating} onClick={onClose}>
           Cancel
         </Button>

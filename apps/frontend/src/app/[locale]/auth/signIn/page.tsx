@@ -10,8 +10,8 @@ import {
   TextField,
   Typography,
   useTheme,
-  CircularProgress,
-  useColorScheme
+  useColorScheme,
+  Stack
 } from "@mui/material";
 import { signIn } from "next-auth/react";
 import { useForm } from "react-hook-form";
@@ -22,31 +22,30 @@ import { z } from "zod";
 import { useScopedI18n } from "@/locales/client";
 
 const signInSchema = z.object({
-  username: z.string({ required_error: "RequiredUsername" }).refine((data) => data.trim() !== "", {
-    message: "RequiredUsername"
-  }),
-  password: z.string({ required_error: "RequiredPassword" }).refine((data) => data.trim() !== "", {
-    message: "RequiredPassword"
-  })
+  username: z.string().trim().min(1, "RequiredUsername"),
+  password: z.string().trim().min(1, "RequiredPassword")
 });
 
-type SignInBody = z.infer<typeof signInSchema>;
+type SignInFormType = z.infer<typeof signInSchema>;
 
 export default function AuthenticationPage() {
+  const router = useRouter();
+  const { palette } = useTheme();
   const { systemMode, mode } = useColorScheme();
   const translate = useScopedI18n("auth");
   const globalTranslate = useScopedI18n("global");
-  const { palette } = useTheme();
-  const router = useRouter();
   const {
     register,
     handleSubmit,
     formState: { errors }
-  } = useForm<SignInBody>({ resolver: zodResolver(signInSchema) });
+  } = useForm<SignInFormType>({
+    resolver: zodResolver(signInSchema),
+    mode: "onSubmit"
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmitSignIn(body: SignInBody) {
+  async function handleSubmitSignIn(body: SignInFormType) {
     setLoading(true);
 
     try {
@@ -77,32 +76,36 @@ export default function AuthenticationPage() {
 
   return (
     <Box
-      width="100vw"
-      height="100vh"
-      display="flex"
-      flexDirection="column"
-      justifyContent="space-between"
-      alignItems="center"
-      padding="1rem"
       sx={{
         backgroundImage: `url('/static/images/background-${systemMode || mode || "light"}.png')`,
         backgroundSize: "cover",
         backgroundRepeat: "no-repeat",
-        backgroundPosition: "center center"
+        backgroundPosition: "center center",
+        width: "100vw",
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: 2
       }}
     >
-      <Box bgcolor="Background" padding="3rem" borderRadius="1rem" marginY="auto">
-        <Typography variant="h4" textAlign="center" marginBottom="1.5rem">
+      <Stack
+        sx={{
+          backgroundColor: palette.background.default,
+          padding: 6,
+          borderRadius: 4,
+          marginY: "auto"
+        }}
+      >
+        <Typography variant="h4" sx={{ textAlign: "center", marginBottom: 3 }}>
           {translate("Login to Account")}
         </Typography>
-        <Typography variant="subtitle2" marginTop="1rem" marginBottom="5rem">
+        <Typography variant="subtitle2" sx={{ marginBottom: 10 }}>
           {translate("Please enter your username and password to continue")}
         </Typography>
-        <Box
-          display="flex"
-          flexDirection="column"
-          justifyContent="flex-start"
-          alignItems="flex-end"
+        <Stack
+          sx={{ justifyContent: "flex-start", alignItems: "flex-end" }}
           component="form"
           onSubmit={handleSubmit(handleSubmitSignIn)}
         >
@@ -110,7 +113,7 @@ export default function AuthenticationPage() {
             variant="filled"
             size="medium"
             label={translate("Username")}
-            sx={{ width: "100%", marginBottom: "0.8rem" }}
+            sx={{ marginBottom: 1.5 }}
             error={!!errors.username}
             helperText={
               errors.username?.message
@@ -121,30 +124,30 @@ export default function AuthenticationPage() {
             {...register("username")}
           />
           <TextField
+            type={showPassword ? "text" : "password"}
             variant="filled"
             size="medium"
             label={translate("Password")}
-            type={showPassword ? "text" : "password"}
-            sx={{ width: "100%", WebkitTextSecurity: "*" }}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <IconButton disableRipple onClick={() => setShowPassword((prev) => !prev)}>
-                    {showPassword ? (
-                      <HiEyeOff color={palette.secondary.main} size="1.2rem" />
-                    ) : (
-                      <HiEye color={palette.secondary.main} size="1.2rem" />
-                    )}
-                  </IconButton>
-                )
-              }
-            }}
+            sx={{ marginBottom: 1.5 }}
             error={!!errors.password}
             helperText={
               errors.password?.message
                 ? translate(errors.password.message as "RequiredPassword")
                 : undefined
             }
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <IconButton disableRipple onClick={() => setShowPassword((prev) => !prev)}>
+                    {showPassword ? (
+                      <HiEyeOff color={palette.secondary.main} size={20} />
+                    ) : (
+                      <HiEye color={palette.secondary.main} size={20} />
+                    )}
+                  </IconButton>
+                )
+              }
+            }}
             disabled={loading}
             {...register("password")}
           />
@@ -154,6 +157,7 @@ export default function AuthenticationPage() {
             sx={{
               textTransform: "none",
               width: "auto",
+              marginTop: -1,
               backgroundColor: "transparent !important",
               transition: "all 200ms ease",
               "&:hover": {
@@ -168,16 +172,14 @@ export default function AuthenticationPage() {
             variant="contained"
             fullWidth
             size="large"
-            sx={{ marginTop: "3rem !important", paddingY: "0.7rem" }}
-            disabled={loading}
-            startIcon={
-              loading ? <CircularProgress sx={{ color: "inherit" }} size="1rem" /> : undefined
-            }
+            sx={{ marginTop: 6, paddingY: 1.4 }}
+            loading={loading}
+            loadingPosition="end"
           >
             {translate("Sign In")}
           </Button>
-        </Box>
-      </Box>
+        </Stack>
+      </Stack>
     </Box>
   );
 }

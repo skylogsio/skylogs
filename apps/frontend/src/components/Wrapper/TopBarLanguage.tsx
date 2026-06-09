@@ -51,11 +51,13 @@ export default function TopBarLanguage() {
   return (
     <>
       <Box
-        display="flex"
-        alignItems="center"
         onClick={handleOpen}
-        marginX="1rem"
-        sx={{ cursor: "pointer" }}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          marginX: 2,
+          cursor: "pointer"
+        }}
       >
         {currentLanguage && (
           <Image
@@ -66,21 +68,27 @@ export default function TopBarLanguage() {
             style={{ borderRadius: "0.4rem" }}
           />
         )}
-        <Box display="flex" flexDirection="column" marginX="1rem">
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            marginX: 2
+          }}
+        >
           <Typography
             variant="body2"
-            fontWeight="bold"
             sx={{
+              fontWeight: "bold",
               whiteSpace: "nowrap",
               overflow: "hidden",
-              maxWidth: "100px",
+              maxWidth: 100,
               textOverflow: "ellipsis"
             }}
           >
             {currentLanguage?.title}
           </Typography>
         </Box>
-        <IconButton sx={{ padding: "0.2rem" }}>
+        <IconButton sx={{ padding: 0.4 }}>
           <FaAngleDown size="0.7rem" />
         </IconButton>
       </Box>
@@ -93,7 +101,7 @@ export default function TopBarLanguage() {
         slotProps={{
           paper: {
             sx: {
-              borderRadius: "1rem",
+              borderRadius: 2,
               boxShadow: ({ palette }) => `0 1px 10px 0px ${alpha(palette.common.black, 0.1)}`
             }
           }
@@ -108,22 +116,35 @@ export default function TopBarLanguage() {
           horizontal: "left"
         }}
       >
-        <Typography padding="0.7rem 1rem">{t("language")}</Typography>
+        <Typography
+          sx={{
+            paddingX: 1,
+            paddingy: 1.3
+          }}
+        >
+          {t("language")}
+        </Typography>
         <Divider />
         <List disablePadding>
           {LanguageList.map((item) => (
             <ListItem key={item.locale} disablePadding onClick={() => handleChangeLanguage(item)}>
-              <ListItemButton selected={currentLocale === item.locale} sx={{ padding: "1rem" }}>
-                <ListItemIcon sx={{ minWidth: 0, marginRight: "1rem" }}>
+              <ListItemButton selected={currentLocale === item.locale} sx={{ padding: 2 }}>
+                <ListItemIcon sx={{ minWidth: 0, marginRight: 2 }}>
                   <Image
                     src={item.iconSRC}
                     alt={item.title}
                     width={45}
                     height={30}
-                    style={{ borderRadius: "0.4rem" }}
+                    style={{ borderRadius: 0.8 }}
                   />
                 </ListItemIcon>
-                <Typography variant="body1" whiteSpace="nowrap" marginRight="2rem">
+                <Typography
+                  variant="body1"
+                  sx={{
+                    whiteSpace: "nowrap",
+                    marginRight: 4
+                  }}
+                >
                   {item.title}
                 </Typography>
                 {currentLocale === item.locale && (

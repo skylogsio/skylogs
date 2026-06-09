@@ -72,7 +72,13 @@ export default function AlertRuleStatusIndicator({
   }
 
   return (
-    <Stack direction="row" spacing={1} justifyContent="center">
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{
+        justifyContent: "center"
+      }}
+    >
       <Chip
         label={statusTitle ?? status}
         size={size}

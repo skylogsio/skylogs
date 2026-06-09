@@ -19,7 +19,8 @@ import {
   Button,
   useTheme,
   Stack,
-  Collapse
+  Collapse,
+  tablePaginationClasses
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -243,7 +244,13 @@ function Table<T>(
 
   if (isError)
     return (
-      <Typography variant="h5" color="error" mt="2rem">
+      <Typography
+        variant="h5"
+        color="error"
+        sx={{
+          mt: "2rem"
+        }}
+      >
         {t("errorOnGettingData")}
       </Typography>
     );
@@ -265,16 +272,32 @@ function Table<T>(
   });
 
   return (
-    <Box display="flex" flexDirection="column" width="100%" minHeight="100%">
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        width: 1,
+        minHeight: 1
+      }}
+    >
       <Box
-        width="100%"
-        display="flex"
-        justifyContent="space-between"
-        alignItems="flex-end"
-        paddingX={1}
+        sx={{
+          width: 1,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          paddingX: 1
+        }}
       >
         {title && (
-          <Typography variant="h5" fontSize="1.8rem" fontWeight="700" component="div">
+          <Typography
+            variant="h5"
+            component="span"
+            sx={{
+              fontSize: 28,
+              fontWeight: 700
+            }}
+          >
             {title}
           </Typography>
         )}
@@ -296,7 +319,7 @@ function Table<T>(
                 openFilterBox || hasActiveFilters
                   ? palette.background.paper
                   : palette.secondary.dark,
-              paddingRight: "0.7rem",
+              paddingRight: 1.5,
               textTransform: "none"
             }}
           >
@@ -320,7 +343,7 @@ function Table<T>(
               onClick={onCreate}
               size="small"
               variant="contained"
-              sx={{ paddingRight: "1rem" }}
+              sx={{ paddingRight: 2 }}
             >
               {t("createButton")}
             </Button>
@@ -329,16 +352,24 @@ function Table<T>(
       </Box>
       <Collapse in={openFilterBox}>
         <Stack
-          padding={1}
           spacing={1}
-          bgcolor={palette.background.paper}
-          borderRadius="1rem"
-          marginTop={1}
-          border="1px solid"
-          borderColor={palette.divider}
+          sx={{
+            padding: 1,
+            bgcolor: palette.background.paper,
+            borderRadius: 4,
+            marginTop: 1,
+            border: 1,
+            borderColor: palette.divider
+          }}
         >
           {filterComponent?.({ onChange: handleChangeFilter })}
-          <Stack direction="row" spacing={1} justifyContent="space-between">
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              justifyContent: "space-between"
+            }}
+          >
             <Box>
               {hasActiveFilters && (
                 <Button size="small" variant="text" onClick={handleClearFilters}>
@@ -360,17 +391,19 @@ function Table<T>(
         </Stack>
       </Collapse>
       <Box
-        width="100%"
-        height="70vh"
-        bgcolor="background.paper"
-        borderRadius="1rem"
-        border="1px solid"
-        borderColor={(theme) => theme.palette.divider}
-        overflow="hidden"
-        marginTop={1}
+        sx={{
+          width: 1,
+          height: "70vh",
+          bgcolor: "background.paper",
+          borderRadius: 4,
+          border: 1,
+          borderColor: (theme) => theme.palette.divider,
+          overflow: "hidden",
+          marginTop: 1
+        }}
       >
-        <TableContainer sx={{ width: "100%", maxHeight: "100%", overflow: "auto" }}>
-          <MuiTable stickyHeader sx={{ width: "100%" }}>
+        <TableContainer sx={{ width: 1, maxHeight: 1, overflow: "auto" }}>
+          <MuiTable stickyHeader sx={{ width: 1 }}>
             <TableHead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
@@ -392,10 +425,10 @@ function Table<T>(
                         ...typography.body1,
                         fontWeight: "bold",
                         width: header.id === "select" ? "50px" : "auto",
-                        paddingY: "1rem",
+                        paddingY: 2,
                         textTransform: "capitalize",
                         borderBottomColor: palette.divider,
-                        fontSize: "0.9rem"
+                        fontSize: 14
                       })}
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
@@ -412,14 +445,14 @@ function Table<T>(
                         <TableCell
                           key={cellIndex}
                           sx={{
-                            width: cellIndex === 0 ? "40px" : "auto",
+                            width: cellIndex === 0 ? 40 : "auto",
                             borderBottomColor: (theme) => theme.palette.divider
                           }}
                         >
                           <Skeleton
                             variant="text"
-                            width={cellIndex === 0 ? "20px" : "100%"}
-                            height="30px"
+                            width={cellIndex === 0 ? 20 : "100%"}
+                            height={30}
                             className="mx-auto"
                             animation="wave"
                             sx={{ bgcolor: (theme) => theme.palette.action.hover }}
@@ -432,7 +465,7 @@ function Table<T>(
                     <TableRow
                       key={row.id}
                       sx={{
-                        width: row.id === "select" ? "50px" : "auto",
+                        width: row.id === "select" ? 50 : "auto",
                         transition: "background-color 200ms ease",
                         backgroundColor: ({ palette }) =>
                           row.getIsSelected() ? alpha(palette.primary.main, 0.06) : "transparent",
@@ -481,20 +514,20 @@ function Table<T>(
         sx={{
           overflow: "hidden",
           width: "100%",
-          "& .MuiTablePagination-displayedRows": {
+          [`& .${tablePaginationClasses.displayedRows}`]: {
             marginLeft: "auto",
             color: (theme) => theme.palette.text.secondary
           },
-          "& .MuiTablePagination-spacer": {
+          [`& .${tablePaginationClasses.spacer}`]: {
             display: "none"
           },
-          "& .MuiTablePagination-selectLabel": {
+          [`& .${tablePaginationClasses.selectLabel}`]: {
             color: (theme) => theme.palette.text.secondary
           },
-          "& .MuiTablePagination-input": {
+          [`& .${tablePaginationClasses.input}`]: {
             color: (theme) => theme.palette.text.secondary
           },
-          "& .MuiTablePagination-actions": {
+          [`& .${tablePaginationClasses.actions}`]: {
             "& button": {
               transform: `rotateY(${direction === "ltr" ? 0 : "180deg"})`,
               "svg path": {

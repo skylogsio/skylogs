@@ -4,7 +4,7 @@ import {
   alpha,
   Button,
   Collapse,
-  Grid2,
+  Grid,
   Grow,
   IconButton,
   Stack,
@@ -46,7 +46,7 @@ export default function ProxyCard({
   });
 
   return (
-    <Grid2
+    <Grid
       onMouseEnter={() => setShowButtons(true)}
       onMouseLeave={() => setShowButtons(false)}
       key={data.id}
@@ -58,7 +58,7 @@ export default function ProxyCard({
         overflow: "hidden",
         backgroundColor: palette.background.default,
         boxSizing: "border-box",
-        borderRadius: "0.7rem"
+        borderRadius: 3
       }}
     >
       <Collapse orientation="horizontal" in={showButtons}>
@@ -71,7 +71,7 @@ export default function ProxyCard({
             borderRadius: 0,
             minWidth: 0,
             paddingX: 1.5,
-            height: "100%",
+            height: 1,
             color: palette.error.light,
             backgroundColor: alpha(palette.error.light, 0.1)
           }}
@@ -80,12 +80,14 @@ export default function ProxyCard({
         </Button>
       </Collapse>
       <Stack
-        flex={1}
         direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        paddingX={2}
-        paddingY={1.5}
+        sx={{
+          flex: 1,
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingX: 2,
+          paddingY: 1.5
+        }}
       >
         <Stack>
           <Stack direction="row" spacing={1}>
@@ -114,6 +116,6 @@ export default function ProxyCard({
           slotProps={{ input: { "aria-label": `proxy-${data.id}-activation-button` } }}
         />
       </Stack>
-    </Grid2>
+    </Grid>
   );
 }

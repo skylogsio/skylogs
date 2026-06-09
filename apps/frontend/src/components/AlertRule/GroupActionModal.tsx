@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+"use client";
+
+import { useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 
 import {
   Alert,
@@ -27,8 +30,20 @@ import {
 import ModalContainer from "@/components/Modal";
 import { ModalContainerProps } from "@/components/Modal/types";
 
-interface GroupActionModalProps extends Pick<ModalContainerProps, "open" | "onClose"> {
-  currentFilters?: Record<string, unknown>;
+interface GroupActionModalProps extends Pick<ModalContainerProps, "open" | "onClose"> {}
+
+function parseFiltersFromSearchParams(searchParams: URLSearchParams): Record<string, unknown> {
+  const filterParam = searchParams.get("filters");
+  if (!filterParam) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(decodeURIComponent(filterParam)) as Record<string, unknown>;
+  } catch (error) {
+    console.error("Error parsing filters from URL:", error);
+    return {};
+  }
 }
 
 export type GroupActionType = "silent" | "unsilent" | "add_user_notify";
@@ -40,11 +55,12 @@ export interface GroupActionData {
   currentFilters: Record<string, unknown>;
 }
 
-export default function GroupActionModal({
-  open,
-  onClose,
-  currentFilters = {}
-}: GroupActionModalProps) {
+export default function GroupActionModal({ open, onClose }: GroupActionModalProps) {
+  const searchParams = useSearchParams();
+  const appliedFilters = useMemo(
+    () => parseFiltersFromSearchParams(searchParams),
+    [searchParams]
+  );
   const { palette } = useTheme();
   const [endpointIds, setEndpointIds] = useState<string[]>([]);
   const [userIds, setUserIds] = useState<string[]>([]);
@@ -56,7 +72,7 @@ export default function GroupActionModal({
   });
 
   const { mutate: silentAlertRulesMutation, isPending: isSilenting } = useMutation({
-    mutationFn: () => silentAlertRules(currentFilters),
+    mutationFn: () => silentAlertRules(appliedFilters),
     onSuccess: (data) => {
       if (data.status) {
         toast.success("Alert Rules Silenced Successfully!");
@@ -66,7 +82,7 @@ export default function GroupActionModal({
   });
 
   const { mutate: unsilentAlertRulesMutation, isPending: isUnsilenting } = useMutation({
-    mutationFn: () => unsilentAlertRules(currentFilters),
+    mutationFn: () => unsilentAlertRules(appliedFilters),
     onSuccess: (data) => {
       if (data.status) {
         toast.success("Alert Rules Unsilenced Successfully!");
@@ -77,7 +93,7 @@ export default function GroupActionModal({
 
   const { mutate: addUserAndNotifyToAlertRulesMutation, isPending: isAddingUserAndNotify } =
     useMutation({
-      mutationFn: () => addUserAndNotifyToAlertRules(currentFilters, { endpointIds, userIds }),
+      mutationFn: () => addUserAndNotifyToAlertRules(appliedFilters, { endpointIds, userIds }),
       onSuccess: (data) => {
         if (data.status) {
           toast.success("Notifications and Users Added to Alert Rules Successfully!");
@@ -95,12 +111,14 @@ export default function GroupActionModal({
       data?.endpoints.filter((endpoint) => (selectedIds as string[]).includes(endpoint.id)) ?? [];
     return (
       <Stack
-        gap={1}
         direction="row"
-        flexWrap="wrap"
-        justifyContent="flex-start"
-        sx={{ float: "left" }}
         onMouseDown={(event) => event.stopPropagation()}
+        sx={{
+          gap: 1,
+          flexWrap: "wrap",
+          justifyContent: "flex-start",
+          float: "left"
+        }}
       >
         {selected.map((endpoint) => (
           <Chip
@@ -123,12 +141,14 @@ export default function GroupActionModal({
       data?.users.filter((user) => (selectedIds as string[]).includes(user.id)) ?? [];
     return (
       <Stack
-        gap={1}
         direction="row"
-        flexWrap="wrap"
-        justifyContent="flex-start"
-        sx={{ float: "left" }}
         onMouseDown={(event) => event.stopPropagation()}
+        sx={{
+          gap: 1,
+          flexWrap: "wrap",
+          justifyContent: "flex-start",
+          float: "left"
+        }}
       >
         {selected.map((user) => (
           <Chip
@@ -147,7 +167,7 @@ export default function GroupActionModal({
   };
 
   const renderFilters = () => {
-    const filterEntries = Object.entries(currentFilters).filter(
+    const filterEntries = Object.entries(appliedFilters).filter(
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       ([_, value]) =>
         value !== undefined &&
@@ -158,7 +178,12 @@ export default function GroupActionModal({
 
     if (filterEntries.length === 0) {
       return (
-        <Typography color="text.secondary" variant="body2">
+        <Typography
+          variant="body2"
+          sx={{
+            color: "text.secondary"
+          }}
+        >
           No filters applied - All alert rules will be affected
         </Typography>
       );
@@ -167,13 +192,29 @@ export default function GroupActionModal({
     return (
       <Stack spacing={1}>
         {filterEntries.map(([key, value]) => (
-          <Stack key={key} direction="row" spacing={1} alignItems="center">
-            <Typography variant="body2" textTransform="capitalize" fontWeight="bold" minWidth={120}>
+          <Stack
+            key={key}
+            direction="row"
+            spacing={1}
+            sx={{
+              alignItems: "center"
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                textTransform: "capitalize",
+                fontWeight: "bold",
+                minWidth: 120
+              }}
+            >
               {key}:
             </Typography>
             <Typography
               variant="body2"
-              textTransform={Array.isArray(value) ? "none" : "capitalize"}
+              sx={{
+                textTransform: Array.isArray(value) ? "none" : "capitalize"
+              }}
             >
               {Array.isArray(value) ? value.join(", ") : String(value)}
             </Typography>
@@ -221,7 +262,12 @@ export default function GroupActionModal({
     >
       <Stack spacing={3}>
         <Stack spacing={2}>
-          <Typography variant="subtitle1" fontWeight="bold">
+          <Typography
+            variant="subtitle1"
+            sx={{
+              fontWeight: "bold"
+            }}
+          >
             Applied Filters:
           </Typography>
           <Box
@@ -239,10 +285,21 @@ export default function GroupActionModal({
         <Divider />
 
         <Stack spacing={2}>
-          <Typography variant="subtitle1" fontWeight="bold">
+          <Typography
+            variant="subtitle1"
+            sx={{
+              fontWeight: "bold"
+            }}
+          >
             Select Action:
           </Typography>
-          <Stack direction="row" spacing={1} flexWrap="wrap">
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              flexWrap: "wrap"
+            }}
+          >
             <Button
               startIcon={<IoNotificationsOff size="1.4rem" />}
               onClick={() => handleActionSelect("silent")}
@@ -303,7 +360,12 @@ export default function GroupActionModal({
             <Stack spacing={2}>
               {selectedAction === "add_user_notify" && (
                 <Stack spacing={2}>
-                  <Typography variant="subtitle2" fontWeight="bold">
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      fontWeight: "bold"
+                    }}
+                  >
                     User And Notification Settings:
                   </Typography>
                   <TextField
@@ -359,7 +421,14 @@ export default function GroupActionModal({
           </Alert>
         )}
 
-        <Stack direction="row" spacing={2} justifyContent="flex-end" mt={3}>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            justifyContent: "flex-end",
+            mt: 3
+          }}
+        >
           <Button onClick={handleCloseModal} variant="outlined" disabled={isLoading}>
             Cancel
           </Button>

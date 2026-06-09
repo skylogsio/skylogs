@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Grid2 as Grid, IconButton, MenuItem, TextField, useTheme } from "@mui/material";
+import { Button, Grid, IconButton, MenuItem, TextField, useTheme } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { HiEye, HiEyeOff } from "react-icons/hi";
@@ -17,10 +17,10 @@ import type { ModalContainerProps } from "@/components/Modal/types";
 const PROXY_TYPES = ["http", "socks5"] as const;
 
 const proxySchema = z.object({
-  name: z.string().trim().nonempty("This field is Required."),
-  type: z.enum(PROXY_TYPES).default("http"),
-  host: z.string().trim().nonempty("This field is Required."),
-  port: z.number({ message: "This field is Required." }).int().min(0).max(65535).default(1080),
+  name: z.string().trim().min(1, "This field is Required."),
+  type: z.enum(PROXY_TYPES),
+  host: z.string().trim().min(1, "This field is Required."),
+  port: z.number("This field is Required.").int().min(0).max(65535),
   username: z.string().optional(),
   password: z.string().optional()
 });
@@ -32,7 +32,7 @@ type ProxyModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
   onSubmit: () => void;
 };
 
-const defaultValues: ProxyFormType = {
+const emptyFormValues: ProxyFormType = {
   name: "",
   type: "http",
   host: "",
@@ -40,6 +40,21 @@ const defaultValues: ProxyFormType = {
   username: "",
   password: ""
 };
+
+function getFormValues(data: CreateUpdateModal<ITelegramProxy>): ProxyFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return {
+    name: data.name,
+    type: data.type,
+    host: data.host,
+    port: data.port,
+    username: data.username ?? "",
+    password: data.password ?? ""
+  };
+}
 
 export default function ProxyModal({ data, open, onClose, onSubmit }: ProxyModalProps) {
   const {
@@ -50,7 +65,8 @@ export default function ProxyModal({ data, open, onClose, onSubmit }: ProxyModal
     formState: { errors }
   } = useForm<ProxyFormType>({
     resolver: zodResolver(proxySchema),
-    defaultValues
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
   const { palette } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
@@ -82,11 +98,7 @@ export default function ProxyModal({ data, open, onClose, onSubmit }: ProxyModal
   }
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else {
-      reset(data as ProxyFormType);
-    }
+    reset(getFormValues(data));
   }, [data, reset]);
 
   return (
@@ -101,9 +113,11 @@ export default function ProxyModal({ data, open, onClose, onSubmit }: ProxyModal
         onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
-        width="100%"
-        display="flex"
-        marginTop="2rem"
+        sx={{
+          width: 1,
+          display: "flex",
+          marginTop: 4
+        }}
       >
         <Grid size={6}>
           <TextField
@@ -156,6 +170,7 @@ export default function ProxyModal({ data, open, onClose, onSubmit }: ProxyModal
             variant="filled"
             error={!!errors.username}
             helperText={errors.username?.message}
+            slotProps={{ input: { autoComplete: "false" } }}
             {...register("username")}
           />
         </Grid>
@@ -169,6 +184,7 @@ export default function ProxyModal({ data, open, onClose, onSubmit }: ProxyModal
             {...register("password")}
             slotProps={{
               input: {
+                autoComplete: "false",
                 endAdornment: (
                   <IconButton disableRipple onClick={() => setShowPassword((prev) => !prev)}>
                     {showPassword ? (
@@ -182,7 +198,12 @@ export default function ProxyModal({ data, open, onClose, onSubmit }: ProxyModal
             }}
           />
         </Grid>
-        <Grid size={12} marginTop="1rem">
+        <Grid
+          size={12}
+          sx={{
+            marginTop: 2
+          }}
+        >
           <Button
             disabled={isCreating || isUpdating}
             type="submit"

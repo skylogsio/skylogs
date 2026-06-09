@@ -32,7 +32,11 @@ export default function GrafanaAndPmmAlertHistory({ alertId }: { alertId: IAlert
 
   return (
     <>
-      <Stack alignItems="center">
+      <Stack
+        sx={{
+          alignItems: "center"
+        }}
+      >
         <DataTable<IGrafanaAndPmmAlertHistory>
           data={allData}
           isLoading={isFetching && !isFetchingNextPage}
@@ -63,11 +67,22 @@ export default function GrafanaAndPmmAlertHistory({ alertId }: { alertId: IAlert
             }
           ]}
         />
-        <Stack alignItems="center" position="relative" width="100%" paddingBottom={1}>
+        <Stack
+          sx={{
+            alignItems: "center",
+            position: "relative",
+            width: "100%",
+            paddingBottom: 1
+          }}
+        >
           <Typography
             variant="caption"
-            color="text.secondary"
-            sx={{ position: "absolute", right: 10, top: 6 }}
+            sx={{
+              color: "text.secondary",
+              position: "absolute",
+              right: 10,
+              top: 6
+            }}
           >
             Showing {allData.length} of {totalCount}
           </Typography>
@@ -86,7 +101,7 @@ export default function GrafanaAndPmmAlertHistory({ alertId }: { alertId: IAlert
                 marginX: "auto",
                 marginTop: 2,
                 backgroundColor: palette.background.paper,
-                border: "1px solid",
+                border: 1,
                 paddingX: 2,
                 borderColor: palette.secondary.light,
                 color: palette.secondary.dark

@@ -32,7 +32,11 @@ export default function ZabbixAlertHistory({ alertId }: { alertId: IAlertRule["i
 
   return (
     <>
-      <Stack alignItems="center">
+      <Stack
+        sx={{
+          alignItems: "center"
+        }}
+      >
         <DataTable<IZabbixAlertHistory>
           data={allData}
           isLoading={isFetching && !isFetchingNextPage}
@@ -63,11 +67,22 @@ export default function ZabbixAlertHistory({ alertId }: { alertId: IAlertRule["i
             }
           ]}
         />
-        <Stack alignItems="center" position="relative" width="100%" paddingBottom={1}>
+        <Stack
+          sx={{
+            alignItems: "center",
+            position: "relative",
+            width: "100%",
+            paddingBottom: 1
+          }}
+        >
           <Typography
             variant="caption"
-            color="text.secondary"
-            sx={{ position: "absolute", right: 10, top: 6 }}
+            sx={{
+              color: "text.secondary",
+              position: "absolute",
+              right: 10,
+              top: 6
+            }}
           >
             Showing {allData.length} of {totalCount}
           </Typography>
@@ -86,7 +101,7 @@ export default function ZabbixAlertHistory({ alertId }: { alertId: IAlertRule["i
                 marginX: "auto",
                 marginTop: 2,
                 backgroundColor: palette.background.paper,
-                border: "1px solid",
+                border: 1,
                 paddingX: 2,
                 borderColor: palette.secondary.light,
                 color: palette.secondary.dark
@@ -103,12 +118,22 @@ export default function ZabbixAlertHistory({ alertId }: { alertId: IAlertRule["i
         open={Boolean(details)}
         onClose={() => setDetails(null)}
       >
-        <Stack maxHeight="70vh" overflow="auto" paddingRight={1} spacing={2} marginTop={2}>
+        <Stack
+          spacing={2}
+          sx={{
+            maxHeight: "70vh",
+            overflow: "auto",
+            paddingRight: 1,
+            marginTop: 2
+          }}
+        >
           <Stack
-            width="100%"
-            padding={2}
-            borderRadius={2}
-            sx={{ backgroundColor: ({ palette }) => palette.grey[200] }}
+            sx={{
+              width: "100%",
+              padding: 2,
+              borderRadius: 2,
+              backgroundColor: ({ palette }) => palette.grey[200]
+            }}
           >
             <Typography variant="subtitle2" component="pre">
               {details}

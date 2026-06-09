@@ -32,7 +32,13 @@ export default function ProfileServicePage() {
 
   function renderEnvironments(envs: IProfileService["envs"]) {
     return (
-      <Stack direction="row" spacing={2} justifyContent="center">
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          justifyContent: "center"
+        }}
+      >
         {envs.map((env) => (
           <Chip key={env} label={env} />
         ))}
@@ -44,7 +50,6 @@ export default function ProfileServicePage() {
     setDeleteModalData(null);
     handleRefreshData();
   }
-
 
   return (
     <>

@@ -8,7 +8,7 @@ import {
   CardContent,
   FormControl,
   FormControlLabel,
-  Grid2 as Grid,
+  Grid,
   Radio,
   RadioGroup,
   Stack,
@@ -31,36 +31,32 @@ import { createUpdateClusterConfig, getClusterConfig } from "@/api/setttings/clu
 const clusterSchema = z
   .object({
     type: z.enum(["main", "agent"], {
-      required_error: "Cluster type is required.",
-      invalid_type_error: "Please select a valid cluster type."
+      error: "Cluster type is required."
     }),
-    sourceUrl: z.string().url({ message: "Source Url is not valid." }).optional(),
+    sourceUrl: z.string().optional(),
     sourceToken: z.string().optional()
+  })
+  .refine((data) => data.type !== "agent" || Boolean(data.sourceUrl?.trim()), {
+    error: "Source URL are required for agent type.",
+    path: ["sourceUrl"]
   })
   .refine(
     (data) => {
-      if (data.type === "agent") {
-        return data.sourceUrl && data.sourceUrl.trim() !== "";
+      if (data.type !== "agent" || !data.sourceUrl?.trim()) {
+        return true;
       }
-      return true;
+
+      return z.url().safeParse(data.sourceUrl.trim()).success;
     },
     {
-      message: "Source URL are required for agent type.",
+      error: "Source Url is not valid.",
       path: ["sourceUrl"]
     }
   )
-  .refine(
-    (data) => {
-      if (data.type === "agent") {
-        return data.sourceToken && data.sourceToken.trim() !== "";
-      }
-      return true;
-    },
-    {
-      message: "Source Token are required for agent type.",
-      path: ["sourceToken"]
-    }
-  );
+  .refine((data) => data.type !== "agent" || Boolean(data.sourceToken?.trim()), {
+    error: "Source Token are required for agent type.",
+    path: ["sourceToken"]
+  });
 
 type ClusterFormType = z.infer<typeof clusterSchema>;
 
@@ -83,7 +79,8 @@ export default function ClusterConfigurationPage() {
     formState: { errors }
   } = useForm<ClusterFormType>({
     resolver: zodResolver(clusterSchema),
-    defaultValues
+    defaultValues,
+    mode: "onSubmit"
   });
 
   const watchedType = watch("type");
@@ -127,7 +124,14 @@ export default function ClusterConfigurationPage() {
 
   if (isLoading) {
     return (
-      <Stack spacing={2} alignItems="center" justifyContent="center" minHeight="400px">
+      <Stack
+        spacing={2}
+        sx={{
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "400px"
+        }}
+      >
         <CircularProgress />
         <Typography variant="h6">Loading cluster configuration...</Typography>
       </Stack>
@@ -137,9 +141,21 @@ export default function ClusterConfigurationPage() {
   if (error && !data) {
     return (
       <Stack spacing={3}>
-        <Stack direction="row" alignItems="center" spacing={2}>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            alignItems: "center"
+          }}
+        >
           <HiServer size="2rem" color={palette.primary.main} />
-          <Typography variant="h5" fontSize="1.8rem" fontWeight="700">
+          <Typography
+            variant="h5"
+            sx={{
+              fontSize: 28,
+              fontWeight: 700
+            }}
+          >
             Cluster Configuration
           </Typography>
         </Stack>
@@ -151,7 +167,12 @@ export default function ClusterConfigurationPage() {
             <Grid component="form" onSubmit={handleSubmit(handleSubmitForm)} container spacing={3}>
               <Grid size={12}>
                 <FormControl component="fieldset" error={!!errors.type}>
-                  <Typography variant="h6" marginBottom={3}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      marginBottom: 3
+                    }}
+                  >
                     Cluster Type
                   </Typography>
                   <Controller
@@ -164,10 +185,15 @@ export default function ClusterConfigurationPage() {
                           control={<Radio />}
                           label={
                             <Stack>
-                              <Typography variant="body1" fontWeight="500">
+                              <Typography
+                                variant="body1"
+                                sx={{
+                                  fontWeight: 500
+                                }}
+                              >
                                 Main Cluster
                               </Typography>
-                              <Typography variant="caption" color="textSecondary">
+                              <Typography variant="caption" color="text.secondary">
                                 Primary cluster node that manages the system
                               </Typography>
                             </Stack>
@@ -178,10 +204,15 @@ export default function ClusterConfigurationPage() {
                           control={<Radio />}
                           label={
                             <Stack>
-                              <Typography variant="body1" fontWeight="500">
+                              <Typography
+                                variant="body1"
+                                sx={{
+                                  fontWeight: 500
+                                }}
+                              >
                                 Agent Cluster
                               </Typography>
-                              <Typography variant="caption" color="textSecondary">
+                              <Typography variant="caption" color="text.secondary">
                                 Secondary node that connects to a main cluster
                               </Typography>
                             </Stack>
@@ -246,13 +277,24 @@ export default function ClusterConfigurationPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack direction="row" alignItems="center" spacing={2}>
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          alignItems: "center"
+        }}
+      >
         <HiServer size="2rem" color={palette.primary.main} />
-        <Typography variant="h5" fontSize="1.8rem" fontWeight="700">
+        <Typography
+          variant="h5"
+          sx={{
+            fontSize: 28,
+            fontWeight: 700
+          }}
+        >
           Cluster Configuration
         </Typography>
       </Stack>
-
       {data && (
         <Alert severity="success">
           Current configuration: <strong>{data.type}</strong> cluster
@@ -263,10 +305,9 @@ export default function ClusterConfigurationPage() {
           )}
         </Alert>
       )}
-
       <Card sx={{ backgroundColor: palette.background.paper, boxShadow: "none" }}>
         <CardContent sx={{ padding: 4 }}>
-          <Grid component="form" onSubmit={handleSubmit(handleSubmitForm)} container spacing={3}>
+          <Grid component="form" onSubmit={handleSubmit(handleSubmitForm)} container spacing={2}>
             <Grid size={12}>
               <FormControl component="fieldset" error={!!errors.type}>
                 <Typography variant="h6" gutterBottom>
@@ -282,10 +323,15 @@ export default function ClusterConfigurationPage() {
                         control={<Radio />}
                         label={
                           <Stack>
-                            <Typography variant="body1" fontWeight="500">
+                            <Typography
+                              variant="body1"
+                              sx={{
+                                fontWeight: 500
+                              }}
+                            >
                               Main Cluster
                             </Typography>
-                            <Typography variant="caption" color="textSecondary">
+                            <Typography variant="caption" color="text.secondary">
                               Primary cluster node that manages the system
                             </Typography>
                           </Stack>
@@ -296,10 +342,15 @@ export default function ClusterConfigurationPage() {
                         control={<Radio />}
                         label={
                           <Stack>
-                            <Typography variant="body1" fontWeight="500">
+                            <Typography
+                              variant="body1"
+                              sx={{
+                                fontWeight: 500
+                              }}
+                            >
                               Agent Cluster
                             </Typography>
-                            <Typography variant="caption" color="textSecondary">
+                            <Typography variant="caption" color="text.secondary">
                               Secondary node that connects to a main cluster
                             </Typography>
                           </Stack>
@@ -325,6 +376,7 @@ export default function ClusterConfigurationPage() {
                     fullWidth
                     error={!!errors.sourceUrl}
                     helperText={errors.sourceUrl?.message}
+                    sx={{ marginTop: 2 }}
                     {...register("sourceUrl")}
                   />
                 </Grid>
@@ -357,18 +409,23 @@ export default function ClusterConfigurationPage() {
           </Grid>
         </CardContent>
       </Card>
-
       <Card sx={{ backgroundColor: alpha(palette.info.light, 0.08), boxShadow: "none" }}>
         <CardContent>
-          <Typography variant="h6" color="info.main" marginBottom={1}>
+          <Typography
+            variant="h6"
+            sx={{
+              color: "info.main",
+              marginBottom: 1
+            }}
+          >
             Configuration Information
           </Typography>
           <Stack spacing={1}>
-            <Typography variant="body2" color="textSecondary">
+            <Typography variant="body2" color="text.secondary">
               <strong>Main Cluster:</strong> Acts as the primary node that manages the entire
               system. No additional configuration is required.
             </Typography>
-            <Typography variant="body2" color="textSecondary">
+            <Typography variant="body2" color="text.secondary">
               <strong>Agent Cluster:</strong> Connects to an existing main cluster. Requires both
               Source URL and Source Token for authentication and communication.
             </Typography>

@@ -160,21 +160,6 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
                 },
                 [`& .${inputBaseClasses.root}`]: {
                   borderRadius: "0.55rem",
-                  backgroundColor:
-                    theme.palette.mode === "light" ? "#F1F4F9" : "rgba(255, 255, 255, 0.09)",
-                  color: theme.palette.text.primary,
-                  "&:hover": {
-                    backgroundColor:
-                      theme.palette.mode === "light" ? "#E8EFFA" : "rgba(255, 255, 255, 0.13)"
-                  },
-                  [`&.${inputBaseClasses.focused}`]: {
-                    backgroundColor:
-                      theme.palette.mode === "light" ? "#E8EFFA" : "rgba(255, 255, 255, 0.13)"
-                  },
-                  [`&.${inputBaseClasses.disabled}`]: {
-                    backgroundColor: `${alpha(grey[600], 0.1)}!important`,
-                    color: grey[600]
-                  },
                   "& input": {
                     color: theme.palette.text.primary
                   },
@@ -267,7 +252,13 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
   );
 
   return (
-    <ThemeProvider theme={theme} defaultMode="system" storageManager={storageManager}>
+    <ThemeProvider
+      theme={theme}
+      defaultMode="system"
+      storageManager={storageManager}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      {...({ forceThemeRerender: true } as any)}
+    >
       {children}
     </ThemeProvider>
   );

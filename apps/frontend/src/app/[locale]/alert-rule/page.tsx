@@ -28,7 +28,6 @@ export default function AlertRule() {
   const [modalData, setModalData] = useState<CreateUpdateModal<IAlertRule>>(null);
   const [deleteModalData, setDeleteModalData] = useState<IAlertRule | null>(null);
   const [openGroupActionModal, setOpenGroupActionModal] = useState<boolean>(false);
-  const [currentFilters, setCurrentFilters] = useState<Record<string, unknown>>({});
 
   function handleRefreshData() {
     if (tableRef.current) {
@@ -46,13 +45,6 @@ export default function AlertRule() {
     setOpenGroupActionModal(false);
   }
 
-  function handleFilterChange(key: string, value: unknown) {
-    setCurrentFilters((prev) => ({
-      ...prev,
-      [key]: value
-    }));
-  }
-
   return (
     <>
       <Table<IAlertRule>
@@ -61,14 +53,7 @@ export default function AlertRule() {
         url="alert-rule"
         onGroupActionClick={() => setOpenGroupActionModal(true)}
         searchKey="alertname"
-        filterComponent={({ onChange }) => (
-          <AlertRuleFilter
-            onChange={(key, value) => {
-              onChange(key, value);
-              handleFilterChange(key, value);
-            }}
-          />
-        )}
+        filterComponent={AlertRuleFilter}
         defaultPageSize={10}
         columns={[
           { header: "Row", accessorFn: (_, index) => ++index },
@@ -78,11 +63,14 @@ export default function AlertRule() {
               <Stack
                 spacing={1}
                 direction="row"
-                alignItems="center"
-                justifyContent="center"
                 component={Link}
                 href={`${pathname}/${row.original.id}`}
-              >
+                sx={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: ({ palette }) => palette.text.primary,
+                  textDecoration: "none"
+                }}>
                 {row.original.isPinned && (
                   <FaThumbtack
                     color={grey[500]}
@@ -157,11 +145,7 @@ export default function AlertRule() {
         />
       )}
       {openGroupActionModal && (
-        <GroupActionModal
-          open={openGroupActionModal}
-          onClose={handleAfterGroupAction}
-          currentFilters={currentFilters}
-        />
+        <GroupActionModal open={openGroupActionModal} onClose={handleAfterGroupAction} />
       )}
     </>
   );

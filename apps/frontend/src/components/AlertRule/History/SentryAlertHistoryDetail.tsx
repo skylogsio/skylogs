@@ -23,7 +23,15 @@ export default function SentryAlertHistoryDetail({ onClose, data }: SentryAlertH
 
   return (
     <ModalContainer title="History Details" maxWidth="70vw" open={Boolean(data)} onClose={onClose}>
-      <Stack height="70vh" overflow="auto" paddingRight={1} spacing={2} marginTop={2}>
+      <Stack
+        spacing={2}
+        sx={{
+          height: "70vh",
+          overflow: "auto",
+          paddingRight: 1,
+          marginTop: 2
+        }}
+      >
         <Box
           sx={{
             display: "flex",
@@ -36,44 +44,77 @@ export default function SentryAlertHistoryDetail({ onClose, data }: SentryAlertH
           <AlertRuleStatusIndicator size="small" status={data.action} />
         </Box>
 
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        <Typography
+          variant="body2"
+          sx={{
+            color: "text.secondary",
+            mb: 3
+          }}
+        >
           {data.createdAt}
         </Typography>
 
         <Stack
-          padding={1}
-          bgcolor={palette.background.default}
-          borderRadius={2}
           spacing={1}
-          sx={{ mb: 2 }}
+          sx={{
+            padding: 1,
+            bgcolor: palette.background.default,
+            borderRadius: 2,
+            mb: 2
+          }}
         >
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: "text.secondary",
+              display: "block",
+              mb: 0.5
+            }}
+          >
             Title
           </Typography>
           <Typography variant="body2">{title}</Typography>
         </Stack>
 
         <Stack
-          padding={1}
-          bgcolor={palette.background.default}
-          borderRadius={2}
           spacing={1}
-          sx={{ mb: 2 }}
+          sx={{
+            padding: 1,
+            bgcolor: palette.background.default,
+            borderRadius: 2,
+            mb: 2
+          }}
         >
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: "text.secondary",
+              display: "block",
+              mb: 0.5
+            }}
+          >
             Message
           </Typography>
           <Typography variant="body2">{data.message}</Typography>
         </Stack>
 
         <Stack
-          padding={1}
-          bgcolor={palette.background.default}
-          borderRadius={2}
           spacing={1}
-          sx={{ mb: 2 }}
+          sx={{
+            padding: 1,
+            bgcolor: palette.background.default,
+            borderRadius: 2,
+            mb: 2
+          }}
         >
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: "text.secondary",
+              display: "block",
+              mb: 0.5
+            }}
+          >
             URL
           </Typography>
           <Link
@@ -88,13 +129,21 @@ export default function SentryAlertHistoryDetail({ onClose, data }: SentryAlertH
         </Stack>
 
         <Stack
-          padding={1}
-          bgcolor={palette.background.default}
-          borderRadius={2}
           spacing={1}
-          sx={{ "& .w-json-view-container": { backgroundColor: "transparent !important" } }}
+          sx={{
+            padding: 1,
+            bgcolor: palette.background.default,
+            borderRadius: 2,
+            "& .w-json-view-container": { backgroundColor: "transparent !important" }
+          }}
         >
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: "text.secondary",
+              display: "block"
+            }}
+          >
             {isTriggered ? "Event Data" : "Metric Alert Data"}
           </Typography>
           <JsonView

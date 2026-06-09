@@ -23,7 +23,11 @@ export default function ZabbixFiredInstance({ alertId }: { alertId: IAlertRule["
 
   return (
     <>
-      <Stack alignItems="center">
+      <Stack
+        sx={{
+          alignItems: "center"
+        }}
+      >
         <DataTable<IZabbixHistoryInstance>
           data={data}
           onRowClick={(row) => setDetails(row.alert_message)}
@@ -60,12 +64,22 @@ export default function ZabbixFiredInstance({ alertId }: { alertId: IAlertRule["
         open={Boolean(details)}
         onClose={() => setDetails(null)}
       >
-        <Stack maxHeight="70vh" overflow="auto" paddingRight={1} spacing={2} marginTop={2}>
+        <Stack
+          spacing={2}
+          sx={{
+            maxHeight: "70vh",
+            overflow: "auto",
+            paddingRight: 1,
+            marginTop: 2
+          }}
+        >
           <Stack
-            width="100%"
-            padding={2}
-            borderRadius={2}
-            sx={{ backgroundColor: ({ palette }) => palette.background.default }}
+            sx={{
+              width: 1,
+              padding: 2,
+              borderRadius: 2,
+              backgroundColor: "background.default"
+            }}
           >
             <Typography variant="subtitle2" component="pre">
               {details}
