@@ -30,6 +30,11 @@ class NotifyMessagesAdapter implements Messageable
         return $this->payload->telegram();
     }
 
+    public function baleMessage(): mixed
+    {
+        return $this->payload->baleMessage();
+    }
+
     public function matterMostMessage(): mixed
     {
         return $this->payload->matterMostMessage();

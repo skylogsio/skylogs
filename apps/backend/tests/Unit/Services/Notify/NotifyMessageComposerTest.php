@@ -141,16 +141,21 @@ describe('NotifyMessageComposer', function () {
             ->and($payload->telegram()['message'])->toBe('Firing: GrafanaLike')
             ->and($payload->telegram())->toHaveKey('meta')
             ->and($payload->telegram()['meta'][0]['text'] ?? null)->toBe('Acknowledge')
-            ->and($payload->telegram()['meta'][0]['url'] ?? null)->toBe('https://example.test/ack/1');
+            ->and($payload->telegram()['meta'][0]['url'] ?? null)->toBe('https://example.test/ack/1')
+            ->and($payload->baleMessage())->toBeArray()
+            ->and($payload->baleMessage()['message'])->toBe('Firing: GrafanaLike')
+            ->and($payload->baleMessage()['meta'][0]['text'] ?? null)->toBe('Acknowledge')
+            ->and($payload->baleMessage()['meta'][0]['url'] ?? null)->toBe('https://example.test/ack/1');
     });
 
-    it('captures call and telegram overrides from messageable alerts', function () {
+    it('captures call, telegram, and bale overrides from messageable alerts', function () {
         $alert = new TelegramInlineKeyboardMessageable('old-body');
 
         $payload = NotifyMessagePayload::fromMessageable($alert);
 
         expect($payload->defaultMessage())->toBe('default')
             ->and($payload->telegram())->toBeArray()
+            ->and($payload->baleMessage())->toBeArray()
             ->and($payload->callMessage())->toBe('default');
     });
 });

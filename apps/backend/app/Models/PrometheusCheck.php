@@ -159,6 +159,24 @@ class PrometheusCheck extends BaseModel implements Messageable
         return $result;
     }
 
+    public function baleMessage()
+    {
+
+        $result = [
+            'message' => $this->defaultMessage(),
+        ];
+        if ($this->alertRule->enableAcknowledgeBtnInMessage() && $this->state == self::FIRE) {
+            $result['meta'] = [
+                [
+                    'text' => 'Acknowledge',
+                    'url' => config('app.url').route('acknowledgeLink', ['id' => $this->alertRuleId], false),
+                ],
+            ];
+        }
+
+        return $result;
+    }
+
     public function callMessage(): string
     {
 

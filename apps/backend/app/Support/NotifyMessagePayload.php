@@ -9,6 +9,7 @@ class NotifyMessagePayload implements Messageable
 {
     use ProvidesDefaultChannelMessages {
         telegram as protected defaultTelegram;
+        baleMessage as protected defaultBaleMessage;
         callMessage as protected defaultCallMessage;
     }
 
@@ -37,6 +38,13 @@ class NotifyMessagePayload implements Messageable
             $overrides['telegram'] = (string) $telegram;
         }
 
+        $bale = $alert->baleMessage();
+        if (is_array($bale)) {
+            $overrides['bale'] = $bale;
+        } elseif ((string) $bale !== $body) {
+            $overrides['bale'] = (string) $bale;
+        }
+
         $call = (string) $alert->callMessage();
         if ($call !== $body) {
             $overrides['call'] = $call;
@@ -61,6 +69,7 @@ class NotifyMessagePayload implements Messageable
 
         return new self($body, array_filter([
             'telegram' => self::legacyTelegramOverride($stored, $body),
+            'bale' => self::legacyBaleOverride($stored, $body),
             'call' => self::legacyCallOverride($stored, $body),
         ], fn (mixed $value): bool => $value !== null));
     }
@@ -73,6 +82,11 @@ class NotifyMessagePayload implements Messageable
     public function telegram(): array|string
     {
         return $this->overrides['telegram'] ?? $this->defaultTelegram();
+    }
+
+    public function baleMessage(): array|string
+    {
+        return $this->overrides['bale'] ?? $this->defaultBaleMessage();
     }
 
     public function callMessage(): string
@@ -107,6 +121,24 @@ class NotifyMessagePayload implements Messageable
         }
 
         return (string) $telegram !== $body ? (string) $telegram : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $stored
+     */
+    private static function legacyBaleOverride(array $stored, string $body): array|string|null
+    {
+        if (! array_key_exists('bale', $stored)) {
+            return null;
+        }
+
+        $bale = $stored['bale'];
+
+        if (is_array($bale)) {
+            return $bale;
+        }
+
+        return (string) $bale !== $body ? (string) $bale : null;
     }
 
     /**

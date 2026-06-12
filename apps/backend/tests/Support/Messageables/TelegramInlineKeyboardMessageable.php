@@ -33,4 +33,17 @@ final class TelegramInlineKeyboardMessageable implements Messageable
             ],
         ];
     }
+
+    public function baleMessage(): array
+    {
+        return [
+            'message' => $this->baseMessage,
+            'meta' => [
+                [
+                    'text' => 'Acknowledge',
+                    'url' => 'https://example.test/ack/1',
+                ],
+            ],
+        ];
+    }
 }

@@ -75,4 +75,21 @@ class ZabbixWebhookAlert extends BaseModel implements Messageable
 
         return $result;
     }
+
+    public function baleMessage()
+    {
+        $result = [
+            'message' => $this->defaultMessage(),
+        ];
+        if ($this->alertRule->enableAcknowledgeBtnInMessage() && $this->event_status == self::PROBLEM) {
+            $result['meta'] = [
+                [
+                    'text' => 'Acknowledge',
+                    'url' => config('app.url').route('acknowledgeLink', ['id' => $this->alertRuleId], false),
+                ],
+            ];
+        }
+
+        return $result;
+    }
 }

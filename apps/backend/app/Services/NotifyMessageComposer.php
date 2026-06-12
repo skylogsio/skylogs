@@ -37,6 +37,13 @@ class NotifyMessageComposer
             $overrides['telegram'] = $telegramBase;
         }
 
+        $baleBase = $alert->baleMessage();
+
+        if (is_array($baleBase)) {
+            $baleBase['message'] = $body;
+            $overrides['bale'] = $baleBase;
+        }
+
         return NotifyMessagePayload::fromBody($body, $overrides);
     }
 
