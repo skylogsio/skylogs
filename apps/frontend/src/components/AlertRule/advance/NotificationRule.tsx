@@ -9,6 +9,7 @@ import { HiPlus } from "react-icons/hi";
 import { toast } from "react-toastify";
 import * as z from "zod";
 
+import { CreateUpdateModal } from "@/@types/global";
 import {
   addBehaviorRuleToAlertRule,
   editBehaviorRuleToAlertRule,
@@ -29,7 +30,7 @@ const notificationRuleSchema = z.object({
   filters: z.array(filtersSchema).min(1, "At least one key-value pair is required")
 });
 
-type NotificationRuleFormData = z.infer<typeof notificationRuleSchema>;
+type NotificationRuleFormType = z.infer<typeof notificationRuleSchema>;
 
 const defaultKeyValue = { key: "", value: "" };
 
@@ -39,16 +40,30 @@ interface NotificationRuleModalProps {
   data: "NEW" | NotificationRuleItem;
 }
 
-const defaultValues: NotificationRuleFormData = {
+const emptyFormValues: NotificationRuleFormType = {
   name: "",
   endpointIds: [],
   filters: [defaultKeyValue]
 };
 
+function getFormValues(
+  data: CreateUpdateModal<NotificationRuleFormType & { id: string }>
+): NotificationRuleFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return {
+    name: data.name,
+    endpointIds: data.endpointIds,
+    filters: data.filters
+  };
+}
+
 const NotificationRuleModal: React.FC<NotificationRuleModalProps> = ({ open, onClose, data }) => {
   const queryClient = useQueryClient();
   const { alertId } = useParams<{ alertId: string }>();
-  const ruleId = data !== "NEW" ? (data as NotificationRuleFormData & { id: string }).id : "";
+  const ruleId = data !== "NEW" ? (data as NotificationRuleFormType & { id: string }).id : "";
   const {
     register,
     trigger,
@@ -58,9 +73,9 @@ const NotificationRuleModal: React.FC<NotificationRuleModalProps> = ({ open, onC
     setValue,
     watch,
     reset
-  } = useForm<NotificationRuleFormData>({
+  } = useForm<NotificationRuleFormType>({
     resolver: zodResolver(notificationRuleSchema),
-    defaultValues
+    defaultValues: getFormValues(data)
   });
 
   const { data: endpointsData } = useQuery({
@@ -69,13 +84,12 @@ const NotificationRuleModal: React.FC<NotificationRuleModalProps> = ({ open, onC
   });
 
   const handleClose = () => {
-    reset(defaultValues);
     onClose();
     queryClient.invalidateQueries({ queryKey: ["get-behavior-rule"] });
   };
 
   const { mutate: addNotificationRule } = useMutation({
-    mutationFn: (body: NotificationRuleFormData) => addBehaviorRuleToAlertRule(alertId, body),
+    mutationFn: (body: NotificationRuleFormType) => addBehaviorRuleToAlertRule(alertId, body),
     onSuccess: () => {
       toast.success("Notification Rule Created Successfully.");
       handleClose();
@@ -83,7 +97,7 @@ const NotificationRuleModal: React.FC<NotificationRuleModalProps> = ({ open, onC
   });
 
   const { mutate: editNotificationRule } = useMutation({
-    mutationFn: (body: NotificationRuleFormData) =>
+    mutationFn: (body: NotificationRuleFormType) =>
       editBehaviorRuleToAlertRule(alertId, ruleId, body),
     onSuccess: () => {
       toast.success("Notification Rule Updated Successfully.");
@@ -98,7 +112,7 @@ const NotificationRuleModal: React.FC<NotificationRuleModalProps> = ({ open, onC
     name: "filters"
   });
 
-  const handleFormSubmit = (formData: NotificationRuleFormData) => {
+  const handleFormSubmit = (formData: NotificationRuleFormType) => {
     const body = { ...formData, type: "notification" };
     if (data === "NEW") {
       addNotificationRule(body);
@@ -108,12 +122,8 @@ const NotificationRuleModal: React.FC<NotificationRuleModalProps> = ({ open, onC
   };
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else {
-      reset(data);
-    }
-  }, [data, reset]);
+    reset(getFormValues(data));
+  }, [data, open, reset]);
 
   return (
     <ModalContainer
