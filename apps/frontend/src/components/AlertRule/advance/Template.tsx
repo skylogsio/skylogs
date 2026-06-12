@@ -2,10 +2,9 @@ import { useParams } from "next/navigation";
 import React, { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Autocomplete, Box, Button, Chip, Grid, Stack, TextField, Typography } from "@mui/material";
+import { Autocomplete, Box, Button, Chip, Grid, TextField } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm, useFieldArray, Controller } from "react-hook-form";
-import { HiPlus } from "react-icons/hi";
+import { useForm, Controller } from "react-hook-form";
 import { toast } from "react-toastify";
 import * as z from "zod";
 
@@ -17,38 +16,31 @@ import {
 } from "@/api/alertRule";
 import ModalContainer from "@/components/Modal";
 
-import type { NotificationRuleItem } from "./BehaviorRuleType";
-import ExtraField from "../Forms/ExtraField";
+import type { TemplateItem } from "./BehaviorRuleType";
 
-const filtersSchema = z.object({
-  key: z.string().trim().min(1, "This field is Required."),
-  value: z.string().trim().min(1, "This field is Required.")
-});
-const notificationRuleSchema = z.object({
+const templateSchema = z.object({
   name: z.string().min(1, "Name is required"),
   endpointIds: z.array(z.string()).min(1, "At least one Endpoint is required"),
-  filters: z.array(filtersSchema).min(1, "At least one key-value pair is required")
+  template: z.string().min(1, "Template is required")
 });
 
-type NotificationRuleFormType = z.infer<typeof notificationRuleSchema>;
+type TemplateFormType = z.infer<typeof templateSchema>;
 
-const defaultKeyValue = { key: "", value: "" };
-
-interface NotificationRuleModalProps {
+interface TemplateModalProps {
   open: boolean;
   onClose: () => void;
-  data: "NEW" | NotificationRuleItem;
+  data: "NEW" | TemplateItem;
 }
 
-const emptyFormValues: NotificationRuleFormType = {
+const emptyFormValues: TemplateFormType = {
   name: "",
   endpointIds: [],
-  filters: [defaultKeyValue]
+  template: ""
 };
 
 function getFormValues(
-  data: CreateUpdateModal<NotificationRuleFormType & { id: string }>
-): NotificationRuleFormType {
+  data: CreateUpdateModal<TemplateFormType & { id: string }>
+): TemplateFormType {
   if (!data || data === "NEW") {
     return emptyFormValues;
   }
@@ -56,25 +48,23 @@ function getFormValues(
   return {
     name: data.name,
     endpointIds: data.endpointIds,
-    filters: data.filters
+    template: data.template
   };
 }
 
-const NotificationRuleModal: React.FC<NotificationRuleModalProps> = ({ open, onClose, data }) => {
+const TemplateModal: React.FC<TemplateModalProps> = ({ open, onClose, data }) => {
   const queryClient = useQueryClient();
   const { alertId } = useParams<{ alertId: string }>();
-  const ruleId = data !== "NEW" ? (data as NotificationRuleFormType & { id: string }).id : "";
+  const ruleId = data !== "NEW" ? (data as TemplateFormType & { id: string }).id : "";
+
   const {
     register,
-    trigger,
     control,
     handleSubmit,
     formState: { errors },
-    setValue,
-    watch,
     reset
-  } = useForm<NotificationRuleFormType>({
-    resolver: zodResolver(notificationRuleSchema),
+  } = useForm<TemplateFormType>({
+    resolver: zodResolver(templateSchema),
     defaultValues: getFormValues(data)
   });
 
@@ -88,36 +78,30 @@ const NotificationRuleModal: React.FC<NotificationRuleModalProps> = ({ open, onC
     queryClient.invalidateQueries({ queryKey: ["get-behavior-rule"] });
   };
 
-  const { mutate: addNotificationRule } = useMutation({
-    mutationFn: (body: NotificationRuleFormType) => addBehaviorRuleToAlertRule(alertId, body),
+  const { mutate: addTemplateRule } = useMutation({
+    mutationFn: (body: TemplateFormType) => addBehaviorRuleToAlertRule(alertId, body),
     onSuccess: () => {
-      toast.success("Notification Rule Created Successfully.");
+      toast.success("Template Rule Created Successfully.");
       handleClose();
     }
   });
 
-  const { mutate: editNotificationRule } = useMutation({
-    mutationFn: (body: NotificationRuleFormType) =>
-      editBehaviorRuleToAlertRule(alertId, ruleId, body),
+  const { mutate: editTemplateRule } = useMutation({
+    mutationFn: (body: TemplateFormType) => editBehaviorRuleToAlertRule(alertId, ruleId, body),
     onSuccess: () => {
-      toast.success("Notification Rule Updated Successfully.");
+      toast.success("Template Rule Updated Successfully.");
       handleClose();
     }
   });
 
   const endpoints = endpointsData?.endpoints ?? [];
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "filters"
-  });
-
-  const handleFormSubmit = (formData: NotificationRuleFormType) => {
-    const body = { ...formData, type: "notification" };
+  const handleFormSubmit = (formData: TemplateFormType) => {
+    const body = { ...formData, type: "template" };
     if (data === "NEW") {
-      addNotificationRule(body);
+      addTemplateRule(body);
     } else {
-      editNotificationRule(body);
+      editTemplateRule(body);
     }
   };
 
@@ -129,7 +113,7 @@ const NotificationRuleModal: React.FC<NotificationRuleModalProps> = ({ open, onC
     <ModalContainer
       open={open}
       onClose={handleClose}
-      title="Notification Rule"
+      title="Template Rule"
       width="90%"
       maxWidth="600px"
     >
@@ -145,11 +129,10 @@ const NotificationRuleModal: React.FC<NotificationRuleModalProps> = ({ open, onC
                 {...register("name")}
               />
             </Grid>
-
             <Grid size={6}>
               <Controller
                 control={control}
-                name={"endpointIds"}
+                name="endpointIds"
                 render={({ field }) => {
                   const selectedEndpoints = endpoints.filter((ep) => field.value?.includes(ep.id));
 
@@ -189,50 +172,18 @@ const NotificationRuleModal: React.FC<NotificationRuleModalProps> = ({ open, onC
                 }}
               />
             </Grid>
-          </Grid>
-
-          <Stack spacing={1} sx={{ mt: 3 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-              Key Value
-            </Typography>
-            {fields.map((field, index) => (
-              <ExtraField
-                key={field.id}
-                keyTextFieldProps={{
-                  value: watch(`filters.${index}.key`),
-                  onChange: (value) => {
-                    setValue(`filters.${index}.key`, value ?? "");
-                    trigger(`filters.${index}.key`);
-                  },
-                  error: !!errors.filters?.[index]?.key,
-                  helperText: errors.filters?.[index]?.key?.message
-                }}
-                valueTextFieldProps={{
-                  value: watch(`filters.${index}.value`),
-                  onChange: (value) => {
-                    setValue(`filters.${index}.value`, value ?? "");
-                    trigger(`filters.${index}.value`);
-                  },
-                  error: !!errors.filters?.[index]?.value,
-                  helperText: errors.filters?.[index]?.value?.message
-                }}
-                onDelete={() => remove(index)}
+            <Grid size={12}>
+              <TextField
+                label="Template"
+                variant="filled"
+                multiline
+                rows={4}
+                error={!!errors.template}
+                helperText={errors.template?.message}
+                {...register("template")}
               />
-            ))}
-            {!!errors.filters && (
-              <Typography variant="caption" color="error">
-                {errors.filters?.message}
-              </Typography>
-            )}
-            <Button
-              startIcon={<HiPlus />}
-              variant="outlined"
-              fullWidth
-              onClick={() => append(defaultKeyValue)}
-            >
-              Add New Key Value
-            </Button>
-          </Stack>
+            </Grid>
+          </Grid>
 
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
             <Button onClick={handleClose} variant="outlined" color="primary">
@@ -248,4 +199,4 @@ const NotificationRuleModal: React.FC<NotificationRuleModalProps> = ({ open, onC
   );
 };
 
-export default NotificationRuleModal;
+export default TemplateModal;

@@ -1,19 +1,10 @@
 import React from "react";
 
-import { Chip, ChipProps, useColorScheme } from "@mui/material";
-import { grey } from "@mui/material/colors";
+import { Chip, ChipProps } from "@mui/material";
 import { alpha, styled } from "@mui/system";
 
-import { AdvanceType } from "./AdvanceUtils";
-
-type ChipType = "all" | AdvanceType;
-
-const chipColor = (theme: "light" | "dark"): Record<ChipType, string> => ({
-  all: theme === "light" ? grey[600] : grey[300],
-  template: "#13C82B",
-  notification: "#4880FF",
-  silent: "#F28D22"
-});
+import type { BehaviorRuleFilterType } from "./BehaviorRuleType";
+import { BEHAVIOR_RULE_FILTER_COLORS } from "./BehaviorRuleUtils";
 
 interface StyledChipProps extends ChipProps {
   chipcolor: string;
@@ -34,16 +25,26 @@ const StyledChip = styled(Chip)<StyledChipProps>(({ chipcolor, active, size }) =
   fontWeight: 500
 }));
 
-interface AdvanceChipProps extends Omit<ChipProps, "label"> {
-  label: ChipType;
+interface BehaviorRuleChipProps extends Omit<ChipProps, "label"> {
+  label: BehaviorRuleFilterType;
+  showNotification?: boolean;
+  showTemplate?: boolean;
   active?: boolean;
   onClick?: () => void;
 }
 
-const AdvanceChip: React.FC<AdvanceChipProps> = ({ label, active = false, onClick, ...props }) => {
-  const { systemMode, mode } = useColorScheme();
-  const theme = (mode === "system" ? systemMode : mode) ?? "light";
-  const color = chipColor(theme)[label];
+const BehaviorRuleChip: React.FC<BehaviorRuleChipProps> = ({
+  label,
+  active = false,
+  showNotification,
+  showTemplate,
+  onClick,
+  ...props
+}) => {
+  if (!showNotification && label === "notification") return;
+  if (!showTemplate && label === "template") return;
+
+  const color = BEHAVIOR_RULE_FILTER_COLORS[label];
 
   return (
     <StyledChip
@@ -56,4 +57,4 @@ const AdvanceChip: React.FC<AdvanceChipProps> = ({ label, active = false, onClic
   );
 };
 
-export default AdvanceChip;
+export default BehaviorRuleChip;
