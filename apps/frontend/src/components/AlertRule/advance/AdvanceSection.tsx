@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useParams } from "next/navigation";
@@ -21,10 +20,18 @@ import { HiOutlinePlusSm, HiOutlineSearch } from "react-icons/hi";
 
 import { getBehaviorRuleOfAlertRule } from "@/api/alertRule";
 
-import BehaviorCard from "./BehaviorRuleCard";
+import BehaviorRuleCard from "./BehaviorRuleCard";
 import BehaviorRuleChip from "./BehaviorRuleChip";
-import type { BehaviorRuleFilterType, BehaviorRuleType } from "./BehaviorRuleType";
+import type {
+  BehaviorRuleFilterType,
+  BehaviorRuleItem,
+  BehaviorRuleType,
+  NotificationRuleItem,
+  SilentRuleItem
+} from "./BehaviorRuleType";
+import EmptyBehaviorRuleState from "./EmptyBehaviorRuleState";
 import NotificationRuleModal from "./NotificationRule";
+import SilentRuleModal from "./SilentRule";
 
 export default function AdvanceSection() {
   const { alertId } = useParams<{ alertId: string }>();
@@ -32,12 +39,13 @@ export default function AdvanceSection() {
   const [filter, setFilter] = useState<BehaviorRuleFilterType>("all");
   const [createMenuAnchor, setCreateMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedModal, setSelectedModal] = useState<BehaviorRuleType | null>(null);
-  const [modalData, setModalData] = useState<"NEW" | never>();
+  const [modalData, setModalData] = useState<"NEW" | BehaviorRuleItem>();
 
   const { data } = useQuery({
     queryKey: ["get-behavior-rule", alertId],
     queryFn: () => getBehaviorRuleOfAlertRule(alertId)
   });
+  console.log("🚀 ~ AdvanceSection ~ data:", data);
 
   function handleOpenModal(type: BehaviorRuleType) {
     setCreateMenuAnchor(null);
@@ -50,7 +58,9 @@ export default function AdvanceSection() {
   if (!data) return null;
 
   const filtered =
-    filter === "all" ? data.rules : data.rules.filter((item: any) => item.type === filter);
+    filter === "all"
+      ? data.rules
+      : data.rules.filter((item: BehaviorRuleItem) => item.type === filter);
 
   return (
     <>
@@ -139,24 +149,37 @@ export default function AdvanceSection() {
         </Stack>
 
         <Grid container spacing={2}>
-          {filtered.map((item: any) => (
-            <Grid key={item.id} size={{ xs: 12, sm: 6, lg: 4 }}>
-              <BehaviorCard
-                item={item}
-                onEdit={() => {
-                  setSelectedModal(item.type);
-                  setModalData(item);
-                }}
-              />
+          {filtered.length === 0 ? (
+            <Grid size={12}>
+              <EmptyBehaviorRuleState filter={filter} />
             </Grid>
-          ))}
+          ) : (
+            filtered.map((item: BehaviorRuleItem) => (
+              <Grid key={item.id} size={{ xs: 12, sm: 6, lg: 4 }}>
+                <BehaviorRuleCard
+                  item={item}
+                  onEdit={() => {
+                    setSelectedModal(item.type);
+                    setModalData(item);
+                  }}
+                />
+              </Grid>
+            ))
+          )}
         </Grid>
       </Box>
       {selectedModal === "notification" && (
         <NotificationRuleModal
           open={selectedModal === "notification"}
           onClose={() => setSelectedModal(null)}
-          data={modalData!}
+          data={modalData! as NotificationRuleItem}
+        />
+      )}
+      {selectedModal === "silent" && (
+        <SilentRuleModal
+          open={selectedModal === "silent"}
+          onClose={() => setSelectedModal(null)}
+          data={modalData! as SilentRuleItem}
         />
       )}
     </>

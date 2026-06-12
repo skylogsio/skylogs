@@ -1,17 +1,10 @@
 import React from "react";
 
-import { Chip, ChipProps, useColorScheme } from "@mui/material";
-import { grey } from "@mui/material/colors";
+import { Chip, ChipProps } from "@mui/material";
 import { alpha, styled } from "@mui/system";
 
 import type { BehaviorRuleFilterType } from "./BehaviorRuleType";
-
-const chipColor = (theme: "light" | "dark"): Record<BehaviorRuleFilterType, string> => ({
-  all: theme === "light" ? grey[600] : grey[300],
-  template: "#13C82B",
-  notification: "#4880FF",
-  silent: "#F28D22"
-});
+import { BEHAVIOR_RULE_FILTER_COLORS } from "./BehaviorRuleUtils";
 
 interface StyledChipProps extends ChipProps {
   chipcolor: string;
@@ -44,9 +37,7 @@ const BehaviorRuleChip: React.FC<BehaviorRuleChipProps> = ({
   onClick,
   ...props
 }) => {
-  const { systemMode, mode } = useColorScheme();
-  const theme = (mode === "system" ? systemMode : mode) ?? "light";
-  const color = chipColor(theme)[label];
+  const color = BEHAVIOR_RULE_FILTER_COLORS[label];
 
   return (
     <StyledChip

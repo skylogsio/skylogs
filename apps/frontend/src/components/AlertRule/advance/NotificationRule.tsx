@@ -16,6 +16,7 @@ import {
 } from "@/api/alertRule";
 import ModalContainer from "@/components/Modal";
 
+import type { NotificationRuleItem } from "./BehaviorRuleType";
 import ExtraField from "../Forms/ExtraField";
 
 const filtersSchema = z.object({
@@ -35,7 +36,7 @@ const defaultKeyValue = { key: "", value: "" };
 interface NotificationRuleModalProps {
   open: boolean;
   onClose: () => void;
-  data: "NEW" | NotificationRuleFormData;
+  data: "NEW" | NotificationRuleItem;
 }
 
 const defaultValues: NotificationRuleFormData = {
