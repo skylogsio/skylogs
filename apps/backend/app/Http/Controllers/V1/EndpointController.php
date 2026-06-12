@@ -121,6 +121,7 @@ class EndpointController extends Controller
                     'required',
                     Rule::in([
                         'telegram',
+                        'bale',
                         'email',
                         'sms',
                         'flow',
@@ -190,6 +191,7 @@ class EndpointController extends Controller
                     'required',
                     Rule::in([
                         'telegram',
+                        'bale',
                         'email',
                         'sms',
                         'discord',

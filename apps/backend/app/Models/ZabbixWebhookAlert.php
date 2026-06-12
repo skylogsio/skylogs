@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Concerns\ProvidesDefaultChannelMessages;
 use App\Interfaces\Messageable;
 use Morilog\Jalali\Jalalian;
 
 class ZabbixWebhookAlert extends BaseModel implements Messageable
 {
+    use ProvidesDefaultChannelMessages;
+
     public $timestamps = true;
 
     protected $guarded = ['id', '_id'];
@@ -73,33 +76,20 @@ class ZabbixWebhookAlert extends BaseModel implements Messageable
         return $result;
     }
 
-    public function matterMostMessage()
+    public function baleMessage()
     {
-        return $this->defaultMessage();
-    }
+        $result = [
+            'message' => $this->defaultMessage(),
+        ];
+        if ($this->alertRule->enableAcknowledgeBtnInMessage() && $this->event_status == self::PROBLEM) {
+            $result['meta'] = [
+                [
+                    'text' => 'Acknowledge',
+                    'url' => config('app.url').route('acknowledgeLink', ['id' => $this->alertRuleId], false),
+                ],
+            ];
+        }
 
-    public function teamsMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function emailMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function smsMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function discordMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function callMessage(): string
-    {
-        return $this->defaultMessage();
+        return $result;
     }
 }

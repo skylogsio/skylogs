@@ -171,14 +171,22 @@ class AlertRuleBehaviorRuleService
             ->values()
             ->all();
 
-        $endpointNameById = $this->endpointNamesByIds($endpointIds);
+        $alertRuleIds = collect($rules)
+            ->flatMap(fn (array $rule) => $rule['dependsOnAlertRuleIds'] ?? [])
+            ->unique()
+            ->values()
+            ->all();
 
-        return collect($rules)->map(function (array $rule) use ($endpointNameById) {
+        $endpointNameById = $this->endpointNamesByIds($endpointIds);
+        $alertRuleNamesByIds = $this->alertRuleNamesByIds($alertRuleIds);
+
+        return collect($rules)->map(function (array $rule) use ($endpointNameById, $alertRuleNamesByIds) {
             $rule['name'] = trim((string) ($rule['name'] ?? ''));
 
             if (($rule['type'] ?? null) === AlertRuleBehaviorRuleType::SILENT->value) {
                 $rule['triggerState'] = trim((string) ($rule['triggerState'] ?? ''));
                 $rule['dependsOnAlertRuleIds'] = array_values($rule['dependsOnAlertRuleIds'] ?? []);
+                $rule['dependsOnAlertRules'] = $this->formatAlertRulesForApi($rule['dependsOnAlertRuleIds'], $alertRuleNamesByIds);
 
                 unset($rule['filters'], $rule['template'], $rule['endpointIds']);
 
@@ -222,6 +230,25 @@ class AlertRuleBehaviorRuleService
 
     /**
      * @param  list<string>  $endpointIds
+     * @return array<string, string>
+     */
+    protected function alertRuleNamesByIds(array $alertRuleIds): array
+    {
+        if ($alertRuleIds === []) {
+            return [];
+        }
+
+        return AlertRule::query()
+            ->whereIn('_id', $alertRuleIds)
+            ->get(['_id', 'name'])
+            ->mapWithKeys(fn (AlertRule $alertRule) => [
+                (string) $alertRule->_id => trim((string) ($alertRule->name ?? '')),
+            ])
+            ->all();
+    }
+
+    /**
+     * @param  list<string>  $endpointIds
      * @param  array<string, string>  $endpointNameById
      * @return list<array{id: string, name: string}>
      */
@@ -231,6 +258,22 @@ class AlertRuleBehaviorRuleService
             ->map(fn (string $endpointId) => [
                 'id' => $endpointId,
                 'name' => $endpointNameById[$endpointId] ?? '',
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  list<string>  $alertRuleIds
+     * @param  array<string, string>  $alertRuleNameById
+     * @return list<array{id: string, name: string}>
+     */
+    protected function formatAlertRulesForApi(array $alertRuleIds, array $alertRuleNameById): array
+    {
+        return collect($alertRuleIds)
+            ->map(fn (string $alertRuleId) => [
+                'id' => $alertRuleId,
+                'name' => $alertRuleNameById[$alertRuleId] ?? '',
             ])
             ->values()
             ->all();
@@ -365,8 +408,8 @@ class AlertRuleBehaviorRuleService
     public function getFilterValue(AlertRule $alertRule, array $context, string $key): ?string
     {
         return match ($alertRule->type) {
-            AlertRuleType::API, AlertRuleType::NOTIFICATION => $context['instance'] !== ''
-                ? $context['instance']
+            AlertRuleType::API, AlertRuleType::NOTIFICATION => $key === 'instance'
+                ? ($context['instance'] !== '' ? $context['instance'] : null)
                 : null,
             default => $this->labelFilterValue($context, $key),
         };

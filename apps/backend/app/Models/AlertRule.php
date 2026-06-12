@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\ProvidesDefaultChannelMessages;
 use App\Enums\AlertRuleType;
 use App\Enums\HealthAlertType;
 use App\Interfaces\Messageable;
@@ -13,6 +14,8 @@ use MongoDB\Laravel\Relations\BelongsTo;
 #[ObservedBy(AlertRuleObserver::class)]
 class AlertRule extends BaseModel implements Messageable
 {
+    use ProvidesDefaultChannelMessages;
+
     public const UNKNOWN = 'unknown';
 
     public const WARNING = 'warning';
@@ -266,41 +269,6 @@ class AlertRule extends BaseModel implements Messageable
         $text .= ' resolved manually.';
 
         return $text;
-    }
-
-    public function telegram()
-    {
-        return $this->defaultMessage();
-    }
-
-    public function matterMostMessage()
-    {
-        return $this->defaultMessage();
-    }
-
-    public function teamsMessage()
-    {
-        return $this->defaultMessage();
-    }
-
-    public function emailMessage()
-    {
-        return $this->defaultMessage();
-    }
-
-    public function smsMessage()
-    {
-        return $this->defaultMessage();
-    }
-
-    public function discordMessage()
-    {
-        return $this->defaultMessage();
-    }
-
-    public function callMessage()
-    {
-        return $this->defaultMessage();
     }
 
     public function testMessage()

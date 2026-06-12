@@ -19,6 +19,8 @@ class Endpoint extends BaseModel
 
     public const TELEGRAM = 'telegram';
 
+    public const BALE = 'bale';
+
     public const TEAMS = 'teams';
 
     protected $guarded = ['id', '_id'];
@@ -58,6 +60,7 @@ class Endpoint extends BaseModel
         'email' => 'Email',
         'call' => 'Call',
         'telegram' => 'Telegram',
+        'bale' => 'Bale',
         'teams' => 'Teams',
     ];
 }

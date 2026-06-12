@@ -2,6 +2,7 @@
 
 namespace Tests\Support\Messageables;
 
+use App\Concerns\ProvidesDefaultChannelMessages;
 use App\Interfaces\Messageable;
 
 /**
@@ -9,6 +10,8 @@ use App\Interfaces\Messageable;
  */
 final class StructuredPayloadMessageable implements Messageable
 {
+    use ProvidesDefaultChannelMessages;
+
     public function __construct(
         public string $instance = 'worker-1',
     ) {}
@@ -16,40 +19,5 @@ final class StructuredPayloadMessageable implements Messageable
     public function defaultMessage(): string
     {
         return 'd';
-    }
-
-    public function telegram(): array|string
-    {
-        return 't';
-    }
-
-    public function matterMostMessage(): string
-    {
-        return 'm';
-    }
-
-    public function teamsMessage(): string
-    {
-        return 'tm';
-    }
-
-    public function smsMessage(): string
-    {
-        return 's';
-    }
-
-    public function discordMessage(): string
-    {
-        return 'di';
-    }
-
-    public function callMessage(): string
-    {
-        return 'c';
-    }
-
-    public function emailMessage(): string
-    {
-        return 'e';
     }
 }

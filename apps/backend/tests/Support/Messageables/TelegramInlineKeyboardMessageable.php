@@ -2,6 +2,7 @@
 
 namespace Tests\Support\Messageables;
 
+use App\Concerns\ProvidesDefaultChannelMessages;
 use App\Interfaces\Messageable;
 
 /**
@@ -9,6 +10,8 @@ use App\Interfaces\Messageable;
  */
 final class TelegramInlineKeyboardMessageable implements Messageable
 {
+    use ProvidesDefaultChannelMessages;
+
     public function __construct(
         private readonly string $baseMessage = 'original-telegram-body',
     ) {}
@@ -31,33 +34,16 @@ final class TelegramInlineKeyboardMessageable implements Messageable
         ];
     }
 
-    public function matterMostMessage(): string
+    public function baleMessage(): array
     {
-        return 'mm';
-    }
-
-    public function teamsMessage(): string
-    {
-        return 'teams';
-    }
-
-    public function smsMessage(): string
-    {
-        return 'sms';
-    }
-
-    public function discordMessage(): string
-    {
-        return 'discord';
-    }
-
-    public function callMessage(): string
-    {
-        return 'call';
-    }
-
-    public function emailMessage(): string
-    {
-        return 'email';
+        return [
+            'message' => $this->baseMessage,
+            'meta' => [
+                [
+                    'text' => 'Acknowledge',
+                    'url' => 'https://example.test/ack/1',
+                ],
+            ],
+        ];
     }
 }
