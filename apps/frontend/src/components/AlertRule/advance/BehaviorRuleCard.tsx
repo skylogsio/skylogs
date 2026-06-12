@@ -132,7 +132,8 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
           </Menu>
         </Stack>
 
-        <Box
+        <Stack
+          direction="row"
           sx={{
             backgroundColor: palette.background.default,
             borderRadius: 1.5,
@@ -140,9 +141,10 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
             mb: 1.5,
             flex: 1
           }}
+          spacing={0.5}
         >
           {renderChip()}
-        </Box>
+        </Stack>
 
         <Stack direction="row" spacing={1}>
           <Button
