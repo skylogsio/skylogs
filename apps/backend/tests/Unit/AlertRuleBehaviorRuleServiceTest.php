@@ -580,6 +580,58 @@ describe('AlertRuleBehaviorRuleService', function () {
         ])->and($formatted[0])->not->toHaveKey('filters');
     });
 
+    it('formats silent rules for api response', function () {
+        $service = Mockery::mock(AlertRuleBehaviorRuleService::class)->makePartial();
+        $service->shouldAllowMockingProtectedMethods();
+        $service->shouldReceive('alertRuleNamesByIds')
+            ->with(['dep-1', 'dep-2'])
+            ->andReturn([]);
+
+        $formatted = $service->formatRulesForApi([
+            [
+                'id' => 'silent-1',
+                'name' => 'Silence when deps resolved',
+                'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                'dependsOnAlertRuleIds' => ['dep-1', 'dep-2'],
+                'triggerState' => AlertRule::RESOlVED,
+            ],
+        ]);
+
+        expect($formatted[0])->toMatchArray([
+            'id' => 'silent-1',
+            'name' => 'Silence when deps resolved',
+            'type' => AlertRuleBehaviorRuleType::SILENT->value,
+            'triggerState' => AlertRule::RESOlVED,
+            'dependsOnAlertRuleIds' => ['dep-1', 'dep-2'],
+            'dependsOnAlertRules' => [
+                ['id' => 'dep-1', 'name' => ''],
+                ['id' => 'dep-2', 'name' => ''],
+            ],
+        ]);
+    });
+
+    it('includes resolved alert rule names in api response for silent rules', function () {
+        $service = Mockery::mock(AlertRuleBehaviorRuleService::class)->makePartial();
+        $service->shouldAllowMockingProtectedMethods();
+        $service->shouldReceive('alertRuleNamesByIds')
+            ->with(['dep-1'])
+            ->andReturn(['dep-1' => 'MySQL alert']);
+
+        $formatted = $service->formatRulesForApi([
+            [
+                'id' => 'silent-1',
+                'name' => 'Silence when deps resolved',
+                'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                'dependsOnAlertRuleIds' => ['dep-1'],
+                'triggerState' => AlertRule::CRITICAL,
+            ],
+        ]);
+
+        expect($formatted[0]['dependsOnAlertRules'])->toBe([
+            ['id' => 'dep-1', 'name' => 'MySQL alert'],
+        ])->and($formatted[0])->not->toHaveKeys(['filters', 'template', 'endpointIds', 'endpoints']);
+    });
+
     it('filters only notification rules from mixed rule types', function () {
         $alertRule = AlertRuleFactory::unsaved([
             'rules' => [

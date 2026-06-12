@@ -41,6 +41,11 @@ class Notify extends BaseModel implements Messageable
         return $this->messagePayload()->telegram();
     }
 
+    public function baleMessage(): mixed
+    {
+        return $this->messagePayload()->baleMessage();
+    }
+
     public function matterMostMessage(): mixed
     {
         return $this->messagePayload()->matterMostMessage();
