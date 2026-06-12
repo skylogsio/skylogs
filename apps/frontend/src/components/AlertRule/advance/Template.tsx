@@ -8,6 +8,7 @@ import { useForm, Controller } from "react-hook-form";
 import { toast } from "react-toastify";
 import * as z from "zod";
 
+import { CreateUpdateModal } from "@/@types/global";
 import {
   addBehaviorRuleToAlertRule,
   editBehaviorRuleToAlertRule,
@@ -23,7 +24,7 @@ const templateSchema = z.object({
   template: z.string().min(1, "Template is required")
 });
 
-type TemplateFormData = z.infer<typeof templateSchema>;
+type TemplateFormType = z.infer<typeof templateSchema>;
 
 interface TemplateModalProps {
   open: boolean;
@@ -31,16 +32,30 @@ interface TemplateModalProps {
   data: "NEW" | TemplateItem;
 }
 
-const defaultValues: TemplateFormData = {
+const emptyFormValues: TemplateFormType = {
   name: "",
   endpointIds: [],
   template: ""
 };
 
+function getFormValues(
+  data: CreateUpdateModal<TemplateFormType & { id: string }>
+): TemplateFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return {
+    name: data.name,
+    endpointIds: data.endpointIds,
+    template: data.template
+  };
+}
+
 const TemplateModal: React.FC<TemplateModalProps> = ({ open, onClose, data }) => {
   const queryClient = useQueryClient();
   const { alertId } = useParams<{ alertId: string }>();
-  const ruleId = data !== "NEW" ? (data as TemplateFormData & { id: string }).id : "";
+  const ruleId = data !== "NEW" ? (data as TemplateFormType & { id: string }).id : "";
 
   const {
     register,
@@ -48,9 +63,9 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ open, onClose, data }) =>
     handleSubmit,
     formState: { errors },
     reset
-  } = useForm<TemplateFormData>({
+  } = useForm<TemplateFormType>({
     resolver: zodResolver(templateSchema),
-    defaultValues
+    defaultValues: getFormValues(data)
   });
 
   const { data: endpointsData } = useQuery({
@@ -59,13 +74,12 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ open, onClose, data }) =>
   });
 
   const handleClose = () => {
-    reset(defaultValues);
     onClose();
     queryClient.invalidateQueries({ queryKey: ["get-behavior-rule"] });
   };
 
   const { mutate: addTemplateRule } = useMutation({
-    mutationFn: (body: TemplateFormData) => addBehaviorRuleToAlertRule(alertId, body),
+    mutationFn: (body: TemplateFormType) => addBehaviorRuleToAlertRule(alertId, body),
     onSuccess: () => {
       toast.success("Template Rule Created Successfully.");
       handleClose();
@@ -73,7 +87,7 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ open, onClose, data }) =>
   });
 
   const { mutate: editTemplateRule } = useMutation({
-    mutationFn: (body: TemplateFormData) => editBehaviorRuleToAlertRule(alertId, ruleId, body),
+    mutationFn: (body: TemplateFormType) => editBehaviorRuleToAlertRule(alertId, ruleId, body),
     onSuccess: () => {
       toast.success("Template Rule Updated Successfully.");
       handleClose();
@@ -82,7 +96,7 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ open, onClose, data }) =>
 
   const endpoints = endpointsData?.endpoints ?? [];
 
-  const handleFormSubmit = (formData: TemplateFormData) => {
+  const handleFormSubmit = (formData: TemplateFormType) => {
     const body = { ...formData, type: "template" };
     if (data === "NEW") {
       addTemplateRule(body);
@@ -92,12 +106,8 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ open, onClose, data }) =>
   };
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else {
-      reset(data);
-    }
-  }, [data, reset]);
+    reset(getFormValues(data));
+  }, [data, open, reset]);
 
   return (
     <ModalContainer
