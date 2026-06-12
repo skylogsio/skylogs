@@ -69,7 +69,7 @@ export default function DeleteBehaviorRuleModal({
           <BehaviorRuleChip label={type} sx={{ height: 26 }} />
         </Stack>
 
-        {type === "notification" && (
+        {(type === "notification" || type === "template") && (
           <>
             <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
               <Typography
@@ -82,7 +82,7 @@ export default function DeleteBehaviorRuleModal({
                 Endpoints:
               </Typography>
               <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-                {data.endpoints.length > 0 ? (
+                {"endpoints" in data && data.endpoints.length > 0 ? (
                   data.endpoints.map((ep) => <Chip key={ep.id} label={ep.name} size="small" />)
                 ) : (
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -92,20 +92,22 @@ export default function DeleteBehaviorRuleModal({
               </Stack>
             </Stack>
 
-            <Stack direction="row" spacing={1}>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  color: "text.secondary",
-                  fontWeight: "bold"
-                }}
-              >
-                Filters Count:
-              </Typography>
-              <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
-                {data.filters?.length ?? 0}
-              </Typography>
-            </Stack>
+            {type === "notification" && "filters" in data && (
+              <Stack direction="row" spacing={1}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    color: "text.secondary",
+                    fontWeight: "bold"
+                  }}
+                >
+                  Filters Count:
+                </Typography>
+                <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
+                  {data.filters?.length ?? 0}
+                </Typography>
+              </Stack>
+            )}
           </>
         )}
 

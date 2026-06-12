@@ -1,8 +1,18 @@
 export type BehaviorRuleType = "template" | "notification" | "silent";
-
 export type BehaviorRuleFilterType = "all" | BehaviorRuleType;
-
 export type TriggerStateType = "resolved" | "critical";
+
+export interface TemplateItem {
+  id: string;
+  name: string;
+  type: "template";
+  endpointIds: string[];
+  endpoints: Array<{
+    id: string;
+    name: string;
+  }>;
+  template: string;
+}
 
 export interface NotificationRuleItem {
   id: string;
@@ -31,4 +41,4 @@ export interface SilentRuleItem {
   triggerState: TriggerStateType;
 }
 
-export type BehaviorRuleItem = NotificationRuleItem | SilentRuleItem;
+export type BehaviorRuleItem = TemplateItem | NotificationRuleItem | SilentRuleItem;

@@ -8,7 +8,6 @@ import {
   Box,
   Button,
   Grid,
-  IconButton,
   Menu,
   MenuItem,
   Stack,
@@ -16,7 +15,7 @@ import {
   useTheme
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { HiOutlinePlusSm, HiOutlineSearch } from "react-icons/hi";
+import { HiOutlinePlusSm } from "react-icons/hi";
 
 import { getBehaviorRuleOfAlertRule } from "@/api/alertRule";
 
@@ -27,11 +26,13 @@ import type {
   BehaviorRuleItem,
   BehaviorRuleType,
   NotificationRuleItem,
-  SilentRuleItem
+  SilentRuleItem,
+  TemplateItem
 } from "./BehaviorRuleType";
 import EmptyBehaviorRuleState from "./EmptyBehaviorRuleState";
 import NotificationRuleModal from "./NotificationRule";
 import SilentRuleModal from "./SilentRule";
+import TemplateModal from "./Template";
 
 export default function AdvanceSection() {
   const { alertId } = useParams<{ alertId: string }>();
@@ -45,7 +46,6 @@ export default function AdvanceSection() {
     queryKey: ["get-behavior-rule", alertId],
     queryFn: () => getBehaviorRuleOfAlertRule(alertId)
   });
-  console.log("🚀 ~ AdvanceSection ~ data:", data);
 
   function handleOpenModal(type: BehaviorRuleType) {
     setCreateMenuAnchor(null);
@@ -78,16 +78,6 @@ export default function AdvanceSection() {
             </Typography>
           </Box>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-            <IconButton
-              sx={{
-                border: `1px solid ${alpha(palette.divider, 0.8)}`,
-                borderRadius: 2,
-                padding: 1,
-                color: palette.text.secondary
-              }}
-            >
-              <HiOutlineSearch size={20} />
-            </IconButton>
             <Button
               variant="contained"
               startIcon={<HiOutlinePlusSm size={18} />}
@@ -168,6 +158,13 @@ export default function AdvanceSection() {
           )}
         </Grid>
       </Box>
+      {selectedModal === "template" && (
+        <TemplateModal
+          open={selectedModal === "template"}
+          onClose={() => setSelectedModal(null)}
+          data={modalData! as TemplateItem}
+        />
+      )}
       {selectedModal === "notification" && (
         <NotificationRuleModal
           open={selectedModal === "notification"}

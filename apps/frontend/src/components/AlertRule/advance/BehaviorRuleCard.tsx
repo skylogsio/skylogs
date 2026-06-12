@@ -52,6 +52,12 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
         return item.dependsOnAlertRules.map((alertRule) => (
           <Chip key={alertRule.id} label={alertRule.name} variant="filled" size="small" />
         ));
+      case "template":
+        return (
+          <Typography variant="caption" component="pre">
+            {item.template}
+          </Typography>
+        );
       default:
         break;
     }
@@ -131,7 +137,8 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
             backgroundColor: palette.background.default,
             borderRadius: 1.5,
             p: 0.75,
-            mb: 1.5
+            mb: 1.5,
+            flex: 1
           }}
         >
           {renderChip()}
