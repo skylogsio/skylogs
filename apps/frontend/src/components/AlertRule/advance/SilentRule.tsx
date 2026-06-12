@@ -8,6 +8,7 @@ import { useForm, Controller } from "react-hook-form";
 import { toast } from "react-toastify";
 import * as z from "zod";
 
+import { CreateUpdateModal } from "@/@types/global";
 import {
   addBehaviorRuleToAlertRule,
   editBehaviorRuleToAlertRule,
@@ -24,7 +25,7 @@ const silentRuleSchema = z.object({
   triggerState: z.enum(["resolved", "critical"])
 });
 
-type SilentRuleFormData = z.infer<typeof silentRuleSchema>;
+type SilentRuleFormType = z.infer<typeof silentRuleSchema>;
 
 interface SilentRuleModalProps {
   open: boolean;
@@ -37,16 +38,30 @@ interface SelectableAlertRule {
   name: string;
 }
 
-const defaultValues: SilentRuleFormData = {
+const emptyFormValues: SilentRuleFormType = {
   name: "",
   dependsOnAlertRuleIds: [],
   triggerState: "resolved"
 };
 
+function getFormValues(
+  data: CreateUpdateModal<SilentRuleFormType & { id: string }>
+): SilentRuleFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return {
+    name: data.name,
+    dependsOnAlertRuleIds: data.dependsOnAlertRuleIds,
+    triggerState: data.triggerState
+  };
+}
+
 const SilentRuleModal: React.FC<SilentRuleModalProps> = ({ open, onClose, data }) => {
   const queryClient = useQueryClient();
   const { alertId } = useParams<{ alertId: string }>();
-  const ruleId = data !== "NEW" ? (data as SilentRuleFormData & { id: string }).id : "";
+  const ruleId = data !== "NEW" ? (data as SilentRuleFormType & { id: string }).id : "";
 
   const {
     register,
@@ -54,9 +69,9 @@ const SilentRuleModal: React.FC<SilentRuleModalProps> = ({ open, onClose, data }
     handleSubmit,
     formState: { errors },
     reset
-  } = useForm<SilentRuleFormData>({
+  } = useForm<SilentRuleFormType>({
     resolver: zodResolver(silentRuleSchema),
-    defaultValues
+    defaultValues: getFormValues(data)
   });
 
   const { data: selectableAlertRules } = useQuery<SelectableAlertRule[]>({
@@ -66,13 +81,12 @@ const SilentRuleModal: React.FC<SilentRuleModalProps> = ({ open, onClose, data }
   });
 
   const handleClose = () => {
-    reset(defaultValues);
     onClose();
     queryClient.invalidateQueries({ queryKey: ["get-behavior-rule"] });
   };
 
   const { mutate: addSilentRule } = useMutation({
-    mutationFn: (body: SilentRuleFormData & { type: string }) =>
+    mutationFn: (body: SilentRuleFormType & { type: string }) =>
       addBehaviorRuleToAlertRule(alertId, body),
     onSuccess: () => {
       toast.success("Silent Rule Created Successfully.");
@@ -81,7 +95,7 @@ const SilentRuleModal: React.FC<SilentRuleModalProps> = ({ open, onClose, data }
   });
 
   const { mutate: editSilentRule } = useMutation({
-    mutationFn: (body: SilentRuleFormData & { type: string }) =>
+    mutationFn: (body: SilentRuleFormType & { type: string }) =>
       editBehaviorRuleToAlertRule(alertId, ruleId, body),
     onSuccess: () => {
       toast.success("Silent Rule Updated Successfully.");
@@ -89,7 +103,7 @@ const SilentRuleModal: React.FC<SilentRuleModalProps> = ({ open, onClose, data }
     }
   });
 
-  const handleFormSubmit = (formData: SilentRuleFormData) => {
+  const handleFormSubmit = (formData: SilentRuleFormType) => {
     const body = { ...formData, type: "silent" };
     if (data === "NEW") {
       addSilentRule(body);
@@ -99,12 +113,8 @@ const SilentRuleModal: React.FC<SilentRuleModalProps> = ({ open, onClose, data }
   };
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else {
-      reset(data);
-    }
-  }, [data, reset]);
+    reset(getFormValues(data));
+  }, [data, open, reset]);
 
   const alertRules = selectableAlertRules ?? [];
 
