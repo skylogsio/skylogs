@@ -9,9 +9,15 @@ import { BEHAVIOR_RULE_FILTER_COLORS } from "./BehaviorRuleUtils";
 
 interface EmptyBehaviorRuleStateProps {
   filter: BehaviorRuleFilterType;
+  showNotification?: boolean;
+  showTemplate?: boolean;
 }
 
-const EmptyBehaviorRuleState: React.FC<EmptyBehaviorRuleStateProps> = ({ filter }) => {
+const EmptyBehaviorRuleState: React.FC<EmptyBehaviorRuleStateProps> = ({
+  filter,
+  showNotification,
+  showTemplate
+}) => {
   const { palette } = useTheme();
 
   const getEmptyContent = () => {
@@ -41,7 +47,7 @@ const EmptyBehaviorRuleState: React.FC<EmptyBehaviorRuleStateProps> = ({ filter 
       default:
         return {
           title: "No Behavior Rules Yet",
-          description: "Get started by creating templates, notification rules, or silent rules.",
+          description: `Get started by creating ${showTemplate ? "Templates," : ""} ${showNotification ? "Notification Rule," : ""} Silent Rules.`,
           icon: <HiOutlineCollection size={40} />,
           color: BEHAVIOR_RULE_FILTER_COLORS.all
         };
@@ -78,7 +84,7 @@ const EmptyBehaviorRuleState: React.FC<EmptyBehaviorRuleStateProps> = ({ filter 
       >
         <Box sx={{ color: alpha(color, 0.7), display: "flex" }}>{icon}</Box>
       </Box>
-      <Stack spacing={1} sx={{ alignItems: "center", maxWidth: 400 }}>
+      <Stack spacing={1} sx={{ alignItems: "center", maxWidth: 370 }}>
         <Typography
           variant="h6"
           sx={{

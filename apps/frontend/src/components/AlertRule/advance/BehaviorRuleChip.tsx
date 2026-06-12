@@ -27,6 +27,8 @@ const StyledChip = styled(Chip)<StyledChipProps>(({ chipcolor, active, size }) =
 
 interface BehaviorRuleChipProps extends Omit<ChipProps, "label"> {
   label: BehaviorRuleFilterType;
+  showNotification?: boolean;
+  showTemplate?: boolean;
   active?: boolean;
   onClick?: () => void;
 }
@@ -34,9 +36,14 @@ interface BehaviorRuleChipProps extends Omit<ChipProps, "label"> {
 const BehaviorRuleChip: React.FC<BehaviorRuleChipProps> = ({
   label,
   active = false,
+  showNotification,
+  showTemplate,
   onClick,
   ...props
 }) => {
+  if (!showNotification && label === "notification") return;
+  if (!showTemplate && label === "template") return;
+
   const color = BEHAVIOR_RULE_FILTER_COLORS[label];
 
   return (

@@ -107,7 +107,7 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
               <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
                 {item.name}
               </Typography>
-              <BehaviorRuleChip label={item.type} size="small" />
+              <BehaviorRuleChip label={item.type} showNotification showTemplate size="small" />
             </Box>
           </Stack>
           <IconButton

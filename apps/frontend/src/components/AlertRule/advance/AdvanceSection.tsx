@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { HiOutlinePlusSm } from "react-icons/hi";
 
 import { getBehaviorRuleOfAlertRule } from "@/api/alertRule";
+import { AlertRuleType } from "@/utils/alertRuleUtils";
 
 import BehaviorRuleCard from "./BehaviorRuleCard";
 import BehaviorRuleChip from "./BehaviorRuleChip";
@@ -34,13 +35,16 @@ import NotificationRuleModal from "./NotificationRule";
 import SilentRuleModal from "./SilentRule";
 import TemplateModal from "./Template";
 
-export default function AdvanceSection() {
+export default function AdvanceSection({ type }: { type: AlertRuleType }) {
   const { alertId } = useParams<{ alertId: string }>();
   const { palette } = useTheme();
   const [filter, setFilter] = useState<BehaviorRuleFilterType>("all");
   const [createMenuAnchor, setCreateMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedModal, setSelectedModal] = useState<BehaviorRuleType | null>(null);
   const [modalData, setModalData] = useState<"NEW" | BehaviorRuleItem>();
+
+  const showNotificationSection = !["elastic", "victoria_logs", "health", "sentry"].includes(type);
+  const showTemplateSection = ["grafana", "prometheus", "pmm"].includes(type);
 
   const { data } = useQuery({
     queryKey: ["get-behavior-rule", alertId],
@@ -74,7 +78,8 @@ export default function AdvanceSection() {
               Advance
             </Typography>
             <Typography variant="body2" sx={{ color: palette.text.secondary, mt: 0.7, mb: 2 }}>
-              Manage and organize your templates &amp; Notification Flows &amp; Silent Rules.
+              Manage and organize your {showTemplateSection && "Templates &"}{" "}
+              {showNotificationSection && "Notification Rule &"} Silent Rules.
             </Typography>
           </Box>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
@@ -110,38 +115,49 @@ export default function AdvanceSection() {
                 }
               }}
             >
-              <MenuItem
-                onClick={() => handleOpenModal("template")}
-                sx={{ color: palette.primary.main, fontWeight: 600, fontSize: 14 }}
-              >
-                Template
-              </MenuItem>
-              <MenuItem onClick={() => handleOpenModal("notification")} sx={{ fontSize: 14 }}>
-                Notification Rule
-              </MenuItem>
+              {showTemplateSection && (
+                <MenuItem
+                  onClick={() => handleOpenModal("template")}
+                  sx={{ color: palette.primary.main, fontWeight: 600, fontSize: 14 }}
+                >
+                  Template
+                </MenuItem>
+              )}
+              {showNotificationSection && (
+                <MenuItem onClick={() => handleOpenModal("notification")} sx={{ fontSize: 14 }}>
+                  Notification Rule
+                </MenuItem>
+              )}
               <MenuItem onClick={() => handleOpenModal("silent")} sx={{ fontSize: 14 }}>
                 Silent Rule
               </MenuItem>
             </Menu>
           </Stack>
         </Stack>
-
-        <Stack direction="row" spacing={0.5} sx={{ mb: 3 }}>
-          {filters.map((item) => (
-            <BehaviorRuleChip
-              key={item}
-              label={item}
-              clickable
-              active={item === filter}
-              onClick={() => setFilter(item)}
-            />
-          ))}
-        </Stack>
+        {(showNotificationSection || showTemplateSection) && (
+          <Stack direction="row" spacing={0.5} sx={{ mb: 3 }}>
+            {filters.map((item) => (
+              <BehaviorRuleChip
+                key={item}
+                label={item}
+                clickable
+                showNotification={showNotificationSection}
+                showTemplate={showTemplateSection}
+                active={item === filter}
+                onClick={() => setFilter(item)}
+              />
+            ))}
+          </Stack>
+        )}
 
         <Grid container spacing={2}>
           {filtered.length === 0 ? (
             <Grid size={12}>
-              <EmptyBehaviorRuleState filter={filter} />
+              <EmptyBehaviorRuleState
+                filter={filter}
+                showNotification={showNotificationSection}
+                showTemplate={showTemplateSection}
+              />
             </Grid>
           ) : (
             filtered.map((item: BehaviorRuleItem) => (
@@ -158,14 +174,14 @@ export default function AdvanceSection() {
           )}
         </Grid>
       </Box>
-      {selectedModal === "template" && (
+      {showTemplateSection && selectedModal === "template" && (
         <TemplateModal
           open={selectedModal === "template"}
           onClose={() => setSelectedModal(null)}
           data={modalData! as TemplateItem}
         />
       )}
-      {selectedModal === "notification" && (
+      {showNotificationSection && selectedModal === "notification" && (
         <NotificationRuleModal
           open={selectedModal === "notification"}
           onClose={() => setSelectedModal(null)}

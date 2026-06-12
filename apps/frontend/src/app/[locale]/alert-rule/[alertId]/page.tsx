@@ -26,7 +26,7 @@ import type { IZabbixAlertRule, IAlertRule } from "@/@types/alertRule";
 import { getAlertRuleById, silenceAlertRule, testAlertRule } from "@/api/alertRule";
 import AlertRuleModal from "@/app/[locale]/alert-rule/AlertRuleModal";
 import DeleteAlertRuleModal from "@/app/[locale]/alert-rule/DeleteAlertRuleModal";
-import AdvancePage from "@/components/AlertRule/advance/AdvanceSection";
+import AdvanceSection from "@/components/AlertRule/advance/AdvanceSection";
 import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndicator";
 import AlertRuleFiredInstances from "@/components/AlertRule/FiredInstances/AlertRuleFiredInstances";
 import AlertRuleHistory from "@/components/AlertRule/History/AlertRuleHistory";
@@ -148,7 +148,7 @@ export default function ViewAlertRule() {
       case "fire":
         return <AlertRuleFiredInstances alertId={alertId} type={data!.type} />;
       case "advance":
-        return <AdvancePage  />;
+        return <AdvanceSection type={data!.type} />;
       default:
         return null;
     }
