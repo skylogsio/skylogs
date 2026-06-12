@@ -9,6 +9,11 @@ trait ProvidesDefaultChannelMessages
         return $this->defaultMessage();
     }
 
+    public function baleMessage(): array|string
+    {
+        return $this->defaultMessage();
+    }
+
     public function matterMostMessage(): string
     {
         return $this->defaultMessage();

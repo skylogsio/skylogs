@@ -29,7 +29,7 @@ class Bale
         $result = Http::pool(function (Pool $pool) use ($chatIds, $alert) {
             foreach ($chatIds as $chat) {
                 $botToken = $chat['botToken'] ?? self::token();
-                $sendData = $alert->telegram();
+                $sendData = $alert->baleMessage();
 
                 if (is_string($sendData)) {
                     $message = $sendData;

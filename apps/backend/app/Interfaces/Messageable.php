@@ -7,6 +7,7 @@ interface Messageable
     public function defaultMessage();
 
     public function telegram();
+    public function baleMessage();
 
     public function matterMostMessage();
 
