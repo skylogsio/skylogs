@@ -14,7 +14,7 @@ final class PrometheusAlertMessageBuilder
 {{name}}
 
 {{state_line}}
-{{alert_items labels="alertname,namespace,pod,reason,severity,job" annotations="summary,description"}}
+{{alert_items labels="*" annotations="*"}}
 {{date}}
 TXT;
 

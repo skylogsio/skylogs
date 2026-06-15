@@ -203,7 +203,7 @@ describe('AlertMessageTemplateRenderer', function () {
             ->toContain("job : node\n")
             ->toContain("summary : Disk almost full\n")
             ->toContain("description : Mount /data at 95%\n")
-            ->not->toContain('runbook_url :')
+            ->toContain("runbook_url : https://example.test/runbook\n")
             ->toMatch('/Date: \d{4}\/\d{2}\/\d{2}$/');
     });
 });

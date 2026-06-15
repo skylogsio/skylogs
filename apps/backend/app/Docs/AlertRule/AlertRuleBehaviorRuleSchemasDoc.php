@@ -93,7 +93,7 @@ Uses a custom template string for messages sent to the listed endpoints.
 {{name}}
 
 {{state_line}}
-{{alert_items labels="alertname,namespace,pod,reason,severity,job" annotations="summary,description"}}
+{{alert_items labels="*" annotations="*"}}
 {{date}}
 ```
 
@@ -104,7 +104,7 @@ Uses a custom template string for messages sent to the listed endpoints.
 {{state_line}}
 Data Source: {{dataSourceName}}
 
-{{alert_items labels="*" annotations="summary,description"}}
+{{alert_items labels="*" annotations="*"}}
 {{date}}
 ```
 

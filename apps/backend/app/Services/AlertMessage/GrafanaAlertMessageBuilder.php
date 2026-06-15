@@ -16,7 +16,7 @@ final class GrafanaAlertMessageBuilder
 {{state_line}}
 Data Source: {{dataSourceName}}
 
-{{alert_items labels="*" annotations="summary,description"}}
+{{alert_items labels="*" annotations="*"}}
 {{date}}
 TXT;
 
