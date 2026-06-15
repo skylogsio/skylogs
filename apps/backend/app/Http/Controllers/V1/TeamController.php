@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Team;
+use App\Services\TeamService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -11,9 +12,12 @@ use Validator;
 
 class TeamController extends Controller
 {
+    public function __construct(protected TeamService $teamService) {}
+
     public function Index(Request $request): JsonResponse
     {
         $perPage = (int) ($request->perPage ?? 25);
+        $user = auth()->user();
 
         $data = Team::query()->with(['owner']);
 
@@ -21,18 +25,34 @@ class TeamController extends Controller
             $data->where('name', 'like', '%'.$request->name.'%');
         }
 
-        return response()->json($data->paginate($perPage));
+        $paginator = $data->paginate($perPage);
+
+        foreach ($paginator as $team) {
+            $this->teamService->applyTeamAccess($user, $team);
+        }
+
+        return response()->json($paginator);
     }
 
     public function All(): JsonResponse
     {
-        return response()->json(Team::all());
+        $user = auth()->user();
+
+        $teams = Team::query()
+            ->with(['owner'])
+            ->get();
+
+        $teams->each(fn (Team $team) => $this->teamService->applyTeamAccess($user, $team));
+
+        return response()->json($teams);
     }
 
     public function Show(string $id): JsonResponse
     {
+        $team = Team::query()->with(['owner'])->where('_id', $id)->firstOrFail();
+
         return response()->json(
-            Team::query()->with(['owner'])->where('_id', $id)->firstOrFail()
+            $this->teamService->applyTeamAccess(auth()->user(), $team)
         );
     }
 
@@ -49,13 +69,18 @@ class TeamController extends Controller
 
         return response()->json([
             'status' => true,
-            'data' => $team->fresh(['owner']),
+            'data' => $this->teamService->applyTeamAccess(auth()->user(), $team->fresh(['owner'])),
         ]);
     }
 
     public function Update(Request $request, string $id): JsonResponse
     {
         $team = Team::query()->where('_id', $id)->firstOrFail();
+        $user = auth()->user();
+
+        if (! $this->teamService->canUpdateTeam($user, $team)) {
+            abort(403);
+        }
 
         $validated = Validator::validate(
             $request->all(),
@@ -71,7 +96,7 @@ class TeamController extends Controller
 
         return response()->json([
             'status' => true,
-            'data' => $team->fresh(['owner']),
+            'data' => $this->teamService->applyTeamAccess($user, $team->fresh(['owner'])),
         ]);
     }
 

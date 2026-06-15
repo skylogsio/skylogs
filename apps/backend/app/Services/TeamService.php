@@ -9,6 +9,34 @@ use Illuminate\Support\Facades\Cache;
 
 class TeamService
 {
+    public function canCreateTeam(User $user): bool
+    {
+        return $user->isAdmin();
+    }
+
+    public function canUpdateTeam(User $user, Team $team): bool
+    {
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return $user->id === $team->ownerId || $user->_id === $team->ownerId;
+    }
+
+    public function canDeleteTeam(User $user): bool
+    {
+        return $user->isAdmin();
+    }
+
+    public function applyTeamAccess(User $user, Team $team): Team
+    {
+        $team->setAttribute('canCreate', $this->canCreateTeam($user));
+        $team->setAttribute('canEdit', $this->canUpdateTeam($user, $team));
+        $team->setAttribute('canDelete', $this->canDeleteTeam($user));
+
+        return $team;
+    }
+
     public function userTeams(User $user)
     {
         $tagsArray = ['team', $user->id];
