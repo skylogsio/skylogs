@@ -5,8 +5,8 @@ namespace App\Models;
 use App\Concerns\ProvidesDefaultChannelMessages;
 use App\Interfaces\Messageable;
 use App\Models\DataSource\DataSource;
+use App\Services\AlertMessage\AlertMessageTemplateRenderer;
 use MongoDB\Laravel\Relations\BelongsTo;
-use Morilog\Jalali\Jalalian;
 
 class PrometheusCheck extends BaseModel implements Messageable
 {
@@ -80,65 +80,13 @@ class PrometheusCheck extends BaseModel implements Messageable
 
     public function defaultMessage(): string
     {
-        $needLabelArray = ['alertname', 'namespace', 'pod', 'reason', 'severity', 'job'];
-        $needLabelAnotArray = ['summary', 'description'];
-
         $alertRule = $this->alertRule;
 
-        $text = $alertRule->name."\n\n";
-        if (! empty($this->state)) {
-            switch ($this->state) {
-                case self::RESOLVED:
-                    $text .= 'State: Resolved ✅'."\n\n";
-                    break;
-                case self::FIRE:
-                    $text .= 'State: Fire 🔥'."\n\n";
-                    break;
-            }
+        if (! $alertRule) {
+            return '';
         }
 
-        if (! empty($this->alerts)) {
-            foreach ($this->alerts as $alert) {
-                if (empty($alert['skylogsStatus']) || $alert['skylogsStatus'] == self::FIRE) {
-                    $severity = $alert['labels']['severity'] ?? '';
-                    switch ($severity) {
-                        case 'warning':
-                            $text .= 'Warning ⚠️'."\n";
-                            break;
-                        case 'info':
-                            $text .= 'Info ℹ️'."\n";
-                            break;
-                        default:
-                            $text .= 'Fire 🔥'."\n";
-                            break;
-                    }
-                } else {
-                    $text .= 'Resolved ✅'."\n";
-
-                }
-
-                $text .= 'Data Source: '.$alert['dataSourceName']."\n";
-                if (! empty($alert['labels'])) {
-                    foreach ($needLabelArray as $label) {
-                        if (! empty($alert['labels'][$label])) {
-                            $text .= "$label : ".$alert['labels'][$label]."\n";
-                        }
-                    }
-                }
-                if (! empty($alert['annotations'])) {
-                    foreach ($needLabelAnotArray as $label) {
-                        if (! empty($alert['annotations'][$label])) {
-                            $text .= "$label : ".$alert['annotations'][$label]."\n";
-                        }
-                    }
-                }
-                $text .= "\n************\n\n";
-            }
-        }
-
-        $text .= 'date: '.Jalalian::now()->format('Y/m/d');
-
-        return $text;
+        return AlertMessageTemplateRenderer::make()->renderDefault($alertRule, $this->toArray());
     }
 
     public function telegram()

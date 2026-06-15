@@ -4,8 +4,8 @@ namespace App\Models;
 
 use App\Concerns\ProvidesDefaultChannelMessages;
 use App\Interfaces\Messageable;
+use App\Services\AlertMessage\AlertMessageTemplateRenderer;
 use MongoDB\Laravel\Relations\BelongsTo;
-use Morilog\Jalali\Jalalian;
 
 class GrafanaWebhookAlert extends BaseModel implements Messageable
 {
@@ -51,65 +51,13 @@ class GrafanaWebhookAlert extends BaseModel implements Messageable
 
     public function defaultMessage(): string
     {
-
-        $needLabelAnotArray = ['summary', 'description'];
-
         $alertRule = $this->alertRule;
 
-        $text = $alertRule->name."\n\n";
-
-        switch ($this->status) {
-            case GrafanaWebhookAlert::RESOLVED:
-                $text .= 'State: Resolved ✅'."\n\n";
-                break;
-            case GrafanaWebhookAlert::FIRING:
-                $text .= 'State: Firing 🔥'."\n\n";
-                break;
+        if (! $alertRule) {
+            return '';
         }
 
-        $text .= 'Data Source: '.$this->dataSourceName."\n\n";
-
-        if (! empty($this->alerts)) {
-            foreach ($this->alerts as $alert) {
-                //                $text .= "Grafana Instance: " . $alert['dataSourceName'] . "\n";
-                if (empty($alert['status']) || $alert['status'] == self::FIRING) {
-                    $severity = $alert['labels']['severity'] ?? '';
-                    switch ($severity) {
-                        case 'warning':
-                            $text .= 'Warning ⚠️'."\n";
-                            break;
-                        case 'info':
-                            $text .= 'Info ℹ️'."\n";
-                            break;
-                        default:
-                            $text .= 'Fire 🔥'."\n";
-                            break;
-                    }
-                } else {
-                    $text .= 'Resolved ✅'."\n";
-
-                }
-
-                if (! empty($alert['labels'])) {
-                    foreach ($alert['labels'] as $label => $labelValue) {
-                        $text .= "$label : $labelValue\n";
-                    }
-                }
-
-                if (! empty($alert['annotations'])) {
-                    foreach ($needLabelAnotArray as $label) {
-                        if (! empty($alert['annotations'][$label])) {
-                            $text .= "$label : ".$alert['annotations'][$label]."\n";
-                        }
-                    }
-                }
-                $text .= "\n************\n\n";
-            }
-        }
-
-        $text .= 'Date: '.Jalalian::now()->format('Y/m/d');
-
-        return $text;
+        return AlertMessageTemplateRenderer::make()->renderDefault($alertRule, $this->toArray());
     }
 
     public function telegram()
