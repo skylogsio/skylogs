@@ -355,7 +355,7 @@ class AlertingController extends Controller
 
             return ['status' => true];
         } else {
-            return ['status' => false, 'message' => $va->messages()[0] ?? 'Error'];
+            return ['status' => false, 'message' => $va->errors()->first() ?? 'Error'];
         }
     }
 

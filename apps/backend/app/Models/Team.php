@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Observers\TeamObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Collection;
+use MongoDB\Laravel\Relations\BelongsTo;
 
 #[ObservedBy(TeamObserver::class)]
 class Team extends BaseModel
@@ -14,17 +16,27 @@ class Team extends BaseModel
 
     protected $appends = ['members'];
 
-    public function getMembersAttribute()
-    {
-        if (! empty($this->userIds)) {
-            return User::whereIn('id', $this->userIds)->get()->pluck('name');
-        }
-
-        return [];
-    }
-
-    public function owner()
+    public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'ownerId', '_id');
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getMembersAttribute(): array
+    {
+        if (empty($this->userIds)) {
+            return [];
+        }
+
+        return $this->resolveMemberUsers()->pluck('name')->values()->all();
+    }
+
+    public function resolveMemberUsers(): Collection
+    {
+        return User::query()
+            ->whereIn('_id', $this->userIds)
+            ->get();
     }
 }
