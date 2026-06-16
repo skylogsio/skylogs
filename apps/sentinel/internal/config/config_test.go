@@ -4,14 +4,48 @@ import (
 	"testing"
 )
 
+func TestConfig_AlertURLs_fromBaseURL(t *testing.T) {
+	t.Parallel()
+	var c Config
+	c.Alert.BaseURL = "http://nginx:80/"
+	if got := c.FireAlertURL(); got != "http://nginx:80/api/v1/fire-alert" {
+		t.Fatalf("FireAlertURL: got %q", got)
+	}
+	if got := c.ResolveAlertURL(); got != "http://nginx:80/api/v1/stop-alert" {
+		t.Fatalf("ResolveAlertURL: got %q", got)
+	}
+}
+
+func TestConfig_AlertURLs_fromLegacyWebhookURL(t *testing.T) {
+	t.Parallel()
+	var c Config
+	c.Alert.WebhookUrl = "http://nginx:80/api/v1/fire-alert"
+	if got := c.FireAlertURL(); got != "http://nginx:80/api/v1/fire-alert" {
+		t.Fatalf("FireAlertURL: got %q", got)
+	}
+	if got := c.ResolveAlertURL(); got != "http://nginx:80/api/v1/stop-alert" {
+		t.Fatalf("ResolveAlertURL: got %q", got)
+	}
+}
+
+func TestConfig_AlertURLs_baseURLWinsOverLegacyWebhook(t *testing.T) {
+	t.Parallel()
+	var c Config
+	c.Alert.BaseURL = "http://custom:8080"
+	c.Alert.WebhookUrl = "http://nginx:80/api/v1/fire-alert"
+	if got := c.FireAlertURL(); got != "http://custom:8080/api/v1/fire-alert" {
+		t.Fatalf("FireAlertURL: got %q", got)
+	}
+}
+
 func TestConfig_IsMainRole_andAgentPull(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		name       string
-		role       string
-		mainURL    string
-		wantMain   bool
-		wantAgent  bool
+		name      string
+		role      string
+		mainURL   string
+		wantMain  bool
+		wantAgent bool
 	}{
 		{"default empty role is main", "", "", true, false},
 		{"main explicit", "main", "http://x", true, false},

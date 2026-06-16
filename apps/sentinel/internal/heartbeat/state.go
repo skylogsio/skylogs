@@ -6,11 +6,12 @@ import (
 )
 
 type State struct {
-	mu           sync.Mutex
-	FailureCount int
-	LastSeen     time.Time
-	Unhealthy    bool
-	StartTime    time.Time
+	mu             sync.Mutex
+	FailureCount   int
+	LastSeen       time.Time
+	Unhealthy      bool
+	resolvePending bool
+	StartTime      time.Time
 }
 
 func NewState() *State {
@@ -41,9 +42,24 @@ func (s *State) MarkUnhealthyIfNeeded() bool {
 
 	if !s.Unhealthy {
 		s.Unhealthy = true
+		s.resolvePending = true
 		return true
 	}
 	return false
+}
+
+func (s *State) NeedsResolve() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.resolvePending
+}
+
+func (s *State) ClearResolvePending() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.resolvePending = false
 }
 
 func (s *State) IsUnhealthy() bool {

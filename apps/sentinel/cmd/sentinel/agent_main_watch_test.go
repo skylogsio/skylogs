@@ -54,12 +54,14 @@ func TestAgentMainDown_sendsWebhookLikePeerDown(t *testing.T) {
 	cfg.Heartbeat.FailAfter = 10 * time.Millisecond
 
 	alertCh := make(chan string, 2)
-	sendAlert := func(ctx context.Context, instance, desc string) error {
-		if instance != "main-sentinel" {
-			t.Fatalf("instance: %q", instance)
-		}
-		alertCh <- desc
-		return nil
+	alerts := heartbeat.AlertHandler{
+		Fire: func(ctx context.Context, instance, desc string) error {
+			if instance != "main-sentinel" {
+				t.Fatalf("instance: %q", instance)
+			}
+			alertCh <- desc
+			return nil
+		},
 	}
 
 	reg := heartbeat.NewRegistry()
@@ -70,7 +72,7 @@ func TestAgentMainDown_sendsWebhookLikePeerDown(t *testing.T) {
 		Secret:    cfg.Security.SharedSecret,
 		SelfID:    cfg.Sentinel.ID,
 	}
-	sup := heartbeat.NewSupervisor(reg, wc, sendAlert)
+	sup := heartbeat.NewSupervisor(reg, wc, alerts)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
