@@ -318,6 +318,10 @@ class SendNotifyService
             return null;
         }
 
+        if ($this->usesFixedSystemMessage($notify)) {
+            return $sender($endpoints, $notify);
+        }
+
         $endpointTemplates = app(AlertRuleBehaviorRuleService::class)
             ->resolveEndpointTemplates($notify->alertRule);
 
@@ -339,11 +343,19 @@ class SendNotifyService
 
     private function messageableForTemplate(Notify $notify, string $template): Messageable
     {
-        if ($template === '' || ! ($notify->alertRule instanceof AlertRule)) {
+        if ($template === '' || ! ($notify->alertRule instanceof AlertRule) || $this->usesFixedSystemMessage($notify)) {
             return $notify;
         }
 
         return NotifyMessageComposer::composeFromSingleTemplate($notify->alertRule, $notify, $template);
+    }
+
+    private function usesFixedSystemMessage(Notify $notify): bool
+    {
+        return in_array($notify->type, [
+            SendNotifyJob::ALERT_RULE_TEST,
+            SendNotifyJob::ALERT_RULE_ACKNOWLEDGED,
+        ], true);
     }
 
     public function processStep(Notify $notify, $endpointId, int $currentStepIndex = 0)
