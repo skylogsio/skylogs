@@ -18,13 +18,19 @@ type WatcherConfig struct {
 	SelfID    string
 }
 
-// RunPeerWatcher periodically GETs the peer's /heartbeat and fires sendAlert when stale.
+// AlertHandler sends fire and resolve webhooks for a peer instance.
+type AlertHandler struct {
+	Fire    func(context.Context, string, string) error
+	Resolve func(context.Context, string, string) error
+}
+
+// RunPeerWatcher periodically GETs the peer's /heartbeat and fires/resolves alerts.
 func RunPeerWatcher(
 	ctx context.Context,
 	peer discovery.Peer,
 	reg *Registry,
 	wc WatcherConfig,
-	sendAlert func(context.Context, string, string) error,
+	alerts AlertHandler,
 ) {
 	st := reg.GetOrCreate(peer.Key())
 	sender := NewSender(peer.HeartbeatURL, st, wc.SelfID, wc.Secret, wc.Timeout)
@@ -44,10 +50,21 @@ func RunPeerWatcher(
 							wc.FailAfter,
 							wc.SelfID,
 						)
-						if err := sendAlert(ctx, peer.Name, desc); err != nil {
-							log.Println("failed to send webhook:", err)
+						if err := alerts.Fire(ctx, peer.Name, desc); err != nil {
+							log.Println("failed to send fire webhook:", err)
 						}
 					}
+				}
+			} else if st.NeedsResolve() && alerts.Resolve != nil {
+				desc := fmt.Sprintf(
+					"Heartbeat from %s recovered (reported by %s)",
+					peer.Name,
+					wc.SelfID,
+				)
+				if err := alerts.Resolve(ctx, peer.Name, desc); err != nil {
+					log.Println("failed to send resolve webhook:", err)
+				} else {
+					st.ClearResolvePending()
 				}
 			}
 		case <-ctx.Done():

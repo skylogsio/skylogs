@@ -11,8 +11,8 @@ import (
 func TestSupervisor_Reconcile_addRemoveAndURLChange(t *testing.T) {
 	t.Parallel()
 	reg := NewRegistry()
-	sendAlert := func(context.Context, string, string) error {
-		return nil
+	alerts := AlertHandler{
+		Fire: func(context.Context, string, string) error { return nil },
 	}
 	wc := WatcherConfig{
 		Interval:  time.Hour,
@@ -21,7 +21,7 @@ func TestSupervisor_Reconcile_addRemoveAndURLChange(t *testing.T) {
 		Secret:    "x",
 		SelfID:    "supervisor-test",
 	}
-	sup := NewSupervisor(reg, wc, sendAlert)
+	sup := NewSupervisor(reg, wc, alerts)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

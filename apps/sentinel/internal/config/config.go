@@ -42,7 +42,9 @@ type Config struct {
 	} `yaml:"heartbeat"`
 
 	Alert struct {
-		WebhookUrl    string        `yaml:"webhook_url"`
+		BaseURL string `yaml:"base_url"`
+		// WebhookUrl is deprecated; use base_url. Kept so existing configs with a full fire-alert URL still work.
+		WebhookUrl    string        `yaml:"webhook_url,omitempty"`
 		Token         string        `yaml:"token"`
 		RetryInterval time.Duration `yaml:"retry_interval"`
 	} `yaml:"alert"`
@@ -89,6 +91,47 @@ func (c *Config) AgentPullEnabled() bool {
 	return strings.TrimSpace(c.MainSentinel.BaseURL) != ""
 }
 
+const (
+	AlertFirePath    = "/api/v1/fire-alert"
+	AlertResolvePath = "/api/v1/stop-alert"
+)
+
+// AlertBaseURL returns the SkyLogs API origin for alert webhooks.
+func (c *Config) AlertBaseURL() string {
+	if base := strings.TrimSpace(c.Alert.BaseURL); base != "" {
+		return strings.TrimRight(base, "/")
+	}
+	return legacyAlertBaseURL(c.Alert.WebhookUrl)
+}
+
+// FireAlertURL is POST /api/v1/fire-alert on the configured base URL.
+func (c *Config) FireAlertURL() string {
+	if base := c.AlertBaseURL(); base != "" {
+		return base + AlertFirePath
+	}
+	return ""
+}
+
+// ResolveAlertURL is POST /api/v1/stop-alert on the configured base URL.
+func (c *Config) ResolveAlertURL() string {
+	if base := c.AlertBaseURL(); base != "" {
+		return base + AlertResolvePath
+	}
+	return ""
+}
+
+// legacyAlertBaseURL strips /api/v1/fire-alert from a deprecated full webhook_url value.
+func legacyAlertBaseURL(webhookURL string) string {
+	webhookURL = strings.TrimSpace(webhookURL)
+	if webhookURL == "" {
+		return ""
+	}
+	if i := strings.LastIndex(webhookURL, AlertFirePath); i >= 0 {
+		return strings.TrimRight(webhookURL[:i], "/")
+	}
+	return ""
+}
+
 func applyEnv(cfg *Config) {
 	if v := os.Getenv("SENTINEL_ID"); v != "" {
 		cfg.Sentinel.ID = v
@@ -101,6 +144,9 @@ func applyEnv(cfg *Config) {
 	}
 	if v := os.Getenv("SENTINEL_LISTEN"); v != "" {
 		cfg.Server.Listen = v
+	}
+	if v := os.Getenv("ALERT_BASE_URL"); v != "" {
+		cfg.Alert.BaseURL = v
 	}
 	if v := os.Getenv("ALERT_WEBHOOK_URL"); v != "" {
 		cfg.Alert.WebhookUrl = v

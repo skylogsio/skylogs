@@ -22,9 +22,11 @@ func TestRunPeerWatcher_failingPeerSendsAlert(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	alertCh := make(chan string, 4)
-	sendAlert := func(ctx context.Context, instanceName, desc string) error {
-		alertCh <- desc
-		return nil
+	alerts := AlertHandler{
+		Fire: func(ctx context.Context, instanceName, desc string) error {
+			alertCh <- desc
+			return nil
+		},
 	}
 
 	wc := WatcherConfig{
@@ -44,7 +46,7 @@ func TestRunPeerWatcher_failingPeerSendsAlert(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go RunPeerWatcher(ctx, peer, NewRegistry(), wc, sendAlert)
+	go RunPeerWatcher(ctx, peer, NewRegistry(), wc, alerts)
 
 	select {
 	case msg := <-alertCh:

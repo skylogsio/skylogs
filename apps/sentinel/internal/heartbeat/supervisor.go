@@ -14,24 +14,24 @@ type runInfo struct {
 
 // Supervisor tracks one outbound watcher per peer key.
 type Supervisor struct {
-	mu        sync.Mutex
-	active    map[string]runInfo
-	reg       *Registry
-	wc        WatcherConfig
-	sendAlert func(context.Context, string, string) error
+	mu     sync.Mutex
+	active map[string]runInfo
+	reg    *Registry
+	wc     WatcherConfig
+	alerts AlertHandler
 }
 
-// NewSupervisor constructs a supervisor. sendAlert(instanceName, description).
+// NewSupervisor constructs a supervisor.
 func NewSupervisor(
 	reg *Registry,
 	wc WatcherConfig,
-	sendAlert func(context.Context, string, string) error,
+	alerts AlertHandler,
 ) *Supervisor {
 	return &Supervisor{
-		active:    make(map[string]runInfo),
-		reg:       reg,
-		wc:        wc,
-		sendAlert: sendAlert,
+		active: make(map[string]runInfo),
+		reg:    reg,
+		wc:     wc,
+		alerts: alerts,
 	}
 }
 
@@ -70,7 +70,7 @@ func (s *Supervisor) Reconcile(ctx context.Context, peers []discovery.Peer) {
 		s.mu.Unlock()
 
 		p := p
-		go RunPeerWatcher(cctx, p, s.reg, s.wc, s.sendAlert)
+		go RunPeerWatcher(cctx, p, s.reg, s.wc, s.alerts)
 	}
 }
 

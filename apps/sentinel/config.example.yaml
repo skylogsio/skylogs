@@ -6,7 +6,8 @@
 # • Agent sentinels: set role agent + main_sentinel.base_url (+ optional peers_cache_file). Leave peers: []
 #   or add a minimal fallback row if main might be unreachable on first boot.
 #
-# Alerts: outbound heartbeat watchers call alert.webhook_url when a peer is unhealthy (already implemented).
+# Alerts: outbound heartbeat watchers POST to SkyLogs when a peer is unhealthy or recovers.
+# Set alert.base_url only; sentinel appends /api/v1/fire-alert and /api/v1/stop-alert.
 #
 server:
   listen: ":9191"
@@ -29,7 +30,7 @@ peers:
 
 # Agent-only: pull signed peer list from main; cache to disk so checks continue if main is down.
 # Agents also GET main_sentinel.base_url/heartbeat on the same schedule as other peers and fire
-# alert.webhook_url when main is unreachable (same as when a zone agent is down).
+# alert.base_url when main is unreachable (same as when a zone agent is down).
 # main_sentinel:
 #   base_url: "http://main.example:9191"
 #   name: main # optional alert instance label (default "main")
@@ -44,7 +45,7 @@ heartbeat:
   fail_after: 15s
 
 alert:
-  webhook_url: "http://nginx-back:80/api/v1/fire-alert"
+  base_url: "http://nginx-back:80"
   token: "the-alert-rule-token"
   retry_interval: 10s
 

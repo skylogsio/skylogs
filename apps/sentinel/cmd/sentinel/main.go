@@ -36,11 +36,26 @@ func main() {
 	reg := heartbeat.NewRegistry()
 	pl := discovery.NewPeerList()
 
-	sendAlert := func(ctx context.Context, instance, description string) error {
-		return alert.SendWebhook(ctx, cfg.Alert.WebhookUrl, cfg.Alert.Token, alert.WebhookPayload{
-			Instance:    instance,
-			Description: description,
-		})
+	fireURL := cfg.FireAlertURL()
+	resolveURL := cfg.ResolveAlertURL()
+	if cfg.Alert.WebhookUrl != "" && cfg.Alert.BaseURL == "" && os.Getenv("ALERT_BASE_URL") == "" {
+		log.Println("notice: alert.webhook_url is deprecated; use alert.base_url (SkyLogs appends /api/v1/fire-alert and /api/v1/stop-alert)")
+	}
+
+	alerts := heartbeat.AlertHandler{}
+	if fireURL != "" {
+		alerts.Fire = func(ctx context.Context, instance, description string) error {
+			return alert.SendWebhook(ctx, fireURL, cfg.Alert.Token, alert.WebhookPayload{
+				Instance:    instance,
+				Description: description,
+			})
+		}
+		alerts.Resolve = func(ctx context.Context, instance, description string) error {
+			return alert.SendWebhook(ctx, resolveURL, cfg.Alert.Token, alert.WebhookPayload{
+				Instance:    instance,
+				Description: description,
+			})
+		}
 	}
 
 	wc := heartbeat.WatcherConfig{
@@ -51,7 +66,7 @@ func main() {
 		SelfID:    cfg.Sentinel.ID,
 	}
 
-	sup := heartbeat.NewSupervisor(reg, wc, sendAlert)
+	sup := heartbeat.NewSupervisor(reg, wc, alerts)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	wg := &sync.WaitGroup{}

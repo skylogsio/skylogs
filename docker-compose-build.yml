@@ -109,7 +109,7 @@ services:
           - HEARTBEAT_INTERVAL=5s
           - HEARTBEAT_TIMEOUT=3s
           - HEARTBEAT_FAIL_AFTER=15s
-          - ALERT_WEBHOOK_URL=http://nginx:80/api/v1/fire-alert
+          - ALERT_BASE_URL=http://nginx:80
         volumes:
           - ./apps/sentinel/config.yaml:/app/config.yaml:ro
         ports:
@@ -133,7 +133,7 @@ services:
     #       - HEARTBEAT_INTERVAL=5s
     #       - HEARTBEAT_TIMEOUT=3s
     #       - HEARTBEAT_FAIL_AFTER=15s
-    #       - ALERT_WEBHOOK_URL=http://nginx:80/api/v1/fire-alert
+    #       - ALERT_BASE_URL=http://nginx:80
     #       - SHARED_SECRET=${SENTINEL_SHARED_SECRET:-}
     #     volumes:
     #       - ./apps/sentinel/config.agent.yaml:/app/config.yaml:ro
