@@ -54,7 +54,11 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
         ));
       case "template":
         return (
-          <Typography variant="caption" component="pre">
+          <Typography
+            variant="caption"
+            component="pre"
+            sx={{ wordBreak: "break-word", textWrap: "wrap" }}
+          >
             {item.template}
           </Typography>
         );
@@ -137,9 +141,11 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
           sx={{
             backgroundColor: palette.background.default,
             borderRadius: 1.5,
+            maxHeight: 120,
             p: 0.75,
             mb: 1.5,
-            flex: 1
+            flex: 1,
+            overflowY: "auto"
           }}
           spacing={0.5}
         >
