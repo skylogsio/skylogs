@@ -143,7 +143,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/all', 'All');
                 Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                 Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->post('/', 'Create');
-                Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->put('/{id}', 'Update');
+                Route::put('/{id}', 'Update');
                 Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->delete('/{id}', 'Delete');
             });
 

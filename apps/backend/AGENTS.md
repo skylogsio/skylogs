@@ -187,4 +187,59 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Run tests: `php artisan test --compact` or filter: `php artisan test --compact --filter=testName`.
 - Do NOT delete tests without approval.
 
+=== skylogs rules ===
+
+# Skylogs Application Conventions
+
+This section documents infrastructure and domain patterns for the Skylogs backend (`apps/backend`). **New code should follow standard Laravel practices** (Form Requests, API Resources, RESTful controller method names, policies). Legacy controllers may still use older patterns — do not copy those when writing new endpoints.
+
+## Domain
+
+Skylogs is a monitoring and alerting platform. It integrates with Prometheus, Zabbix, Sentry, Grafana, Elastic, and similar data sources. Core concepts include alert rules, endpoints, teams, data sources, notification channels (SMS, email, Telegram, call), and cluster sync.
+
+## MongoDB
+
+- All domain models extend `App\Models\BaseModel` (or `User`, which extends MongoDB's authenticatable base).
+- Primary key is `_id` (MongoDB ObjectId). Route constraints use `[0-9a-fA-F]{24}`.
+- Timestamps are camelCase: `createdAt`, `updatedAt`, `deletedAt`.
+- Use `MongoDB\Laravel\Schema\Blueprint` in migrations, not the SQL blueprint.
+- Foreign keys use camelCase field names (e.g. `ownerId`, `userIds`, `userId`). Both `$model->id` and `$model->_id` may appear in existing code — match the surrounding file.
+- Unique validation rules must specify the MongoDB key column: `Rule::unique('teams')->ignore($id, '_id')`.
+
+## API Layer
+
+- Versioned routes live under `/api/v1` in `routes/api.php`.
+- Controllers are in `App\Http\Controllers\V1\` (and nested subfolders for alert rules, config, profile, webhooks).
+- **New endpoints:** use RESTful controller method names (`index`, `store`, `show`, `update`, `destroy`), Form Request classes for validation, and Eloquent API Resources for responses.
+- Request/response fields use camelCase (e.g. `perPage`, `ownerId`, `userIds`) to match existing MongoDB document fields and the frontend API contract.
+- **Legacy note:** existing controllers may use PascalCase actions (`Index`, `Create`, …), inline `Validator::validate()`, and raw `response()->json()`. Refactor toward Laravel standards when touching those files; do not extend legacy patterns in new code.
+
+## Authentication & Authorization
+
+- User auth is JWT via `tymon/jwt-auth` (`config/auth.php` default guard driver: `jwt`). Login is `POST /api/v1/auth/login`.
+- Protected routes use `auth` middleware with the `api` guard. In tests: `$this->actingAs($user, 'api')`.
+- Roles use Spatie Permission (`Constants` enum: `owner`, `manager`, `member`). Apply via `role:` middleware on routes.
+- Custom middleware aliases (registered in `bootstrap/app.php`): `apiAuth`, `webhookAuth`, `clusterAuth`, `clusterProxy`, `clusterAgentValidate`, `horizonBasicAuth`.
+
+## Services & Business Logic
+
+- Put reusable business logic in `App\Services\` (e.g. `TeamService`, `AlertRuleService`). Inject services via constructor property promotion.
+- Authorization checks and computed response attributes (e.g. `canEdit`, `canDelete`) belong in services, not controllers.
+- Cache invalidation for domain data often lives in service `flushCache()` methods and model observers.
+
+## Skills
+
+Activate project skills in `.cursor/skills/` when relevant:
+
+- `laravel-best-practices` — default patterns for new and refactored code.
+- `pest-testing` — all test authoring.
+- `configuring-horizon` — queue workers and Horizon dashboard.
+
+## Testing
+
+- Feature tests hit HTTP routes (`/api/v1/...`). Unit tests may invoke controllers or services directly.
+- Use `Tests\Support\*` helpers and factories where they exist (e.g. `TeamTestData`).
+- Set `config(['cache.default' => 'array'])` in tests that touch cached services.
+- Clean up created MongoDB documents in `afterEach` when tests write to the database.
+
 </laravel-boost-guidelines>

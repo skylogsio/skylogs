@@ -67,7 +67,49 @@ DESC
 #[OA\Schema(
     schema: 'AlertRuleBehaviorRuleTemplate',
     title: 'Template behavior rule',
-    description: 'Uses a single custom template for messages sent to the listed endpoints. Placeholders such as `{{name}}` are supported.',
+    description: <<<'DESC'
+Uses a custom template string for messages sent to the listed endpoints.
+
+**Prometheus, Grafana, and PMM** support type-aware placeholders:
+
+| Placeholder | Description |
+|-------------|-------------|
+| `{{name}}` | Alert rule name |
+| `{{state}}` / `{{state_line}}` | Rule state value / formatted state line |
+| `{{fireCount}}` | Number of firing alerts |
+| `{{date}}` | Jalali date line (`date:` or `Date:` prefix included) |
+| `{{dataSourceName}}` | Data source name |
+| `{{label.KEY}}` | Label from first firing alert |
+| `{{annotation.KEY}}` | Annotation from first firing alert |
+| `{{severity_line}}` | Severity line with emoji |
+| `{{labels:alertname,pod}}` | Label block (include only listed keys) |
+| `{{labels:* exclude=job}}` | All labels except listed keys |
+| `{{annotations:summary,description}}` | Annotation block (include) |
+| `{{alert_items labels="pod" annotations="summary"}}` | Per-alert section |
+| `{{alert_items labels="*" exclude_labels="job"}}` | Per-alert section with exclusions |
+
+**Default Prometheus template:**
+```
+{{name}}
+
+{{state_line}}
+{{alert_items labels="*" annotations="*"}}
+{{date}}
+```
+
+**Default Grafana / PMM template:**
+```
+{{name}}
+
+{{state_line}}
+Data Source: {{dataSourceName}}
+
+{{alert_items labels="*" annotations="*"}}
+{{date}}
+```
+
+Other alert types fall back to generic `{{name}}`, `{{state}}`, and dotted `{{alert.*}}` paths.
+DESC,
     required: ['id', 'name', 'type', 'endpointIds', 'endpoints', 'template'],
     properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid'),
@@ -75,7 +117,11 @@ DESC
         new OA\Property(property: 'type', type: 'string', enum: ['template']),
         new OA\Property(property: 'endpointIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'endpoints', description: 'Resolved endpoint id and name pairs for `endpointIds`', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleEndpoint')),
-        new OA\Property(property: 'template', type: 'string', example: 'Alert {{name}} fired on {{instance}}'),
+        new OA\Property(
+            property: 'template',
+            type: 'string',
+            example: "{{name}}\n\n{{state_line}}\n{{alert_items labels=\"pod,namespace\" annotations=\"summary\"}}\ndate: {{date}}",
+        ),
     ]
 )]
 
@@ -143,7 +189,13 @@ DESC
         new OA\Property(property: 'name', description: 'Display name for this behavior rule', type: 'string', minLength: 1, maxLength: 255, example: 'Disk alert template'),
         new OA\Property(property: 'type', type: 'string', enum: ['template']),
         new OA\Property(property: 'endpointIds', type: 'array', minItems: 1, items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'template', type: 'string', minLength: 1, example: 'Disk alert: {{name}}'),
+        new OA\Property(
+            property: 'template',
+            description: 'Message template. See `AlertRuleBehaviorRuleTemplate` for Prometheus/Grafana/PMM placeholder syntax.',
+            type: 'string',
+            minLength: 1,
+            example: "{{name}}\n\n{{state_line}}\n{{alert_items labels=\"pod\" annotations=\"summary\"}}",
+        ),
     ]
 )]
 
