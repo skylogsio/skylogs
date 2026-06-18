@@ -1,0 +1,17 @@
+# HolmesGPT MCP configuration example for Skylogs.
+# Copy the mcp_servers block into ~/.holmes/config.yaml or your Helm values.yaml.
+#
+# Docs: https://holmesgpt.dev/data-sources/remote-mcp-servers/
+
+mcp_servers:
+  skylogs:
+    description: "Skylogs monitoring and alerting platform"
+    config:
+      url: "http://skylogs-backend.default.svc.cluster.local/mcp/skylogs"
+      mode: streamable-http
+      headers:
+        Authorization: "Bearer {{ env.MCP_API_TOKEN }}"
+    llm_instructions: >
+      Use Skylogs to investigate active monitoring alerts. Start with get-fired-alerts
+      without parameters to list all critical alert rules and their current fired alerts.
+      Use alertRuleId when you need details for a specific alert rule during root-cause analysis.

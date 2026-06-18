@@ -40,6 +40,31 @@ class AlertRuleService
 {
     public function __construct(protected TeamService $teamService) {}
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function firedAlertsForCriticalRules(): array
+    {
+        return AlertRule::query()
+            ->where('state', AlertRule::CRITICAL)
+            ->get()
+            ->map(function (AlertRule $rule): array {
+                $alertRuleId = (string) ($rule->id ?? $rule->_id);
+
+                return [
+                    'alertRuleId' => $alertRuleId,
+                    'name' => $rule->name,
+                    'type' => $rule->type?->value,
+                    'state' => $rule->state,
+                    'fireCount' => $rule->fireCount ?? 0,
+                    'tags' => $rule->tags ?? [],
+                    'firedAlerts' => $this->firedAlerts($alertRuleId),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
     public function firedAlerts(string $alertRuleId)
     {
         $alertRule = AlertRule::where('id', $alertRuleId)->firstOrFail();
