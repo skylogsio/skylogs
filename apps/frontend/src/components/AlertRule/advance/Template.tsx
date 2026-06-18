@@ -2,7 +2,7 @@ import { useParams } from "next/navigation";
 import React, { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Autocomplete, Box, Button, Chip, Grid, TextField } from "@mui/material";
+import { Autocomplete, Box, Button, Chip, Grid, inputBaseClasses, TextField } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "react-toastify";
@@ -110,17 +110,11 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ open, onClose, data }) =>
   }, [data, open, reset]);
 
   return (
-    <ModalContainer
-      open={open}
-      onClose={handleClose}
-      title="Template Rule"
-      width="90%"
-      maxWidth="600px"
-    >
+    <ModalContainer open={open} onClose={handleClose} title="Template" width="90%" maxWidth="600px">
       <form onSubmit={handleSubmit(handleFormSubmit)}>
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={2}>
-            <Grid size={6}>
+            <Grid size={12}>
               <TextField
                 label="Name"
                 variant="filled"
@@ -129,7 +123,7 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ open, onClose, data }) =>
                 {...register("name")}
               />
             </Grid>
-            <Grid size={6}>
+            <Grid size={12}>
               <Controller
                 control={control}
                 name="endpointIds"
@@ -145,11 +139,28 @@ const TemplateModal: React.FC<TemplateModalProps> = ({ open, onClose, data }) =>
                       onChange={(_, newValue) => {
                         field.onChange(newValue.map((ep) => ep.id));
                       }}
+                      sx={{
+                        minHeight: 56,
+                        gap: 1,
+                        [`& .${inputBaseClasses.root}`]: {
+                          display: "flex",
+                          alignItems: "flex-start",
+                          paddingTop: 2.7
+                        }
+                      }}
                       isOptionEqualToValue={(option, value) => option.id === value.id}
                       renderValue={(value, getItemProps) =>
                         value.map((option, index) => {
                           const { key, ...itemProps } = getItemProps({ index });
-                          return <Chip key={key} label={option.name} size="small" {...itemProps} />;
+                          return (
+                            <Chip
+                              key={key}
+                              label={option.name}
+                              size="small"
+                              sx={{ height: 22 }}
+                              {...itemProps}
+                            />
+                          );
                         })
                       }
                       renderInput={(params) => (
