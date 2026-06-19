@@ -9,6 +9,11 @@ x-back-env: &back-env
   - TELEGRAM_BOT_TOKEN=
 #  Change the secret
   - JWT_SECRET=mysecretmysecretmysecretmysecret
+  - MCP_API_TOKEN=
+  - HOLMES_BASE_URL=http://holmesgpt:5050
+  - HOLMES_API_KEY=
+  - HOLMES_MODEL=default
+  - HOLMES_TIMEOUT=120
 
 x-front-env: &front-env
   environment:
@@ -32,6 +37,32 @@ services:
             - mongo
             - redis
         <<: *back-env
+
+    holmesgpt:
+        image: us-central1-docker.pkg.dev/genuine-flight-317411/devel/holmes
+        container_name: holmesgpt
+        restart: unless-stopped
+        ports:
+            - "5050:5050"
+        environment:
+            - OPENAI_API_BASE=${OPENAI_API_BASE:-}
+            - OPENAI_API_KEY=${OPENAI_API_KEY:-none}
+            - HOLMES_LLM_MODEL=${HOLMES_LLM_MODEL:-gpt-4o}
+            - HOLMES_API_KEY=${HOLMES_API_KEY:-}
+            - MCP_API_TOKEN=${MCP_API_TOKEN:-}
+        volumes:
+            - ./apps/backend/holmesgpt:/root/.holmes:ro
+        entrypoint: ["python", "-u", "server.py"]
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:5050/healthz"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 15s
+        networks:
+            - skylogs_net
+        depends_on:
+            - nginx
 
     nginx:
         image: nginx:latest

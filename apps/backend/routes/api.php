@@ -13,6 +13,7 @@ use App\Http\Controllers\V1\AlertRule\TagsController;
 use App\Http\Controllers\V1\AuthController;
 use App\Http\Controllers\V1\Config\CallController;
 use App\Http\Controllers\V1\Config\EmailController;
+use App\Http\Controllers\V1\Config\HolmesChatController;
 use App\Http\Controllers\V1\Config\SkylogsController;
 use App\Http\Controllers\V1\Config\SmsController;
 use App\Http\Controllers\V1\Config\TelegramController;
@@ -326,6 +327,12 @@ Route::prefix('v1')->group(function () {
                         Route::post('/make-backup/{id}', 'makeBackup');
                         Route::put('/{id}', 'Update');
                         Route::delete('/{id}', 'Delete');
+                    });
+
+                Route::prefix('/holmes')
+                    ->controller(HolmesChatController::class)
+                    ->group(function () {
+                        Route::post('/chat', 'Chat');
                     });
 
             });

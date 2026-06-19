@@ -4,6 +4,7 @@ use App\Http\Middleware\ApiAlertAuth;
 use App\Http\Middleware\ClusterAgentValidateMiddleware;
 use App\Http\Middleware\ClusterAuth;
 use App\Http\Middleware\ClusterProxyMiddleware;
+use App\Http\Middleware\HolmesChatWebAuth;
 use App\Http\Middleware\HorizonBasicAuthMiddleware;
 use App\Http\Middleware\McpAuthMiddleware;
 use App\Http\Middleware\WebhookAuth;
@@ -35,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'clusterAgentValidate' => ClusterAgentValidateMiddleware::class,
             'horizonBasicAuth' => HorizonBasicAuthMiddleware::class,
             'mcpAuth' => McpAuthMiddleware::class,
+            'holmesChatWebAuth' => HolmesChatWebAuth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

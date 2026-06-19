@@ -1,0 +1,17 @@
+# HolmesGPT server config for local Docker Compose.
+# Docs: https://holmesgpt.dev/latest/installation/docker-compose-installation/
+
+model: default
+
+mcp_servers:
+  skylogs:
+    description: "Skylogs monitoring and alerting platform"
+    config:
+      url: "http://nginx/mcp/skylogs"
+      mode: streamable-http
+      headers:
+        Authorization: "Bearer {{ env.MCP_API_TOKEN }}"
+    llm_instructions: >
+      Use Skylogs to investigate active monitoring alerts. Start with get-fired-alerts
+      without parameters to list all critical alert rules and their current fired alerts.
+      Use alertRuleId when you need details for a specific alert rule during root-cause analysis.

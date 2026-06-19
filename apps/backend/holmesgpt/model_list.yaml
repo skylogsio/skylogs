@@ -1,0 +1,8 @@
+# Named models for the HolmesGPT HTTP server.
+# Docs: https://holmesgpt.dev/latest/ai-providers/openai-compatible/
+
+default:
+  api_key: "{{ env.OPENAI_API_KEY }}"
+  api_base: "{{ env.OPENAI_API_BASE }}"
+  model: "openai/{{ env.HOLMES_LLM_MODEL }}"
+  temperature: 1
