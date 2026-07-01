@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
+import { TextFieldProps } from "@mui/material";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { AdapterDateFnsJalali } from "@mui/x-date-pickers/AdapterDateFnsJalali";
 import { DatePicker, DatePickerSlotProps } from "@mui/x-date-pickers/DatePicker";
@@ -11,8 +14,6 @@ import { format as formatGregorian } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { format as formatJalali } from "date-fns-jalali";
 import { faIR as faIRJalali } from "date-fns-jalali/locale";
-import { TextFieldProps } from "@mui/material";
-import { useEffect, useState } from "react";
 
 export type CalendarType = "gregorian" | "persian";
 export type PickerType = "time" | "date" | "date-time";
@@ -31,6 +32,7 @@ type Props = {
   onChange?: (payload: SingleChangePayload) => void;
   label?: string;
   disabled?: boolean;
+  textfieldProps?: TextFieldProps;
 };
 
 const DISPLAY_FORMAT: Record<PickerType, string> = {
@@ -45,7 +47,8 @@ export default function DateTimeInput({
   value = null,
   onChange,
   label,
-  disabled = false
+  disabled = false,
+  textfieldProps
 }: Props) {
   const isPersian = calendar === "persian";
   const Adapter = isPersian ? AdapterDateFnsJalali : AdapterDateFns;
@@ -78,15 +81,21 @@ export default function DateTimeInput({
   const commonTextFieldProps: TextFieldProps = {
     size: "small" as const,
     fullWidth: true,
+    ...textfieldProps,
     variant: "filled" as const,
-    slotProps: { input: { disableUnderline: true } },
+    slotProps: {
+      ...textfieldProps?.slotProps,
+      input: { disableUnderline: true, ...textfieldProps?.slotProps?.input }
+    },
     onClick: () => {
       if (!disabled) setOpen(true);
     },
     sx: {
       [`& .${pickersInputBaseClasses.root}`]: {
         borderRadius: "0.55rem"
-      }
+      },
+
+      ...textfieldProps?.sx
     }
   };
 
@@ -129,7 +138,7 @@ export default function DateTimeInput({
     >
       {type === "time" && (
         <TimePicker
-          label={label ?? (isPersian ? "زمان" : "Time")}
+          label={label}
           value={pickerValue}
           onChange={(newVal) => handleSingleChange(getPickerDate(newVal), "time")}
           ampm={false}
@@ -144,7 +153,7 @@ export default function DateTimeInput({
 
       {type === "date" && (
         <DatePicker
-          label={label ?? (isPersian ? "تاریخ" : "Date")}
+          label={label}
           value={pickerValue}
           onChange={(newVal) => handleSingleChange(getPickerDate(newVal), "date")}
           format={DISPLAY_FORMAT.date}
@@ -158,7 +167,7 @@ export default function DateTimeInput({
 
       {type === "date-time" && (
         <DateTimePicker
-          label={label ?? (isPersian ? "تاریخ و زمان" : "Date & Time")}
+          label={label}
           value={pickerValue}
           onChange={(newVal) => handleSingleChange(getPickerDate(newVal), "date-time")}
           ampm={false}
