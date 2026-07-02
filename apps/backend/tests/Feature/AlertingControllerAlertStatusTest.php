@@ -41,6 +41,23 @@ describe('AlertingController AlertStatus', function () {
             ->assertJsonValidationErrors(['alertRuleIds', 'fromTime', 'toTime']);
     });
 
+    it('accepts a single alertRuleId sent as a plain query string', function () {
+        $this->apiAlert = AlertRule::create([
+            'name' => 'API Alert',
+            'type' => 'api',
+            'userId' => $this->owner->id,
+        ]);
+
+        $this->actingAs($this->owner, 'api')
+            ->getJson('/api/v1/alert-rule/status?'.http_build_query([
+                'fromTime' => $this->fromTime,
+                'toTime' => $this->toTime,
+                'bucketCount' => 10,
+            ]).'&alertRuleIds='.$this->apiAlert->id)
+            ->assertSuccessful()
+            ->assertJsonCount(1);
+    });
+
     it('rejects a time window where toTime is not after fromTime', function () {
         $this->apiAlert = AlertRule::create([
             'name' => 'API Alert',
