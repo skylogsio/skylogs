@@ -691,6 +691,83 @@
                 ]
             }
         },
+        "/api/v1/alert-rule/status": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Get status timelines for a batch of alert rules",
+                "description": "Returns a fixed-bucket status timeline per alert rule over `[fromTime, toTime]`. Each bucket is colored by the worst status that occurred inside it (critical > warning > resolved > unknown) and carries every raw underlying status change that overlaps it, for hover/click incident detail. Alert rules the user cannot access are silently omitted from the response.",
+                "operationId": "getAlertRuleStatusTimeline",
+                "parameters": [
+                    {
+                        "name": "alertRuleIds",
+                        "in": "query",
+                        "description": "Alert rule ids to build timelines for",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "pattern": "^[0-9a-fA-F]{24}$"
+                            }
+                        }
+                    },
+                    {
+                        "name": "fromTime",
+                        "in": "query",
+                        "description": "Window start (unix timestamp, seconds)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "toTime",
+                        "in": "query",
+                        "description": "Window end (unix timestamp, seconds), must be after fromTime",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "bucketCount",
+                        "in": "query",
+                        "description": "Number of equal-width buckets to divide the window into",
+                        "schema": {
+                            "type": "integer",
+                            "default": 100,
+                            "maximum": 500,
+                            "minimum": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status timeline per alert rule",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AlertStatusTimeline"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/alert-rule/history/{id}": {
             "get": {
                 "tags": [
@@ -4086,6 +4163,7 @@
                                             "call",
                                             "email",
                                             "telegram",
+                                            "bale",
                                             "teams",
                                             "matter-most",
                                             "flow"
@@ -4344,6 +4422,7 @@
                                             "call",
                                             "email",
                                             "telegram",
+                                            "bale",
                                             "teams",
                                             "matter-most",
                                             "flow"
@@ -5572,8 +5651,8 @@
                             "schema": {
                                 "required": [
                                     "name",
-                                    "type",
-                                    "url"
+                                    "ownerId",
+                                    "userIds"
                                 ],
                                 "properties": {
                                     "name": {
@@ -6477,7 +6556,7 @@
             },
             "AlertRuleBehaviorRuleTemplate": {
                 "title": "Template behavior rule",
-                "description": "Uses a single custom template for messages sent to the listed endpoints. Placeholders such as `{{name}}` are supported.",
+                "description": "Uses a custom template string for messages sent to the listed endpoints.\n\n**Prometheus, Grafana, and PMM** support type-aware placeholders:\n\n| Placeholder | Description |\n|-------------|-------------|\n| `{{name}}` | Alert rule name |\n| `{{state}}` / `{{state_line}}` | Rule state value / formatted state line |\n| `{{fireCount}}` | Number of firing alerts |\n| `{{date}}` | Jalali date line (`date:` or `Date:` prefix included) |\n| `{{dataSourceName}}` | Data source name |\n| `{{label.KEY}}` | Label from first firing alert |\n| `{{annotation.KEY}}` | Annotation from first firing alert |\n| `{{severity_line}}` | Severity line with emoji |\n| `{{labels:alertname,pod}}` | Label block (include only listed keys) |\n| `{{labels:* exclude=job}}` | All labels except listed keys |\n| `{{annotations:summary,description}}` | Annotation block (include) |\n| `{{alert_items labels=\"pod\" annotations=\"summary\"}}` | Per-alert section |\n| `{{alert_items labels=\"*\" exclude_labels=\"job\"}}` | Per-alert section with exclusions |\n\n**Default Prometheus template:**\n```\n{{name}}\n\n{{state_line}}\n{{alert_items labels=\"*\" annotations=\"*\"}}\n{{date}}\n```\n\n**Default Grafana / PMM template:**\n```\n{{name}}\n\n{{state_line}}\nData Source: {{dataSourceName}}\n\n{{alert_items labels=\"*\" annotations=\"*\"}}\n{{date}}\n```\n\nOther alert types fall back to generic `{{name}}`, `{{state}}`, and dotted `{{alert.*}}` paths.",
                 "required": [
                     "id",
                     "name",
@@ -6517,7 +6596,7 @@
                     },
                     "template": {
                         "type": "string",
-                        "example": "Alert {{name}} fired on {{instance}}"
+                        "example": "{{name}}\n\n{{state_line}}\n{{alert_items labels=\"pod,namespace\" annotations=\"summary\"}}\ndate: {{date}}"
                     }
                 },
                 "type": "object"
@@ -6662,8 +6741,9 @@
                         "minItems": 1
                     },
                     "template": {
+                        "description": "Message template. See `AlertRuleBehaviorRuleTemplate` for Prometheus/Grafana/PMM placeholder syntax.",
                         "type": "string",
-                        "example": "Disk alert: {{name}}",
+                        "example": "{{name}}\n\n{{state_line}}\n{{alert_items labels=\"pod\" annotations=\"summary\"}}",
                         "minLength": 1
                     }
                 },
@@ -8246,6 +8326,76 @@
                 },
                 "type": "object"
             },
+            "AlertStatusEventDetail": {
+                "description": "A single raw status-changing event overlapping a bucket.",
+                "properties": {
+                    "status": {
+                        "$ref": "#/components/schemas/AlertRuleState"
+                    },
+                    "fromTime": {
+                        "type": "integer"
+                    },
+                    "toTime": {
+                        "type": "integer"
+                    },
+                    "count": {
+                        "type": "integer"
+                    },
+                    "summary": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "AlertStatusSegment": {
+                "description": "One fixed-width bucket, colored by the worst status that occurred inside it.",
+                "properties": {
+                    "status": {
+                        "$ref": "#/components/schemas/AlertRuleState"
+                    },
+                    "fromTime": {
+                        "type": "integer"
+                    },
+                    "toTime": {
+                        "type": "integer"
+                    },
+                    "changesCount": {
+                        "description": "Number of raw events overlapping this bucket",
+                        "type": "integer"
+                    },
+                    "events": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertStatusEventDetail"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "AlertStatusTimeline": {
+                "properties": {
+                    "alertRuleId": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "bucketSeconds": {
+                        "type": "integer"
+                    },
+                    "segments": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertStatusSegment"
+                        }
+                    }
+                },
+                "type": "object"
+            },
             "AlertRuleDetail": {
                 "allOf": [
                     {
@@ -8564,6 +8714,7 @@
                             "call",
                             "email",
                             "telegram",
+                            "bale",
                             "teams",
                             "matter-most",
                             "flow"
@@ -8681,6 +8832,7 @@
                             "call",
                             "email",
                             "telegram",
+                            "bale",
                             "teams",
                             "matter-most",
                             "flow"
@@ -8946,7 +9098,17 @@
                     "ownerId": {
                         "type": "string"
                     },
+                    "owner": {
+                        "$ref": "#/components/schemas/User"
+                    },
                     "userIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "members": {
+                        "description": "Member display names resolved from userIds",
                         "type": "array",
                         "items": {
                             "type": "string"
@@ -8954,6 +9116,15 @@
                     },
                     "description": {
                         "type": "string"
+                    },
+                    "canCreate": {
+                        "type": "boolean"
+                    },
+                    "canEdit": {
+                        "type": "boolean"
+                    },
+                    "canDelete": {
+                        "type": "boolean"
                     },
                     "createdAt": {
                         "type": "string",
@@ -8969,8 +9140,8 @@
             "TeamInput": {
                 "required": [
                     "name",
-                    "type",
-                    "url"
+                    "ownerId",
+                    "userIds"
                 ],
                 "properties": {
                     "name": {

@@ -164,6 +164,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', 'Index');
                 Route::get('/all', 'All');
                 Route::get('/types', 'GetTypes');
+                Route::get('/status', 'AlertStatus');
                 Route::get('/history/{id}', 'History');
                 Route::get('/triggered/{id}', 'FiredAlerts');
                 Route::get('/filter-endpoints', 'FilterEndpoints');
