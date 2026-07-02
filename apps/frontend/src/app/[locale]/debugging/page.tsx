@@ -3,11 +3,9 @@
 import { useState } from "react";
 
 import { Box, Typography, Stack, Button, useTheme } from "@mui/material";
-import { FiInfo, FiCalendar } from "react-icons/fi";
-import { HiCalendar } from "react-icons/hi";
-import { IoChevronDown } from "react-icons/io5";
+import { HiCalendar, HiChevronDown, HiOutlineInformationCircle } from "react-icons/hi";
 
-import AnalysisTimeRangePopover from "@/components/Analysis/AnalysisTimeRangePopover";
+import AnalysisTimeRangePopover from "@/components/Debugging/DebuggingTimeRangePopover";
 
 export default function AnalysisPage() {
   const { palette } = useTheme();
@@ -22,7 +20,7 @@ export default function AnalysisPage() {
   };
 
   return (
-    <Stack spacing={3} sx={{ p: 3, width: "100%", boxSizing: "border-box" }}>
+    <Stack spacing={3} sx={{ px: 2, py: 1, width: "100%", boxSizing: "border-box" }}>
       <Box
         sx={{
           display: "flex",
@@ -37,7 +35,10 @@ export default function AnalysisPage() {
             <Typography variant="h5" sx={{ fontWeight: 700, color: "text.primary" }}>
               Debugging & Root Cause Analysis
             </Typography>
-            <FiInfo style={{ color: palette.text.disabled, cursor: "pointer" }} />
+            <HiOutlineInformationCircle
+              size={20}
+              style={{ color: palette.text.disabled, cursor: "pointer" }}
+            />
           </Stack>
           <Typography variant="body2" sx={{ mt: 0.5, color: "text.secondary" }}>
             Correlate alerts across data sources and analyze the root cause with AI.
@@ -49,7 +50,7 @@ export default function AnalysisPage() {
             onClick={handleOpenPicker}
             variant="contained"
             startIcon={<HiCalendar size={20} color={palette.text.disabled} />}
-            endIcon={<IoChevronDown size={14} />}
+            endIcon={<HiChevronDown size={18} />}
             sx={{
               textTransform: "none",
               color: "text.primary",
@@ -95,7 +96,7 @@ export default function AnalysisPage() {
             >
               2024/10/27 21:03:00
             </Typography>
-            <FiCalendar size={16} style={{ color: palette.text.disabled, marginLeft: 4 }} />
+            <HiCalendar size={20} style={{ color: palette.text.disabled, marginLeft: 10 }} />
           </Stack>
         </Stack>
       </Box>

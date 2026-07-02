@@ -5,19 +5,19 @@ import DateTimeInput from "../DateTimeInput";
 
 type RelativeTimeUnit = "minutes" | "hours" | "days";
 
-interface RelativeTimePickerProps {
+interface RelativeDateTimeProps {
   value?: number;
   unit?: RelativeTimeUnit;
   onValueChange?: (value: number) => void;
   onUnitChange?: (unit: RelativeTimeUnit) => void;
 }
 
-export function RelativeTimePicker({
+export default function RelativeDateTime({
   value,
   unit,
   onValueChange,
   onUnitChange
-}: RelativeTimePickerProps) {
+}: RelativeDateTimeProps) {
   return (
     <Stack spacing={2} sx={{ p: 2.5 }}>
       <Stack direction="row" spacing={2}>

@@ -27,7 +27,7 @@ const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
   return `${hours}:${minutes}`;
 });
 
-export const AbsoluteTabDateTime = ({ calendar }: { calendar: "persian" | "gregorian" }) => {
+export default function AbsoluteDateTime({ calendar }: { calendar: "persian" | "gregorian" }) {
   const { palette } = useTheme();
   const [viewDate, setViewDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
@@ -111,4 +111,4 @@ export const AbsoluteTabDateTime = ({ calendar }: { calendar: "persian" | "grego
       </Box>
     </LocalizationProvider>
   );
-};
+}

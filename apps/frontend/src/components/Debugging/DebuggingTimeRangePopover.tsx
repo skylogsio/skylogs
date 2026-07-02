@@ -4,8 +4,8 @@ import { useState } from "react";
 
 import { Box, Popover, Tabs, Tab, useTheme } from "@mui/material";
 
-import { AbsoluteTabDateTime } from "./AbsoluteTabDateTime";
-import { RelativeTimePicker } from "./RelativeTabDateTime";
+import AbsoluteDateTime from "./AbsoluteDateTime";
+import RelativeDateTime from "./RelativeDateTime";
 
 interface AnalysisTimeRangePopoverProps {
   anchorEl: HTMLElement | null;
@@ -80,8 +80,8 @@ export default function AnalysisTimeRangePopover({
         </Tabs>
       </Box>
 
-      {tabValue === "relative" && <RelativeTimePicker />}
-      {tabValue === "absolute" && <AbsoluteTabDateTime calendar="gregorian" />}
+      {tabValue === "relative" && <RelativeDateTime />}
+      {tabValue === "absolute" && <AbsoluteDateTime calendar="gregorian" />}
     </Popover>
   );
 }
