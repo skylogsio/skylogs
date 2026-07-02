@@ -91,6 +91,16 @@ class AlertRuleService
 
     }
 
+    /**
+     * @return Collection<int, AlertRule>
+     */
+    public function all(): Collection
+    {
+        return AlertRule::query()
+            ->orderBy('name')
+            ->get(['name', 'type']);
+    }
+
     public function getAlertRules($request)
     {
         $match = [];

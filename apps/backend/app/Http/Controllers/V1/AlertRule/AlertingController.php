@@ -129,6 +129,10 @@ class AlertingController extends Controller
 
     }
 
+    public function All(){
+        $result = $this->alertRuleService->all();
+        return response()->json($result);
+    }
     public function Pin($id)
     {
         $alert = AlertRule::where('_id', $id)->first();

@@ -162,6 +162,7 @@ Route::prefix('v1')->group(function () {
             ->controller(AlertingController::class)
             ->group(function () {
                 Route::get('/', 'Index');
+                Route::get('/all', 'All');
                 Route::get('/types', 'GetTypes');
                 Route::get('/history/{id}', 'History');
                 Route::get('/triggered/{id}', 'FiredAlerts');
