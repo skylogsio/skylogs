@@ -10,7 +10,7 @@ use Illuminate\Support\Collection;
  * into a fixed number of equal-width buckets covering [fromTime, toTime].
  *
  * Each bucket is colored by the worst status that occurred anywhere inside it
- * (critical > warning > unknown > resolved) and carries every raw underlying
+ * (critical > warning > resolved > unknown) and carries every raw underlying
  * event that overlaps it, so the frontend can show exact incident detail on
  * hover/click without losing the fixed-width bar layout.
  */
@@ -24,8 +24,8 @@ final class AlertStatusTimelineBuilder
     private const STATUS_PRIORITY = [
         AlertRule::CRITICAL => 3,
         AlertRule::WARNING => 2,
-        AlertRule::UNKNOWN => 1,
-        AlertRule::RESOlVED => 0,
+        AlertRule::RESOlVED => 1,
+        AlertRule::UNKNOWN => 0,
     ];
 
     public function __construct(

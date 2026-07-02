@@ -382,7 +382,7 @@ class AlertingDoc
         path: '/api/v1/alert-rule/status',
         operationId: 'getAlertRuleStatusTimeline',
         summary: 'Get status timelines for a batch of alert rules',
-        description: 'Returns a fixed-bucket status timeline per alert rule over `[fromTime, toTime]`. Each bucket is colored by the worst status that occurred inside it (critical > warning > unknown > resolved) and carries every raw underlying status change that overlaps it, for hover/click incident detail. Alert rules the user cannot access are silently omitted from the response.',
+        description: 'Returns a fixed-bucket status timeline per alert rule over `[fromTime, toTime]`. Each bucket is colored by the worst status that occurred inside it (critical > warning > resolved > unknown) and carries every raw underlying status change that overlaps it, for hover/click incident detail. Alert rules the user cannot access are silently omitted from the response.',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [
