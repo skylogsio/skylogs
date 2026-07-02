@@ -29,6 +29,8 @@ use App\Models\VictoriaLogsCheck;
 use App\Models\VictoriaLogsHistory;
 use App\Models\ZabbixCheck;
 use App\Models\ZabbixWebhookAlert;
+use App\Services\AlertStatus\AlertStatusEventSourceFactory;
+use App\Services\AlertStatus\AlertStatusTimelineBuilder;
 use Cache;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -1020,5 +1022,71 @@ class AlertRuleService
             app(SendNotifyService::class)->createNotify(SendNotifyJob::RESOLVED_MANUALLY, $alert, $alert->_id);
         }
 
+    }
+
+    /**
+     * Build a fixed-bucket status timeline for each of the given alert rules over [fromTime, toTime].
+     *
+     * Alert rules the user doesn't have access to are silently skipped rather than aborting the
+     * whole request, since this endpoint is designed to be called with a batch of ids.
+     *
+     * @param  array<int, string>  $alertRuleIds
+     * @return array<int, array{alertRuleId: string, type: string, name: string, bucketSeconds: int, segments: array<int, array<string, mixed>>}>
+     */
+    public function getAlertsStatusHistory(
+        array $alertRuleIds,
+        int $fromTime,
+        int $toTime,
+        int $bucketCount,
+        User $user,
+    ): array {
+        $alertRules = AlertRule::whereIn('_id', $alertRuleIds)
+            ->get()
+            ->filter(fn (AlertRule $alertRule) => $this->hasUserAccessAlert($user, $alertRule))
+            ->keyBy(fn (AlertRule $alertRule) => (string) $alertRule->_id);
+
+        if ($alertRules->isEmpty()) {
+            return [];
+        }
+
+        $from = Carbon::createFromTimestamp($fromTime);
+        $to = Carbon::createFromTimestamp($toTime);
+
+        $factory = app(AlertStatusEventSourceFactory::class);
+        $builder = new AlertStatusTimelineBuilder;
+
+        $eventsByAlertRule = collect();
+
+        foreach ($alertRules->groupBy(fn (AlertRule $alertRule) => $alertRule->type->value, preserveKeys: true) as $typeValue => $rulesOfType) {
+            $source = $factory->make(AlertRuleType::from($typeValue));
+
+            $baseline = $source->fetchBaseline($rulesOfType, $from);
+            $windowEvents = $source->fetchEvents($rulesOfType, $from, $to)->groupBy('alertRuleId');
+
+            foreach ($rulesOfType as $alertRuleId => $alertRule) {
+                $events = collect();
+
+                if ($baseline->has($alertRuleId)) {
+                    $events->push($baseline->get($alertRuleId));
+                }
+
+                $eventsByAlertRule->put($alertRuleId, $events->merge($windowEvents->get($alertRuleId, collect())));
+            }
+        }
+
+        return $alertRules
+            ->map(function (AlertRule $alertRule, string $alertRuleId) use ($eventsByAlertRule, $fromTime, $toTime, $bucketCount, $builder) {
+                $timeline = $builder->build($eventsByAlertRule->get($alertRuleId, collect()), $fromTime, $toTime, $bucketCount);
+
+                return [
+                    'alertRuleId' => $alertRuleId,
+                    'type' => $alertRule->type->value,
+                    'name' => $alertRule->name,
+                    'bucketSeconds' => $timeline['bucketSeconds'],
+                    'segments' => $timeline['segments'],
+                ];
+            })
+            ->values()
+            ->all();
     }
 }
