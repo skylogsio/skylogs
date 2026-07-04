@@ -2,21 +2,45 @@
 
 import { useState } from "react";
 
-import { Box, Typography, Stack, Button, useTheme } from "@mui/material";
+import { Box, Typography, Stack, Button, useTheme, CircularProgress, Alert } from "@mui/material";
 import { HiCalendar, HiOutlineInformationCircle } from "react-icons/hi";
 
-import AnalysisTimeRangePopover from "@/components/Debugging/DebuggingTimeRangePopover";
+import DebuggingBar from "@/features/Debugging/components/DebuggingBar";
+import AnalysisTimeRangePopover from "@/features/Debugging/components/DebuggingTimeRangePopover";
 import {
   DebuggingTimeRangeProvider,
   formatDebuggingTimeLabel,
   useDebuggingTimeRange
-} from "@/context/DebuggingTimeRangeContext";
+} from "@/features/Debugging/DebuggingTimeRange.context";
+import { useDebuggingData } from "@/features/Debugging/hooks/useDebuggingData";
+
+////   JUST TEMP   ////
+const alertRuleIds = [
+  "69345f5cef730078340875a2",
+  "696bcb9bae8c9d232803c1af",
+  "6a46bf2ee7498e1c3b0aa582",
+  "696bc74fae8c9d232803c1a9"
+];
+const fromTime = 1768671000;
+const toTime = 1768671600;
+const bucketCount = 100;
 
 function AnalysisPageContent() {
   const { palette } = useTheme();
   const { start, end } = useDebuggingTimeRange();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentDatePopover, setCurrentDatePopover] = useState<null | "start" | "end">(null);
+
+  const {
+    data: rules = [],
+    isLoading,
+    error
+  } = useDebuggingData({
+    alertRuleIds,
+    fromTime,
+    toTime,
+    bucketCount
+  });
 
   const handleOpenPicker = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -107,6 +131,34 @@ function AnalysisPageContent() {
             <HiCalendar size={20} style={{ color: palette.text.disabled, marginLeft: 10 }} />
           </Stack>
         </Stack>
+      </Box>
+      <Box sx={{ width: "100%", backgroundColor: palette.background.paper, p: 2, borderRadius: 4 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }} gutterBottom>
+          Timeline Comparison
+        </Typography>
+        <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
+          Compare alert occurrences across data sources{" "}
+        </Typography>
+
+        {isLoading && (
+          <Stack sx={{ alignItems: "center", py: 4 }}>
+            <CircularProgress size={28} />
+          </Stack>
+        )}
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error.toString()}
+          </Alert>
+        )}
+
+        {!isLoading && !error && rules.length === 0 && (
+          <Typography color="text.secondary">No alert rules found.</Typography>
+        )}
+
+        {!isLoading &&
+          !error &&
+          rules.map((rule) => <DebuggingBar key={rule.alertRuleId} rule={rule} />)}
       </Box>
     </Stack>
   );
