@@ -18,7 +18,7 @@ import {
   computeRelativeDate,
   useDebuggingTimeRange,
   type RelativeTimeUnit
-} from "@/context/DebuggingTimeRangeContext";
+} from "@/features/Debugging/DebuggingTimeRange.context";
 
 interface RelativeDateTimeProps {
   variant?: "start" | "end";

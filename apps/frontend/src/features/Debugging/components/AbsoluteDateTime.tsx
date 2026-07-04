@@ -19,7 +19,7 @@ import { format } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { faIR } from "date-fns-jalali/locale";
 
-import { useDebuggingTimeRange } from "@/context/DebuggingTimeRangeContext";
+import { useDebuggingTimeRange } from "@/features/Debugging/DebuggingTimeRange.context";
 
 const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
   const hours = Math.floor(i / 2)
