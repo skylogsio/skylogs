@@ -697,7 +697,7 @@
                     "AlertRule"
                 ],
                 "summary": "Get status timelines for a batch of alert rules",
-                "description": "Returns a fixed-bucket status timeline per alert rule over `[fromTime, toTime]`. Each bucket is colored by the worst status that occurred inside it (critical > warning > resolved > unknown) and carries every raw underlying status change that overlaps it, for hover/click incident detail. Alert rules the user cannot access are silently omitted from the response.",
+                "description": "Returns a fixed-slot status timeline per alert rule over `[fromTime, toTime]`. Consecutive slots from the same status period are merged; each segment count sums to the configured timeline slot count (see `config/alert-status.php`). Alert rules the user cannot access are silently omitted from the response.",
                 "operationId": "getAlertRuleStatusTimeline",
                 "parameters": [
                     {
@@ -729,17 +729,6 @@
                         "required": true,
                         "schema": {
                             "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "bucketCount",
-                        "in": "query",
-                        "description": "Number of equal-width buckets to divide the window into",
-                        "schema": {
-                            "type": "integer",
-                            "default": 100,
-                            "maximum": 500,
-                            "minimum": 10
                         }
                     }
                 ],
@@ -8326,49 +8315,26 @@
                 },
                 "type": "object"
             },
-            "AlertStatusEventDetail": {
-                "description": "A single raw status-changing event overlapping a bucket.",
+            "AlertStatusSegment": {
+                "description": "A merged run of consecutive timeline slots sharing the same underlying status period. Segment count values sum to the configured timeline slot count.",
                 "properties": {
                     "status": {
                         "$ref": "#/components/schemas/AlertRuleState"
+                    },
+                    "count": {
+                        "description": "Number of fixed bucket slots this segment spans in the timeline bar",
+                        "type": "integer"
                     },
                     "fromTime": {
                         "type": "integer"
                     },
                     "toTime": {
-                        "type": "integer"
-                    },
-                    "count": {
                         "type": "integer"
                     },
                     "summary": {
+                        "description": "Human-readable alert summary when the segment is firing",
                         "type": "string",
                         "nullable": true
-                    }
-                },
-                "type": "object"
-            },
-            "AlertStatusSegment": {
-                "description": "One fixed-width bucket, colored by the worst status that occurred inside it.",
-                "properties": {
-                    "status": {
-                        "$ref": "#/components/schemas/AlertRuleState"
-                    },
-                    "fromTime": {
-                        "type": "integer"
-                    },
-                    "toTime": {
-                        "type": "integer"
-                    },
-                    "changesCount": {
-                        "description": "Number of raw events overlapping this bucket",
-                        "type": "integer"
-                    },
-                    "events": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/AlertStatusEventDetail"
-                        }
                     }
                 },
                 "type": "object"

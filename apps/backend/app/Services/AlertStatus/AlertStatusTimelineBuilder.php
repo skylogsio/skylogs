@@ -7,12 +7,12 @@ use Illuminate\Support\Collection;
 
 /**
  * Turns a chronological list of status-changing events for a single alert rule
- * into a fixed number of equal-width buckets covering [fromTime, toTime].
+ * into a fixed number of equal-width buckets covering [fromTime, toTime], then
+ * merges consecutive buckets that belong to the same underlying status period.
  *
- * Each bucket is colored by the worst status that occurred anywhere inside it
- * (critical > warning > resolved > unknown) and carries every raw underlying
- * event that overlaps it, so the frontend can show exact incident detail on
- * hover/click without losing the fixed-width bar layout.
+ * Each output segment carries a bucket-slot count (summing to the configured
+ * timeline slot count) so the frontend can render a fixed-width bar as N colored blocks without losing
+ * exact incident boundaries or summaries from the underlying history.
  */
 final class AlertStatusTimelineBuilder
 {
@@ -28,55 +28,154 @@ final class AlertStatusTimelineBuilder
         AlertRule::UNKNOWN => 0,
     ];
 
-    public function __construct(
-        private readonly int $minBucketSeconds = 100,
-    ) {}
-
     /**
      * @param  Collection<int, AlertStatusEvent>  $events  baseline event (if any) plus every event inside the window, unsorted
-     * @return array{bucketSeconds: int, segments: array<int, array<string, mixed>>}
+     * @return array{bucketSeconds: int, segments: array<int, array{status: string, count: int, fromTime: int, toTime: int, summary?: string}>}
      */
     public function build(Collection $events, int $fromTime, int $toTime, int $bucketCount): array
     {
         $exactSegments = $this->buildExactSegments($events, $fromTime, $toTime);
 
         $duration = max(1, $toTime - $fromTime);
-        $bucketSeconds = max($this->minBucketSeconds, (int) ceil($duration / max(1, $bucketCount)));
-        $actualBucketCount = max(1, (int) ceil($duration / $bucketSeconds));
+        $actualBucketCount = max(1, $bucketCount);
+        $bucketSeconds = max(1, (int) ceil($duration / $actualBucketCount));
 
-        $segments = [];
+        $bucketAssignments = [];
+
         for ($i = 0; $i < $actualBucketCount; $i++) {
             $bucketFrom = $fromTime + ($i * $bucketSeconds);
-            $bucketTo = min($toTime, $bucketFrom + $bucketSeconds);
+            $bucketTo = ($i === $actualBucketCount - 1)
+                ? $toTime
+                : $fromTime + (($i + 1) * $bucketSeconds);
 
             if ($bucketFrom >= $bucketTo) {
                 break;
             }
 
-            $overlapping = array_values(array_filter(
-                $exactSegments,
-                fn (array $segment) => $segment['from'] < $bucketTo && $segment['to'] > $bucketFrom,
-            ));
+            $overlapping = $this->overlappingExactSegments($exactSegments, $bucketFrom, $bucketTo);
+            $winningIndex = $this->winningExactSegmentIndex($overlapping);
 
-            $segments[] = [
-                'status' => $this->worstStatus($overlapping),
+            $bucketAssignments[] = [
+                'exactSegmentIndex' => $winningIndex,
                 'fromTime' => $bucketFrom,
                 'toTime' => $bucketTo,
-                'changesCount' => count($overlapping),
-                'events' => array_map(fn (array $segment) => [
-                    'status' => $segment['status'],
-                    'fromTime' => $segment['from'],
-                    'toTime' => $segment['to'],
-                    'count' => $segment['count'],
-                    'summary' => $segment['summary'],
-                ], $overlapping),
             ];
         }
 
         return [
             'bucketSeconds' => $bucketSeconds,
-            'segments' => $segments,
+            'segments' => $this->mergeBucketAssignments($bucketAssignments, $exactSegments),
         ];
+    }
+
+    /**
+     * @param  array<int, array{status: string, from: int, to: int, count: int, summary: ?string}>  $exactSegments
+     * @return array<int, array{index: int, segment: array{status: string, from: int, to: int, count: int, summary: ?string}}>
+     */
+    private function overlappingExactSegments(array $exactSegments, int $bucketFrom, int $bucketTo): array
+    {
+        $overlapping = [];
+
+        foreach ($exactSegments as $index => $segment) {
+            if ($segment['from'] < $bucketTo && $segment['to'] > $bucketFrom) {
+                $overlapping[] = [
+                    'index' => $index,
+                    'segment' => $segment,
+                ];
+            }
+        }
+
+        return $overlapping;
+    }
+
+    /**
+     * @param  array<int, array{index: int, segment: array{status: string, from: int, to: int, count: int, summary: ?string}}>  $overlapping
+     */
+    private function winningExactSegmentIndex(array $overlapping): int
+    {
+        if ($overlapping === []) {
+            return -1;
+        }
+
+        return collect($overlapping)
+            ->sortBy([
+                fn (array $entry) => -(self::STATUS_PRIORITY[$entry['segment']['status']] ?? 0),
+                fn (array $entry) => -$entry['segment']['from'],
+            ])
+            ->first()['index'];
+    }
+
+    /**
+     * @param  array<int, array{exactSegmentIndex: int, fromTime: int, toTime: int}>  $bucketAssignments
+     * @param  array<int, array{status: string, from: int, to: int, count: int, summary: ?string}>  $exactSegments
+     * @return array<int, array{status: string, count: int, fromTime: int, toTime: int, summary?: string}>
+     */
+    private function mergeBucketAssignments(array $bucketAssignments, array $exactSegments): array
+    {
+        if ($bucketAssignments === []) {
+            return [];
+        }
+
+        $merged = [];
+        $currentIndex = $bucketAssignments[0]['exactSegmentIndex'];
+        $currentFrom = $bucketAssignments[0]['fromTime'];
+        $currentTo = $bucketAssignments[0]['toTime'];
+        $currentCount = 1;
+
+        for ($i = 1; $i < count($bucketAssignments); $i++) {
+            $bucket = $bucketAssignments[$i];
+
+            if ($bucket['exactSegmentIndex'] === $currentIndex) {
+                $currentTo = $bucket['toTime'];
+                $currentCount++;
+
+                continue;
+            }
+
+            $merged[] = $this->toOutputSegment($currentIndex, $currentFrom, $currentTo, $currentCount, $exactSegments);
+
+            $currentIndex = $bucket['exactSegmentIndex'];
+            $currentFrom = $bucket['fromTime'];
+            $currentTo = $bucket['toTime'];
+            $currentCount = 1;
+        }
+
+        $merged[] = $this->toOutputSegment($currentIndex, $currentFrom, $currentTo, $currentCount, $exactSegments);
+
+        return $merged;
+    }
+
+    /**
+     * @param  array<int, array{status: string, from: int, to: int, count: int, summary: ?string}>  $exactSegments
+     * @return array{status: string, count: int, fromTime: int, toTime: int, summary?: string}
+     */
+    private function toOutputSegment(
+        int $exactSegmentIndex,
+        int $fromTime,
+        int $toTime,
+        int $count,
+        array $exactSegments,
+    ): array {
+        $status = AlertRule::UNKNOWN;
+        $summary = null;
+
+        if ($exactSegmentIndex >= 0 && isset($exactSegments[$exactSegmentIndex])) {
+            $status = $exactSegments[$exactSegmentIndex]['status'];
+            $summary = $exactSegments[$exactSegmentIndex]['summary'];
+        }
+
+        $segment = [
+            'status' => $status,
+            'count' => $count,
+            'fromTime' => $fromTime,
+            'toTime' => $toTime,
+        ];
+
+        if ($summary !== null) {
+            $segment['summary'] = $summary;
+        }
+
+        return $segment;
     }
 
     /**
@@ -129,20 +228,5 @@ final class AlertStatusTimelineBuilder
         }
 
         return $segments;
-    }
-
-    /**
-     * @param  array<int, array{status: string, from: int, to: int, count: int, summary: ?string}>  $overlapping
-     */
-    private function worstStatus(array $overlapping): string
-    {
-        if ($overlapping === []) {
-            return AlertRule::UNKNOWN;
-        }
-
-        return collect($overlapping)
-            ->pluck('status')
-            ->sortByDesc(fn (string $status) => self::STATUS_PRIORITY[$status] ?? 0)
-            ->first();
     }
 }
