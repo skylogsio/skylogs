@@ -1,34 +1,74 @@
-import { Box, MenuItem, Select, Stack, TextField, Typography, alpha } from "@mui/material";
-import { pickersInputBaseClasses } from "@mui/x-date-pickers/PickersTextField";
+"use client";
 
-import DateTimeInput from "../DateTimeInput";
+import { useCallback, useEffect, useState } from "react";
 
-type RelativeTimeUnit = "minutes" | "hours" | "days";
+import {
+  Box,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+  alpha,
+  useTheme
+} from "@mui/material";
+import { format } from "date-fns";
+
+import {
+  computeRelativeDate,
+  useDebuggingTimeRange,
+  type RelativeTimeUnit
+} from "@/context/DebuggingTimeRangeContext";
 
 interface RelativeDateTimeProps {
-  value?: number;
-  unit?: RelativeTimeUnit;
-  onValueChange?: (value: number) => void;
-  onUnitChange?: (unit: RelativeTimeUnit) => void;
+  variant?: "start" | "end";
 }
 
-export default function RelativeDateTime({
-  value,
-  unit,
-  onValueChange,
-  onUnitChange
-}: RelativeDateTimeProps) {
+export default function RelativeDateTime({ variant = "start" }: RelativeDateTimeProps) {
+  const { palette } = useTheme();
+  const { referenceNow, start, end, setStartRelative, setEndRelative } = useDebuggingTimeRange();
+
+  const [value, setValue] = useState(15);
+  const [unit, setUnit] = useState<RelativeTimeUnit>("minutes");
+
+  const date = computeRelativeDate(value, unit, referenceNow);
+
+  const updateDateTime = useCallback(
+    (nextValue: number, nextUnit: RelativeTimeUnit) => {
+      if (variant === "end") {
+        setEndRelative(nextValue, nextUnit);
+      } else {
+        setStartRelative(nextValue, nextUnit);
+      }
+    },
+    [setEndRelative, setStartRelative, variant]
+  );
+
+  useEffect(() => {
+    const selection = variant === "end" ? end : start;
+    if (selection.relative) {
+      setValue(selection.relative.value);
+      setUnit(selection.relative.unit);
+    } else {
+      updateDateTime(15, "minutes");
+    }
+  }, [variant, end, start, updateDateTime]);
+
   return (
     <Stack spacing={2} sx={{ p: 2.5 }}>
       <Stack direction="row" spacing={2}>
         <TextField
           variant="filled"
-          defaultValue={15}
           hiddenLabel
           size="small"
           type="number"
           value={value}
-          onChange={(e) => onValueChange?.(Number(e.target.value))}
+          slotProps={{ htmlInput: { min: 1 } }}
+          onChange={(e) => {
+            const nextValue = Math.max(1, Number(e.target.value));
+            setValue(nextValue);
+            updateDateTime(nextValue, unit);
+          }}
           sx={{
             "& input[type=number]": {
               MozAppearance: "auto"
@@ -48,56 +88,49 @@ export default function RelativeDateTime({
           variant="filled"
           hiddenLabel
           value={unit}
-          defaultValue="minutes"
-          onChange={(e) => onUnitChange?.(e.target.value as RelativeTimeUnit)}
+          onChange={(e) => {
+            const nextUnit = e.target.value as RelativeTimeUnit;
+            setUnit(nextUnit);
+            updateDateTime(value, nextUnit);
+          }}
           sx={{ borderRadius: 2 }}
         >
           <MenuItem value="minutes">Minutes ago</MenuItem>
           <MenuItem value="hours">Hours ago</MenuItem>
           <MenuItem value="days">Days ago</MenuItem>
+          <MenuItem value="weeks">Week ago</MenuItem>
+          <MenuItem value="months">Month ago</MenuItem>
+          <MenuItem value="years">Year ago</MenuItem>
         </Select>
       </Stack>
 
       <Box
-        sx={(theme) => ({
+        sx={{
           display: "flex",
-          alignItems: "stretch",
-          border: `1px solid ${theme.palette.divider}`,
-          borderRadius: 2,
-          overflow: "hidden"
-        })}
+          border: `1px solid ${palette.divider}`,
+          borderRadius: "8px",
+          overflow: "hidden",
+          fontSize: 14
+        }}
       >
         <Typography
           variant="body2"
-          sx={(theme) => ({
-            bgcolor: alpha(theme.palette.divider, 0.1),
+          sx={{
+            bgcolor: alpha(palette.divider, 0.1),
             px: 2,
             py: 1,
-            borderRight: `1px solid ${theme.palette.divider}`,
+            borderRight: `1px solid ${palette.divider}`,
             fontWeight: 600,
-            whiteSpace: "nowrap",
+            textWrap: "nowrap",
             lineHeight: 1.5
-          })}
-        >
-          Start date
-        </Typography>
-
-        <DateTimeInput
-          calendar="gregorian"
-          type="date-time"
-          textfieldProps={{
-            hiddenLabel: true,
-            sx: {
-              [`& .${pickersInputBaseClasses.root}`]: {
-                backgroundColor: "transparent",
-                borderRadius: 0
-              }
-            },
-            slotProps: {
-              inputLabel: { disabled: true }
-            }
           }}
-        />
+        >
+          {variant === "start" ? "Start date" : "End date"}
+        </Typography>
+        <Typography variant="body1" sx={{ flex: 1, px: 2, py: 1 }}>
+          {date ? format(date, "MMM dd, yyyy") : "---"} @ {date.toLocaleTimeString().split(" ")[0]}
+          :00.000
+        </Typography>
       </Box>
     </Stack>
   );

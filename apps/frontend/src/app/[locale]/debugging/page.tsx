@@ -3,20 +3,32 @@
 import { useState } from "react";
 
 import { Box, Typography, Stack, Button, useTheme } from "@mui/material";
-import { HiCalendar, HiChevronDown, HiOutlineInformationCircle } from "react-icons/hi";
+import { HiCalendar, HiOutlineInformationCircle } from "react-icons/hi";
 
 import AnalysisTimeRangePopover from "@/components/Debugging/DebuggingTimeRangePopover";
+import {
+  DebuggingTimeRangeProvider,
+  formatDebuggingTimeLabel,
+  useDebuggingTimeRange
+} from "@/context/DebuggingTimeRangeContext";
 
-export default function AnalysisPage() {
+function AnalysisPageContent() {
   const { palette } = useTheme();
+  const { start, end } = useDebuggingTimeRange();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [currentDatePopover, setCurrentDatePopover] = useState<null | "start" | "end">(null);
 
-  const handleOpenPicker = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleOpenPicker = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    variant: "start" | "end"
+  ) => {
     setAnchorEl(event.currentTarget);
+    setCurrentDatePopover(variant);
   };
 
   const handleClosePicker = () => {
     setAnchorEl(null);
+    setCurrentDatePopover(null);
   };
 
   return (
@@ -46,28 +58,12 @@ export default function AnalysisPage() {
         </Box>
 
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-          <Button
-            onClick={handleOpenPicker}
-            variant="contained"
-            startIcon={<HiCalendar size={20} color={palette.text.disabled} />}
-            endIcon={<HiChevronDown size={18} />}
-            sx={{
-              textTransform: "none",
-              color: "text.primary",
-              borderRadius: "8px",
-              height: "40px",
-              px: 2,
-              fontWeight: 500,
-              bgcolor: "background.paper"
-            }}
-          >
-            Last 15 Minutes
-          </Button>
-
           <AnalysisTimeRangePopover
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
             onClose={handleClosePicker}
+            variant={currentDatePopover!}
+            arrowPosition={currentDatePopover === "start" ? "center" : "right"}
           />
 
           <Stack
@@ -81,25 +77,45 @@ export default function AnalysisPage() {
               bgcolor: "background.paper"
             }}
           >
-            <Typography
-              variant="body2"
-              sx={{ fontFamily: "monospace", color: "text.primary", fontSize: "0.85rem" }}
+            <Button
+              onClick={(e) => handleOpenPicker(e, "start")}
+              variant="text"
+              sx={{
+                fontFamily: start.mode === "absolute" ? "monospace" : "inherit",
+                color: "text.primary",
+                fontSize: "0.85rem",
+                fontWeight: start.mode === "absolute" ? 400 : 600
+              }}
             >
-              2024/10/27 20:48:00
-            </Typography>
+              {formatDebuggingTimeLabel(start)}
+            </Button>
             <Typography variant="body2" color="textDisabled">
               →
             </Typography>
-            <Typography
-              variant="body2"
-              sx={{ fontFamily: "monospace", color: "text.primary", fontSize: "0.85rem" }}
+            <Button
+              onClick={(e) => handleOpenPicker(e, "end")}
+              variant="text"
+              sx={{
+                fontFamily: end.mode === "absolute" ? "monospace" : "inherit",
+                color: "text.primary",
+                fontSize: "0.85rem",
+                fontWeight: end.mode === "absolute" ? 400 : 600
+              }}
             >
-              2024/10/27 21:03:00
-            </Typography>
+              {formatDebuggingTimeLabel(end)}
+            </Button>
             <HiCalendar size={20} style={{ color: palette.text.disabled, marginLeft: 10 }} />
           </Stack>
         </Stack>
       </Box>
     </Stack>
+  );
+}
+
+export default function AnalysisPage() {
+  return (
+    <DebuggingTimeRangeProvider>
+      <AnalysisPageContent />
+    </DebuggingTimeRangeProvider>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   Box,
@@ -19,6 +19,8 @@ import { format } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { faIR } from "date-fns-jalali/locale";
 
+import { useDebuggingTimeRange } from "@/context/DebuggingTimeRangeContext";
+
 const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
   const hours = Math.floor(i / 2)
     .toString()
@@ -27,14 +29,57 @@ const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
   return `${hours}:${minutes}`;
 });
 
-export default function AbsoluteDateTime({ calendar }: { calendar: "persian" | "gregorian" }) {
+function roundTimeToSlot(date: Date): string {
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes() < 30 ? "00" : "30";
+  return `${hours}:${minutes}`;
+}
+
+function combineDateAndTime(date: Date, time: string): Date {
+  const [hours, minutes] = time.split(":").map(Number);
+  const combined = new Date(date);
+  combined.setHours(hours, minutes, 0, 0);
+  return combined;
+}
+
+export default function AbsoluteDateTime({
+  calendar,
+  variant = "start"
+}: {
+  calendar: "persian" | "gregorian";
+  variant?: "start" | "end";
+}) {
   const { palette } = useTheme();
-  const [viewDate, setViewDate] = useState<Date>(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
-  const [selectedTime, setSelectedTime] = useState("11:00");
+  const { start, end, setStartAbsolute, setEndAbsolute } = useDebuggingTimeRange();
+  const selection = variant === "end" ? end : start;
+  const contextDateTime = selection.dateTime;
+
+  const [viewDate, setViewDate] = useState<Date>(() => new Date(contextDateTime));
+  const [selectedDate, setSelectedDate] = useState<Date | null>(() => new Date(contextDateTime));
+  const [selectedTime, setSelectedTime] = useState(() => roundTimeToSlot(contextDateTime));
 
   const adapter = calendar === "persian" ? AdapterDateFnsJalali : AdapterDateFns;
   const locale = calendar === "persian" ? faIR : enUS;
+
+  useEffect(() => {
+    if (selection.mode !== "absolute") {
+      return;
+    }
+
+    setViewDate(new Date(selection.dateTime));
+    setSelectedDate(new Date(selection.dateTime));
+    setSelectedTime(roundTimeToSlot(selection.dateTime));
+  }, [variant, selection.mode, selection.dateTime]);
+
+  const updateDateTime = (date: Date, time: string) => {
+    const combined = combineDateAndTime(date, time);
+
+    if (variant === "end") {
+      setEndAbsolute(combined);
+    } else {
+      setStartAbsolute(combined);
+    }
+  };
 
   return (
     <LocalizationProvider dateAdapter={adapter} adapterLocale={locale}>
@@ -44,7 +89,12 @@ export default function AbsoluteDateTime({ calendar }: { calendar: "persian" | "
             <DateCalendar
               value={selectedDate}
               referenceDate={viewDate}
-              onChange={(newDate) => setSelectedDate(newDate)}
+              onChange={(newDate) => {
+                setSelectedDate(newDate);
+                if (newDate) {
+                  updateDateTime(newDate, selectedTime);
+                }
+              }}
               onMonthChange={(date) => setViewDate(date)}
             />
           </Box>
@@ -57,7 +107,12 @@ export default function AbsoluteDateTime({ calendar }: { calendar: "persian" | "
                 <ListItemButton
                   key={time}
                   selected={selectedTime === time}
-                  onClick={() => setSelectedTime(time)}
+                  onClick={() => {
+                    setSelectedTime(time);
+                    if (selectedDate) {
+                      updateDateTime(selectedDate, time);
+                    }
+                  }}
                   sx={{
                     py: 0.5,
                     borderRadius: 1,
@@ -78,7 +133,6 @@ export default function AbsoluteDateTime({ calendar }: { calendar: "persian" | "
 
         <Divider />
 
-        {/* فوتر نمایش تاریخ انتخاب شده */}
         <Box sx={{ p: 1.5 }}>
           <Box
             sx={{
@@ -86,7 +140,7 @@ export default function AbsoluteDateTime({ calendar }: { calendar: "persian" | "
               border: `1px solid ${palette.divider}`,
               borderRadius: "8px",
               overflow: "hidden",
-              fontSize: "0.85rem"
+              fontSize: 14
             }}
           >
             <Typography
@@ -101,7 +155,7 @@ export default function AbsoluteDateTime({ calendar }: { calendar: "persian" | "
                 lineHeight: 1.5
               }}
             >
-              Start date
+              {variant === "start" ? "Start date" : "End date"}
             </Typography>
             <Typography variant="body1" sx={{ flex: 1, px: 2, py: 1 }}>
               {selectedDate ? format(selectedDate, "MMM dd, yyyy") : "---"} @ {selectedTime}:00.000
