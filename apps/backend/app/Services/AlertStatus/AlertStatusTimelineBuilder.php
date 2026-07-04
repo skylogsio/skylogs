@@ -97,11 +97,12 @@ final class AlertStatusTimelineBuilder
             return -1;
         }
 
+        $maxPriority = collect($overlapping)
+            ->max(fn (array $entry): int => self::STATUS_PRIORITY[$entry['segment']['status']] ?? 0);
+
         return collect($overlapping)
-            ->sortBy([
-                fn (array $entry) => -(self::STATUS_PRIORITY[$entry['segment']['status']] ?? 0),
-                fn (array $entry) => -$entry['segment']['from'],
-            ])
+            ->filter(fn (array $entry): bool => (self::STATUS_PRIORITY[$entry['segment']['status']] ?? 0) === $maxPriority)
+            ->sortByDesc(fn (array $entry): int => $entry['segment']['from'])
             ->first()['index'];
     }
 

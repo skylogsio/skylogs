@@ -42,6 +42,23 @@ describe('AlertStatusTimelineBuilder', function () {
             ->and($segments[1]['summary'])->toBe('Database is down');
     });
 
+    it('assigns a bucket that spans unknown and warning to warning', function () {
+        $builder = new AlertStatusTimelineBuilder;
+
+        $events = collect([
+            new AlertStatusEvent('rule-1', Carbon::createFromTimestamp(50), AlertRule::WARNING, 1, 'Latency is elevated'),
+            new AlertStatusEvent('rule-1', Carbon::createFromTimestamp(250), AlertRule::CRITICAL, 2, 'Latency is very high'),
+        ]);
+
+        $timeline = $builder->build($events, 0, 1000, 10);
+        $segments = $timeline['segments'];
+
+        expect($segments[0]['status'])->toBe(AlertRule::WARNING)
+            ->and($segments[0]['count'])->toBe(2)
+            ->and($segments[1]['status'])->toBe(AlertRule::CRITICAL)
+            ->and($segments[1]['count'])->toBe(8);
+    });
+
     it('keeps consecutive critical periods separate when summaries differ', function () {
         $builder = new AlertStatusTimelineBuilder;
 
