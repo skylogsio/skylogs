@@ -9,7 +9,10 @@ use Tests\Support\TeamTestData;
 
 describe('AlertingController AlertStatus', function () {
     beforeEach(function () {
-        config(['cache.default' => 'array']);
+        config([
+            'cache.default' => 'array',
+            'alert-status.timeline_slot_count' => 10,
+        ]);
 
         $this->owner = TeamTestData::createUser(Constants::ROLE_OWNER);
         $this->outsider = TeamTestData::createUser(Constants::ROLE_MEMBER);
@@ -52,7 +55,6 @@ describe('AlertingController AlertStatus', function () {
             ->getJson('/api/v1/alert-rule/status?'.http_build_query([
                 'fromTime' => $this->fromTime,
                 'toTime' => $this->toTime,
-                'bucketCount' => 10,
             ]).'&alertRuleIds='.$this->apiAlert->id)
             ->assertSuccessful()
             ->assertJsonCount(1);
@@ -93,7 +95,6 @@ describe('AlertingController AlertStatus', function () {
                 'alertRuleIds' => [$this->privateAlert->id, $this->apiAlert->id],
                 'fromTime' => $this->fromTime,
                 'toTime' => $this->toTime,
-                'bucketCount' => 10,
             ]))
             ->assertSuccessful()
             ->json();
@@ -114,7 +115,6 @@ describe('AlertingController AlertStatus', function () {
                 'alertRuleIds' => [$this->apiAlert->id],
                 'fromTime' => $this->fromTime,
                 'toTime' => $this->toTime,
-                'bucketCount' => 10,
             ]))
             ->assertSuccessful()
             ->json();
@@ -122,8 +122,10 @@ describe('AlertingController AlertStatus', function () {
         $segments = $response[0]['segments'];
 
         expect($response[0]['bucketSeconds'])->toBe(100)
-            ->and($segments)->toHaveCount(10)
-            ->and(collect($segments)->pluck('status')->unique()->all())->toBe(['unknown']);
+            ->and($segments)->toHaveCount(1)
+            ->and($segments[0]['status'])->toBe('unknown')
+            ->and($segments[0]['count'])->toBe(10)
+            ->and(collect($segments)->sum('count'))->toBe(10);
     });
 
     it('never reports a warning status for API alerts, which have no severity concept', function () {
@@ -146,7 +148,6 @@ describe('AlertingController AlertStatus', function () {
                 'alertRuleIds' => [$this->apiAlert->id],
                 'fromTime' => $this->fromTime,
                 'toTime' => $this->toTime,
-                'bucketCount' => 10,
             ]))
             ->assertSuccessful()
             ->json();
@@ -157,7 +158,7 @@ describe('AlertingController AlertStatus', function () {
             ->and($statuses)->toContain('critical');
     });
 
-    it('buckets a prometheus alert with worst-status-wins and nested raw events', function () {
+    it('buckets a prometheus alert with worst-status-wins and segment summaries', function () {
         $this->prometheusAlert = AlertRule::create([
             'name' => 'DatabaseDown',
             'type' => 'prometheus',
@@ -199,16 +200,12 @@ describe('AlertingController AlertStatus', function () {
         $segments = $response[0]['segments'];
 
         expect($response[0]['bucketSeconds'])->toBe(100)
-            ->and($segments)->toHaveCount(10)
+            ->and(collect($segments)->sum('count'))->toBe(10)
             ->and($segments[0]['status'])->toBe('warning')
-            ->and($segments[1]['status'])->toBe('warning')
-            ->and($segments[2]['status'])->toBe('critical')
-            ->and($segments[9]['status'])->toBe('critical');
-
-        $criticalEvent = collect($segments[2]['events'])->firstWhere('status', 'critical');
-
-        expect($criticalEvent)->not->toBeNull()
-            ->and($criticalEvent['summary'])->toBeString()
-            ->and($criticalEvent['summary'])->not->toBeEmpty();
+            ->and($segments[0]['count'])->toBe(2)
+            ->and($segments[1]['status'])->toBe('critical')
+            ->and($segments[1]['count'])->toBe(8)
+            ->and($segments[1]['summary'])->toBeString()
+            ->and($segments[1]['summary'])->not->toBeEmpty();
     });
 });

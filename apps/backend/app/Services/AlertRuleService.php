@@ -1041,15 +1041,15 @@ class AlertRuleService
      * whole request, since this endpoint is designed to be called with a batch of ids.
      *
      * @param  array<int, string>  $alertRuleIds
-     * @return array<int, array{alertRuleId: string, type: string, name: string, bucketSeconds: int, segments: array<int, array<string, mixed>>}>
+     * @return array<int, array{alertRuleId: string, type: string, name: string, bucketSeconds: int, segments: array<int, array{status: string, count: int, fromTime: int, toTime: int, summary?: string}>}>
      */
     public function getAlertsStatusHistory(
         array $alertRuleIds,
         int $fromTime,
         int $toTime,
-        int $bucketCount,
         User $user,
     ): array {
+        $slotCount = (int) config('alert-status.timeline_slot_count', 100);
         $alertRules = AlertRule::whereIn('_id', $alertRuleIds)
             ->get()
             ->filter(fn (AlertRule $alertRule) => $this->hasUserAccessAlert($user, $alertRule))
@@ -1085,8 +1085,8 @@ class AlertRuleService
         }
 
         return $alertRules
-            ->map(function (AlertRule $alertRule, string $alertRuleId) use ($eventsByAlertRule, $fromTime, $toTime, $bucketCount, $builder) {
-                $timeline = $builder->build($eventsByAlertRule->get($alertRuleId, collect()), $fromTime, $toTime, $bucketCount);
+            ->map(function (AlertRule $alertRule, string $alertRuleId) use ($eventsByAlertRule, $fromTime, $toTime, $slotCount, $builder) {
+                $timeline = $builder->build($eventsByAlertRule->get($alertRuleId, collect()), $fromTime, $toTime, $slotCount);
 
                 return [
                     'alertRuleId' => $alertRuleId,

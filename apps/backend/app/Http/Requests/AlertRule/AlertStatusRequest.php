@@ -81,12 +81,6 @@ class AlertStatusRequest extends FormRequest
             'alertRuleIds.*' => ['string', 'regex:/^[0-9a-fA-F]{24}$/'],
             'fromTime' => ['required', 'integer'],
             'toTime' => ['required', 'integer', 'gt:fromTime'],
-            'bucketCount' => ['sometimes', 'integer', 'min:10', 'max:500'],
         ];
-    }
-
-    public function bucketCount(): int
-    {
-        return (int) ($this->validated('bucketCount') ?? 100);
     }
 }

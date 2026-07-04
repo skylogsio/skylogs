@@ -609,7 +609,6 @@ class AlertingController extends Controller
             $request->validated('alertRuleIds'),
             (int) $request->validated('fromTime'),
             (int) $request->validated('toTime'),
-            $request->bucketCount(),
             Auth::user(),
         ));
     }
