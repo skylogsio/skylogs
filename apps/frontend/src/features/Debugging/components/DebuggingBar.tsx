@@ -1,13 +1,30 @@
-import { Box, Typography, Stack, Tooltip } from "@mui/material";
+import { memo, useMemo } from "react";
+
+import { Typography, Stack } from "@mui/material";
 import { format } from "date-fns";
 
 import type { DebuggingBarType } from "../debugging.type";
+import Segment from "./Segment";
 import useSegmentColor from "../hooks/useSegmentColor";
 
-export default function DebuggingBar({ rule }: { rule: DebuggingBarType }) {
+function DebuggingBar({ rule }: { rule: DebuggingBarType }) {
   const statusColors = useSegmentColor();
   const minTime = Math.min(...rule.segments.map((s) => s.fromTime));
   const maxTime = Math.max(...rule.segments.map((s) => s.toTime));
+
+  const dots = useMemo(() => {
+    let dotIndex = -1;
+    return rule.segments.flatMap((segment) =>
+      Array.from({ length: segment.count }).map(() => {
+        dotIndex += 1;
+        return {
+          index: dotIndex,
+          summary: segment.summary,
+          color: statusColors[segment.status] ?? statusColors.unknown
+        };
+      })
+    );
+  }, [rule.segments, statusColors]);
 
   return (
     <Stack direction="row" spacing={1} sx={{ mb: 2, borderRadius: 2 }}>
@@ -33,24 +50,9 @@ export default function DebuggingBar({ rule }: { rule: DebuggingBarType }) {
 
       <Stack sx={{ flex: 1 }}>
         <Stack direction="row" spacing={0.25} sx={{ width: "100%", borderRadius: 1 }}>
-          {rule.segments.map((segment) => {
-            return Array.from({ length: segment.count }).map((_, index) => (
-              <Tooltip key={index} title={segment.summary} arrow placement="top">
-                <Box
-                  key={index}
-                  sx={{
-                    flex: 1,
-                    height: 28,
-                    backgroundColor: statusColors[segment.status] ?? statusColors.unknown,
-                    cursor: "pointer",
-                    borderRadius: 1,
-                    transition: "all 50ms ease-out",
-                    "&:hover": { opacity: 0.8, transform: "scale(1.3)" }
-                  }}
-                />
-              </Tooltip>
-            ));
-          })}
+          {dots.map((dot) => (
+            <Segment key={dot.index} index={dot.index} summary={dot.summary} color={dot.color} />
+          ))}
         </Stack>
 
         <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
@@ -65,3 +67,5 @@ export default function DebuggingBar({ rule }: { rule: DebuggingBarType }) {
     </Stack>
   );
 }
+
+export default memo(DebuggingBar);

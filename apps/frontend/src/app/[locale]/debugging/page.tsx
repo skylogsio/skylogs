@@ -7,6 +7,7 @@ import { HiCalendar, HiOutlineInformationCircle } from "react-icons/hi";
 
 import DebuggingBar from "@/features/Debugging/components/DebuggingBar";
 import AnalysisTimeRangePopover from "@/features/Debugging/components/DebuggingTimeRangePopover";
+import { ControlBarProvider } from "@/features/Debugging/context/ControlBar.context";
 import {
   DebuggingTimeRangeProvider,
   formatDebuggingTimeLabel,
@@ -156,9 +157,11 @@ function AnalysisPageContent() {
           <Typography color="text.secondary">No alert rules found.</Typography>
         )}
 
-        {!isLoading &&
-          !error &&
-          rules.map((rule) => <DebuggingBar key={rule.alertRuleId} rule={rule} />)}
+        <ControlBarProvider>
+          {!isLoading &&
+            !error &&
+            rules.map((rule) => <DebuggingBar key={rule.alertRuleId} rule={rule} />)}
+        </ControlBarProvider>
       </Box>
     </Stack>
   );
