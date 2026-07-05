@@ -96,13 +96,14 @@ function createInitialState() {
     }
   };
 }
-
 interface DebuggingTimeRangeContextType {
   referenceNow: Date;
   start: DebuggingTimeSelection;
   end: DebuggingTimeSelection;
   startDateTime: Date;
   endDateTime: Date;
+  isTimeRangeInvalid: boolean;
+  timeRangeError: string | null;
   setStartAbsolute: (date: Date) => void;
   setEndAbsolute: (date: Date) => void;
   setStartRelative: (value: number, unit: RelativeTimeUnit) => void;
@@ -157,6 +158,8 @@ export function DebuggingTimeRangeProvider({ children }: PropsWithChildren) {
   const setEndNow = useCallback(() => {
     setEnd({ dateTime: referenceNow, mode: "now" });
   }, [referenceNow]);
+  const isTimeRangeInvalid = end.dateTime.getTime() <= start.dateTime.getTime();
+  const timeRangeError = isTimeRangeInvalid ? "End time must be after the start time" : null;
 
   return (
     <DebuggingTimeRangeContext.Provider
@@ -166,6 +169,8 @@ export function DebuggingTimeRangeProvider({ children }: PropsWithChildren) {
         end,
         startDateTime: start.dateTime,
         endDateTime: end.dateTime,
+        isTimeRangeInvalid,
+        timeRangeError,
         setStartAbsolute,
         setEndAbsolute,
         setStartRelative,

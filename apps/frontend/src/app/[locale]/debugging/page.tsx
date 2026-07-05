@@ -2,8 +2,17 @@
 
 import { useState } from "react";
 
-import { Box, Typography, Stack, Button, useTheme, CircularProgress, Alert } from "@mui/material";
-import { HiCalendar, HiOutlineInformationCircle } from "react-icons/hi";
+import {
+  Box,
+  Typography,
+  Stack,
+  Button,
+  useTheme,
+  CircularProgress,
+  Alert,
+  Tooltip
+} from "@mui/material";
+import { HiCalendar, HiOutlineExclamationCircle, HiOutlineInformationCircle } from "react-icons/hi";
 
 import DebuggingBar from "@/features/Debugging/components/DebuggingBar";
 import AnalysisTimeRangePopover from "@/features/Debugging/components/DebuggingTimeRangePopover";
@@ -25,7 +34,7 @@ const alertRuleIds = [
 
 function AnalysisPageContent() {
   const { palette } = useTheme();
-  const { start, end } = useDebuggingTimeRange();
+  const { start, end, isTimeRangeInvalid, timeRangeError } = useDebuggingTimeRange();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentDatePopover, setCurrentDatePopover] = useState<null | "start" | "end">(null);
 
@@ -93,7 +102,9 @@ function AnalysisPageContent() {
               borderRadius: "8px",
               height: "40px",
               px: 2,
-              bgcolor: "background.paper"
+              bgcolor: "background.paper",
+              border: "1px solid",
+              borderColor: isTimeRangeInvalid ? "error.main" : "transparent"
             }}
           >
             <Button
@@ -101,7 +112,7 @@ function AnalysisPageContent() {
               variant="text"
               sx={{
                 fontFamily: start.mode === "absolute" ? "monospace" : "inherit",
-                color: "text.primary",
+                color: isTimeRangeInvalid ? "error.main" : "text.primary",
                 fontSize: "0.85rem",
                 fontWeight: start.mode === "absolute" ? 400 : 600
               }}
@@ -116,14 +127,22 @@ function AnalysisPageContent() {
               variant="text"
               sx={{
                 fontFamily: end.mode === "absolute" ? "monospace" : "inherit",
-                color: "text.primary",
+                color: isTimeRangeInvalid ? "error.main" : "text.primary",
                 fontSize: "0.85rem",
                 fontWeight: end.mode === "absolute" ? 400 : 600
               }}
             >
               {formatDebuggingTimeLabel(end)}
             </Button>
-            <HiCalendar size={20} style={{ color: palette.text.disabled, marginLeft: 10 }} />
+            {isTimeRangeInvalid ? (
+              <Tooltip title={timeRangeError} arrow placement="top">
+                <Box sx={{ display: "flex", alignItems: "center", ml: 1.25 }}>
+                  <HiOutlineExclamationCircle size={20} style={{ color: palette.error.main }} />
+                </Box>
+              </Tooltip>
+            ) : (
+              <HiCalendar size={20} style={{ color: palette.text.disabled, marginLeft: 10 }} />
+            )}
           </Stack>
         </Stack>
       </Box>
@@ -143,7 +162,7 @@ function AnalysisPageContent() {
 
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {error.toString()}
+            {error.message}
           </Alert>
         )}
 
