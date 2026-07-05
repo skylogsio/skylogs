@@ -22,9 +22,6 @@ const alertRuleIds = [
   "6a46bf2ee7498e1c3b0aa582",
   "696bc74fae8c9d232803c1a9"
 ];
-const fromTime = 1768671000;
-const toTime = 1768671600;
-const bucketCount = 100;
 
 function AnalysisPageContent() {
   const { palette } = useTheme();
@@ -37,10 +34,7 @@ function AnalysisPageContent() {
     isLoading,
     error
   } = useDebuggingData({
-    alertRuleIds,
-    fromTime,
-    toTime,
-    bucketCount
+    alertRuleIds
   });
 
   const handleOpenPicker = (
