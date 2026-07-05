@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Box, Popover, Tabs, Tab, useTheme, alpha, Typography } from "@mui/material";
 import { format } from "date-fns";
 
-import { useDebuggingTimeRange } from "@/features/Debugging/DebuggingTimeRange.context";
+import { useDebuggingTimeRange } from "@/features/Debugging/context/DebuggingTimeRange.context";
 
 import AbsoluteDateTime from "./AbsoluteDateTime";
 import RelativeDateTime from "./RelativeDateTime";

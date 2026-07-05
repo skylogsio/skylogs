@@ -11,7 +11,7 @@ import {
   DebuggingTimeRangeProvider,
   formatDebuggingTimeLabel,
   useDebuggingTimeRange
-} from "@/features/Debugging/DebuggingTimeRange.context";
+} from "@/features/Debugging/context/DebuggingTimeRange.context";
 import { useDebuggingData } from "@/features/Debugging/hooks/useDebuggingData";
 
 ////   JUST TEMP   ////

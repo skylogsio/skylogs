@@ -14,7 +14,6 @@ export default function DebuggingBar({ rule }: { rule: DebuggingBarType }) {
       <Stack sx={{ alignItems: "flex-start", width: 170, cursor: "default" }}>
         <Typography
           sx={{
-            fontWeight: 600,
             textWrap: "nowrap",
             textOverflow: "ellipsis",
             width: "100%",
@@ -23,7 +22,11 @@ export default function DebuggingBar({ rule }: { rule: DebuggingBarType }) {
         >
           {rule.name}
         </Typography>
-        <Typography variant="caption" color="textDisabled">
+        <Typography
+          variant="caption"
+          color="textDisabled"
+          sx={{ textTransform: "uppercase", textDecoration: "dot" }}
+        >
           ({rule.type})
         </Typography>
       </Stack>
@@ -51,10 +54,10 @@ export default function DebuggingBar({ rule }: { rule: DebuggingBarType }) {
         </Stack>
 
         <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="textSecondary">
             {format(minTime, "yyyy/MM/dd HH:mm:ss")}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="textSecondary">
             {format(maxTime, "yyyy/MM/dd HH:mm:ss")}
           </Typography>
         </Stack>
