@@ -1,13 +1,22 @@
 import { memo, useMemo } from "react";
 
-import { Typography, Stack } from "@mui/material";
+import { CircularProgress, IconButton, Stack, Typography } from "@mui/material";
 import { format } from "date-fns";
+import { HiX } from "react-icons/hi";
 
 import type { DebuggingBarType } from "../debugging.type";
 import Segment from "./Segment";
 import useSegmentColor from "../hooks/useSegmentColor";
 
-function DebuggingBar({ rule }: { rule: DebuggingBarType }) {
+function DebuggingBar({
+  rule,
+  onRemove,
+  isRemoving = false
+}: {
+  rule: DebuggingBarType;
+  onRemove: () => void;
+  isRemoving?: boolean;
+}) {
   const statusColors = useSegmentColor();
   const minTime = Math.min(...rule.segments.map((s) => s.fromTime));
   const maxTime = Math.max(...rule.segments.map((s) => s.toTime));
@@ -27,7 +36,7 @@ function DebuggingBar({ rule }: { rule: DebuggingBarType }) {
   }, [rule.segments, statusColors]);
 
   return (
-    <Stack direction="row" spacing={1} sx={{ mb: 2, borderRadius: 2 }}>
+    <Stack direction="row" spacing={1} sx={{ mb: 2, borderRadius: 2, alignItems: "flex-start" }}>
       <Stack sx={{ alignItems: "flex-start", width: 170, cursor: "default" }}>
         <Typography
           sx={{
@@ -64,6 +73,15 @@ function DebuggingBar({ rule }: { rule: DebuggingBarType }) {
           </Typography>
         </Stack>
       </Stack>
+      <IconButton
+        size="small"
+        onClick={onRemove}
+        disabled={isRemoving}
+        aria-label={`Remove ${rule.name}`}
+        sx={{ color: "text.secondary" }}
+      >
+        {isRemoving ? <CircularProgress size={18} /> : <HiX size={18} />}
+      </IconButton>
     </Stack>
   );
 }

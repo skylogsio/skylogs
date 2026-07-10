@@ -2,9 +2,18 @@
 
 import axiosInstance from "@/lib/axios";
 
-import { DebuggingBarType, GetDebuggingsParams } from "./debugging.type";
+import { AlertRuleOption, DebuggingBarType, GetDebuggingsParams } from "./debugging.type";
 
 const ALERT_RULE_URL = "alert-rule";
+
+export async function getAllAlertRules(): Promise<AlertRuleOption[]> {
+  try {
+    const response = await axiosInstance.get<AlertRuleOption[]>(`${ALERT_RULE_URL}/all`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
 
 export async function getDebuggingBars({
   alertRuleIds,
