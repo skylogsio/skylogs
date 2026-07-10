@@ -49,7 +49,9 @@ export function useDebuggingData({ alertRuleIds }: Pick<GetDebuggingsParams, "al
   });
 
   return {
-    ...query,
+    data: query.data,
+    error: query.error,
+    isFetching: query.isFetching,
     isDebouncing
   };
 }
