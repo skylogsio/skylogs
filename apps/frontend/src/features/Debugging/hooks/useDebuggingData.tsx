@@ -41,10 +41,15 @@ export function useDebuggingData({ alertRuleIds }: Pick<GetDebuggingsParams, "al
     toTime !== debounced.toTime ||
     alertRuleIdsKey !== debounced.alertRuleIds.join(",");
 
-  return useQuery({
+  const query = useQuery({
     queryKey: alertRuleStatusKey(params),
     queryFn: () => getDebuggingBars(params),
     enabled: params.alertRuleIds.length > 0 && !isTimeRangeInvalid && !isDebouncing,
     placeholderData: keepPreviousData
   });
+
+  return {
+    ...query,
+    isDebouncing
+  };
 }

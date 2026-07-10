@@ -2,21 +2,12 @@
 
 import { useEffect, useState } from "react";
 
-import {
-  Box,
-  Typography,
-  Stack,
-  Button,
-  useTheme,
-  CircularProgress,
-  Alert,
-  Tooltip,
-  Chip
-} from "@mui/material";
+import { Box, Typography, Stack, Button, useTheme, Alert, Tooltip, Chip } from "@mui/material";
 import { HiCalendar, HiOutlineExclamationCircle, HiOutlineInformationCircle } from "react-icons/hi";
 
 import AlertRuleSelector from "@/features/Debugging/components/AlertRuleSelector";
 import DebuggingBar from "@/features/Debugging/components/DebuggingBar";
+import DebuggingBarLoading from "@/features/Debugging/components/DebuggingBarLoading";
 import AnalysisTimeRangePopover from "@/features/Debugging/components/DebuggingTimeRangePopover";
 import TimelineComparisonEmptyState from "@/features/Debugging/components/TimelineComparisonEmptyState";
 import { ControlBarProvider } from "@/features/Debugging/context/ControlBar.context";
@@ -36,15 +27,20 @@ function AnalysisPageContent() {
   const [selectedAlertRules, setSelectedAlertRules] = useState<AlertRuleOption[]>([]);
   const [removingAlertRuleIds, setRemovingAlertRuleIds] = useState<Set<string>>(() => new Set());
 
-  const alertRuleIds = selectedAlertRules.map((rule) => rule.id);
+  const alertRuleIds = selectedAlertRules
+    .filter((rule) => !removingAlertRuleIds.has(rule.id))
+    .map((rule) => rule.id);
 
   const {
-    data: rules = [],
-    isLoading,
+    data: alertRules = [],
+    isFetching,
+    isDebouncing,
     error
   } = useDebuggingData({
     alertRuleIds
   });
+
+  const isPendingData = isDebouncing || isFetching;
 
   const handleOpenPicker = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -61,24 +57,24 @@ function AnalysisPageContent() {
 
   const handleRemoveAlertRule = (alertRuleId: string) => {
     setRemovingAlertRuleIds((prev) => new Set(prev).add(alertRuleId));
-    setSelectedAlertRules((prev) => prev.filter((rule) => rule.id !== alertRuleId));
   };
 
   useEffect(() => {
+    if (removingAlertRuleIds.size === 0) return;
+
+    const resolvedIds = [...removingAlertRuleIds].filter(
+      (id) => !alertRules.some((alertRule) => alertRule.alertRuleId === id)
+    );
+
+    if (resolvedIds.length === 0) return;
+
     setRemovingAlertRuleIds((prev) => {
       const next = new Set(prev);
-      let changed = false;
-
-      for (const id of prev) {
-        if (!rules.some((rule) => rule.alertRuleId === id)) {
-          next.delete(id);
-          changed = true;
-        }
-      }
-
-      return changed ? next : prev;
+      resolvedIds.forEach((id) => next.delete(id));
+      return next;
     });
-  }, [rules]);
+    setSelectedAlertRules((prev) => prev.filter((rule) => !resolvedIds.includes(rule.id)));
+  }, [alertRules, removingAlertRuleIds]);
 
   return (
     <Stack spacing={3} sx={{ px: 2, py: 1, width: "100%", boxSizing: "border-box" }}>
@@ -188,7 +184,7 @@ function AnalysisPageContent() {
               )}
             </Stack>
             <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
-              Compare alert occurrences across data sources{" "}
+              Compare alert occurrences across data sources
             </Typography>
           </Stack>
           <AlertRuleSelector value={selectedAlertRules} onChange={setSelectedAlertRules} />
@@ -196,36 +192,46 @@ function AnalysisPageContent() {
 
         {selectedAlertRules.length === 0 && <TimelineComparisonEmptyState />}
 
-        {selectedAlertRules.length > 0 && isLoading && (
-          <Stack sx={{ alignItems: "center", py: 4 }}>
-            <CircularProgress size={28} />
-          </Stack>
-        )}
-
         {selectedAlertRules.length > 0 && error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error.message}
           </Alert>
         )}
 
-        {selectedAlertRules.length > 0 && !isLoading && !error && rules.length === 0 && (
-          <Typography color="text.secondary">
+        {selectedAlertRules.length > 0 && !isPendingData && !error && alertRules.length === 0 && (
+          <Typography color="textSecondary">
             No timeline data found for the selected rules.
           </Typography>
         )}
 
         <ControlBarProvider>
-          {selectedAlertRules.length > 0 &&
-            !isLoading &&
-            !error &&
-            rules.map((rule) => (
-              <DebuggingBar
-                key={rule.alertRuleId}
-                rule={rule}
-                isRemoving={removingAlertRuleIds.has(rule.alertRuleId)}
-                onRemove={() => handleRemoveAlertRule(rule.alertRuleId)}
-              />
-            ))}
+          {selectedAlertRules.map((selected, index) => {
+            const rule = alertRules.find((item) => item.alertRuleId === selected.id);
+
+            if (rule) {
+              return (
+                <DebuggingBar
+                  key={selected.id}
+                  rule={rule}
+                  isRemoving={removingAlertRuleIds.has(selected.id)}
+                  onRemove={() => handleRemoveAlertRule(selected.id)}
+                />
+              );
+            }
+
+            if (isPendingData) {
+              return (
+                <DebuggingBarLoading
+                  key={selected.id}
+                  alertRule={selected}
+                  index={index}
+                  onRemove={() => handleRemoveAlertRule(selected.id)}
+                />
+              );
+            }
+
+            return null;
+          })}
         </ControlBarProvider>
       </Box>
     </Stack>
