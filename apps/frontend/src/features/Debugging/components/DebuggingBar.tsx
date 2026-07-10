@@ -18,22 +18,30 @@ function DebuggingBar({
   isRemoving?: boolean;
 }) {
   const statusColors = useSegmentColor();
-  const minTime = Math.min(...rule.segments.map((s) => s.fromTime));
-  const maxTime = Math.max(...rule.segments.map((s) => s.toTime));
+  const minTime = Math.min(...rule.segments.map((segment) => segment.fromTime));
+  const maxTime = Math.max(...rule.segments.map((segment) => segment.toTime));
 
   const dots = useMemo(() => {
     let dotIndex = -1;
+    const totalDots = rule.segments.reduce((sum, segment) => sum + segment.count, 0);
+    const dotDuration = totalDots > 0 ? (maxTime - minTime) / totalDots : 0;
+
     return rule.segments.flatMap((segment) =>
       Array.from({ length: segment.count }).map(() => {
         dotIndex += 1;
+        const startTime = minTime + dotIndex * dotDuration;
+        const endTime = startTime + dotDuration;
         return {
           index: dotIndex,
           summary: segment.summary,
-          color: statusColors[segment.status] ?? statusColors.unknown
+          color: statusColors[segment.status] ?? statusColors.unknown,
+          status: segment.status,
+          startTime,
+          endTime
         };
       })
     );
-  }, [rule.segments, statusColors]);
+  }, [rule.segments, statusColors, minTime, maxTime]);
 
   return (
     <Stack direction="row" spacing={1} sx={{ mb: 2, borderRadius: 2, alignItems: "flex-start" }}>
@@ -60,7 +68,15 @@ function DebuggingBar({
       <Stack sx={{ flex: 1 }}>
         <Stack direction="row" spacing={0.25} sx={{ width: "100%", borderRadius: 1 }}>
           {dots.map((dot) => (
-            <Segment key={dot.index} index={dot.index} summary={dot.summary} color={dot.color} />
+            <Segment
+              key={dot.index}
+              index={dot.index}
+              summary={dot.summary}
+              color={dot.color}
+              status={dot.status}
+              startTime={dot.startTime}
+              endTime={dot.endTime}
+            />
           ))}
         </Stack>
 
