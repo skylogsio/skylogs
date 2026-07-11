@@ -103,7 +103,7 @@ describe('AlertingController AlertStatus', function () {
             ->toBe([$this->apiAlert->id]);
     });
 
-    it('returns unknown segments spanning the whole window when there is no history', function () {
+    it('returns resolved segments spanning the whole window when an api alert has no history', function () {
         $this->apiAlert = AlertRule::create([
             'name' => 'No History Alert',
             'type' => 'api',
@@ -123,7 +123,7 @@ describe('AlertingController AlertStatus', function () {
 
         expect($response[0]['bucketSeconds'])->toBe(100)
             ->and($segments)->toHaveCount(1)
-            ->and($segments[0]['status'])->toBe('unknown')
+            ->and($segments[0]['status'])->toBe('resolved')
             ->and($segments[0]['count'])->toBe(10)
             ->and(collect($segments)->sum('count'))->toBe(10);
     });

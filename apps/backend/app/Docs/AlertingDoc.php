@@ -51,6 +51,35 @@ class AlertingDoc
     public function index() {}
 
     // ----------------------------
+    // GET /api/v1/alert-rule/all
+    // ----------------------------
+    #[OA\Get(
+        path: '/api/v1/alert-rule/all',
+        operationId: 'getAllAlertRules',
+        summary: 'List all alert rules (name and type only)',
+        description: 'Unpaginated list ordered by name. Returns only `name` and `type` for each alert rule.',
+        security: [['bearerAuth' => []]],
+        tags: ['AlertRule'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'All alert rules',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(
+                        properties: [
+                            new OA\Property(property: 'name', type: 'string'),
+                            new OA\Property(property: 'type', type: 'string'),
+                        ]
+                    )
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+        ]
+    )]
+    public function all() {}
+
+    // ----------------------------
     // GET /api/v1/alert-rule/{id}
     // ----------------------------
     #[OA\Get(
