@@ -1,0 +1,13 @@
+---
+alwaysApply: true
+---
+
+public function AlertStatus(AlertStatusRequest $request)
+    {
+        return response()->json($this->alertRuleService->getAlertsStatusHistory(
+            $request->validated('alertRuleIds'),
+            (int) $request->validated('fromTime'),
+            (int) $request->validated('toTime'),
+            Auth::user(),
+        ));
+    }

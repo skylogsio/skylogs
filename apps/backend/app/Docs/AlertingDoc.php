@@ -376,6 +376,32 @@ class AlertingDoc
     public function getTypes() {}
 
     // ----------------------------
+    // GET /api/v1/alert-rule/status
+    // ----------------------------
+    #[OA\Get(
+        path: '/api/v1/alert-rule/status',
+        operationId: 'getAlertRuleStatusTimeline',
+        summary: 'Get status timelines for a batch of alert rules',
+        description: 'Returns a fixed-slot status timeline per alert rule over `[fromTime, toTime]`. Consecutive slots from the same status period are merged; each segment count sums to the configured timeline slot count (see `config/alert-status.php`). Alert rules the user cannot access are silently omitted from the response.',
+        security: [['bearerAuth' => []]],
+        tags: ['AlertRule'],
+        parameters: [
+            new OA\Parameter(name: 'alertRuleIds', description: 'Alert rule ids to build timelines for', in: 'query', required: true, schema: new OA\Schema(type: 'array', items: new OA\Items(type: 'string', pattern: '^[0-9a-fA-F]{24}$'))),
+            new OA\Parameter(name: 'fromTime', description: 'Window start (unix timestamp, seconds)', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'toTime', description: 'Window end (unix timestamp, seconds), must be after fromTime', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Status timeline per alert rule',
+                content: new OA\JsonContent(type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertStatusTimeline'))
+            ),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
+    public function alertStatus() {}
+
+    // ----------------------------
     // GET /api/v1/alert-rule/history/{id}
     // ----------------------------
     #[OA\Get(
@@ -1136,6 +1162,31 @@ class AlertRuleExtraFieldSchema {}
     ]
 )]
 class AlertRuleListItemSchema {}
+
+#[OA\Schema(
+    schema: 'AlertStatusSegment',
+    description: 'A merged run of consecutive timeline slots sharing the same underlying status period. Segment count values sum to the configured timeline slot count.',
+    properties: [
+        new OA\Property(property: 'status', ref: '#/components/schemas/AlertRuleState'),
+        new OA\Property(property: 'count', description: 'Number of fixed bucket slots this segment spans in the timeline bar', type: 'integer'),
+        new OA\Property(property: 'fromTime', type: 'integer'),
+        new OA\Property(property: 'toTime', type: 'integer'),
+        new OA\Property(property: 'summary', description: 'Human-readable alert summary when the segment is firing', type: 'string', nullable: true),
+    ]
+)]
+class AlertStatusSegmentSchema {}
+
+#[OA\Schema(
+    schema: 'AlertStatusTimeline',
+    properties: [
+        new OA\Property(property: 'alertRuleId', type: 'string'),
+        new OA\Property(property: 'type', type: 'string'),
+        new OA\Property(property: 'name', type: 'string'),
+        new OA\Property(property: 'bucketSeconds', type: 'integer'),
+        new OA\Property(property: 'segments', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertStatusSegment')),
+    ]
+)]
+class AlertStatusTimelineSchema {}
 
 #[OA\Schema(
     schema: 'AlertRuleDetail',

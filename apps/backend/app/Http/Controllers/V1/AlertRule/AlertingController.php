@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V1\AlertRule;
 
 use App\Enums\AlertRuleType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AlertRule\AlertStatusRequest;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
@@ -129,6 +130,10 @@ class AlertingController extends Controller
 
     }
 
+    public function All(){
+        $result = $this->alertRuleService->all();
+        return response()->json($result);
+    }
     public function Pin($id)
     {
         $alert = AlertRule::where('_id', $id)->first();
@@ -596,6 +601,16 @@ class AlertingController extends Controller
 
         return response()->json(['status' => true]);
         //        return redirect()->route('role.index');
+    }
+
+    public function AlertStatus(AlertStatusRequest $request)
+    {
+        return response()->json($this->alertRuleService->getAlertsStatusHistory(
+            $request->validated('alertRuleIds'),
+            (int) $request->validated('fromTime'),
+            (int) $request->validated('toTime'),
+            Auth::user(),
+        ));
     }
 
     public function AllHistory(Request $request)
