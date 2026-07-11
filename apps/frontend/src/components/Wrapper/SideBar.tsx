@@ -11,7 +11,8 @@ import {
   AiOutlineCloud,
   AiOutlineSetting,
   AiOutlineFundProjectionScreen,
-  AiOutlineTeam
+  AiOutlineTeam,
+  AiOutlineBug
 } from "react-icons/ai";
 
 import { useZone } from "@/context/ZoneContext";
@@ -23,6 +24,7 @@ const URLS: Array<URLType> = [
   // { pathname: "/", label: "Home", icon: AiOutlineHome },
   { pathname: "/alert-rule", label: "Alert Rules", icon: AiOutlineAlert },
   { pathname: "/status", label: "Status", icon: AiOutlineFundProjectionScreen },
+  { pathname: "/debugging", label: "Debugging", icon: AiOutlineBug },
   { pathname: "/endpoints", label: "Endpoints", icon: AiOutlineApi },
   { pathname: "/users", label: "Users", role: ["owner", "manager"], icon: AiOutlineUser },
   { pathname: "/teams", label: "Teams", icon: AiOutlineTeam },
