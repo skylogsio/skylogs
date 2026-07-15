@@ -78,10 +78,10 @@ const Segment = memo(function SegmentDot({
 
   const Bar = (
     <Box
-      onMouseDown={() => startSelection(index)}
+      onMouseDown={() => startSelection(index, startTime, endTime)}
       onMouseEnter={() => {
         setHoveredIndex(index);
-        updateSelection(index);
+        updateSelection(index, startTime, endTime);
       }}
       onMouseLeave={clearHoveredIndex}
       sx={{

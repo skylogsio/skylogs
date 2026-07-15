@@ -8,6 +8,7 @@ import { HiCalendar, HiOutlineExclamationCircle, HiOutlineInformationCircle } fr
 import AlertRuleSelector from "@/features/Debugging/components/AlertRuleSelector";
 import DebuggingBar from "@/features/Debugging/components/DebuggingBar";
 import DebuggingBarLoading from "@/features/Debugging/components/DebuggingBarLoading";
+import DebuggingRangeSync from "@/features/Debugging/components/DebuggingRangeSync";
 import AnalysisTimeRangePopover from "@/features/Debugging/components/DebuggingTimeRangePopover";
 import TimelineComparisonEmptyState from "@/features/Debugging/components/TimelineComparisonEmptyState";
 import { ControlBarProvider } from "@/features/Debugging/context/ControlBar.context";
@@ -205,6 +206,7 @@ function AnalysisPageContent() {
         )}
 
         <ControlBarProvider>
+          <DebuggingRangeSync />
           {selectedAlertRules.map((selected, index) => {
             const rule = alertRules.find((item) => item.alertRuleId === selected.id);
 
