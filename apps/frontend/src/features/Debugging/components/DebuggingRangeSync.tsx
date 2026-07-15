@@ -4,12 +4,11 @@ import { useControlBarActions, useOnSelectionEnd } from "../context/ControlBar.c
 import { useDebuggingTimeRange } from "../context/DebuggingTimeRange.context";
 
 export default function DebuggingRangeSync() {
-  const { setStartAbsolute, setEndAbsolute } = useDebuggingTimeRange();
+  const { zoomToRange } = useDebuggingTimeRange();
   const { clearSelection } = useControlBarActions();
 
   useOnSelectionEnd(({ start, end }) => {
-    setStartAbsolute(new Date(start));
-    setEndAbsolute(new Date(end));
+    zoomToRange(new Date(start), new Date(end));
     clearSelection();
   });
 

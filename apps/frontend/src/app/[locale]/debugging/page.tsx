@@ -2,8 +2,25 @@
 
 import { useEffect, useState } from "react";
 
-import { Box, Typography, Stack, Button, useTheme, Alert, Tooltip, Chip } from "@mui/material";
-import { HiCalendar, HiOutlineExclamationCircle, HiOutlineInformationCircle } from "react-icons/hi";
+import {
+  Box,
+  Typography,
+  Stack,
+  Button,
+  useTheme,
+  Alert,
+  Tooltip,
+  Chip,
+  Badge,
+  IconButton,
+  alpha
+} from "@mui/material";
+import {
+  HiCalendar,
+  HiOutlineExclamationCircle,
+  HiOutlineInformationCircle,
+  HiOutlineZoomOut
+} from "react-icons/hi";
 
 import AlertRuleSelector from "@/features/Debugging/components/AlertRuleSelector";
 import DebuggingBar from "@/features/Debugging/components/DebuggingBar";
@@ -22,7 +39,8 @@ import { useDebuggingData } from "@/features/Debugging/hooks/useDebuggingData";
 
 function AnalysisPageContent() {
   const { palette } = useTheme();
-  const { start, end, isTimeRangeInvalid, timeRangeError } = useDebuggingTimeRange();
+  const { start, end, isTimeRangeInvalid, timeRangeError, zoomLevel, canZoomOut, zoomOut } =
+    useDebuggingTimeRange();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentDatePopover, setCurrentDatePopover] = useState<null | "start" | "end">(null);
   const [selectedAlertRules, setSelectedAlertRules] = useState<AlertRuleOption[]>([]);
@@ -188,7 +206,47 @@ function AnalysisPageContent() {
               Compare alert occurrences across data sources
             </Typography>
           </Stack>
-          <AlertRuleSelector value={selectedAlertRules} onChange={setSelectedAlertRules} />
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+            {canZoomOut && (
+              <Tooltip title="Zoom out to previous range" arrow placement="top">
+                <Badge
+                  badgeContent={zoomLevel}
+                  color="primary"
+                  overlap="circular"
+                  anchorOrigin={{ vertical: "top", horizontal: "right" }}
+                  sx={{
+                    "& .MuiBadge-badge": {
+                      fontWeight: 700,
+                      fontSize: 11,
+                      minWidth: 18,
+                      height: 18,
+                      boxShadow: ({ palette }) => `0 0 0 2px ${palette.background.paper}`
+                    }
+                  }}
+                >
+                  <IconButton
+                    onClick={zoomOut}
+                    aria-label="Zoom out"
+                    sx={({ palette }) => ({
+                      color: palette.primary.main,
+                      backgroundColor: alpha(palette.primary.main, 0.08),
+                      border: "1px solid",
+                      borderColor: alpha(palette.primary.main, 0.24),
+                      transition: "all 150ms ease",
+                      "&:hover": {
+                        backgroundColor: alpha(palette.primary.main, 0.16),
+                        borderColor: palette.primary.main,
+                        transform: "scale(1.05)"
+                      }
+                    })}
+                  >
+                    <HiOutlineZoomOut size={20} />
+                  </IconButton>
+                </Badge>
+              </Tooltip>
+            )}
+            <AlertRuleSelector value={selectedAlertRules} onChange={setSelectedAlertRules} />
+          </Stack>
         </Stack>
 
         {selectedAlertRules.length === 0 && <TimelineComparisonEmptyState />}
