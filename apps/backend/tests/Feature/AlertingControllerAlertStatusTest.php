@@ -1,10 +1,12 @@
 <?php
 
+use App\Enums\AlertRuleType;
 use App\Enums\Constants;
 use App\Models\AlertRule;
 use App\Models\ApiAlertStatusHistory;
 use App\Models\PrometheusHistory;
 use Carbon\Carbon;
+use Tests\Support\AlertStatusHistoryTestData;
 use Tests\Support\TeamTestData;
 
 describe('AlertingController AlertStatus', function () {
@@ -208,4 +210,211 @@ describe('AlertingController AlertStatus', function () {
             ->and($segments[1]['summary'])->toBeString()
             ->and($segments[1]['summary'])->not->toBeEmpty();
     });
+});
+
+describe('AlertingController AlertStatus timeline segments', function () {
+    beforeEach(function () {
+        config([
+            'cache.default' => 'array',
+            'alert-status.timeline_slot_count' => AlertStatusHistoryTestData::SLOT_COUNT,
+        ]);
+
+        $this->owner = TeamTestData::createUser(Constants::ROLE_OWNER);
+        $this->fromTime = AlertStatusHistoryTestData::WINDOW_FROM;
+        $this->toTime = AlertStatusHistoryTestData::WINDOW_TO;
+        $this->fireAt = AlertStatusHistoryTestData::FIRE_AT;
+        $this->resolveAt = AlertStatusHistoryTestData::RESOLVE_AT;
+        $this->createdAlerts = [];
+    });
+
+    afterEach(function () {
+        foreach ($this->createdAlerts as $alert) {
+            AlertStatusHistoryTestData::deleteAlertAndHistory($alert);
+        }
+
+        if (isset($this->owner)) {
+            TeamTestData::deleteUser($this->owner);
+        }
+    });
+
+    /**
+     * @return array<string, array{0: string}>
+     */
+    function criticalResolvedAlertTypes(): array
+    {
+        return [
+            'api' => ['api'],
+            'grafana' => ['grafana'],
+            'pmm' => ['pmm'],
+            'elastic' => ['elastic'],
+            'victoria_logs' => ['victoria_logs'],
+            'prometheus' => ['prometheus'],
+            'zabbix' => ['zabbix'],
+            'sentry' => ['sentry'],
+            'health' => ['health'],
+        ];
+    }
+
+    function createTrackedAlert(string $type): AlertRule
+    {
+        $alert = AlertStatusHistoryTestData::createAlertRule(test()->owner, $type);
+        $createdAlerts = test()->createdAlerts;
+        $createdAlerts[] = $alert;
+        test()->createdAlerts = $createdAlerts;
+
+        return $alert;
+    }
+
+    function requestAlertStatus(AlertRule $alert): array
+    {
+        return test()->actingAs(test()->owner, 'api')
+            ->getJson('/api/v1/alert-rule/status?'.http_build_query([
+                'alertRuleIds' => [$alert->id],
+                'fromTime' => test()->fromTime,
+                'toTime' => test()->toTime,
+            ]))
+            ->assertSuccessful()
+            ->json();
+    }
+
+    it('maps a single fire and resolve window into critical buckets for every critical-capable alert type', function (string $type) {
+        $alert = createTrackedAlert($type);
+
+        if ($type !== AlertRuleType::API->value) {
+            AlertStatusHistoryTestData::seedResolvedBaseline($alert, $this->fromTime - 1);
+        }
+
+        AlertStatusHistoryTestData::seedFireEvent($alert, $this->fireAt);
+        AlertStatusHistoryTestData::seedResolveEvent($alert, $this->resolveAt);
+
+        $response = requestAlertStatus($alert);
+        $segments = $response[0]['segments'];
+        $expectedCriticalBuckets = AlertStatusHistoryTestData::bucketsOverlappingInterval(
+            $this->fireAt,
+            $this->resolveAt,
+        );
+
+        expect($response[0]['bucketSeconds'])->toBe(10_000)
+            ->and(collect($segments)->sum('count'))->toBe(AlertStatusHistoryTestData::SLOT_COUNT)
+            ->and($expectedCriticalBuckets)->not->toBeEmpty();
+
+        foreach ($expectedCriticalBuckets as $bucket) {
+            $midpoint = (int) floor(($bucket['fromTime'] + $bucket['toTime']) / 2);
+
+            expect(AlertStatusHistoryTestData::segmentStatusAt($segments, $midpoint))
+                ->toBe('critical', "Bucket {$bucket['fromTime']}->{$bucket['toTime']} should be critical for {$type}");
+        }
+
+        expect(AlertStatusHistoryTestData::segmentStatusAt($segments, $this->fromTime + 1))
+            ->toBe('resolved');
+
+        expect(AlertStatusHistoryTestData::segmentStatusAt($segments, $this->resolveAt + 10_000))
+            ->toBe('resolved');
+    })->with(fn () => criticalResolvedAlertTypes());
+
+    it('marks the api alert example buckets as critical between 1782610000 and 1782660000', function () {
+        $alert = createTrackedAlert('api');
+
+        AlertStatusHistoryTestData::seedFireEvent($alert, $this->fireAt);
+        AlertStatusHistoryTestData::seedResolveEvent($alert, $this->resolveAt);
+
+        $response = requestAlertStatus($alert);
+        $segments = $response[0]['segments'];
+
+        $userExpectedCriticalBuckets = [
+            ['fromTime' => 1_782_610_000, 'toTime' => 1_782_620_000],
+            ['fromTime' => 1_782_620_000, 'toTime' => 1_782_630_000],
+            ['fromTime' => 1_782_630_000, 'toTime' => 1_782_640_000],
+            ['fromTime' => 1_782_640_000, 'toTime' => 1_782_650_000],
+            ['fromTime' => 1_782_650_000, 'toTime' => 1_782_660_000],
+        ];
+
+        foreach ($userExpectedCriticalBuckets as $bucket) {
+            $midpoint = (int) floor(($bucket['fromTime'] + $bucket['toTime']) / 2);
+
+            expect(AlertStatusHistoryTestData::segmentStatusAt($segments, $midpoint))->toBe('critical');
+        }
+
+        $criticalSegment = collect($segments)->firstWhere('status', 'critical');
+
+        expect($criticalSegment)->not->toBeNull()
+            ->and($criticalSegment['fromTime'])->toBeLessThanOrEqual(1_782_610_000)
+            ->and($criticalSegment['toTime'])->toBeGreaterThanOrEqual(1_782_660_000)
+            ->and($criticalSegment['count'])->toBeGreaterThanOrEqual(5)
+            ->and(collect($segments)->sum('count'))->toBe(AlertStatusHistoryTestData::SLOT_COUNT);
+    });
+
+    it('keeps the timeline resolved when only pre-window resolved history exists', function (string $type) {
+        $alert = createTrackedAlert($type);
+
+        AlertStatusHistoryTestData::seedResolvedBaseline($alert, $this->fromTime - 1);
+
+        $response = requestAlertStatus($alert);
+        $segments = $response[0]['segments'];
+
+        expect(collect($segments)->pluck('status')->unique()->all())->toBe(['resolved'])
+            ->and(collect($segments)->sum('count'))->toBe(AlertStatusHistoryTestData::SLOT_COUNT)
+            ->and($segments[0]['fromTime'])->toBe($this->fromTime)
+            ->and($segments[0]['toTime'])->toBe($this->toTime);
+    })->with(fn () => criticalResolvedAlertTypes());
+
+    it('stays critical through the end of the window when a fire event has no matching resolve', function (string $type) {
+        $alert = createTrackedAlert($type);
+
+        if ($type !== AlertRuleType::API->value) {
+            AlertStatusHistoryTestData::seedResolvedBaseline($alert, $this->fromTime - 1);
+        }
+
+        AlertStatusHistoryTestData::seedFireEvent($alert, $this->fireAt);
+
+        $response = requestAlertStatus($alert);
+        $segments = $response[0]['segments'];
+
+        expect(AlertStatusHistoryTestData::segmentStatusAt($segments, $this->toTime - 1))
+            ->toBe('critical')
+            ->and(AlertStatusHistoryTestData::segmentStatusAt($segments, $this->fromTime + 1))
+            ->toBe('resolved');
+    })->with(fn () => criticalResolvedAlertTypes());
+
+    it('splits the timeline into alternating critical and resolved segments for repeated incidents', function (string $type) {
+        $alert = createTrackedAlert($type);
+
+        if ($type !== AlertRuleType::API->value) {
+            AlertStatusHistoryTestData::seedResolvedBaseline($alert, $this->fromTime - 1);
+        }
+
+        $firstFireAt = $this->fromTime + 50_000;
+        $firstResolveAt = $this->fromTime + 80_000;
+        $secondFireAt = $this->fromTime + 200_000;
+        $secondResolveAt = $this->fromTime + 230_000;
+
+        AlertStatusHistoryTestData::seedFireEvent($alert, $firstFireAt);
+        AlertStatusHistoryTestData::seedResolveEvent($alert, $firstResolveAt);
+        AlertStatusHistoryTestData::seedFireEvent($alert, $secondFireAt);
+        AlertStatusHistoryTestData::seedResolveEvent($alert, $secondResolveAt);
+
+        $response = requestAlertStatus($alert);
+        $segments = $response[0]['segments'];
+        $statuses = collect($segments)->pluck('status')->all();
+
+        expect($statuses)->toContain('critical')
+            ->and($statuses)->toContain('resolved')
+            ->and(collect($segments)->sum('count'))->toBe(AlertStatusHistoryTestData::SLOT_COUNT);
+
+        foreach (AlertStatusHistoryTestData::bucketsOverlappingInterval($firstFireAt, $firstResolveAt) as $bucket) {
+            $midpoint = (int) floor(($bucket['fromTime'] + $bucket['toTime']) / 2);
+
+            expect(AlertStatusHistoryTestData::segmentStatusAt($segments, $midpoint))->toBe('critical');
+        }
+
+        foreach (AlertStatusHistoryTestData::bucketsOverlappingInterval($secondFireAt, $secondResolveAt) as $bucket) {
+            $midpoint = (int) floor(($bucket['fromTime'] + $bucket['toTime']) / 2);
+
+            expect(AlertStatusHistoryTestData::segmentStatusAt($segments, $midpoint))->toBe('critical');
+        }
+
+        $quietMidpoint = (int) floor(($firstResolveAt + $secondFireAt) / 2);
+
+        expect(AlertStatusHistoryTestData::segmentStatusAt($segments, $quietMidpoint))->toBe('resolved');
+    })->with(fn () => criticalResolvedAlertTypes());
 });
