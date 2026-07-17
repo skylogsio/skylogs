@@ -1,0 +1,44 @@
+# Frontend (Next.js / TypeScript) CI
+# ADJUST: working-directory paths if your frontend is not at apps/frontend
+name: CI Frontend
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/frontend/**"]
+  pull_request:
+    paths: ["apps/frontend/**"]
+
+defaults:
+  run:
+    working-directory: apps/frontend
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Type check
+        run: |
+          if [ -f tsconfig.json ]; then npx tsc --noEmit; else echo "No tsconfig, skipping"; fi
+
+      - name: Build
+        run: npm run build
+        env:
+          # Dummy values so `next build` succeeds without real secrets
+          NEXTAUTH_SECRET: "ci-build-only"
+          NEXTAUTH_URL: "http://localhost:3000"
+          BASE_URL: "http://localhost:8080/api/v1/"

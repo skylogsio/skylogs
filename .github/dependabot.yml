@@ -1,0 +1,45 @@
+version: 2
+updates:
+  # Laravel backend
+  - package-ecosystem: composer
+    directory: /apps/backend
+    schedule:
+      interval: weekly
+    groups:
+      composer-minor:
+        update-types: ["minor", "patch"]
+
+  # Next.js frontend
+  - package-ecosystem: npm
+    directory: /apps/frontend
+    schedule:
+      interval: weekly
+    groups:
+      npm-minor:
+        update-types: ["minor", "patch"]
+
+  # Go sentinel
+  - package-ecosystem: gomod
+    directory: /apps/sentinel
+    schedule:
+      interval: weekly
+
+  # Dockerfiles (base image updates)
+  - package-ecosystem: docker
+    directory: /apps/backend
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /apps/frontend
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /apps/sentinel
+    schedule:
+      interval: weekly
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

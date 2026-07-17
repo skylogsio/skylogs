@@ -1,0 +1,45 @@
+# Backend (Laravel / PHP 8.3) CI
+# ADJUST: working-directory paths if your backend is not at apps/backend
+name: CI Backend
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/backend/**"]
+  pull_request:
+    paths: ["apps/backend/**"]
+
+defaults:
+  run:
+    working-directory: apps/backend
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: mbstring, bcmath, redis, mongodb
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Code style (Pint)
+        run: |
+          if [ -f vendor/bin/pint ]; then vendor/bin/pint --test; else echo "Pint not installed, skipping"; fi
+
+      - name: Static analysis (PHPStan/Larastan)
+        run: |
+          if [ -f vendor/bin/phpstan ]; then vendor/bin/phpstan analyse --no-progress; else echo "PHPStan not installed, skipping"; fi
+
+      - name: Tests
+        env:
+          APP_ENV: testing
+        run: |
+          if [ -f vendor/bin/pest ]; then vendor/bin/pest; \
+          elif [ -f vendor/bin/phpunit ]; then vendor/bin/phpunit; \
+          else echo "No test runner found, skipping"; fi

@@ -1,0 +1,34 @@
+# Builds the MkDocs site from docs/ and publishes it to the gh-pages branch.
+# With docs/CNAME containing "docs.skylogs.io" and a DNS CNAME record
+# (docs.skylogs.io -> skylogsio.github.io), the site serves at docs.skylogs.io.
+name: Deploy Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yaml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install MkDocs Material
+        run: pip install mkdocs-material
+
+      - name: Build and deploy
+        run: mkdocs gh-deploy --force
