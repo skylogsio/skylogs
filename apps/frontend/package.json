@@ -34,7 +34,7 @@
     "next": "^16.2.6",
     "next-auth": "^4.24.10",
     "next-international": "^1.2.4",
-    "prism-react-editor": "^2.0.0",
+    "prism-react-editor": "^3.2.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-hook-form": "^7.53.0",
