@@ -1,203 +1,179 @@
-# Skylogs 
+<p align="center">
+  <img src="public/images/skylogLogo1000x300.png" alt="Skylogs" width="500"/>
+</p>
 
-<div align="center">
-  <img src="https://github.com/skylogsio/skylogs/raw/main/public/images/skylogLogo1000x300.png" >
-  
-  <h3>A unified platform for alert and incident management that integrates seamlessly with your observability solutions</h3>
-  
-  [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-  [![Laravel](https://img.shields.io/badge/Laravel-12.x-red.svg)](https://laravel.com)
-  [![PHP](https://img.shields.io/badge/PHP-8.3%2B-blue.svg)](https://php.net)
-  [![Docker](https://img.shields.io/badge/Docker-supported-blue.svg)](https://docker.com)
-</div>
+<h3 align="center">Open-source incident response that survives the incident.</h3>
 
----
+<p align="center">
+  Alerting, on-call, and incident management built on shared responsibility —<br/>
+  with a multi-zone, self-healing architecture designed to stay up when your datacenter doesn't.
+</p>
 
-## 🚀 About Skylogs
-
-**Skylogs** is an open-source, end-to-end **alert and incident management platform** built to bridge the gap between observability tools and incident response.  
-
-It is designed with **shared responsibility** and **personalization** in mind, making it a flexible platform for use across all teams in an organization.  
-
-Skylogs consolidates alerts from multiple observability systems, applies intelligent routing and escalation, and ensures the right people are notified through their preferred communication channels.  
-
-👉 Our belief: **Incident response is not only an infrastructure concern — it’s an organizational responsibility.** Skylogs helps implement this mission by giving every team the tools they need to act quickly and effectively.  
+<p align="center">
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
+  <img src="https://img.shields.io/github/v/release/skylogsio/skylogs" alt="Release">
+  <img src="https://img.shields.io/badge/docs-docs.skylogs.io-brightgreen.svg" alt="Documentation">
+  <img src="https://img.shields.io/badge/Docker-supported-blue.svg" alt="Docker">
+</p>
 
 ---
 
-## ✨ Key Features
+<!-- TODO: Add a screenshot or short GIF of the main dashboard here.
+     This is the single highest-impact thing you can add to this README. -->
 
-### 🔗 Universal Integration
-- Works seamlessly with popular monitoring tools (Prometheus, Grafana, New Relic, Datadog, Zabbix, etc.)
-- Technology-agnostic design — integrate with *any* observability solution
-- REST API and webhook support for custom workflows
+## What is Skylogs?
 
-### 📊 Intelligent Alert Management
-- Collect alerts from multiple observability systems
-- Smart correlation and deduplication to reduce noise
-- Flexible alert routing based on severity, source, and tags
-- Alert suppression and maintenance windows
+Skylogs is an **open-source incident response platform** — an alternative to tools like incident.io, PagerDuty, and Opsgenie that you can run on your own infrastructure.
 
-### 🚨 Incident Management
-- Transform alerts into actionable incidents
-- Incident analysis to reduce troubleshooting time
-- Automated AI-generated incident reports (e.g., postmortems)
-- Track key metrics (MTTR, MTTA, SLA compliance)
+It consolidates alerts from your observability stack (Prometheus, Grafana, Zabbix, Datadog, Splunk, ELK, and anything with a webhook), routes them to the right people through escalation policies and on-call schedules, and manages the full incident lifecycle — from first alert to root cause analysis and postmortem.
 
-### 👥 On-Call Management
-- Customizable on-call rotations and schedules
-- Automated escalations with configurable timeouts
-- Easy handoff management and shift swapping
+Skylogs is built on one core belief:
 
-### 📱 Flexible Notifications
-- Multi-channel notifications: SMS, phone calls, email, Slack, Microsoft Teams, Telegram, etc.
-- Rich email formatting for better context
-- Endpoint verification flow to ensure no critical alert is lost
+> **Incident response is an organizational responsibility, not just an infrastructure concern.**
 
-### 📈 Custom Status Pages
-- Public or private branded status pages
-- Real-time incident updates
-- Historical uptime reporting
-- Subscriber notifications
+That belief shapes the product. Instead of concentrating incident response in a single ops team, Skylogs implements a **shared responsibility and risk distribution model** rooted in DevOps culture and security standards: every team owns its alerts, its escalation paths, and its part of the response — with RBAC and clear ownership boundaries keeping it safe.
 
-### 🛠 Advanced Features
-- Full incident lifecycle tracking and post-mortems
-- Alert analytics and trend reporting
-- Custom dashboards and widgets
-- Role-Based Access Control (RBAC)
+## Why Skylogs?
 
-### Reports 
-- SLA Report for each service for a long period of time
-- Service issues reports 
-- 
----
+**🔓 Truly open source.** MIT-licensed, self-hosted, no feature-gated core. Your alert and incident data never leaves your infrastructure.
 
-## 👨‍💻 Who Uses Skylogs?
+**🤝 Shared responsibility by design.** Risk and response are distributed across teams, not funneled through a single NOC. Team-scoped alert ownership, per-user notification preferences, and role-based access control make cross-team incident response practical instead of chaotic.
 
-### Network & Datacenter Teams
-- Strong integration with Zabbix and similar tools
-- Endpoint assurance for reliable critical alert delivery  
+**🔍 Root cause, not just paging.** A built-in **troubleshooting workspace** helps responders trace an incident to its root cause during the incident — and export the result as an **RCA report** or **postmortem** when it's over.
 
-### DevOps Engineers
-- Centralize alerts from multiple monitoring platforms
-- Reduce alert fatigue with intelligent routing
-- Simplify on-call scheduling and escalation  
+**🌍 Built to survive disasters — including its own.** An incident platform is the last thing that's allowed to go down. Skylogs is architected for exactly that scenario. See the architecture section below — this is where Skylogs differs most from other self-hosted alternatives.
 
-### Site Reliability Engineers (SREs)
-- Improve MTTD and MTTR  
-- Enforce reliable alerting strategies  
-- Analyze incident trends and patterns  
-- Maintain and track SLOs  
+## Resilience architecture
 
-### Development Teams
-- Real-time notifications on application issues  
-- Team/project-specific alert preferences  
-- Integration with development workflows  
-- Monitor application performance and health  
+Most self-hosted alerting tools have a single point of failure: themselves. Skylogs ships with two independent clustering layers to remove it.
 
-### Security Teams
-- Integrate with Splunk, ELK stack, and SIEMs  
-- Manage security alerts and incidents  
-- Coordinate SOC response efforts  
+### Multi-zone mode — surviving datacenter disasters
 
-### Engineering Managers
-- Visibility into team workload and on-call burden  
-- Track incident response metrics and KPIs  
-- Ensure escalation coverage and accountability  
-- Generate executive-ready reports  
+Skylogs can be deployed across **multiple zones** (datacenters, regions, or sites). Each zone runs a full Skylogs deployment and is monitored by **Sentinel**, a lightweight Go service that heartbeats between zones.
 
----
+- **Alert data stays local to each zone** — the zone closest to the failing system keeps paging, even when it's cut off from the rest of the world.
+- **Organizational data is synchronized across zones** — users, teams, endpoints, clusters, schedules, and escalation policies are the same everywhere, so any zone can run a complete response on its own.
+- If a zone goes dark, the surviving zones detect it via Sentinel heartbeats. You are never blind during a datacenter disaster — which is precisely when you need your incident platform the most.
 
-## 🎯 Why Choose Skylogs?
+### High-availability mode — surviving server outages
 
-### 🔧 Shared Responsibility
-- Collaborative workflows across DevOps, SRE, SecOps, and Dev teams  
-- Clear team-based alert ownership  
+Within a zone, Skylogs runs in an HA cluster built on the **Raft consensus algorithm**. If a node fails, the cluster elects a new leader and continues operating — no manual failover, no lost escalations, no dropped pages during ordinary server outages or internal zone incidents.
 
-### 🎨 Personalization
-- Tailored notification preferences per user  
-- Custom routing rules and escalation policies  
-- Personalized dashboards and alerts  
+Together, these two layers form a simple mental model: **HA inside the zone, federation across zones.** Strong consistency where a lost page is unacceptable; independent operation where a network partition must never blind you.
 
-### 🚀 Easy Integration
-- Plug-and-play setup with major observability tools  
-- REST API and webhooks for custom integrations  
-- Pre-built connectors for common platforms  
+<!-- TODO: Add an architecture diagram here showing zones, Sentinel heartbeats, and the Raft cluster within a zone. -->
 
-### 📊 Data-Driven Insights
-- Detailed analytics on alerts and incidents  
-- SLA, SLO, and KPI tracking  
-- Historical data for capacity planning  
-- Custom reporting dashboards  
+## Key features
 
-### 🔒 Enterprise-Ready
-- RBAC and fine-grained permissions  
-- SSO integration (coming soon)  
-- SOC 2 Type II compliance (in progress)  
-- Full audit logs and retention policies  
+### Alert management
+- Ingest alerts from any observability tool via pre-built integrations, REST API, and webhooks
+- Correlation and deduplication to cut alert noise
+- Routing by severity, source, and tags; suppression and maintenance windows
 
----
+### On-call & escalation
+- On-call rotations, schedules, shift swaps, and handoffs
+- Automated escalation chains with configurable timeouts
+- Multi-channel notifications: phone call, SMS, email, Slack, Microsoft Teams, Telegram
+- **Endpoint verification** so a critical page is never sent to a dead channel
 
-## 🐳 Quick Start with Docker
+### Incident response
+- Turn alerts into structured incidents with clear ownership
+- Troubleshooting workspace for live root cause analysis
+- Exportable **RCA reports** and **postmortems**
+- MTTA / MTTR / SLA tracking and long-period SLA reports per service
 
-### Prerequisites
-- Docker & Docker Compose installed  
-- Git  
+### Visibility
+- Public or private branded status pages with subscriber notifications
+- Alert and incident analytics, trend reporting, custom dashboards
+- Full audit logs
 
-### Installation
+## Quick start
+
+**Prerequisites:** Docker and Docker Compose.
 
 ```bash
-# Clone the repository
 git clone https://github.com/skylogsio/skylogs.git
 cd skylogs
-
-docker-compose up -d --build
-
-
+docker compose up -d --build
 ```
 
-## 📚 Documentation
+Then open `http://localhost:PORT` and log in with the default credentials.
+<!-- TODO: fill in the real port, default credentials, and the 2–3 steps to fire a first test alert.
+     Target: a stranger goes from clone to receiving a test notification in under 10 minutes. -->
 
-Comprehensive documentation is available in the following sections:
+Full instructions, production deployment (including multi-zone and HA setup), and integration guides are in the documentation — see the links at the end of this page.
 
-- [Installation Guide](docs/installation.md) - Detailed setup instructions
-- [Configuration](docs/configuration.md) - Environment and application configuration
-- [API Documentation](docs/api.md) - REST API endpoints and examples
-- [Integration Guide](docs/integrations.md) - Third-party tool integrations
-- [User Guide](docs/user-guide.md) - End-user documentation
-- [Administrator Guide](docs/admin-guide.md) - System administration
-- [Developer Guide](docs/developer-guide.md) - Contributing and development setup
-- [Deployment Guide](docs/deployment.md) - Production deployment strategies
-- [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
-- [Changelog](docs/changelog.md) - Version history and updates
-- [Contributing Guidelines](docs/contributing.md) - How to contribute to the project
-- [Security Policy](docs/security.md) - Security guidelines and reporting
-- [FAQ](docs/faq.md) - Frequently asked questions
+## Who is it for?
 
-## 🤝 Contributing
+- **SRE & DevOps teams** centralizing alerts from multiple monitoring platforms and running on-call
+- **Network & datacenter teams** — first-class Zabbix integration and verified endpoint delivery for critical infrastructure alerts
+- **Security teams** coordinating SOC response with Splunk, ELK, and SIEM integrations
+- **Development teams** who want ownership of their own services' alerts without adopting a heavyweight ops process
+- **Engineering managers** tracking on-call load, response metrics, and escalation coverage
 
-We welcome contributions from the community! Please read our [Contributing Guidelines](docs/contributing.md) to get started.
+## Roadmap
 
-## 📄 License
+Our roadmap is organized around one long-term vision: **moving incident response from reactive to rehearsed.**
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### 🧪 Incident simulation — the flagship
 
-## 🆘 Support
+Today, testing your incident readiness means organizing a manual game day a couple of times a year. Skylogs is building something different: an **automated incident simulation engine**.
 
-- **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/skylogsio/skylogs/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/skylogsio/skylogs/discussions)
-- **Email**: support@skylogs.io
+Describe your infrastructure topology (hosts, VMs, Kubernetes workloads, databases, services), pick a fault — say, a hypervisor outage taking down 100 VMs, two Kubernetes workers, and a MySQL server — and Skylogs regenerates the **full realistic alert cascade** in native datasource formats (Prometheus/Alertmanager first; Zabbix, Splunk, PMM and others to follow), fires it through the *real* ingestion pipeline, and simulates the complete incident chain: node-down alerts, pod CrashLoopBackOff storms, blackbox service-down detection, escalation, and notification.
 
-## 🌟 Star History
+Every run produces a **readiness report**: who would have been paged and when, which alerts went unrouted, which notification endpoints are dead, where escalation chains have gaps, whether root cause analysis identified the injected fault, and the simulated SLA and financial impact.
 
-[![Star History Chart](https://api.star-history.com/svg?repos=skylogsio/skylogs&type=Date)](https://star-history.com/#skylogsio/skylogs&Date)
+Planned in stages:
+- **Sandbox mode** — the full pipeline runs, notifications are captured but not delivered
+- **Fire-drill mode** — scheduled drills with real notification delivery, proving your endpoints end to end
+- **Scenario library** — declarative, version-controlled YAML scenarios that can be shared and community-contributed
+- **Topology import** — building the dependency graph automatically from Kubernetes, Zabbix, and Prometheus metadata
+
+For teams under regulatory pressure (DORA, NIS2, SOC 2, ISO 27001), each simulation run doubles as timestamped, repeatable evidence of incident response testing.
+
+### 🧩 Unified cluster management
+
+Sentinel (cross-zone federation) and the Raft HA layer will progressively converge into a single cluster-management experience: one configuration, one deployment, and one status view covering both intra-zone health and cross-zone federation — while keeping the two consensus domains strictly separate by design.
+
+### 🔐 Platform & enterprise
+
+- SSO integration
+- SOC 2 Type II compliance
+- Expanded integration catalog
+
+See the full roadmap link at the end of this page for details and progress.
+
+## Contributing
+
+We welcome contributions — code, integrations, documentation, and (soon) simulation scenarios. Read the contributing guidelines linked below to get started, and join the conversation in GitHub Discussions.
+
+## License
+
+MIT — see the license link below.
+
+## Links
+
+**Documentation**
+- 📖 Documentation home: https://docs.skylogs.io
+- 🚀 Installation guide: https://docs.skylogs.io/installation
+- 🌍 Multi-zone & HA deployment: https://docs.skylogs.io/deployment
+- 🔌 Integrations: https://docs.skylogs.io/integrations
+- 🧾 API reference: https://docs.skylogs.io/api
+- 📘 User guide: https://docs.skylogs.io/user-guide
+- 🛠️ Admin guide: https://docs.skylogs.io/admin-guide
+
+**Project**
+- 🌐 Website: https://skylogs.io
+- 🗺️ Roadmap: https://github.com/skylogsio/skylogs/projects
+- 🤝 Contributing guidelines: https://docs.skylogs.io/contributing
+- 📄 License: https://github.com/skylogsio/skylogs/blob/main/LICENSE
+- 📦 Releases: https://github.com/skylogsio/skylogs/releases
+
+**Community & support**
+- 💬 GitHub Discussions: https://github.com/skylogsio/skylogs/discussions
+- 🐛 Issue tracker: https://github.com/skylogsio/skylogs/issues
+- ✉️ Email: support@skylogs.io
 
 ---
 
-<div align="center">
-  <p>Made with ❤️ by the Skylogs team</p>
-  <p>
-    <a href="https://skylogs.io">Website</a> •
-  </p>
-</div>
+<p align="center">Made with ❤️ by the Skylogs team · <a href="https://skylogs.io">skylogs.io</a></p>
