@@ -94,10 +94,10 @@ class StatusChart extends BaseModel
     public static function GetStatusPrometheus($history)
     {
 
-        /*    public const RESOLVED = 1;
-    public const FIRE = 2;
-    public const NOTIFICATION = 3;
-*/
+        /*  public const RESOLVED = 1;
+            public const FIRE = 2;
+            public const NOTIFICATION = 3;
+        */
         switch ($history->state) {
             case PrometheusHistory::FIRE:
                 return self::CRITICAL;

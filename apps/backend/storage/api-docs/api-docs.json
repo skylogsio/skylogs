@@ -247,6 +247,47 @@
                 ]
             }
         },
+        "/api/v1/alert-rule/all": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "List all alert rules (name and type only)",
+                "description": "Unpaginated list ordered by name. Returns only `name` and `type` for each alert rule.",
+                "operationId": "getAllAlertRules",
+                "responses": {
+                    "200": {
+                        "description": "All alert rules",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "type": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/alert-rule/{id}": {
             "get": {
                 "tags": [

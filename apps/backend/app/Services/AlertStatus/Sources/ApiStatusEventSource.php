@@ -8,6 +8,7 @@ use App\Services\AlertStatus\AlertStatusEvent;
 use App\Services\AlertStatus\Contracts\AlertStatusEventSource;
 use App\Services\AlertStatus\Sources\Concerns\QueriesHistoryModel;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use MongoDB\Laravel\Eloquent\Model;
 
 final class ApiStatusEventSource implements AlertStatusEventSource
@@ -17,6 +18,40 @@ final class ApiStatusEventSource implements AlertStatusEventSource
     protected function modelClass(): string
     {
         return ApiAlertStatusHistory::class;
+    }
+
+    /**
+     * API alerts with no history before the window are assumed resolved at fromTime.
+     *
+     * @param  Collection<string, AlertRule>  $alertRules
+     * @return Collection<string, AlertStatusEvent>
+     */
+    public function fetchBaseline(Collection $alertRules, Carbon $before): Collection
+    {
+        $result = collect();
+
+        foreach ($alertRules as $alertRuleId => $alertRule) {
+            $document = ApiAlertStatusHistory::query()
+                ->where('alertRuleId', $alertRule->_id)
+                ->where('createdAt', '<', $before)
+                ->orderByDesc('createdAt')
+                ->first();
+
+            $result->put(
+                $alertRuleId,
+                $document !== null
+                    ? $this->toEvent($document)
+                    : new AlertStatusEvent(
+                        alertRuleId: (string) $alertRuleId,
+                        occurredAt: $before->copy()->subSecond(),
+                        status: AlertRule::RESOlVED,
+                        count: 0,
+                        summary: null,
+                    ),
+            );
+        }
+
+        return $result;
     }
 
     /**

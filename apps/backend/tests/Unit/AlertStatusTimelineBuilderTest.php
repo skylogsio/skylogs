@@ -101,4 +101,49 @@ describe('AlertStatusTimelineBuilder', function () {
                 'toTime' => 1000,
             ]);
     });
+
+    it('buckets a single critical window into the expected 10000-second slots', function () {
+        $builder = new AlertStatusTimelineBuilder;
+        $fromTime = 1_782_000_000;
+        $toTime = 1_783_000_000;
+        $fireAt = 1_782_605_000;
+        $resolveAt = 1_782_655_000;
+
+        $events = collect([
+            new AlertStatusEvent('rule-1', Carbon::createFromTimestamp($fromTime - 1), AlertRule::RESOlVED, 0, null),
+            new AlertStatusEvent('rule-1', Carbon::createFromTimestamp($fireAt), AlertRule::CRITICAL, 1, 'connection refused'),
+            new AlertStatusEvent('rule-1', Carbon::createFromTimestamp($resolveAt), AlertRule::RESOlVED, 0, null),
+        ]);
+
+        $timeline = $builder->build($events, $fromTime, $toTime, 100);
+        $segments = $timeline['segments'];
+
+        $userExpectedCriticalBuckets = [
+            1_782_610_000,
+            1_782_620_000,
+            1_782_630_000,
+            1_782_640_000,
+            1_782_650_000,
+        ];
+
+        expect($timeline['bucketSeconds'])->toBe(10_000)
+            ->and(collect($segments)->sum('count'))->toBe(100);
+
+        foreach ($userExpectedCriticalBuckets as $bucketFrom) {
+            $midpoint = $bucketFrom + 5_000;
+
+            $status = collect($segments)->first(
+                fn (array $segment): bool => $midpoint >= $segment['fromTime'] && $midpoint < $segment['toTime'],
+            )['status'] ?? null;
+
+            expect($status)->toBe(AlertRule::CRITICAL);
+        }
+
+        $criticalSegment = collect($segments)->firstWhere('status', AlertRule::CRITICAL);
+
+        expect($criticalSegment)->not->toBeNull()
+            ->and($criticalSegment['fromTime'])->toBeLessThanOrEqual(1_782_610_000)
+            ->and($criticalSegment['toTime'])->toBeGreaterThanOrEqual(1_782_660_000)
+            ->and($criticalSegment['count'])->toBeGreaterThanOrEqual(5);
+    });
 });
