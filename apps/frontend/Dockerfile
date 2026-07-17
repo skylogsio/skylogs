@@ -1,5 +1,5 @@
 # Use Node.js LTS version as base image
-FROM node:24-alpine AS builder
+FROM node:26-alpine AS builder
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Use a minimal Node.js runtime for production
-FROM node:24-alpine AS runner
+FROM node:26-alpine AS runner
 
 # Set working directory
 WORKDIR /usr/src/app
