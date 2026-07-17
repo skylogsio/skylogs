@@ -187,8 +187,11 @@ class AlertRuleBehaviorRuleService
                 $rule['triggerState'] = trim((string) ($rule['triggerState'] ?? ''));
                 $rule['dependsOnAlertRuleIds'] = array_values($rule['dependsOnAlertRuleIds'] ?? []);
                 $rule['dependsOnAlertRules'] = $this->formatAlertRulesForApi($rule['dependsOnAlertRuleIds'], $alertRuleNamesByIds);
+                $rule['filters'] = $this->normalizeFilterEntries($rule['filters'] ?? []);
+                $rule['startsAt'] = $this->normalizeSilentTimestamp($rule['startsAt'] ?? null);
+                $rule['endsAt'] = $this->normalizeSilentTimestamp($rule['endsAt'] ?? null);
 
-                unset($rule['filters'], $rule['template'], $rule['endpointIds']);
+                unset($rule['template'], $rule['endpointIds']);
 
                 return $rule;
             }
@@ -279,32 +282,186 @@ class AlertRuleBehaviorRuleService
             ->all();
     }
 
-    public function resolveIsSilent(AlertRule $alertRule): bool
+    /**
+     * @param  array<string, mixed>|null  $notifyAlert
+     */
+    public function resolveIsSilent(AlertRule $alertRule, ?array $notifyAlert = null, ?int $now = null): bool
     {
         foreach ($this->silentRules($alertRule) as $silentRule) {
-            $triggerState = $this->normalizeTriggerState((string) ($silentRule['triggerState'] ?? ''));
-            if ($triggerState === null) {
-                continue;
-            }
-
-            $dependsOnAlertRuleIds = array_values(array_unique($silentRule['dependsOnAlertRuleIds'] ?? []));
-            if ($dependsOnAlertRuleIds === []) {
-                continue;
-            }
-            $isAllMatched = true;
-            foreach ($this->findDependentAlertRules($dependsOnAlertRuleIds) as $dependentAlertRule) {
-                [$dependentState] = $dependentAlertRule->getStatus();
-                if ($dependentState !== $triggerState) {
-                    $isAllMatched = false;
-                }
-            }
-
-            if ($isAllMatched) {
+            if ($this->silentRuleMatches($alertRule, $silentRule, $notifyAlert, $now)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * @param  array<string, mixed>  $rule
+     * @param  array<string, mixed>|null  $notifyAlert
+     */
+    public function silentRuleMatches(AlertRule $alertRule, array $rule, ?array $notifyAlert = null, ?int $now = null): bool
+    {
+        if (! $this->hasAnySilentTriggerConfig($rule)) {
+            return false;
+        }
+
+        if ($this->hasSilentTimeConfig($rule) && ! $this->isSilentRuleWithinTimeWindow($rule, $now)) {
+            return false;
+        }
+
+        if ($this->hasSilentDependencyConfig($rule) && ! $this->dependencyTriggerMatches($rule)) {
+            return false;
+        }
+
+        if ($this->hasSilentFilterConfig($rule)) {
+            if ($notifyAlert === null) {
+                return false;
+            }
+
+            $filterEntries = $this->normalizeFilterEntries($rule['filters'] ?? []);
+            $contexts = $this->extractAlertContexts($alertRule, $notifyAlert);
+
+            if (! $this->notificationRuleMatches($alertRule, $filterEntries, $contexts)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $rule
+     */
+    public function hasAnySilentTriggerConfig(array $rule): bool
+    {
+        return $this->hasSilentDependencyConfig($rule)
+            || $this->hasSilentFilterConfig($rule)
+            || $this->hasSilentTimeConfig($rule);
+    }
+
+    /**
+     * @param  array<string, mixed>  $rule
+     */
+    public function hasSilentDependencyConfig(array $rule): bool
+    {
+        $dependsOnAlertRuleIds = array_values(array_unique($rule['dependsOnAlertRuleIds'] ?? []));
+
+        return $dependsOnAlertRuleIds !== []
+            && $this->normalizeTriggerState((string) ($rule['triggerState'] ?? '')) !== null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $rule
+     */
+    public function hasSilentFilterConfig(array $rule): bool
+    {
+        return $this->normalizeFilterEntries($rule['filters'] ?? []) !== [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $rule
+     */
+    public function hasSilentTimeConfig(array $rule): bool
+    {
+        return $this->normalizeSilentTimestamp($rule['startsAt'] ?? null) !== null
+            || $this->normalizeSilentTimestamp($rule['endsAt'] ?? null) !== null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $rule
+     */
+    public function isSilentRuleWithinTimeWindow(array $rule, ?int $now = null): bool
+    {
+        if (! $this->hasSilentTimeConfig($rule)) {
+            return true;
+        }
+
+        $now ??= time();
+        $startsAt = $this->normalizeSilentTimestamp($rule['startsAt'] ?? null);
+        $endsAt = $this->normalizeSilentTimestamp($rule['endsAt'] ?? null);
+
+        if ($startsAt !== null && $now < $startsAt) {
+            return false;
+        }
+
+        if ($endsAt !== null && $now > $endsAt) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $rule
+     */
+    protected function dependencyTriggerMatches(array $rule): bool
+    {
+        $triggerState = $this->normalizeTriggerState((string) ($rule['triggerState'] ?? ''));
+        if ($triggerState === null) {
+            return false;
+        }
+
+        $dependsOnAlertRuleIds = array_values(array_unique($rule['dependsOnAlertRuleIds'] ?? []));
+        if ($dependsOnAlertRuleIds === []) {
+            return false;
+        }
+
+        foreach ($this->findDependentAlertRules($dependsOnAlertRuleIds) as $dependentAlertRule) {
+            [$dependentState] = $dependentAlertRule->getStatus();
+            if ($dependentState !== $triggerState) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public function normalizeSilentTimestamp(mixed $timestamp): ?int
+    {
+        if ($timestamp === null || $timestamp === '') {
+            return null;
+        }
+
+        if (! is_numeric($timestamp)) {
+            return null;
+        }
+
+        return (int) $timestamp;
+    }
+
+    /**
+     * @param  array<string, mixed>  $ruleData
+     * @return array<string, mixed>
+     */
+    public function buildSilentRulePayload(array $ruleData): array
+    {
+        $payload = [
+            'dependsOnAlertRuleIds' => array_values(array_unique($ruleData['dependsOnAlertRuleIds'] ?? [])),
+            'triggerState' => trim((string) ($ruleData['triggerState'] ?? '')),
+            'filters' => $this->normalizeFilterEntries($ruleData['filters'] ?? []),
+            'startsAt' => $this->normalizeSilentTimestamp($ruleData['startsAt'] ?? null),
+            'endsAt' => $this->normalizeSilentTimestamp($ruleData['endsAt'] ?? null),
+        ];
+
+        if ($payload['dependsOnAlertRuleIds'] === []) {
+            unset($payload['dependsOnAlertRuleIds']);
+            $payload['triggerState'] = '';
+        }
+
+        if ($payload['filters'] === []) {
+            unset($payload['filters']);
+        }
+
+        if ($payload['startsAt'] === null) {
+            unset($payload['startsAt']);
+        }
+
+        if ($payload['endsAt'] === null) {
+            unset($payload['endsAt']);
+        }
+
+        return $payload;
     }
 
     /**
@@ -549,13 +706,14 @@ class AlertRuleBehaviorRuleService
     {
         $rules = $alertRule->rules ?? [];
 
-        $rule = [
-            'id' => (string) Str::uuid(),
-            'name' => trim((string) ($ruleData['name'] ?? '')),
-            'type' => AlertRuleBehaviorRuleType::SILENT->value,
-            'dependsOnAlertRuleIds' => array_values(array_unique($ruleData['dependsOnAlertRuleIds'] ?? [])),
-            'triggerState' => trim((string) ($ruleData['triggerState'] ?? '')),
-        ];
+        $rule = array_merge(
+            [
+                'id' => (string) Str::uuid(),
+                'name' => trim((string) ($ruleData['name'] ?? '')),
+                'type' => AlertRuleBehaviorRuleType::SILENT->value,
+            ],
+            $this->buildSilentRulePayload($ruleData),
+        );
 
         $rules[] = $rule;
         $alertRule->rules = $rules;
@@ -619,13 +777,16 @@ class AlertRuleBehaviorRuleService
                 return null;
             }
 
-            $rules[$index] = [
-                'id' => $ruleId,
-                'name' => trim((string) ($ruleData['name'] ?? $rule['name'] ?? '')),
-                'type' => AlertRuleBehaviorRuleType::SILENT->value,
-                'dependsOnAlertRuleIds' => array_values(array_unique($ruleData['dependsOnAlertRuleIds'] ?? $rule['dependsOnAlertRuleIds'] ?? [])),
-                'triggerState' => trim((string) ($ruleData['triggerState'] ?? $rule['triggerState'] ?? '')),
-            ];
+            $mergedRuleData = array_merge($rule, $ruleData);
+
+            $rules[$index] = array_merge(
+                [
+                    'id' => $ruleId,
+                    'name' => trim((string) ($ruleData['name'] ?? $rule['name'] ?? '')),
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                ],
+                $this->buildSilentRulePayload($mergedRuleData),
+            );
 
             $updatedRule = $rules[$index];
             break;

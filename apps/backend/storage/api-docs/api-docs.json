@@ -6633,13 +6633,11 @@
             },
             "AlertRuleBehaviorRuleSilent": {
                 "title": "Silent behavior rule",
-                "description": "While any listed alert rule has the given `triggerState`, notifications for this alert rule are suppressed. Does not affect the manual `isSilent` toggle.",
+                "description": "Suppresses notifications when **all configured** conditions match. Configure one or more of:\n\n- **Dependency:** `dependsOnAlertRuleIds` + `triggerState` — all listed rules must have that status\n- **Content:** `filters` — incoming alert labels/instance must match (same filter syntax as notification rules)\n- **Time:** `startsAt` and/or `endsAt` — Unix timestamps; omit a bound for no start/end limit\n\nIf multiple silent rules exist on one alert rule, **any** matching rule suppresses notifications (OR). Does not affect the manual `isSilent` toggle.",
                 "required": [
                     "id",
                     "name",
-                    "type",
-                    "dependsOnAlertRuleIds",
-                    "triggerState"
+                    "type"
                 ],
                 "properties": {
                     "id": {
@@ -6658,7 +6656,7 @@
                         ]
                     },
                     "dependsOnAlertRuleIds": {
-                        "description": "MongoDB `_id` values of other alert rules to watch",
+                        "description": "MongoDB `_id` values of other alert rules to watch. Required with `triggerState` when using dependency silence.",
                         "type": "array",
                         "items": {
                             "type": "string",
@@ -6668,14 +6666,53 @@
                             "507f1f77bcf86cd799439011"
                         ]
                     },
+                    "dependsOnAlertRules": {
+                        "description": "Resolved alert rule id and name pairs for `dependsOnAlertRuleIds`",
+                        "type": "array",
+                        "items": {
+                            "required": [
+                                "id",
+                                "name"
+                            ],
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "pattern": "^[0-9a-fA-F]{24}$"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
                     "triggerState": {
-                        "description": "When any dependent rule reaches this status, this alert becomes silent",
+                        "description": "Required with `dependsOnAlertRuleIds`. All dependent rules must have this status.",
                         "type": "string",
                         "example": "resolved",
                         "enum": [
                             "resolved",
                             "critical"
                         ]
+                    },
+                    "filters": {
+                        "description": "Label or instance filters. All filters must match the firing alert.",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertRuleBehaviorRuleFilter"
+                        }
+                    },
+                    "startsAt": {
+                        "description": "Unix timestamp when silence becomes active. Omit for no start bound.",
+                        "type": "integer",
+                        "example": 1720000000,
+                        "nullable": true
+                    },
+                    "endsAt": {
+                        "description": "Unix timestamp when silence expires. Omit for permanent silence until the rule is deleted.",
+                        "type": "integer",
+                        "example": 1721289600,
+                        "nullable": true
                     }
                 },
                 "type": "object"
@@ -6781,11 +6818,10 @@
             },
             "AlertRuleBehaviorRuleStoreSilent": {
                 "title": "Create silent rule",
+                "description": "Requires `name` and `type`. At least one condition must be set: dependency pair (`dependsOnAlertRuleIds` + `triggerState`), `filters`, `startsAt`, or `endsAt`. When multiple conditions are set, all must match.",
                 "required": [
                     "name",
-                    "type",
-                    "dependsOnAlertRuleIds",
-                    "triggerState"
+                    "type"
                 ],
                 "properties": {
                     "name": {
@@ -6802,6 +6838,7 @@
                         ]
                     },
                     "dependsOnAlertRuleIds": {
+                        "description": "Must be provided together with `triggerState`.",
                         "type": "array",
                         "items": {
                             "type": "string",
@@ -6815,6 +6852,23 @@
                             "resolved",
                             "critical"
                         ]
+                    },
+                    "filters": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertRuleBehaviorRuleFilter"
+                        },
+                        "minItems": 1
+                    },
+                    "startsAt": {
+                        "description": "Unix timestamp silence start",
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "endsAt": {
+                        "description": "Unix timestamp silence end",
+                        "type": "integer",
+                        "nullable": true
                     }
                 },
                 "type": "object"
@@ -6929,7 +6983,7 @@
             },
             "AlertRuleBehaviorRuleUpdateSilent": {
                 "title": "Update silent rule",
-                "description": "`filters`, `endpointIds`, and `template` are not allowed on silent rules.",
+                "description": "Send only fields allowed for silent rules. After update, at least one condition must remain: dependency pair, `filters`, `startsAt`, or `endsAt`. `endpointIds` and `template` are not allowed.",
                 "properties": {
                     "name": {
                         "type": "string",
@@ -6950,6 +7004,21 @@
                             "resolved",
                             "critical"
                         ]
+                    },
+                    "filters": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AlertRuleBehaviorRuleFilter"
+                        },
+                        "minItems": 1
+                    },
+                    "startsAt": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "endsAt": {
+                        "type": "integer",
+                        "nullable": true
                     }
                 },
                 "type": "object"
@@ -9264,7 +9333,7 @@
     "tags": [
         {
             "name": "AlertRule Behavior Rules",
-            "description": "Optional rules attached to an alert rule that change notification behavior.\n\n| Type | Purpose |\n|------|---------|\n| `notification` | Add extra endpoints when incoming alert labels match filters |\n| `template` | Override message text for specific endpoints |\n| `silent` | Suppress all notifications while another alert rule is `resolved` or `critical` |\n\n**Create:** one URL — set `type` and send the matching body (see discriminator on POST).\n\n**Silence on the list page:** `isSilent` is the per-user manual toggle (`POST /api/v1/alert-rule/silent/{id}`).\n`isSilentByBehavior` is computed from silent behavior rules and is read-only in the UI."
+            "description": "Optional rules attached to an alert rule that change notification behavior.\n\n| Type | Purpose |\n|------|---------|\n| `notification` | Add extra endpoints when incoming alert labels match filters |\n| `template` | Override message text for specific endpoints |\n| `silent` | Suppress notifications when all configured conditions match (dependency status, label filters, time window) |\n\n**Create:** one URL — set `type` and send the matching body (see discriminator on POST).\n\n**Silence on the list page:** `isSilent` is the per-user manual toggle (`POST /api/v1/alert-rule/silent/{id}`).\n`isSilentByBehavior` is computed from silent behavior rules and is read-only in the UI."
         },
         {
             "name": "AlertRule",

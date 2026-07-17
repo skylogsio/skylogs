@@ -75,6 +75,11 @@ it('documents behavior rule create payloads per type with discriminator', functi
         'critical',
     ]);
 
+    $silentSchema = $docs['components']['schemas']['AlertRuleBehaviorRuleSilent']['properties'];
+
+    expect($silentSchema)->toHaveKeys(['filters', 'startsAt', 'endsAt'])
+        ->and($docs['components']['schemas']['AlertRuleBehaviorRuleStoreSilent']['required'])->toBe(['name', 'type']);
+
     expect($docs['paths']['/api/v1/alert-rule-behavior-rule/{alertRuleId}']['get']['tags'])->toBe(['AlertRule Behavior Rules']);
 });
 

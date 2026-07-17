@@ -10,7 +10,9 @@ use App\Services\AlertRuleService;
 use App\Services\EndpointService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class BehaviorRuleController extends Controller
 {
@@ -44,6 +46,8 @@ class BehaviorRuleController extends Controller
     {
         $alertRule = $this->authorizedAlertRule($alertRuleId, requireAdmin: true);
 
+        $isSilentType = $request->input('type') === AlertRuleBehaviorRuleType::SILENT->value;
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:1', 'max:255'],
             'type' => [
@@ -56,8 +60,13 @@ class BehaviorRuleController extends Controller
             ],
             'filters' => [
                 Rule::requiredIf(fn () => $request->input('type') === AlertRuleBehaviorRuleType::NOTIFICATION->value),
+                Rule::prohibitedIf(fn () => $request->input('type') === AlertRuleBehaviorRuleType::TEMPLATE->value),
                 'array',
-                'min:1',
+                Rule::when(
+                    fn () => $request->input('type') === AlertRuleBehaviorRuleType::NOTIFICATION->value
+                        || ($isSilentType && $request->has('filters')),
+                    'min:1',
+                ),
             ],
             'filters.*.key' => ['required_with:filters', 'string'],
             'filters.*.value' => ['required_with:filters', 'string'],
@@ -72,15 +81,24 @@ class BehaviorRuleController extends Controller
             ],
             'endpointIds.*' => ['required_with:endpointIds', 'string'],
             'dependsOnAlertRuleIds' => [
-                Rule::requiredIf(fn () => $request->input('type') === AlertRuleBehaviorRuleType::SILENT->value),
+                Rule::prohibitedIf(fn () => $request->input('type') !== AlertRuleBehaviorRuleType::SILENT->value),
                 'array',
-                'min:1',
             ],
             'dependsOnAlertRuleIds.*' => ['required_with:dependsOnAlertRuleIds', 'string'],
             'triggerState' => [
-                Rule::requiredIf(fn () => $request->input('type') === AlertRuleBehaviorRuleType::SILENT->value),
+                Rule::prohibitedIf(fn () => $request->input('type') !== AlertRuleBehaviorRuleType::SILENT->value),
                 'string',
                 Rule::in([AlertRule::RESOlVED, AlertRule::CRITICAL]),
+            ],
+            'startsAt' => [
+                Rule::prohibitedIf(fn () => $request->input('type') !== AlertRuleBehaviorRuleType::SILENT->value),
+                'nullable',
+                'integer',
+            ],
+            'endsAt' => [
+                Rule::prohibitedIf(fn () => $request->input('type') !== AlertRuleBehaviorRuleType::SILENT->value),
+                'nullable',
+                'integer',
             ],
             'template' => [
                 Rule::requiredIf(fn () => $request->input('type') === AlertRuleBehaviorRuleType::TEMPLATE->value),
@@ -88,6 +106,10 @@ class BehaviorRuleController extends Controller
                 'min:1',
             ],
         ]);
+
+        if ($isSilentType) {
+            $this->assertValidSilentRulePayload($validated);
+        }
 
         if (! empty($validated['endpointIds'])) {
             $this->assertSelectableEndpoints($alertRule, $validated['endpointIds']);
@@ -123,7 +145,7 @@ class BehaviorRuleController extends Controller
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'min:1', 'max:255'],
-            'filters' => [$isTemplate || $isSilent ? 'prohibited' : 'sometimes', 'array', 'min:1'],
+            'filters' => [$isTemplate ? 'prohibited' : 'sometimes', 'array', 'min:1'],
             'filters.*.key' => ['required_with:filters', 'string'],
             'filters.*.value' => ['required_with:filters', 'string'],
             'endpointIds' => [$isSilent ? 'prohibited' : 'sometimes', 'array', 'min:1'],
@@ -136,7 +158,14 @@ class BehaviorRuleController extends Controller
                 'string',
                 Rule::in([AlertRule::RESOlVED, AlertRule::CRITICAL]),
             ],
+            'startsAt' => [$isSilent ? 'sometimes' : 'prohibited', 'nullable', 'integer'],
+            'endsAt' => [$isSilent ? 'sometimes' : 'prohibited', 'nullable', 'integer'],
         ]);
+
+        if ($isSilent) {
+            $mergedRuleData = array_merge($existingRule, $validated);
+            $this->assertValidSilentRulePayload($mergedRuleData);
+        }
 
         if (! empty($validated['endpointIds'])) {
             $this->assertSelectableEndpoints($alertRule, $validated['endpointIds']);
@@ -220,6 +249,44 @@ class BehaviorRuleController extends Controller
             if (! $selectableAlertRuleIds->contains($dependsOnAlertRuleId)) {
                 abort(403);
             }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $ruleData
+     */
+    private function assertValidSilentRulePayload(array $ruleData): void
+    {
+        $behaviorRuleService = $this->behaviorRuleService;
+
+        $hasDependencyIds = ! empty($ruleData['dependsOnAlertRuleIds']);
+        $hasTriggerState = trim((string) ($ruleData['triggerState'] ?? '')) !== '';
+        $hasFilters = $behaviorRuleService->normalizeFilterEntries($ruleData['filters'] ?? []) !== [];
+        $hasStartsAt = $behaviorRuleService->normalizeSilentTimestamp($ruleData['startsAt'] ?? null) !== null;
+        $hasEndsAt = $behaviorRuleService->normalizeSilentTimestamp($ruleData['endsAt'] ?? null) !== null;
+
+        $validator = Validator::make($ruleData, []);
+
+        if ($hasDependencyIds xor $hasTriggerState) {
+            $validator->errors()->add('dependsOnAlertRuleIds', 'dependsOnAlertRuleIds and triggerState must be provided together.');
+            $validator->errors()->add('triggerState', 'dependsOnAlertRuleIds and triggerState must be provided together.');
+        }
+
+        if (! $hasDependencyIds && ! $hasFilters && ! $hasStartsAt && ! $hasEndsAt) {
+            $validator->errors()->add('filters', 'At least one silent condition is required: dependency, filters, startsAt, or endsAt.');
+        }
+
+        if ($hasStartsAt && $hasEndsAt) {
+            $startsAt = $behaviorRuleService->normalizeSilentTimestamp($ruleData['startsAt']);
+            $endsAt = $behaviorRuleService->normalizeSilentTimestamp($ruleData['endsAt']);
+
+            if ($startsAt !== null && $endsAt !== null && $endsAt <= $startsAt) {
+                $validator->errors()->add('endsAt', 'endsAt must be greater than startsAt.');
+            }
+        }
+
+        if ($validator->errors()->isNotEmpty()) {
+            throw new ValidationException($validator);
         }
     }
 }

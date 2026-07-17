@@ -20,7 +20,7 @@ Optional rules attached to an alert rule that change notification behavior.
 |------|---------|
 | `notification` | Add extra endpoints when incoming alert labels match filters |
 | `template` | Override message text for specific endpoints |
-| `silent` | Suppress all notifications while another alert rule is `resolved` or `critical` |
+| `silent` | Suppress notifications when all configured conditions match (dependency status, label filters, time window) |
 
 **Create:** one URL — set `type` and send the matching body (see discriminator on POST).
 
@@ -128,25 +128,65 @@ DESC,
 #[OA\Schema(
     schema: 'AlertRuleBehaviorRuleSilent',
     title: 'Silent behavior rule',
-    description: 'While any listed alert rule has the given `triggerState`, notifications for this alert rule are suppressed. Does not affect the manual `isSilent` toggle.',
-    required: ['id', 'name', 'type', 'dependsOnAlertRuleIds', 'triggerState'],
+    description: <<<'DESC'
+Suppresses notifications when **all configured** conditions match. Configure one or more of:
+
+- **Dependency:** `dependsOnAlertRuleIds` + `triggerState` — all listed rules must have that status
+- **Content:** `filters` — incoming alert labels/instance must match (same filter syntax as notification rules)
+- **Time:** `startsAt` and/or `endsAt` — Unix timestamps; omit a bound for no start/end limit
+
+If multiple silent rules exist on one alert rule, **any** matching rule suppresses notifications (OR). Does not affect the manual `isSilent` toggle.
+DESC,
+    required: ['id', 'name', 'type'],
     properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'name', description: 'Display name for this behavior rule', type: 'string', example: 'Silence during maintenance'),
         new OA\Property(property: 'type', type: 'string', enum: ['silent']),
         new OA\Property(
             property: 'dependsOnAlertRuleIds',
-            description: 'MongoDB `_id` values of other alert rules to watch',
+            description: 'MongoDB `_id` values of other alert rules to watch. Required with `triggerState` when using dependency silence.',
             type: 'array',
             items: new OA\Items(type: 'string', pattern: '^[0-9a-fA-F]{24}$'),
             example: ['507f1f77bcf86cd799439011']
         ),
         new OA\Property(
+            property: 'dependsOnAlertRules',
+            description: 'Resolved alert rule id and name pairs for `dependsOnAlertRuleIds`',
+            type: 'array',
+            items: new OA\Items(
+                required: ['id', 'name'],
+                properties: [
+                    new OA\Property(property: 'id', type: 'string', pattern: '^[0-9a-fA-F]{24}$'),
+                    new OA\Property(property: 'name', type: 'string'),
+                ],
+            ),
+        ),
+        new OA\Property(
             property: 'triggerState',
-            description: 'When any dependent rule reaches this status, this alert becomes silent',
+            description: 'Required with `dependsOnAlertRuleIds`. All dependent rules must have this status.',
             type: 'string',
             enum: ['resolved', 'critical'],
             example: 'resolved'
+        ),
+        new OA\Property(
+            property: 'filters',
+            description: 'Label or instance filters. All filters must match the firing alert.',
+            type: 'array',
+            items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleFilter'),
+        ),
+        new OA\Property(
+            property: 'startsAt',
+            description: 'Unix timestamp when silence becomes active. Omit for no start bound.',
+            type: 'integer',
+            example: 1720000000,
+            nullable: true,
+        ),
+        new OA\Property(
+            property: 'endsAt',
+            description: 'Unix timestamp when silence expires. Omit for permanent silence until the rule is deleted.',
+            type: 'integer',
+            example: 1721289600,
+            nullable: true,
         ),
     ]
 )]
@@ -202,12 +242,22 @@ DESC,
 #[OA\Schema(
     schema: 'AlertRuleBehaviorRuleStoreSilent',
     title: 'Create silent rule',
-    required: ['name', 'type', 'dependsOnAlertRuleIds', 'triggerState'],
+    description: 'Requires `name` and `type`. At least one condition must be set: dependency pair (`dependsOnAlertRuleIds` + `triggerState`), `filters`, `startsAt`, or `endsAt`. When multiple conditions are set, all must match.',
+    required: ['name', 'type'],
     properties: [
         new OA\Property(property: 'name', description: 'Display name for this behavior rule', type: 'string', minLength: 1, maxLength: 255, example: 'Silence during maintenance'),
         new OA\Property(property: 'type', type: 'string', enum: ['silent']),
-        new OA\Property(property: 'dependsOnAlertRuleIds', type: 'array', minItems: 1, items: new OA\Items(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+        new OA\Property(
+            property: 'dependsOnAlertRuleIds',
+            description: 'Must be provided together with `triggerState`.',
+            type: 'array',
+            minItems: 1,
+            items: new OA\Items(type: 'string', pattern: '^[0-9a-fA-F]{24}$'),
+        ),
         new OA\Property(property: 'triggerState', type: 'string', enum: ['resolved', 'critical']),
+        new OA\Property(property: 'filters', type: 'array', minItems: 1, items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleFilter')),
+        new OA\Property(property: 'startsAt', description: 'Unix timestamp silence start', type: 'integer', nullable: true),
+        new OA\Property(property: 'endsAt', description: 'Unix timestamp silence end', type: 'integer', nullable: true),
     ]
 )]
 
@@ -265,11 +315,14 @@ DESC,
 #[OA\Schema(
     schema: 'AlertRuleBehaviorRuleUpdateSilent',
     title: 'Update silent rule',
-    description: '`filters`, `endpointIds`, and `template` are not allowed on silent rules.',
+    description: 'Send only fields allowed for silent rules. After update, at least one condition must remain: dependency pair, `filters`, `startsAt`, or `endsAt`. `endpointIds` and `template` are not allowed.',
     properties: [
         new OA\Property(property: 'name', type: 'string', minLength: 1, maxLength: 255),
         new OA\Property(property: 'dependsOnAlertRuleIds', type: 'array', minItems: 1, items: new OA\Items(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
         new OA\Property(property: 'triggerState', type: 'string', enum: ['resolved', 'critical']),
+        new OA\Property(property: 'filters', type: 'array', minItems: 1, items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleFilter')),
+        new OA\Property(property: 'startsAt', type: 'integer', nullable: true),
+        new OA\Property(property: 'endsAt', type: 'integer', nullable: true),
     ]
 )]
 

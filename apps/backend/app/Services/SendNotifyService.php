@@ -69,7 +69,10 @@ class SendNotifyService
 
         $behaviorRuleService = app(AlertRuleBehaviorRuleService::class);
 
-        if (! $isTest && $behaviorRuleService->resolveIsSilent($notify->alertRule)) {
+        if (! $isTest && $behaviorRuleService->resolveIsSilent(
+            $notify->alertRule,
+            is_array($notify->alert) ? $notify->alert : [],
+        )) {
             $notify->status = Notify::STATUS_SILENT;
             $notify->save();
 

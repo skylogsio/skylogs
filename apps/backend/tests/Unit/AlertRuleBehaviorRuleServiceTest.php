@@ -629,7 +629,8 @@ describe('AlertRuleBehaviorRuleService', function () {
 
         expect($formatted[0]['dependsOnAlertRules'])->toBe([
             ['id' => 'dep-1', 'name' => 'MySQL alert'],
-        ])->and($formatted[0])->not->toHaveKeys(['filters', 'template', 'endpointIds', 'endpoints']);
+        ])->and($formatted[0])->not->toHaveKeys(['template', 'endpointIds', 'endpoints'])
+            ->and($formatted[0]['filters'])->toBe([]);
     });
 
     it('filters only notification rules from mixed rule types', function () {
@@ -765,6 +766,269 @@ describe('AlertRuleBehaviorRuleService', function () {
         $service->shouldNotReceive('findDependentAlertRules');
 
         expect($service->resolveIsSilent($alertRule))->toBeFalse();
+    });
+
+    it('formats silent rules with filters and time bounds for api response', function () {
+        $formatted = $this->service->formatRulesForApi([
+            [
+                'id' => 'silent-1',
+                'name' => 'Silence api instance',
+                'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                'filters' => [['key' => 'instance', 'value' => 'api*']],
+                'startsAt' => 1_720_000_000,
+                'endsAt' => 1_721_289_600,
+            ],
+        ]);
+
+        expect($formatted[0])->toMatchArray([
+            'id' => 'silent-1',
+            'name' => 'Silence api instance',
+            'type' => AlertRuleBehaviorRuleType::SILENT->value,
+            'filters' => [
+                ['key' => 'instance', 'value' => 'api*'],
+            ],
+            'startsAt' => 1_720_000_000,
+            'endsAt' => 1_721_289_600,
+        ]);
+    });
+
+    it('resolves silent for time-only rule within active window', function () {
+        $now = 1_720_500_000;
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::PROMETHEUS,
+            'endpointIds' => [],
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'startsAt' => 1_720_000_000,
+                    'endsAt' => 1_721_000_000,
+                ],
+            ],
+        ]);
+
+        expect($this->service->resolveIsSilent($alertRule, null, $now))->toBeTrue();
+    });
+
+    it('does not resolve silent for time-only rule outside active window', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::PROMETHEUS,
+            'endpointIds' => [],
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'startsAt' => 1_720_000_000,
+                    'endsAt' => 1_721_000_000,
+                ],
+            ],
+        ]);
+
+        expect($this->service->silentRuleMatches(
+            $alertRule,
+            $alertRule->rules[0],
+            null,
+            1_722_000_000,
+        ))->toBeFalse();
+    });
+
+    it('resolves silent when prometheus label filters match notify payload', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::PROMETHEUS,
+            'endpointIds' => [],
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'filters' => [['key' => 'job', 'value' => 'prometheus*']],
+                ],
+            ],
+        ]);
+
+        $payload = [
+            'alerts' => [
+                ['labels' => ['job' => 'prometheus-main', 'instance' => 'host1']],
+            ],
+        ];
+
+        expect($this->service->resolveIsSilent($alertRule, $payload))->toBeTrue();
+    });
+
+    it('does not resolve silent when prometheus label filters do not match', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::PROMETHEUS,
+            'endpointIds' => [],
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'filters' => [['key' => 'job', 'value' => 'prometheus*']],
+                ],
+            ],
+        ]);
+
+        $payload = [
+            'alerts' => [
+                ['labels' => ['job' => 'grafana', 'instance' => 'host1']],
+            ],
+        ];
+
+        expect($this->service->resolveIsSilent($alertRule, $payload))->toBeFalse();
+    });
+
+    it('does not resolve filter-only silent rule without notify payload', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::PROMETHEUS,
+            'endpointIds' => [],
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'filters' => [['key' => 'job', 'value' => 'prometheus*']],
+                ],
+            ],
+        ]);
+
+        expect($this->service->resolveIsSilent($alertRule))->toBeFalse();
+    });
+
+    it('resolves silent for api instance filter when payload matches', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::API,
+            'endpointIds' => [],
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'filters' => [['key' => 'instance', 'value' => 'api*']],
+                ],
+            ],
+        ]);
+
+        expect($this->service->resolveIsSilent($alertRule, ['instance' => 'api-server']))->toBeTrue();
+    });
+
+    it('requires all configured silent dimensions to match', function () {
+        $now = 1_720_500_000;
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::PROMETHEUS,
+            'endpointIds' => [],
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'dependsOnAlertRuleIds' => ['dep-1'],
+                    'triggerState' => AlertRule::CRITICAL,
+                    'filters' => [['key' => 'instance', 'value' => 'api*']],
+                    'startsAt' => 1_720_000_000,
+                    'endsAt' => 1_721_000_000,
+                ],
+            ],
+        ]);
+
+        $dependentAlert = Mockery::mock(AlertRule::class);
+        $dependentAlert->shouldReceive('getStatus')->andReturn([AlertRule::CRITICAL, 0]);
+
+        $service = Mockery::mock(AlertRuleBehaviorRuleService::class)->makePartial();
+        $service->shouldAllowMockingProtectedMethods();
+        $service->shouldReceive('findDependentAlertRules')
+            ->with(['dep-1'])
+            ->andReturn(collect([$dependentAlert]));
+
+        $payload = [
+            'alerts' => [
+                ['labels' => ['instance' => 'api-server']],
+            ],
+        ];
+
+        expect($service->silentRuleMatches($alertRule, $alertRule->rules[0], $payload, $now))->toBeTrue()
+            ->and($service->silentRuleMatches($alertRule, $alertRule->rules[0], [
+                'alerts' => [
+                    ['labels' => ['instance' => 'other-server']],
+                ],
+            ], $now))->toBeFalse();
+    });
+
+    it('resolves silent when any silent rule matches', function () {
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::PROMETHEUS,
+            'endpointIds' => [],
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'filters' => [['key' => 'job', 'value' => 'nomatch*']],
+                ],
+                [
+                    'id' => 'silent-2',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'filters' => [['key' => 'job', 'value' => 'prometheus*']],
+                ],
+            ],
+        ]);
+
+        $payload = [
+            'alerts' => [
+                ['labels' => ['job' => 'prometheus-main']],
+            ],
+        ];
+
+        expect($this->service->resolveIsSilent($alertRule, $payload))->toBeTrue();
+    });
+
+    it('creates silent rules with optional filters and time bounds', function () {
+        $alertRule = mockAlertRuleForPersistence([
+            'rules' => [],
+        ]);
+
+        $rule = $this->service->createSilentRule($alertRule, [
+            'name' => 'Maintenance silence',
+            'filters' => [['key' => 'instance', 'value' => 'api*']],
+            'startsAt' => 1_720_000_000,
+            'endsAt' => 1_721_289_600,
+        ]);
+
+        expect($rule)->toMatchArray([
+            'name' => 'Maintenance silence',
+            'type' => AlertRuleBehaviorRuleType::SILENT->value,
+            'filters' => [
+                ['key' => 'instance', 'value' => 'api*'],
+            ],
+            'startsAt' => 1_720_000_000,
+            'endsAt' => 1_721_289_600,
+        ])->and($rule)->not->toHaveKey('dependsOnAlertRuleIds');
+    });
+
+    it('updates silent rules with merged optional fields', function () {
+        $alertRule = mockAlertRuleForPersistence([
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'name' => 'Old name',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'dependsOnAlertRuleIds' => ['dep-1'],
+                    'triggerState' => AlertRule::CRITICAL,
+                ],
+            ],
+        ]);
+
+        $updated = $this->service->updateSilentRule($alertRule, 'silent-1', [
+            'name' => 'New name',
+            'filters' => [['key' => 'instance', 'value' => 'api*']],
+            'endsAt' => 1_721_289_600,
+        ]);
+
+        expect($updated)->toMatchArray([
+            'id' => 'silent-1',
+            'name' => 'New name',
+            'type' => AlertRuleBehaviorRuleType::SILENT->value,
+            'dependsOnAlertRuleIds' => ['dep-1'],
+            'triggerState' => AlertRule::CRITICAL,
+            'filters' => [
+                ['key' => 'instance', 'value' => 'api*'],
+            ],
+            'endsAt' => 1_721_289_600,
+        ]);
     });
 });
 
