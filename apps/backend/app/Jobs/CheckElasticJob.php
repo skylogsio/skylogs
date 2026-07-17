@@ -48,6 +48,11 @@ class CheckElasticJob implements ShouldQueue
         );
 
         $countDocuments = ElasticService::countDocuments($check);
+
+        if ($countDocuments === null) {
+            return;
+        }
+
         $check->refresh();
         if (empty($this->alert->conditionType) || $this->alert->conditionType == ElasticCheck::CONDITION_TYPE_GREATER_OR_EQUAL) {
             $isFired = $countDocuments >= $check->countDocument;

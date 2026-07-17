@@ -72,11 +72,19 @@ describe('ElasticService::countDocuments', function () {
         expect(ElasticService::countDocuments(makeElasticCheckForTest()))->toBe(0);
     });
 
-    it('returns zero when the elasticsearch request fails', function () {
+    it('returns null when the elasticsearch request fails', function () {
         Http::fake([
             'elastic.example.com/*' => Http::failedConnection(),
         ]);
 
-        expect(ElasticService::countDocuments(makeElasticCheckForTest()))->toBe(0);
+        expect(ElasticService::countDocuments(makeElasticCheckForTest()))->toBeNull();
+    });
+
+    it('returns null when elasticsearch responds with an error status', function () {
+        Http::fake([
+            'elastic.example.com/*' => Http::response('service unavailable', 503),
+        ]);
+
+        expect(ElasticService::countDocuments(makeElasticCheckForTest()))->toBeNull();
     });
 });

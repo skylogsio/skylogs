@@ -46,6 +46,11 @@ class CheckVictoriaLogsJob implements ShouldQueue
         );
 
         $countDocuments = VictoriaLogsService::countDocuments($check);
+
+        if ($countDocuments === null) {
+            return;
+        }
+
         $check->refresh();
         if (empty($this->alert->conditionType) || $this->alert->conditionType == VictoriaLogsCheck::CONDITION_TYPE_GREATER_OR_EQUAL) {
             $isFired = $countDocuments >= $check->countDocument;

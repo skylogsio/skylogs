@@ -6,28 +6,31 @@ use App\Models\VictoriaLogsCheck;
 
 class VictoriaLogsService
 {
-    public static function countDocuments(VictoriaLogsCheck $victoriaLogsCheck): int
+    public static function countDocuments(VictoriaLogsCheck $victoriaLogsCheck): ?int
     {
-        $documents = 0;
-
         $dataSource = $victoriaLogsCheck->alertRule->dataSource;
+
         try {
             $timeString = $victoriaLogsCheck->minutes.'m';
             $response = \Http::acceptJson()
-                ->get($dataSource->url.'/select/logsql/query',
-                    [
-                        'query' => "_time:$timeString $victoriaLogsCheck->queryString | stats count() as total",
-                    ]
-                );
+                ->get($dataSource->url.'/select/logsql/query', [
+                    'query' => "_time:$timeString $victoriaLogsCheck->queryString | stats count() as total",
+                ]);
+
+            if (! $response->successful()) {
+                return null;
+            }
+
             $body = $response->json();
 
-            $documents = intval($body['total']);
+            if (! is_array($body) || ! array_key_exists('total', $body)) {
+                return null;
+            }
+
+            return (int) $body['total'];
 
         } catch (\Exception $exception) {
-
+            return null;
         }
-
-        return $documents;
-
     }
 }
