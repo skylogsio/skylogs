@@ -96,6 +96,11 @@ function createInitialState() {
     }
   };
 }
+interface TimeRangeSnapshot {
+  start: DebuggingTimeSelection;
+  end: DebuggingTimeSelection;
+}
+
 interface DebuggingTimeRangeContextType {
   referenceNow: Date;
   start: DebuggingTimeSelection;
@@ -110,6 +115,10 @@ interface DebuggingTimeRangeContextType {
   setEndRelative: (value: number, unit: RelativeTimeUnit) => void;
   setStartNow: () => void;
   setEndNow: () => void;
+  zoomLevel: number;
+  canZoomOut: boolean;
+  zoomToRange: (start: Date, end: Date) => void;
+  zoomOut: () => void;
 }
 
 const DebuggingTimeRangeContext = createContext<DebuggingTimeRangeContextType | undefined>(
@@ -120,6 +129,7 @@ export function DebuggingTimeRangeProvider({ children }: PropsWithChildren) {
   const [{ referenceNow, start: initialStart, end: initialEnd }] = useState(createInitialState);
   const [start, setStart] = useState<DebuggingTimeSelection>(initialStart);
   const [end, setEnd] = useState<DebuggingTimeSelection>(initialEnd);
+  const [zoomHistory, setZoomHistory] = useState<TimeRangeSnapshot[]>([]);
 
   const setStartAbsolute = (date: Date) => {
     setStart({ dateTime: date, mode: "absolute" });
@@ -128,6 +138,25 @@ export function DebuggingTimeRangeProvider({ children }: PropsWithChildren) {
   const setEndAbsolute = (date: Date) => {
     setEnd({ dateTime: date, mode: "absolute" });
   };
+
+  const zoomToRange = useCallback(
+    (nextStart: Date, nextEnd: Date) => {
+      setZoomHistory((prev) => [...prev, { start, end }]);
+      setStart({ dateTime: nextStart, mode: "absolute" });
+      setEnd({ dateTime: nextEnd, mode: "absolute" });
+    },
+    [start, end]
+  );
+
+  const zoomOut = useCallback(() => {
+    setZoomHistory((prev) => {
+      if (prev.length === 0) return prev;
+      const previousRange = prev[prev.length - 1];
+      setStart(previousRange.start);
+      setEnd(previousRange.end);
+      return prev.slice(0, -1);
+    });
+  }, []);
 
   const setStartRelative = useCallback(
     (value: number, unit: RelativeTimeUnit) => {
@@ -176,7 +205,11 @@ export function DebuggingTimeRangeProvider({ children }: PropsWithChildren) {
         setStartRelative,
         setEndRelative,
         setStartNow,
-        setEndNow
+        setEndNow,
+        zoomLevel: zoomHistory.length,
+        canZoomOut: zoomHistory.length > 0,
+        zoomToRange,
+        zoomOut
       }}
     >
       {children}

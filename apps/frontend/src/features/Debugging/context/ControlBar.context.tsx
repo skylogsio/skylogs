@@ -16,15 +16,34 @@ interface SelectionRange {
   end: number;
 }
 
+interface SelectionTimeRange {
+  start: number;
+  end: number;
+}
+
+interface SelectionAnchor {
+  index: number;
+  startTime: number;
+  endTime: number;
+}
+
 class ControlBarStore {
   private hoveredIndex: number | null = null;
   private selection: SelectionRange | null = null;
+  private selectionAnchor: SelectionAnchor | null = null;
+  private selectionTimeRange: SelectionTimeRange | null = null;
   private isSelecting = false;
   private listeners = new Set<Listener>();
+  private selectionEndListeners = new Set<(range: SelectionTimeRange) => void>();
 
   subscribe = (listener: Listener): (() => void) => {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  };
+
+  onSelectionEnd = (listener: (range: SelectionTimeRange) => void): (() => void) => {
+    this.selectionEndListeners.add(listener);
+    return () => this.selectionEndListeners.delete(listener);
   };
 
   setHoveredIndex = (index: number): void => {
@@ -41,33 +60,48 @@ class ControlBarStore {
 
   isHovered = (index: number): boolean => this.hoveredIndex === index;
 
-  startSelection = (index: number): void => {
+  startSelection = (index: number, startTime: number, endTime: number): void => {
     this.isSelecting = true;
+    this.selectionAnchor = { index, startTime, endTime };
     this.selection = { start: index, end: index };
+    this.selectionTimeRange = { start: startTime, end: endTime };
     this.emit();
   };
 
-  updateSelection = (index: number): void => {
-    if (!this.isSelecting || !this.selection) return;
+  updateSelection = (index: number, startTime: number, endTime: number): void => {
+    if (!this.isSelecting || !this.selection || !this.selectionAnchor) return;
     if (this.selection.end === index) return;
-    this.selection = { start: this.selection.start, end: index };
+
+    const isForward = index >= this.selectionAnchor.index;
+    this.selection = { start: this.selectionAnchor.index, end: index };
+    this.selectionTimeRange = isForward
+      ? { start: this.selectionAnchor.startTime, end: endTime }
+      : { start: startTime, end: this.selectionAnchor.endTime };
     this.emit();
   };
 
   endSelection = (): void => {
     if (!this.isSelecting) return;
     this.isSelecting = false;
+    const range = this.selectionTimeRange;
     this.emit();
+    if (range) {
+      this.selectionEndListeners.forEach((listener) => listener(range));
+    }
   };
 
   clearSelection = (): void => {
     if (!this.selection) return;
     this.selection = null;
+    this.selectionAnchor = null;
+    this.selectionTimeRange = null;
     this.isSelecting = false;
     this.emit();
   };
 
   getSelectionRange = (): SelectionRange | null => this.selection;
+
+  getSelectionTimeRange = (): SelectionTimeRange | null => this.selectionTimeRange;
 
   getIsSelecting = (): boolean => this.isSelecting;
 
@@ -136,6 +170,34 @@ export function useSelectionRange(): SelectionRange | null {
     () => store.getSelectionRange(),
     () => null
   );
+}
+
+export function useSelectionTimeRange(): SelectionTimeRange | null {
+  const store = useControlBarStore();
+  return useSyncExternalStore(
+    store.subscribe,
+    () => store.getSelectionTimeRange(),
+    () => null
+  );
+}
+
+export function useIsSelecting(): boolean {
+  const store = useControlBarStore();
+  return useSyncExternalStore(
+    store.subscribe,
+    () => store.getIsSelecting(),
+    () => false
+  );
+}
+
+export function useOnSelectionEnd(callback: (range: SelectionTimeRange) => void): void {
+  const store = useControlBarStore();
+  const callbackRef = useRef(callback);
+  callbackRef.current = callback;
+
+  useEffect(() => {
+    return store.onSelectionEnd((range) => callbackRef.current(range));
+  }, [store]);
 }
 
 export function useControlBarActions() {

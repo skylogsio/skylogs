@@ -48,10 +48,12 @@ export function useDebuggingData({ alertRuleIds }: Pick<GetDebuggingsParams, "al
     placeholderData: keepPreviousData
   });
 
+  const hasNoAlertRules = params.alertRuleIds.length === 0;
+
   return {
-    data: query.data,
+    data: hasNoAlertRules ? [] : query.data,
     error: query.error,
-    isFetching: query.isFetching,
+    isFetching: hasNoAlertRules ? false : query.isFetching,
     isDebouncing
   };
 }

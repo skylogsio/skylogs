@@ -25,6 +25,7 @@ function AlertRuleSelector({ value, onChange }: AlertRuleSelectorProps) {
       options={availableOptions}
       value={null}
       inputValue={inputValue}
+      size="small"
       disableCloseOnSelect
       blurOnSelect={false}
       getOptionLabel={(option) => option.name}
