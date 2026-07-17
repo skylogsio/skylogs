@@ -38,7 +38,8 @@ trait QueriesHistoryModel
             ->orderBy('createdAt')
             ->get()
             ->map(fn (Model $document) => $this->toEvent($document))
-            ->values();
+            ->values()
+            ->toBase();
     }
 
     public function fetchBaseline(Collection $alertRules, Carbon $before): Collection
