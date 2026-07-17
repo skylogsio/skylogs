@@ -29,6 +29,7 @@ class AlertRule extends BaseModel implements Messageable
     protected $casts = [
         'type' => AlertRuleType::class,
         'checkType' => HealthAlertType::class,
+        'isPrivate' => 'boolean',
     ];
 
     public const DYNAMIC_QUERY_TYPE = 'dynamic';

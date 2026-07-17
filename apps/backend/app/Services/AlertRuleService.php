@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AlertRuleAccessLevel;
 use App\Enums\AlertRuleType;
 use App\Enums\HealthAlertType;
 use App\Helpers\Constants;
@@ -193,15 +194,23 @@ class AlertRuleService
     {
 
         $user = \Auth::user();
+        $scope = $request->input('scope', 'assigned');
 
         if (! $user->isAdmin()) {
-            $match['$or'] = [
+            $assignedOr = [
                 ['userId' => $user->id],
                 ['userIds' => $user->id],
             ];
             $userTeams = $this->teamService->userTeams($user)->pluck('id')->toArray();
             if (! empty($userTeams)) {
-                $match['$or'][] = ['teamIds' => ['$in' => $userTeams]];
+                $assignedOr[] = ['teamIds' => ['$in' => $userTeams]];
+            }
+
+            if ($scope === 'organization') {
+                $assignedOr[] = ['isPrivate' => ['$ne' => true]];
+                $match['$or'] = $assignedOr;
+            } else {
+                $match['$or'] = $assignedOr;
             }
 
         }
@@ -214,13 +223,20 @@ class AlertRuleService
         }
 
         if ($request->filled('userId')) {
-            $match['$or'] = [
+            $userFilterOr = [
                 ['userId' => $request->userId],
                 ['userIds' => $request->userId],
             ];
-            $userTeams = $this->teamService->userTeams($user)->pluck('id')->toArray();
-            if (! empty($userTeams)) {
-                $match['$or'][] = ['teamIds' => ['$in' => $userTeams]];
+
+            // Keep access-control $or for non-admins; AND the userId filter with it.
+            if (isset($match['$or'])) {
+                $match['$and'] = [
+                    ['$or' => $match['$or']],
+                    ['$or' => $userFilterOr],
+                ];
+                unset($match['$or']);
+            } else {
+                $match['$or'] = $userFilterOr;
             }
         }
 
@@ -245,10 +261,6 @@ class AlertRuleService
 
         if ($request->filled('endpointId')) {
             $match['endpointIds'] = ['$in' => [$request->endpointId]];
-        }
-
-        if ($request->filled('userId')) {
-            $match['userId'] = $request->userId;
         }
 
         if ($request->filled('status')) {
@@ -752,6 +764,37 @@ class AlertRuleService
         return $this->userOwnsAlert($user, $alert);
     }
 
+    public function isPrivateAlert(AlertRule $alert): bool
+    {
+        return (bool) ($alert->isPrivate ?? false);
+    }
+
+    public function hasReadAccessAlert(User $user, AlertRule $alert): bool
+    {
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        if ($this->hasUserAccessAlert($user, $alert)) {
+            return true;
+        }
+
+        return ! $this->isPrivateAlert($alert);
+    }
+
+    public function resolveAccessLevel(User $user, AlertRule $alert): AlertRuleAccessLevel
+    {
+        if ($this->hasUserAccessAlert($user, $alert)) {
+            return AlertRuleAccessLevel::Manage;
+        }
+
+        if ($this->hasReadAccessAlert($user, $alert)) {
+            return AlertRuleAccessLevel::Readonly;
+        }
+
+        return AlertRuleAccessLevel::None;
+    }
+
     public function hasTeamAccessAlert(User $user, AlertRule $alert): bool
     {
         $alertTeamIds = $alert->teamIds ?? [];
@@ -1052,7 +1095,7 @@ class AlertRuleService
         $slotCount = (int) config('alert-status.timeline_slot_count', 100);
         $alertRules = AlertRule::whereIn('_id', $alertRuleIds)
             ->get()
-            ->filter(fn (AlertRule $alertRule) => $this->hasUserAccessAlert($user, $alertRule))
+            ->filter(fn (AlertRule $alertRule) => $this->hasReadAccessAlert($user, $alertRule))
             ->keyBy(fn (AlertRule $alertRule) => (string) $alertRule->_id);
 
         if ($alertRules->isEmpty()) {

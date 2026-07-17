@@ -106,6 +106,7 @@ describe('AlertingController AlertStatus', function () {
             'name' => 'Private Alert',
             'type' => 'api',
             'userId' => $this->owner->id,
+            'isPrivate' => true,
         ]);
 
         $this->apiAlert = AlertRule::create([
@@ -125,6 +126,29 @@ describe('AlertingController AlertStatus', function () {
 
         expect(collect($response)->pluck('alertRuleId')->all())
             ->toBe([$this->apiAlert->id]);
+    });
+
+    it('includes organization-visible alerts in status history for readonly users', function () {
+        $publicAlert = AlertRule::create([
+            'name' => 'Public Alert',
+            'type' => 'api',
+            'userId' => $this->owner->id,
+            'isPrivate' => false,
+        ]);
+
+        $response = $this->actingAs($this->outsider, 'api')
+            ->getJson('/api/v1/alert-rule/status?'.http_build_query([
+                'alertRuleIds' => [$publicAlert->id],
+                'fromTime' => $this->fromTime,
+                'toTime' => $this->toTime,
+            ]))
+            ->assertSuccessful()
+            ->json();
+
+        expect(collect($response)->pluck('alertRuleId')->all())
+            ->toBe([$publicAlert->id]);
+
+        AlertRule::query()->where('_id', $publicAlert->_id)->delete();
     });
 
     it('returns resolved segments spanning the whole window when an api alert has no history', function () {

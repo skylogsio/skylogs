@@ -8,10 +8,9 @@ use App\Http\Requests\AlertRule\AlertStatusRequest;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
-use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
 use App\Models\VictoriaLogsCheck;
-use App\Services\AlertRuleBehaviorRuleService;
+use App\Services\AlertRuleResponseFormatter;
 use App\Services\AlertRuleService;
 use App\Services\EndpointService;
 use App\Services\SendNotifyService;
@@ -29,6 +28,7 @@ class AlertingController extends Controller
         protected AlertRuleService $alertRuleService,
         protected EndpointService $endpointService,
         protected ZabbixService $zabbixService,
+        protected AlertRuleResponseFormatter $alertRuleResponseFormatter,
     ) {}
 
     public function Index(Request $request)
@@ -36,7 +36,6 @@ class AlertingController extends Controller
 
         $perPage = $request->perPage ? intval($request->perPage) : 25;
         $currentUser = \Auth::user();
-        $userId = $currentUser->id;
 
         $pipeline = [];
 
@@ -96,47 +95,29 @@ class AlertingController extends Controller
         );
 
         foreach ($paginatedData as &$alert) {
-            //            $alert =new AlertRule($alert);
-            /** @var $alert AlertRule */
-            $alert->hasActionAccess = $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert);
-            [$alertStatus, $alertStatusCount] = $alert->getStatus();
-            $alert->statusLabel = $alertStatus;
-            $alert->statusCount = $alertStatusCount;
-            $alert->status_label = $alertStatus;
-            $isSilent = $alert->isSilent();
-            $alert->isSilent = $isSilent;
-            $alert->is_silent = $isSilent;
-            $isSilentByBehavior = app(AlertRuleBehaviorRuleService::class)->resolveIsSilent($alert);
-            $alert->isSilentByBehavior = $isSilentByBehavior;
-            $alert->countEndpoints = $this->endpointService->countUserEndpointAlert($currentUser, $alert);
-            $alert->count_endpoints = $alert->countEndpoints;
-            $alert->showAcknowledgeBtn = $alert->showAcknowledgeBtn ?? false;
-            $alert->teamIds = $alert->teamIds ?? [];
-            $alert->description = $alert->description ?? '';
-
-            $extraField = [];
-            if (! empty($alert->extraField)) {
-                foreach ($alert->extraField as $key => $value) {
-                    $extraField[] = [
-                        'key' => $key,
-                        'value' => $value,
-                    ];
-                }
-            }
-            $alert->extraField = $extraField;
+            /** @var AlertRule $alert */
+            $this->alertRuleResponseFormatter->enrichForList($alert, $currentUser);
         }
 
         return response()->json($paginatedData);
 
     }
 
-    public function All(){
+    public function All()
+    {
         $result = $this->alertRuleService->all();
+
         return response()->json($result);
     }
+
     public function Pin($id)
     {
-        $alert = AlertRule::where('_id', $id)->first();
+        $alert = AlertRule::where('_id', $id)->firstOrFail();
+
+        if (! $this->alertRuleService->hasUserAccessAlert(Auth::user(), $alert)) {
+            abort(403);
+        }
+
         if ($alert->isPin()) {
             $alert->unPin();
         } else {
@@ -191,7 +172,12 @@ class AlertingController extends Controller
 
     public function Silent($id)
     {
-        $alert = AlertRule::where('_id', $id)->first();
+        $alert = AlertRule::where('_id', $id)->firstOrFail();
+
+        if (! $this->alertRuleService->hasUserAccessAlert(Auth::user(), $alert)) {
+            abort(403);
+        }
+
         if ($alert->isSilent()) {
             $alert->unSilent();
         } else {
@@ -231,6 +217,7 @@ class AlertingController extends Controller
                 'endpointIds' => [],
                 'userIds' => [],
                 'teamIds' => [],
+                'isPrivate' => $request->boolean('isPrivate'),
             ];
             switch ($alertType) {
                 case AlertRuleType::GRAFANA:
@@ -369,41 +356,11 @@ class AlertingController extends Controller
         $alert = AlertRule::where('_id', $id)->firstOrFail();
         $currentUser = Auth::user();
 
-        if (! $this->alertRuleService->hasUserAccessAlert($currentUser, $alert)) {
+        if ($this->alertRuleService->resolveAccessLevel($currentUser, $alert)->value === 'none') {
             abort(403);
         }
 
-        if (! empty($alert->dataSourceIds)) {
-            $alert->dataSourceLabels = DataSource::whereIn('id', $alert->dataSourceIds)->get()->pluck('name')->toArray();
-        }
-
-        $extraField = [];
-        if (! empty($alert->extraField)) {
-            foreach ($alert->extraField as $key => $value) {
-                $extraField[] = [
-                    'key' => $key,
-                    'value' => $value,
-                ];
-            }
-        }
-        $alert->extraField = $extraField;
-        $alert->description = $alert->description ?? '';
-        $alert->teamIds = $alert->teamIds ?? [];
-        $alert->showAcknowledgeBtn = $alert->showAcknowledgeBtn ?? false;
-        $alert->hasActionAccess = $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert);
-        [$alertStatus, $alertStatusCount] = $alert->getStatus();
-        $alert->statusLabel = $alertStatus;
-        $alert->status_label = $alertStatus;
-        $alert->statusCount = $alertStatusCount;
-        $alert->ownerName = $alert->user->name;
-        $isSilent = $alert->isSilent();
-        $alert->isSilent = $isSilent;
-        $alert->is_silent = $isSilent;
-        $isSilentByBehavior = app(AlertRuleBehaviorRuleService::class)->resolveIsSilent($alert);
-        $alert->isSilentByBehavior = $isSilentByBehavior;
-        $alert->countEndpoints = $this->endpointService->countUserEndpointAlert($currentUser, $alert);
-        $alert->count_endpoints = $alert->countEndpoints;
-        $alert->rules = app(AlertRuleBehaviorRuleService::class)->formatRulesForApi($alert->rules ?? []);
+        $this->alertRuleResponseFormatter->enrichForShow($alert, $currentUser);
 
         return response()->json($alert);
     }
@@ -415,6 +372,12 @@ class AlertingController extends Controller
             $model = $model->where('userId', auth()->id());
         }
         $model = $model->firstOrFail();
+        $currentUser = auth()->user();
+
+        if ($request->has('isPrivate') && $this->alertRuleService->hasAdminAccessAlert($currentUser, $model)) {
+            $model->isPrivate = $request->boolean('isPrivate');
+        }
+
         $model->showAcknowledgeBtn = $request->boolean('showAcknowledgeBtn');
         $model->description = $request->description ?? '';
 
@@ -568,7 +531,7 @@ class AlertingController extends Controller
 
         $model->tags = collect($request->tags ?? [])->map(fn ($item) => trim($item))->unique()->toArray();
 
-        if ($model->isDirty(['tags'])) {
+        if ($model->isDirty(['tags', 'isPrivate'])) {
             $model->save();
         }
 
@@ -633,7 +596,7 @@ class AlertingController extends Controller
 
         $alert = AlertRule::where('_id', $id)->firstOrFail();
 
-        if (! $this->alertRuleService->hasUserAccessAlert(Auth::user(), $alert)) {
+        if (! $this->alertRuleService->hasReadAccessAlert(Auth::user(), $alert)) {
             abort(403);
         }
 
@@ -649,7 +612,12 @@ class AlertingController extends Controller
 
     public function FiredAlerts($id)
     {
-        // TODO check access alert
+        $alert = AlertRule::where('_id', $id)->firstOrFail();
+
+        if (! $this->alertRuleService->hasReadAccessAlert(Auth::user(), $alert)) {
+            abort(403);
+        }
+
         return $this->alertRuleService->firedAlerts($id);
     }
 }
