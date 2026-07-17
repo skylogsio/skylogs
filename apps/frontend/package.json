@@ -27,7 +27,7 @@
     "date-fns": "^4.4.0",
     "date-fns-jalali": "^4.0.0-0",
     "framer-motion": "^12.23.25",
-    "glob": "^11.0.0",
+    "glob": "^13.0.6",
     "intl-locale-textinfo-polyfill": "^2.1.1",
     "js-cookie": "^3.0.5",
     "lru-cache": "^11.0.1",
