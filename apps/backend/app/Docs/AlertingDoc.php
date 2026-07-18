@@ -416,8 +416,8 @@ class AlertingDoc
         tags: ['AlertRule'],
         parameters: [
             new OA\Parameter(name: 'alertRuleIds', description: 'Alert rule ids to build timelines for', in: 'query', required: true, schema: new OA\Schema(type: 'array', items: new OA\Items(type: 'string', pattern: '^[0-9a-fA-F]{24}$'))),
-            new OA\Parameter(name: 'fromTime', description: 'Window start (unix timestamp, seconds)', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
-            new OA\Parameter(name: 'toTime', description: 'Window end (unix timestamp, seconds), must be after fromTime', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'fromTime', description: 'Window start (unix timestamp in seconds or milliseconds; ms values are normalized to seconds)', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'toTime', description: 'Window end (unix timestamp in seconds or milliseconds; must be after fromTime). Ms values are normalized to seconds.', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
             new OA\Response(

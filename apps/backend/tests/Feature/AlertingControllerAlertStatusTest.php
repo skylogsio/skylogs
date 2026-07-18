@@ -79,6 +79,28 @@ describe('AlertingController AlertStatus', function () {
             ->assertJsonValidationErrors(['toTime']);
     });
 
+    it('accepts millisecond timestamps and returns second-based segments', function () {
+        $this->apiAlert = AlertRule::create([
+            'name' => 'API Alert',
+            'type' => 'api',
+            'userId' => $this->owner->id,
+        ]);
+
+        $response = $this->actingAs($this->owner, 'api')
+            ->getJson('/api/v1/alert-rule/status?'.http_build_query([
+                'alertRuleIds' => [$this->apiAlert->id],
+                'fromTime' => $this->fromTime * 1000,
+                'toTime' => $this->toTime * 1000,
+            ]))
+            ->assertSuccessful()
+            ->assertJsonCount(1);
+
+        $timeline = $response->json('0');
+
+        expect($timeline['segments'][0]['fromTime'])->toBe($this->fromTime)
+            ->and($timeline['segments'][array_key_last($timeline['segments'])]['toTime'])->toBe($this->toTime);
+    });
+
     it('silently excludes alert rules the requesting user cannot access', function () {
         $this->privateAlert = AlertRule::create([
             'name' => 'Private Alert',
