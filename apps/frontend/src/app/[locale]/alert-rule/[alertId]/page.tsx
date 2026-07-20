@@ -345,7 +345,7 @@ export default function ViewAlertRule() {
                 Tags:
               </Typography>
               <Stack direction="row" sx={{ padding: 1, flexWrap: "wrap", gap: 1 }}>
-                {data.tags.map((tag, index) => (
+                {data.tags?.map((tag, index) => (
                   <Chip key={index} variant="filled" label={tag} size="small" />
                 ))}
               </Stack>
