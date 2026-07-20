@@ -63,8 +63,7 @@ class BehaviorRuleController extends Controller
                 Rule::prohibitedIf(fn () => $request->input('type') === AlertRuleBehaviorRuleType::TEMPLATE->value),
                 'array',
                 Rule::when(
-                    fn () => $request->input('type') === AlertRuleBehaviorRuleType::NOTIFICATION->value
-                        || ($isSilentType && $request->has('filters')),
+                    fn () => $request->input('type') === AlertRuleBehaviorRuleType::NOTIFICATION->value,
                     'min:1',
                 ),
             ],
@@ -145,13 +144,17 @@ class BehaviorRuleController extends Controller
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'min:1', 'max:255'],
-            'filters' => [$isTemplate ? 'prohibited' : 'sometimes', 'array', 'min:1'],
+            'filters' => [
+                $isTemplate ? 'prohibited' : 'sometimes',
+                'array',
+                Rule::when(! $isSilent && ! $isTemplate, 'min:1'),
+            ],
             'filters.*.key' => ['required_with:filters', 'string'],
             'filters.*.value' => ['required_with:filters', 'string'],
             'endpointIds' => [$isSilent ? 'prohibited' : 'sometimes', 'array', 'min:1'],
             'endpointIds.*' => ['required_with:endpointIds', 'string'],
             'template' => [$isTemplate ? 'sometimes' : 'prohibited', 'string', 'min:1'],
-            'dependsOnAlertRuleIds' => [$isSilent ? 'sometimes' : 'prohibited', 'array', 'min:1'],
+            'dependsOnAlertRuleIds' => [$isSilent ? 'sometimes' : 'prohibited', 'array'],
             'dependsOnAlertRuleIds.*' => ['required_with:dependsOnAlertRuleIds', 'string'],
             'triggerState' => [
                 $isSilent ? 'sometimes' : 'prohibited',
@@ -267,9 +270,8 @@ class BehaviorRuleController extends Controller
 
         $validator = Validator::make($ruleData, []);
 
-        if ($hasDependencyIds xor $hasTriggerState) {
-            $validator->errors()->add('dependsOnAlertRuleIds', 'dependsOnAlertRuleIds and triggerState must be provided together.');
-            $validator->errors()->add('triggerState', 'dependsOnAlertRuleIds and triggerState must be provided together.');
+        if ($hasDependencyIds && ! $hasTriggerState) {
+            $validator->errors()->add('triggerState', 'triggerState is required when dependsOnAlertRuleIds is provided.');
         }
 
         if (! $hasDependencyIds && ! $hasFilters && ! $hasStartsAt && ! $hasEndsAt) {
