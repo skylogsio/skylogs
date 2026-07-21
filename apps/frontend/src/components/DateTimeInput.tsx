@@ -102,7 +102,36 @@ export default function DateTimeInput({
   const commonSlotProps: DatePickerSlotProps = {
     textField: commonTextFieldProps as never,
     inputAdornment: { sx: { display: "none" } },
-    openPickerButton: { sx: { display: "none" } }
+    openPickerButton: { sx: { display: "none" } },
+    popper: {
+      placement: "bottom-start",
+      modifiers: [
+        {
+          name: "flip",
+          enabled: true,
+          options: {
+            fallbackPlacements: ["top-start", "bottom-end", "top-end"],
+            padding: 8
+          }
+        },
+        {
+          name: "preventOverflow",
+          enabled: true,
+          options: {
+            altAxis: true,
+            tether: true,
+            padding: 8,
+            rootBoundary: "viewport"
+          }
+        }
+      ]
+    },
+    desktopPaper: {
+      sx: {
+        maxHeight: "calc(100vh - 32px)",
+        overflow: "auto"
+      }
+    }
   };
 
   const pickerValue = toDate(isoValue);
