@@ -38,7 +38,7 @@ type Props = {
 const DISPLAY_FORMAT: Record<PickerType, string> = {
   time: "HH:mm",
   date: "yyyy/MM/dd",
-  "date-time": "yyyy/MM/dd @ HH:mm"
+  "date-time": "yyyy/MM/dd HH:mm"
 };
 
 export default function DateTimeInput({
@@ -101,7 +101,6 @@ export default function DateTimeInput({
 
   const commonSlotProps: DatePickerSlotProps = {
     textField: commonTextFieldProps as never,
-    inputAdornment: { sx: { display: "none" } },
     openPickerButton: { sx: { display: "none" } },
     popper: {
       placement: "bottom-start",
@@ -135,16 +134,21 @@ export default function DateTimeInput({
   };
 
   const pickerValue = toDate(isoValue);
+  const hasValue = pickerValue !== null;
+
+  const handleClear = (pickerType: PickerType) => {
+    setIsoValue(null);
+    onChange?.({
+      iso: null,
+      formatted: "",
+      calendar,
+      type: pickerType
+    });
+  };
 
   const handleSingleChange = (newVal: Date | null, pickerType: PickerType) => {
     if (!newVal || Number.isNaN(newVal.getTime())) {
-      setIsoValue(null);
-      onChange?.({
-        iso: null,
-        formatted: "",
-        calendar,
-        type: pickerType
-      });
+      handleClear(pickerType);
       return;
     }
 
@@ -158,6 +162,29 @@ export default function DateTimeInput({
       type: pickerType
     });
   };
+
+  const getSlotProps = (pickerType: PickerType): DatePickerSlotProps => ({
+    ...commonSlotProps,
+    field: {
+      clearable: hasValue && !disabled,
+      onClear: (event) => {
+        event.stopPropagation();
+        handleClear(pickerType);
+      }
+    },
+    clearButton: {
+      size: "small",
+      onClick: (event) => {
+        event.stopPropagation();
+        handleClear(pickerType);
+      },
+      sx: {
+        p: 0.5,
+        mr: 0.5
+      }
+    },
+    openPickerButton: { sx: { display: "none" } }
+  });
 
   return (
     <LocalizationProvider
@@ -176,7 +203,7 @@ export default function DateTimeInput({
           open={open}
           onOpen={() => setOpen(true)}
           onClose={() => setOpen(false)}
-          slotProps={commonSlotProps}
+          slotProps={getSlotProps("time")}
         />
       )}
 
@@ -190,7 +217,7 @@ export default function DateTimeInput({
           open={open}
           onOpen={() => setOpen(true)}
           onClose={() => setOpen(false)}
-          slotProps={commonSlotProps}
+          slotProps={getSlotProps("date")}
         />
       )}
 
@@ -205,7 +232,7 @@ export default function DateTimeInput({
           open={open}
           onOpen={() => setOpen(true)}
           onClose={() => setOpen(false)}
-          slotProps={commonSlotProps}
+          slotProps={getSlotProps("date-time")}
         />
       )}
     </LocalizationProvider>
