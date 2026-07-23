@@ -18,7 +18,7 @@
                     "AlertRule"
                 ],
                 "summary": "List alert rules",
-                "description": "Returns a paginated list of alert rules visible to the authenticated user. Pinned rules appear first.",
+                "description": "Returns a paginated list of alert rules visible to the authenticated user. Pinned rules appear first. Each item includes `accessLevel` (`manage` or `readonly`). For `readonly` organization-visible alerts, sensitive fields (tokens, endpoints, query config, etc.) are omitted.",
                 "operationId": "getAlertRules",
                 "parameters": [
                     {
@@ -36,6 +36,19 @@
                         "schema": {
                             "type": "integer",
                             "default": 25
+                        }
+                    },
+                    {
+                        "name": "scope",
+                        "in": "query",
+                        "description": "Access filter for non-admin users. `assigned` (default) returns rules the user owns or is shared on. `organization` also includes non-private rules from the rest of the organization (returned with `accessLevel: readonly`).",
+                        "schema": {
+                            "type": "string",
+                            "default": "assigned",
+                            "enum": [
+                                "assigned",
+                                "organization"
+                            ]
                         }
                     },
                     {
@@ -147,7 +160,7 @@
                     "AlertRule"
                 ],
                 "summary": "Create alert rule",
-                "description": "Creates an alert rule. All types use this endpoint; set `type` to select the request body shape (see schema oneOf / discriminator). Prometheus, Grafana, and PMM additionally use `queryType` (`dynamic` vs `textQuery`).",
+                "description": "Creates an alert rule. All types use this endpoint; set `type` to select the request body shape (see schema oneOf / discriminator). Prometheus, Grafana, and PMM additionally use `queryType` (`dynamic` vs `textQuery`). Optional `isPrivate` hides the rule from organization-wide readonly access.",
                 "operationId": "createAlertRule",
                 "requestBody": {
                     "required": true,
@@ -294,6 +307,7 @@
                     "AlertRule"
                 ],
                 "summary": "Get alert rule by id",
+                "description": "Returns alert rule details when the user has at least readonly access. `accessLevel` is `manage` for owners/shared users/admins, or `readonly` for organization-visible public alerts. Readonly responses omit sensitive configuration (tokens, endpoints, query details, behavior rules, etc.). Private alerts are forbidden to users without manage access.",
                 "operationId": "getAlertRule",
                 "parameters": [
                     {
@@ -335,7 +349,7 @@
                     "AlertRule"
                 ],
                 "summary": "Update alert rule",
-                "description": "Updates an alert rule. Send the payload for the rule's existing type (type cannot be changed). Non-admin users can only update rules they own.",
+                "description": "Updates an alert rule. Send the payload for the rule's existing type (type cannot be changed). Non-admin users can only update rules they own. `isPrivate` can be updated only by users with admin access on the rule.",
                 "operationId": "updateAlertRule",
                 "parameters": [
                     {
@@ -462,6 +476,7 @@
                     "AlertRule"
                 ],
                 "summary": "Toggle pin on alert rule",
+                "description": "Requires manage access (owner, shared user/team, or admin). Readonly organization viewers cannot pin.",
                 "operationId": "pinAlertRule",
                 "parameters": [
                     {
@@ -493,6 +508,12 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
                     }
                 },
                 "security": [
@@ -629,6 +650,7 @@
                     "AlertRule"
                 ],
                 "summary": "Toggle silence for current user on a single alert rule",
+                "description": "Requires manage access (owner, shared user/team, or admin). Readonly organization viewers cannot silence.",
                 "operationId": "toggleSilentAlertRule",
                 "parameters": [
                     {
@@ -660,6 +682,12 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
                     }
                 },
                 "security": [
@@ -738,26 +766,29 @@
                     "AlertRule"
                 ],
                 "summary": "Get status timelines for a batch of alert rules",
-                "description": "Returns a fixed-slot status timeline per alert rule over `[fromTime, toTime]`. Consecutive slots from the same status period are merged; each segment count sums to the configured timeline slot count (see `config/alert-status.php`). Alert rules the user cannot access are silently omitted from the response.",
+                "description": "Returns a fixed-slot status timeline per alert rule over `[fromTime, toTime]`. Consecutive slots from the same status period are merged; each segment count sums to the configured timeline slot count (see `config/alert-status.php`). Includes rules the user can manage or read (organization-visible public rules). Alert rules the user cannot access are silently omitted from the response. Response `fromTime`/`toTime` segment bounds are always unix seconds.",
                 "operationId": "getAlertRuleStatusTimeline",
                 "parameters": [
                     {
                         "name": "alertRuleIds",
                         "in": "query",
-                        "description": "Alert rule ids to build timelines for",
+                        "description": "Alert rule MongoDB ids. Accepts a repeated query array, a single id, a comma-separated list, or a JSON array string.",
                         "required": true,
+                        "style": "form",
+                        "explode": true,
                         "schema": {
                             "type": "array",
                             "items": {
                                 "type": "string",
                                 "pattern": "^[0-9a-fA-F]{24}$"
-                            }
+                            },
+                            "minItems": 1
                         }
                     },
                     {
                         "name": "fromTime",
                         "in": "query",
-                        "description": "Window start (unix timestamp, seconds)",
+                        "description": "Window start (unix timestamp in seconds or milliseconds; ms values are normalized to seconds)",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -766,7 +797,7 @@
                     {
                         "name": "toTime",
                         "in": "query",
-                        "description": "Window end (unix timestamp, seconds), must be after fromTime",
+                        "description": "Window end (unix timestamp in seconds or milliseconds; must be after fromTime). Ms values are normalized to seconds.",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -804,7 +835,7 @@
                     "AlertRule"
                 ],
                 "summary": "Get history for an alert rule",
-                "description": "Returns paginated state-change history. Shape depends on alert type (API instances, Prometheus/Grafana checks, Elastic/VictoriaLogs checks, etc.).",
+                "description": "Returns paginated state-change history. Shape depends on alert type (API instances, Prometheus/Grafana checks, Elastic/VictoriaLogs checks, etc.). Requires read access (manage or readonly for organization-visible public alerts).",
                 "operationId": "getAlertHistory",
                 "parameters": [
                     {
@@ -889,7 +920,7 @@
                     "AlertRule"
                 ],
                 "summary": "Get triggered/fired alerts for an alert rule",
-                "description": "Returns currently firing data: API `AlertInstance` rows, Prometheus/Grafana alert arrays, Zabbix webhook events, or Elastic/VictoriaLogs check documents depending on type.",
+                "description": "Returns currently firing data: API `AlertInstance` rows, Prometheus/Grafana alert arrays, Zabbix webhook events, or Elastic/VictoriaLogs check documents depending on type. Requires read access (manage or readonly for organization-visible public alerts).",
                 "operationId": "getTriggeredAlerts",
                 "parameters": [
                     {
@@ -915,6 +946,9 @@
                                 }
                             }
                         }
+                    },
+                    "403": {
+                        "description": "Forbidden"
                     },
                     "404": {
                         "description": "Not Found"
@@ -7066,6 +7100,11 @@
                         "type": "boolean",
                         "default": false
                     },
+                    "isPrivate": {
+                        "description": "When true, hides the rule from organization-wide readonly listing/detail access",
+                        "type": "boolean",
+                        "default": false
+                    },
                     "tags": {
                         "type": "array",
                         "items": {
@@ -7808,7 +7847,7 @@
                 ]
             },
             "AlertRuleUpdateCommonFields": {
-                "description": "Fields that can be updated on any alert rule type.",
+                "description": "Fields that can be updated on any alert rule type. `isPrivate` is applied only when the caller has admin access on the rule.",
                 "properties": {
                     "name": {
                         "type": "string"
@@ -7817,6 +7856,10 @@
                         "type": "string"
                     },
                     "showAcknowledgeBtn": {
+                        "type": "boolean"
+                    },
+                    "isPrivate": {
+                        "description": "When true, hides the rule from organization-wide readonly access. Only applied for callers with admin access.",
                         "type": "boolean"
                     },
                     "tags": {
@@ -8344,7 +8387,18 @@
                 },
                 "type": "object"
             },
+            "AlertRuleAccessLevel": {
+                "description": "Caller access on an alert rule. `manage` = owner, shared, or admin. `readonly` = organization-visible public alert. `none` is never returned in successful responses.",
+                "type": "string",
+                "example": "manage",
+                "enum": [
+                    "manage",
+                    "readonly",
+                    "none"
+                ]
+            },
             "AlertRuleListItem": {
+                "description": "Alert rule list row. When `accessLevel` is `readonly`, sensitive fields (tokens, endpoints, teams, query config, etc.) are omitted.",
                 "properties": {
                     "_id": {
                         "type": "string"
@@ -8365,6 +8419,7 @@
                         }
                     },
                     "teamIds": {
+                        "description": "Present only for `manage` access",
                         "type": "array",
                         "items": {
                             "type": "string"
@@ -8373,7 +8428,15 @@
                     "showAcknowledgeBtn": {
                         "type": "boolean"
                     },
+                    "accessLevel": {
+                        "$ref": "#/components/schemas/AlertRuleAccessLevel"
+                    },
+                    "isPrivate": {
+                        "description": "When true, the rule is hidden from organization-wide readonly access",
+                        "type": "boolean"
+                    },
                     "hasActionAccess": {
+                        "description": "True when the caller can perform admin actions (acknowledge resolve UI, etc.) — typically the owner/admin with manage access",
                         "type": "boolean"
                     },
                     "statusLabel": {
@@ -8394,7 +8457,7 @@
                         "type": "integer"
                     },
                     "isSilent": {
-                        "description": "Manual per-user silence (toggle via POST /api/v1/alert-rule/silent/{id})",
+                        "description": "Manual per-user silence (toggle via POST /api/v1/alert-rule/silent/{id}). Always false for readonly viewers.",
                         "type": "boolean"
                     },
                     "is_silent": {
@@ -8411,12 +8474,14 @@
                         "type": "boolean"
                     },
                     "countEndpoints": {
+                        "description": "Present only for `manage` access",
                         "type": "integer"
                     },
                     "count_endpoints": {
                         "type": "integer"
                     },
                     "extraField": {
+                        "description": "Present only for `manage` access",
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/AlertRuleExtraField"
@@ -8473,6 +8538,7 @@
                 "type": "object"
             },
             "AlertRuleDetail": {
+                "description": "Alert rule detail. Manage responses include configuration fields below; readonly responses only include the base list fields (plus `accessLevel` / `isPrivate`) with sensitive attributes stripped.",
                 "allOf": [
                     {
                         "$ref": "#/components/schemas/AlertRuleListItem"
@@ -8480,9 +8546,11 @@
                     {
                         "properties": {
                             "ownerName": {
+                                "description": "Present only for `manage` access",
                                 "type": "string"
                             },
                             "dataSourceLabels": {
+                                "description": "Present only for `manage` access",
                                 "type": "array",
                                 "items": {
                                     "type": "string"
@@ -8490,6 +8558,7 @@
                                 "nullable": true
                             },
                             "dataSourceIds": {
+                                "description": "Present only for `manage` access",
                                 "type": "array",
                                 "items": {
                                     "type": "string"
@@ -8497,14 +8566,17 @@
                                 "nullable": true
                             },
                             "dataSourceId": {
+                                "description": "Present only for `manage` access",
                                 "type": "string",
                                 "nullable": true
                             },
                             "dataSourceAlertName": {
+                                "description": "Present only for `manage` access",
                                 "type": "string",
                                 "nullable": true
                             },
                             "queryType": {
+                                "description": "Present only for `manage` access",
                                 "type": "string",
                                 "nullable": true,
                                 "enum": [
@@ -8513,22 +8585,32 @@
                                 ]
                             },
                             "queryText": {
+                                "description": "Present only for `manage` access",
                                 "type": "string",
                                 "nullable": true
                             },
                             "queryObject": {
+                                "description": "Present only for `manage` access",
                                 "type": "object",
                                 "nullable": true
                             },
                             "enableAutoResolve": {
+                                "description": "Present only for `manage` access",
                                 "type": "boolean",
                                 "nullable": true
                             },
                             "autoResolveMinutes": {
+                                "description": "Present only for `manage` access",
                                 "type": "integer",
                                 "nullable": true
                             },
+                            "apiToken": {
+                                "description": "Present only for API/notification owners (admin access)",
+                                "type": "string",
+                                "nullable": true
+                            },
                             "rules": {
+                                "description": "Behavior rules; present only for `manage` access",
                                 "type": "array",
                                 "items": {
                                     "$ref": "#/components/schemas/AlertRuleBehaviorRule"
