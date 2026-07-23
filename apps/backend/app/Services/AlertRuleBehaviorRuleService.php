@@ -427,6 +427,11 @@ class AlertRuleBehaviorRuleService
             return null;
         }
 
+
+        if ($timestamp >=  1_000_000_000_000) {
+            return intdiv($timestamp, 1000);
+        }
+
         return (int) $timestamp;
     }
 
