@@ -79,6 +79,7 @@ const storageManager = createStorageManager();
 export const ENDPOINT_COLORS = {
   sms: "#4880FF",
   telegram: "#2AABEE",
+  bale: "#00A693",
   teams: "#454DB3",
   call: "#11AC26",
   email: "#F05A28",

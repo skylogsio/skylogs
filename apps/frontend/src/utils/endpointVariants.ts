@@ -5,9 +5,12 @@ import { RiTelegram2Fill } from "react-icons/ri";
 import { SiDiscord, SiMattermost } from "react-icons/si";
 import { TiFlowChildren } from "react-icons/ti";
 
+import BaleIcon from "@/assets/svg/BaleIcon";
+
 export type EndpointType =
   | "sms"
   | "telegram"
+  | "bale"
   | "teams"
   | "call"
   | "email"
@@ -28,6 +31,10 @@ export const ENDPOINT_CONFIG: Record<EndpointType, EndpointTypeConfig> = {
   telegram: {
     title: "Telegram",
     icon: RiTelegram2Fill
+  },
+  bale: {
+    title: "Bale",
+    icon: BaleIcon as IconType
   },
   teams: {
     title: "Teams",

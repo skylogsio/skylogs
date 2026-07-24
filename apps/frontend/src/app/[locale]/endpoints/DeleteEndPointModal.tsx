@@ -81,7 +81,7 @@ export default function DeleteEndPointModal({
               wordBreak: "break-word"
             }}
           >
-            {type === "telegram" ? chatId : value}
+            {type === "telegram" || type === "bale" ? chatId : value}
           </Typography>
         </Stack>
       </Stack>

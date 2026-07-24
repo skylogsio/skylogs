@@ -5,6 +5,7 @@ declare module "@mui/material/styles" {
     endpoint: {
       sms: string;
       telegram: string;
+      bale: string;
       teams: string;
       call: string;
       email: string;
@@ -18,6 +19,7 @@ declare module "@mui/material/styles" {
     endpoint?: {
       sms?: string;
       telegram?: string;
+      bale?: string;
       teams?: string;
       call?: string;
       email?: string;

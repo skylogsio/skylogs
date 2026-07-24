@@ -128,7 +128,9 @@ export default function EndPoints() {
             {
               header: "Value",
               accessorFn: (row) =>
-                truncateLongString(row.type === "telegram" ? row.chatId : row.value)
+                truncateLongString(
+                  row.type === "telegram" || row.type === "bale" ? row.chatId : row.value
+                )
             },
             {
               header: "Action",
