@@ -13,6 +13,12 @@ use Illuminate\Support\Str;
 class AlertRuleBehaviorRuleService
 {
     /**
+     * Values at or above this are treated as Unix milliseconds (13-digit).
+     * 1e12 ms ≈ 2001-09-09; seconds never reach this until year ~33658.
+     */
+    private const MILLISECOND_TIMESTAMP_THRESHOLD = 1_000_000_000_000;
+
+    /**
      * @return Collection<int, array<string, mixed>>
      */
     public function silentRules(AlertRule $alertRule): Collection
@@ -378,8 +384,8 @@ class AlertRuleBehaviorRuleService
         }
 
         $now ??= time();
-        $startsAt = $this->normalizeSilentTimestamp($rule['startsAt'] ?? null);
-        $endsAt = $this->normalizeSilentTimestamp($rule['endsAt'] ?? null);
+        $startsAt = $this->silentTimestampAsSeconds($rule['startsAt'] ?? null);
+        $endsAt = $this->silentTimestampAsSeconds($rule['endsAt'] ?? null);
 
         if ($startsAt !== null && $now < $startsAt) {
             return false;
@@ -417,6 +423,9 @@ class AlertRuleBehaviorRuleService
         return true;
     }
 
+    /**
+     * Accept seconds (10-digit) or milliseconds (13-digit); always store/return milliseconds.
+     */
     public function normalizeSilentTimestamp(mixed $timestamp): ?int
     {
         if ($timestamp === null || $timestamp === '') {
@@ -427,12 +436,31 @@ class AlertRuleBehaviorRuleService
             return null;
         }
 
+        $timestamp = (int) $timestamp;
 
-        if ($timestamp >=  1_000_000_000_000) {
-            return intdiv($timestamp, 1000);
+        if ($timestamp <= 0) {
+            return null;
         }
 
-        return (int) $timestamp;
+        if ($timestamp < self::MILLISECOND_TIMESTAMP_THRESHOLD) {
+            return $timestamp * 1000;
+        }
+
+        return $timestamp;
+    }
+
+    /**
+     * Convert a silent timestamp to Unix seconds for time-window comparisons with time().
+     */
+    public function silentTimestampAsSeconds(mixed $timestamp): ?int
+    {
+        $milliseconds = $this->normalizeSilentTimestamp($timestamp);
+
+        if ($milliseconds === null) {
+            return null;
+        }
+
+        return intdiv($milliseconds, 1000);
     }
 
     /**

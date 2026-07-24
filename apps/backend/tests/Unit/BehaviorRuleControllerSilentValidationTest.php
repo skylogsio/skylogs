@@ -69,4 +69,22 @@ describe('BehaviorRuleController silent payload validation', function () {
             expect($exception->errors())->toHaveKey('filters');
         }
     });
+
+    it('accepts millisecond silent timestamps and rejects endsAt not greater than startsAt', function () {
+        invokeAssertValidSilentRulePayload([
+            'startsAt' => 1_720_000_000_000,
+            'endsAt' => 1_721_000_000_000,
+        ]);
+
+        try {
+            invokeAssertValidSilentRulePayload([
+                'startsAt' => 1_721_000_000_000,
+                'endsAt' => 1_720_000_000_000,
+            ]);
+
+            $this->fail('Expected a ValidationException.');
+        } catch (ValidationException $exception) {
+            expect($exception->errors())->toHaveKey('endsAt');
+        }
+    });
 });

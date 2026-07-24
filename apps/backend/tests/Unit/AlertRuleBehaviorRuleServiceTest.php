@@ -775,8 +775,8 @@ describe('AlertRuleBehaviorRuleService', function () {
                 'name' => 'Silence api instance',
                 'type' => AlertRuleBehaviorRuleType::SILENT->value,
                 'filters' => [['key' => 'instance', 'value' => 'api*']],
-                'startsAt' => 1_720_000_000,
-                'endsAt' => 1_721_289_600,
+                'startsAt' => 1_720_000_000_000,
+                'endsAt' => 1_721_289_600_000,
             ],
         ]);
 
@@ -787,12 +787,47 @@ describe('AlertRuleBehaviorRuleService', function () {
             'filters' => [
                 ['key' => 'instance', 'value' => 'api*'],
             ],
-            'startsAt' => 1_720_000_000,
-            'endsAt' => 1_721_289_600,
+            'startsAt' => 1_720_000_000_000,
+            'endsAt' => 1_721_289_600_000,
+        ]);
+    });
+
+    it('normalizes second-based silent timestamps to milliseconds in api response', function () {
+        $formatted = $this->service->formatRulesForApi([
+            [
+                'id' => 'silent-1',
+                'name' => 'Legacy seconds',
+                'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                'startsAt' => 1_720_000_000,
+                'endsAt' => 1_721_289_600,
+            ],
+        ]);
+
+        expect($formatted[0])->toMatchArray([
+            'startsAt' => 1_720_000_000_000,
+            'endsAt' => 1_721_289_600_000,
         ]);
     });
 
     it('resolves silent for time-only rule within active window', function () {
+        $now = 1_720_500_000;
+        $alertRule = AlertRuleFactory::unsaved([
+            'type' => AlertRuleType::PROMETHEUS,
+            'endpointIds' => [],
+            'rules' => [
+                [
+                    'id' => 'silent-1',
+                    'type' => AlertRuleBehaviorRuleType::SILENT->value,
+                    'startsAt' => 1_720_000_000_000,
+                    'endsAt' => 1_721_000_000_000,
+                ],
+            ],
+        ]);
+
+        expect($this->service->resolveIsSilent($alertRule, null, $now))->toBeTrue();
+    });
+
+    it('resolves silent for time-only rule when legacy seconds are stored', function () {
         $now = 1_720_500_000;
         $alertRule = AlertRuleFactory::unsaved([
             'type' => AlertRuleType::PROMETHEUS,
@@ -818,8 +853,8 @@ describe('AlertRuleBehaviorRuleService', function () {
                 [
                     'id' => 'silent-1',
                     'type' => AlertRuleBehaviorRuleType::SILENT->value,
-                    'startsAt' => 1_720_000_000,
-                    'endsAt' => 1_721_000_000,
+                    'startsAt' => 1_720_000_000_000,
+                    'endsAt' => 1_721_000_000_000,
                 ],
             ],
         ]);
@@ -984,8 +1019,8 @@ describe('AlertRuleBehaviorRuleService', function () {
         $rule = $this->service->createSilentRule($alertRule, [
             'name' => 'Maintenance silence',
             'filters' => [['key' => 'instance', 'value' => 'api*']],
-            'startsAt' => 1_720_000_000,
-            'endsAt' => 1_721_289_600,
+            'startsAt' => 1_720_000_000_000,
+            'endsAt' => 1_721_289_600_000,
         ]);
 
         expect($rule)->toMatchArray([
@@ -994,9 +1029,26 @@ describe('AlertRuleBehaviorRuleService', function () {
             'filters' => [
                 ['key' => 'instance', 'value' => 'api*'],
             ],
+            'startsAt' => 1_720_000_000_000,
+            'endsAt' => 1_721_289_600_000,
+        ])->and($rule)->not->toHaveKey('dependsOnAlertRuleIds');
+    });
+
+    it('stores second-based silent timestamps as milliseconds', function () {
+        $alertRule = mockAlertRuleForPersistence([
+            'rules' => [],
+        ]);
+
+        $rule = $this->service->createSilentRule($alertRule, [
+            'name' => 'Seconds input',
             'startsAt' => 1_720_000_000,
             'endsAt' => 1_721_289_600,
-        ])->and($rule)->not->toHaveKey('dependsOnAlertRuleIds');
+        ]);
+
+        expect($rule)->toMatchArray([
+            'startsAt' => 1_720_000_000_000,
+            'endsAt' => 1_721_289_600_000,
+        ]);
     });
 
     it('updates silent rules with merged optional fields', function () {
@@ -1015,7 +1067,7 @@ describe('AlertRuleBehaviorRuleService', function () {
         $updated = $this->service->updateSilentRule($alertRule, 'silent-1', [
             'name' => 'New name',
             'filters' => [['key' => 'instance', 'value' => 'api*']],
-            'endsAt' => 1_721_289_600,
+            'endsAt' => 1_721_289_600_000,
         ]);
 
         expect($updated)->toMatchArray([
@@ -1027,7 +1079,7 @@ describe('AlertRuleBehaviorRuleService', function () {
             'filters' => [
                 ['key' => 'instance', 'value' => 'api*'],
             ],
-            'endsAt' => 1_721_289_600,
+            'endsAt' => 1_721_289_600_000,
         ]);
     });
 });

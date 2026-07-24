@@ -133,7 +133,7 @@ Suppresses notifications when **all configured** conditions match. Configure one
 
 - **Dependency:** `dependsOnAlertRuleIds` + `triggerState` — all listed rules must have that status
 - **Content:** `filters` — incoming alert labels/instance must match (same filter syntax as notification rules)
-- **Time:** `startsAt` and/or `endsAt` — Unix timestamps; omit a bound for no start/end limit
+- **Time:** `startsAt` and/or `endsAt` — Unix timestamps in milliseconds (13-digit); seconds (10-digit) are accepted on write and normalized to milliseconds; omit a bound for no start/end limit
 
 If multiple silent rules exist on one alert rule, **any** matching rule suppresses notifications (OR). Does not affect the manual `isSilent` toggle.
 DESC,
@@ -176,16 +176,16 @@ DESC,
         ),
         new OA\Property(
             property: 'startsAt',
-            description: 'Unix timestamp when silence becomes active. Omit for no start bound.',
+            description: 'Unix timestamp in milliseconds when silence becomes active. Omit for no start bound. Seconds are accepted on write and stored/returned as milliseconds.',
             type: 'integer',
-            example: 1720000000,
+            example: 1720000000000,
             nullable: true,
         ),
         new OA\Property(
             property: 'endsAt',
-            description: 'Unix timestamp when silence expires. Omit for permanent silence until the rule is deleted.',
+            description: 'Unix timestamp in milliseconds when silence expires. Omit for permanent silence until the rule is deleted. Seconds are accepted on write and stored/returned as milliseconds.',
             type: 'integer',
-            example: 1721289600,
+            example: 1721289600000,
             nullable: true,
         ),
     ]
@@ -256,8 +256,8 @@ DESC,
         ),
         new OA\Property(property: 'triggerState', type: 'string', enum: ['resolved', 'critical']),
         new OA\Property(property: 'filters', type: 'array', minItems: 1, items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRuleFilter')),
-        new OA\Property(property: 'startsAt', description: 'Unix timestamp silence start', type: 'integer', nullable: true),
-        new OA\Property(property: 'endsAt', description: 'Unix timestamp silence end', type: 'integer', nullable: true),
+        new OA\Property(property: 'startsAt', description: 'Unix timestamp in milliseconds silence start', type: 'integer', nullable: true),
+        new OA\Property(property: 'endsAt', description: 'Unix timestamp in milliseconds silence end', type: 'integer', nullable: true),
     ]
 )]
 
