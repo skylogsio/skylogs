@@ -4228,12 +4228,14 @@
                                             "email",
                                             "telegram",
                                             "bale",
+                                            "discord",
                                             "teams",
                                             "matter-most",
                                             "flow"
                                         ]
                                     },
                                     "value": {
+                                        "description": "Primary value: phone/email for otp types, chat ID for telegram and bale",
                                         "type": "string",
                                         "example": "09000000000"
                                     },
@@ -4254,16 +4256,12 @@
                                         "type": "string",
                                         "example": "12345"
                                     },
-                                    "chatId": {
-                                        "description": "For Telegram type",
-                                        "type": "string"
-                                    },
                                     "threadId": {
-                                        "description": "For Telegram type",
+                                        "description": "Optional message thread ID for Telegram type only",
                                         "type": "string"
                                     },
                                     "botToken": {
-                                        "description": "For Telegram type",
+                                        "description": "Custom bot token for Telegram and Bale types",
                                         "type": "string"
                                     },
                                     "steps": {
@@ -4428,7 +4426,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Endpoint details. Response structure varies based on endpoint type (sms, email, telegram, flow, etc.)",
+                        "description": "Endpoint details. Response structure varies based on endpoint type (sms, email, telegram, bale, flow, etc.)",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -4480,19 +4478,21 @@
                                     },
                                     "type": {
                                         "type": "string",
-                                        "example": "telegram",
+                                        "example": "bale",
                                         "enum": [
                                             "sms",
                                             "call",
                                             "email",
                                             "telegram",
                                             "bale",
+                                            "discord",
                                             "teams",
                                             "matter-most",
                                             "flow"
                                         ]
                                     },
                                     "value": {
+                                        "description": "Primary value: phone/email for otp types, chat ID for telegram and bale",
                                         "type": "string",
                                         "example": "09000000000"
                                     },
@@ -4513,16 +4513,12 @@
                                         "type": "string",
                                         "example": "12345"
                                     },
-                                    "chatId": {
-                                        "description": "For Telegram type",
-                                        "type": "string"
-                                    },
                                     "threadId": {
-                                        "description": "For Telegram type",
+                                        "description": "Optional message thread ID for Telegram type only",
                                         "type": "string"
                                     },
                                     "botToken": {
-                                        "description": "For Telegram type",
+                                        "description": "Custom bot token for Telegram and Bale types",
                                         "type": "string"
                                     },
                                     "steps": {
@@ -8854,7 +8850,7 @@
                 "type": "object"
             },
             "Endpoint": {
-                "description": "Endpoint model with different structures based on type. The structure varies depending on the endpoint type (sms, email, telegram, flow, etc.)",
+                "description": "Endpoint model with different structures based on type. The structure varies depending on the endpoint type (sms, email, telegram, bale, flow, etc.)",
                 "properties": {
                     "id": {
                         "description": "Unique identifier for the endpoint",
@@ -8873,13 +8869,14 @@
                             "email",
                             "telegram",
                             "bale",
+                            "discord",
                             "teams",
                             "matter-most",
                             "flow"
                         ]
                     },
                     "value": {
-                        "description": "Primary value (phone number, email address, etc.) - used for most types except telegram and flow",
+                        "description": "Primary value (phone number, email address, etc.) - used for most types except telegram, bale and flow",
                         "type": "string"
                     },
                     "accessUserIds": {
@@ -8895,15 +8892,15 @@
                         }
                     },
                     "chatId": {
-                        "description": "Chat ID for telegram type endpoints",
+                        "description": "Chat ID for telegram and bale type endpoints",
                         "type": "string"
                     },
                     "threadId": {
-                        "description": "Thread ID for telegram type endpoints",
+                        "description": "Thread ID for telegram type endpoints only",
                         "type": "string"
                     },
                     "botToken": {
-                        "description": "Bot token for telegram type endpoints",
+                        "description": "Bot token for telegram and bale type endpoints",
                         "type": "string"
                     },
                     "steps": {
@@ -8991,13 +8988,14 @@
                             "email",
                             "telegram",
                             "bale",
+                            "discord",
                             "teams",
                             "matter-most",
                             "flow"
                         ]
                     },
                     "value": {
-                        "description": "Primary value (phone number, email address, etc.) - required for most types",
+                        "description": "Primary value (phone/email for otp types, chat ID for telegram and bale)",
                         "type": "string"
                     },
                     "accessUserIds": {
@@ -9012,16 +9010,12 @@
                             "type": "string"
                         }
                     },
-                    "chatId": {
-                        "description": "Chat ID for telegram type endpoints",
-                        "type": "string"
-                    },
                     "threadId": {
-                        "description": "Thread ID for telegram type endpoints",
+                        "description": "Optional message thread ID for Telegram type only",
                         "type": "string"
                     },
                     "botToken": {
-                        "description": "Bot token for telegram type endpoints",
+                        "description": "Custom bot token for Telegram and Bale types",
                         "type": "string"
                     },
                     "steps": {
@@ -9451,7 +9445,7 @@
         },
         {
             "name": "Endpoints",
-            "description": "Manage notification endpoints (SMS, Email, Telegram, Teams, etc.)"
+            "description": "Manage notification endpoints (SMS, Email, Telegram, Bale, Teams, etc.)"
         },
         {
             "name": "ProfileAsset",
