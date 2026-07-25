@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Helpers\Constants;
 use App\Models\AlertRule;
 use App\Models\GrafanaWebhookAlert;
+use App\Queue\Middleware\EnsureLeader;
 use App\Services\SendNotifyService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -29,6 +30,14 @@ class GrafanaWebhookJob implements ShouldQueue
     {
         $this->alerts = $alerts;
         $this->instance = $instance;
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new EnsureLeader];
     }
 
     /**

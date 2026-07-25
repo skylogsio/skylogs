@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\AlertRule;
 use App\Models\ElasticCheck;
 use App\Models\ElasticHistory;
+use App\Queue\Middleware\EnsureLeader;
 use App\Services\ElasticService;
 use App\Services\SendNotifyService;
 use Illuminate\Bus\Queueable;
@@ -23,6 +24,14 @@ class CheckElasticJob implements ShouldQueue
     {
         $this->onQueue('httpRequests');
         $this->alert = $alert;
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new EnsureLeader];
     }
 
     /**
