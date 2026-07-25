@@ -7,6 +7,11 @@ x-back-env: &back-env
   - KAVENEGAR_TOKEN=
   - KAVENEGAR_SENDER_NUMBER=
   - TELEGRAM_BOT_TOKEN=
+#  High availability. Off here: this stack has no raft sidecar to elect a leader.
+  - HA_ENABLED=false
+  - HA_NODE_ID=node-1
+  - HA_NODE_SECRET=
+  - RAFT_URL=http://raft:8090
 #  Change the secret
   - JWT_SECRET=mysecretmysecretmysecretmysecret
 

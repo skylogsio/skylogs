@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\AlertRuleType;
 use App\Models\AlertRule;
+use App\Queue\Middleware\EnsureLeader;
 use App\Services\PrometheusInstanceService;
 use App\Services\PrometheusService;
 use Illuminate\Bus\Queueable;
@@ -24,6 +25,14 @@ class CheckPrometheusJob implements ShouldQueue
     public function __construct()
     {
         $this->onQueue('httpRequests');
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new EnsureLeader];
     }
 
     /**

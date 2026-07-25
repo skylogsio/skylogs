@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Enums\AlertRuleType;
+use App\Queue\Middleware\EnsureLeader;
 use App\Services\AlertRuleService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -15,10 +16,12 @@ class AddChecksJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * Create a new job instance.
-     *
-     * @return void
+     * @return array<int, object>
      */
+    public function middleware(): array
+    {
+        return [new EnsureLeader];
+    }
 
     /**
      * Execute the job.

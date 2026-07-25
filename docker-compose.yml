@@ -18,6 +18,12 @@ x-back-env: &back-env
 #  Change the secret
   - JWT_SECRET=mysecret
   - DEPLOY_TYPE=web
+#  High availability. Leave HA_ENABLED=false for a single node install.
+  - HA_ENABLED=true
+  - HA_NODE_ID=node-1
+#  Change the secret, and use the same value for the raft sidecar's APPLY_SECRET
+  - HA_NODE_SECRET=changeme-ha-secret
+  - RAFT_URL=http://raft:8090
 
 x-front-env: &front-env
   environment:
@@ -93,6 +99,28 @@ services:
     <<: *back-env
 
 
+########### RAFT ############
+# One sidecar per HA node. It elects the leader, replicates the alert state log
+# between nodes, and POSTs every replicated change to this node's /api/ha/apply.
+  raft:
+    container_name: skylogs_raft
+    image: skylogs/skylogs:raft-v0.1.0
+    restart: unless-stopped
+    environment:
+      - NODE_ID=node-1
+      - RAFT_BIND=0.0.0.0:9200
+      - RAFT_PEERS=node-1@raft-1:9200,node-2@raft-2:9200,node-3@raft-3:9200
+      - HTTP_LISTEN=0.0.0.0:8090
+#     This node's own backend address, not the load balancer: followers pull config from it
+      - NODE_ADVERTISE_URL=http://nginx_back:80
+      - APPLY_URL=http://nginx_back:80/api/ha/apply
+#     Must match HA_NODE_SECRET in x-back-env
+      - APPLY_SECRET=changeme-ha-secret
+    volumes:
+      - raft_data:/var/lib/raft
+    networks:
+      - skylogs
+
 ########### MONGODB ############
   mongodb:
     image: mongo:4.4 
@@ -142,4 +170,6 @@ volumes:
   skylogs_back:
     driver: local
   mongo_data:
+    driver: local
+  raft_data:
     driver: local

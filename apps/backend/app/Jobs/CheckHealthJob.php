@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Queue\Middleware\EnsureLeader;
 use App\Services\HealthService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -20,6 +21,14 @@ class CheckHealthJob implements ShouldBeUnique, ShouldQueue
     {
         $this->onQueue('httpRequests');
         $this->alert = $alert;
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new EnsureLeader];
     }
 
     /**
