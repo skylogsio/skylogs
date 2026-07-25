@@ -23,9 +23,4 @@ class SkylogsInstance extends BaseModel
     {
         return $this->getBaseUrl().'/api/health';
     }
-
-    public function getPingUrl()
-    {
-        return $this->getBaseUrl().'/api/leaderPing';
-    }
 }
