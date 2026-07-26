@@ -34,8 +34,17 @@ services:
     networks:
       - skylogs_net
     depends_on:
-      - mongo
-      - redis
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    # Healthy once entrypoint finishes and php-fpm listens (app_data populated).
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 9000 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 120s
     <<: *back-env
   
   nginx:
@@ -62,6 +71,12 @@ services:
       - skylogs_net
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
   
   redis:
     image: redis:latest
@@ -80,15 +95,19 @@ services:
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
+      # Populated by back's entrypoint; starts only after back is healthy.
       - app_data:/var/www/html
     depends_on:
-      - back
-      - mongo
-      - redis
+      back:
+        condition: service_healthy
+      mongo:
+        condition: service_started
+      redis:
+        condition: service_started
     networks:
       - skylogs_net
     <<: *back-env
-  
+
   
   front:
     build: apps/frontend
