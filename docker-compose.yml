@@ -26,7 +26,7 @@ x-front-env: &front-env
 services:
   back:
     build: apps/backend
-    container_name: skylogs_app
+#    container_name: skylogs_app
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
@@ -40,7 +40,7 @@ services:
   
   nginx:
     image: nginx:latest
-    container_name: skylogs_nginx
+#    container_name: skylogs_nginx
     restart: unless-stopped
     ports:
       - "8000:80"
@@ -54,7 +54,7 @@ services:
   
   mongo:
     image: mongo:latest
-    container_name: skylogs_mongo
+#    container_name: skylogs_mongo
     restart: unless-stopped
     ports:
       - "27018:27017"
@@ -65,7 +65,7 @@ services:
   
   redis:
     image: redis:latest
-    container_name: skylogs_redis
+#    container_name: skylogs_redis
     restart: unless-stopped
     ports:
       - "6380:6379"
@@ -76,7 +76,7 @@ services:
     build:
       context: apps/backend
       dockerfile: HorizonDockerfile
-    container_name: skylogs_horizon
+#    container_name: skylogs_horizon
     restart: unless-stopped
     working_dir: /var/www/html
     volumes:
@@ -103,14 +103,14 @@ services:
   
   sentinel:
     build: apps/sentinel
-    container_name: sentinel
+#    container_name: sentinel
     restart: always
     depends_on:
       - back
     environment:
       - SENTINEL_ID=dc2-sentinel
       - SENTINEL_ROLE=secondary
-      - MAIN_SKYLOGS_HEARTBEAT_URL=http://skylogs-core:8080/heartbeat
+      - MAIN_SKYLOGS_HEARTBEAT_URL=http://nginx/heartbeat
       - HEARTBEAT_INTERVAL=5s
       - HEARTBEAT_TIMEOUT=3s
       - FAIL_THRESHOLD=3
@@ -126,7 +126,7 @@ services:
   
   raft:
     build: apps/raft
-    container_name: raft
+#    container_name: raft
     restart: unless-stopped
     environment:
       - RAFT_NODE_ID=node1
