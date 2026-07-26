@@ -24,6 +24,17 @@ php artisan migrate --force
 echo "Seeding database..."
 php artisan db:seed --force
 
+# A node that was down has missed both configuration and replicated state, and
+# catching up before it starts serving is worth a few seconds. Configuration goes
+# first because reconciliation writes state onto alert rules that a brand new
+# follower only receives here. Both are non-fatal: a sidecar that is still
+# electing, or a single node install, must not stop the application booting.
+echo "Syncing HA configuration..."
+php artisan ha:config-sync || true
+
+echo "Reconciling HA state..."
+php artisan ha:reconcile || true
+
 echo "Caching config..."
 php artisan config:cache
 php artisan route:cache

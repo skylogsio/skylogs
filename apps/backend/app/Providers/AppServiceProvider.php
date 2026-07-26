@@ -13,7 +13,9 @@ use App\Models\VictoriaLogsCheck;
 use App\Models\ZabbixCheck;
 use App\Observers\Ha\HaAlertRuleObserver;
 use App\Observers\Ha\HaCheckObserver;
+use App\Observers\Ha\HaConfigObserver;
 use App\Services\Ha\AlertStateReplicator;
+use App\Services\Ha\HaConfigCatalog;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -67,6 +69,14 @@ class AppServiceProvider extends ServiceProvider
 
         foreach (self::HA_REPLICATED_CHECKS as $check) {
             $check::observe(HaCheckObserver::class);
+        }
+
+        /*
+         | Every replicated collection, so that a new writer anywhere in the
+         | application cannot forget to invalidate a follower's snapshot.
+         */
+        foreach (HaConfigCatalog::models() as $model) {
+            $model::observe(HaConfigObserver::class);
         }
     }
 }

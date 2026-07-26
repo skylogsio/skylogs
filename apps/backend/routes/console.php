@@ -4,6 +4,8 @@ use App\Enums\ClusterType;
 use App\Jobs\AddChecksJob;
 use App\Jobs\AutoResolveApiAlertsJob;
 use App\Jobs\CheckPrometheusJob;
+use App\Jobs\Ha\ReconcileHaStateJob;
+use App\Jobs\Ha\SyncHaConfigJob;
 use App\Jobs\RefreshStatusHistoryJob;
 use App\Jobs\SyncCluster;
 use App\Services\ClusterService;
@@ -45,3 +47,19 @@ Schedule::job(new AutoResolveApiAlertsJob)->everyFiveSeconds()->when($onLeader);
 | five second time series through Raft.
 */
 Schedule::job(new RefreshStatusHistoryJob)->everyFiveSeconds();
+
+/*
+| Also on every node, and for the same reason in reverse: a follower catching up
+| on deliveries it missed is the whole point, and a leader uses the same pass to
+| repair publishes the sidecar dropped.
+*/
+Schedule::job(new ReconcileHaStateJob)->everyMinute()->when(fn (): bool => (bool) config('ha.enabled'));
+
+/*
+|| Followers pull the leader's configuration; the job no-ops on the leader. Every
+|| thirty seconds because the version check costs a few bytes when nothing moved,
+|| which keeps the lag on a new alert rule to half a minute for almost nothing.
+*/
+Schedule::job(new SyncHaConfigJob)
+    ->everyThirtySeconds()
+    ->when(fn (): bool => (bool) config('ha.enabled') && (bool) config('ha.config_sync.enabled'));

@@ -3,6 +3,7 @@
 namespace App\Services\Ha;
 
 use App\Exceptions\Ha\RaftUnavailableException;
+use App\Jobs\Ha\ReconcileHaStateJob;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -18,12 +19,6 @@ class HaLeaderService
     private const ROLE_LEADER = 'leader';
 
     private const ROLE_FOLLOWER = 'follower';
-
-    /**
-     * Resolved lazily by name: reconciliation ships with the follower apply
-     * path, and a promotion only logs until then.
-     */
-    private const RECONCILE_JOB = 'App\Jobs\Ha\ReconcileHaStateJob';
 
     public function __construct(private readonly RaftClient $raft) {}
 
@@ -153,12 +148,6 @@ class HaLeaderService
      */
     private function reconcileAfterPromotion(): void
     {
-        $job = self::RECONCILE_JOB;
-
-        if (! class_exists($job)) {
-            return;
-        }
-
-        dispatch(new $job);
+        ReconcileHaStateJob::dispatch();
     }
 }

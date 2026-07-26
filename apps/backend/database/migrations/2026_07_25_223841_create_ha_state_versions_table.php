@@ -13,9 +13,6 @@ return new class extends Migration
     {
         Schema::create('ha_state_versions', function (Blueprint $table) {
             $table->string('key')->unique();
-            $table->string('nodeId');
-
-            $table->timestamps();
         });
     }
 

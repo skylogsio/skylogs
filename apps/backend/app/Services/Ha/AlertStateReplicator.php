@@ -84,6 +84,22 @@ class AlertStateReplicator
     }
 
     /**
+     * Publish the rule's slots again regardless of whether anything moved.
+     *
+     * Reconciliation's repair path: a publish that was dropped while the
+     * sidecar was unreachable leaves the log behind this node, and only a
+     * forced republish closes that gap.
+     */
+    public function republishRule(AlertRule $alertRule): void
+    {
+        if (! $this->shouldReplicate()) {
+            return;
+        }
+
+        $this->publishAll(fn (StateProjector $projector): array => $projector->projectRule($alertRule), $alertRule);
+    }
+
+    /**
      * A deleted rule takes every slot underneath it with it.
      */
     public function replicateRuleDeletion(AlertRule $alertRule): void
