@@ -24,7 +24,9 @@ class LeaderUnavailableException extends Exception
 
     public static function unknownAddress(): self
     {
-        return new self('The Raft sidecar did not report a leader address.');
+        return new self(
+            'No backend URL is known for the current leader: either an election is in progress, or the leader is missing from HA_PEER_URLS.'
+        );
     }
 
     public static function unreachable(string $address, Throwable $previous): self

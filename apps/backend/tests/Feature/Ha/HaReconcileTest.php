@@ -17,20 +17,22 @@ use Tests\Support\TeamTestData;
  * Stubs are appended to the factory rather than replacing what is already
  * registered, and the first one that matches answers. A test that redefines the
  * log part way through therefore has to start from a clean factory.
+ *
+ * The sidecar hands back the raw JSON text it stored, so every slot is encoded
+ * here exactly as GET /get would return it.
  */
 function haFakeSidecar(bool $isLeader, array $data): void
 {
     Http::swap(new Factory(app(Dispatcher::class)));
 
     Http::fake([
-        'raft:8090/leader' => Http::response([
-            'isLeader' => $isLeader,
-            'nodeId' => 'node-2',
-            'leaderId' => $isLeader ? 'node-2' : 'node-1',
-            'leaderAddress' => 'http://skylogs-back-1:80',
-            'term' => 7,
+        'raft:8000/status' => Http::response([
+            'node_id' => 'node-2',
+            'is_leader' => $isLeader,
+            'leader' => $isLeader ? '172.28.7.12:7000' : '172.28.7.11:7000',
+            'state' => $isLeader ? 'Leader' : 'Follower',
         ]),
-        'raft:8090/state' => Http::response(['index' => 1234, 'data' => $data]),
+        'raft:8000/get' => Http::response(array_map(json_encode(...), $data)),
     ]);
 }
 
@@ -59,7 +61,7 @@ beforeEach(function () {
         'ha.enabled' => true,
         'ha.node_id' => 'node-2',
         'ha.leader_cache_seconds' => 0,
-        'ha.raft.url' => 'http://raft:8090',
+        'ha.raft.url' => 'http://raft:8000',
     ]);
 
     $this->owner = TeamTestData::createUser(Constants::ROLE_OWNER);
@@ -171,7 +173,7 @@ describe('ha:reconcile on a leader', function () {
 
 describe('ha:reconcile without a sidecar', function () {
     it('succeeds so that a node whose sidecar is still electing can still boot', function () {
-        Http::fake(['raft:8090/*' => Http::failedConnection()]);
+        Http::fake(['raft:8000/*' => Http::failedConnection()]);
 
         $this->artisan('ha:reconcile')->assertSuccessful();
     });

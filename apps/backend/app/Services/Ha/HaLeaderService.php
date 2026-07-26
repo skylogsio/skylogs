@@ -29,11 +29,27 @@ class HaLeaderService
 
     /**
      * Base URL of the leader's backend, used by followers to pull config. This
-     * is the node's own advertised address, never the load balancer's.
+     * is the node's own address, never the load balancer's.
+     *
+     * The sidecar cannot answer this on its own: it knows the leader only as a
+     * Raft address, so the ha.peers map supplies the backend half.
      */
     public function leaderAddress(): ?string
     {
-        return $this->status()['leaderAddress'];
+        $status = $this->status();
+
+        return $status['isLeader']
+            ? $this->peerUrl($status['nodeId'] !== '' ? $status['nodeId'] : $this->nodeId())
+            : $this->peerUrl($status['leaderRaftAddress']);
+    }
+
+    /**
+     * Raft address of the current leader, e.g. 172.28.7.11:7000. Useful for
+     * diagnostics; it is not a URL and nothing can be fetched from it.
+     */
+    public function leaderRaftAddress(): ?string
+    {
+        return $this->status()['leaderRaftAddress'];
     }
 
     public function nodeId(): string
@@ -52,7 +68,32 @@ class HaLeaderService
     }
 
     /**
-     * @return array{isLeader: bool, nodeId: string, leaderId: string|null, leaderAddress: string|null, term: int|null}
+     * Resolves an identifier the sidecar reported, a Raft address or a node id,
+     * to the backend base URL configured for that node. A Raft address is
+     * matched with and without its port so one entry covers both spellings.
+     */
+    private function peerUrl(?string $identifier): ?string
+    {
+        if ($identifier === null || $identifier === '') {
+            return null;
+        }
+
+        /** @var array<string, string> $peers */
+        $peers = (array) config('ha.peers');
+
+        foreach ([$identifier, strstr($identifier, ':', true)] as $candidate) {
+            $url = is_string($candidate) ? ($peers[$candidate] ?? null) : null;
+
+            if (is_string($url) && $url !== '') {
+                return rtrim($url, '/');
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{isLeader: bool, nodeId: string, leaderRaftAddress: string|null, state: string|null}
      */
     private function status(): array
     {
@@ -86,12 +127,12 @@ class HaLeaderService
      * evaluation is cheap; two nodes both believing they lead means duplicate
      * calls and messages to on-call staff.
      *
-     * @return array{isLeader: bool, nodeId: string, leaderId: string|null, leaderAddress: string|null, term: int|null}
+     * @return array{isLeader: bool, nodeId: string, leaderRaftAddress: string|null, state: string|null}
      */
     private function resolveStatus(): array
     {
         try {
-            return $this->raft->leader();
+            return $this->raft->status();
         } catch (RaftUnavailableException $exception) {
             Log::warning('HA leader check failed, treating this node as a follower.', [
                 'nodeId' => $this->nodeId(),
@@ -103,16 +144,15 @@ class HaLeaderService
     }
 
     /**
-     * @return array{isLeader: bool, nodeId: string, leaderId: string|null, leaderAddress: string|null, term: int|null}
+     * @return array{isLeader: bool, nodeId: string, leaderRaftAddress: string|null, state: string|null}
      */
     private function followerStatus(): array
     {
         return [
             'isLeader' => false,
             'nodeId' => $this->nodeId(),
-            'leaderId' => null,
-            'leaderAddress' => null,
-            'term' => null,
+            'leaderRaftAddress' => null,
+            'state' => null,
         ];
     }
 

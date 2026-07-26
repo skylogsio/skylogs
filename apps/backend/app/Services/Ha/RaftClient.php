@@ -6,8 +6,10 @@ use App\Exceptions\Ha\RaftUnavailableException;
 use Closure;
 use Illuminate\Http\Client\HttpClientException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 /**
  * Thin client for the Raft sidecar running next to this node.
@@ -15,28 +17,36 @@ use Illuminate\Support\Facades\Http;
  * The sidecar owns leadership and the replicated log; this class only speaks
  * its three HTTP endpoints and translates every failure into a
  * RaftUnavailableException so callers never have to handle HTTP errors.
+ *
+ * A value is stored as the raw JSON text of whatever was sent, so a slot goes
+ * out as an object and comes back as a string: every read decodes.
  */
 class RaftClient
 {
     /**
-     * @return array{isLeader: bool, nodeId: string, leaderId: string|null, leaderAddress: string|null, term: int|null}
+     * How the sidecar sees the cluster from this node. /status answers 200
+     * whatever role the node holds, so a follower is an answer rather than a
+     * failure, and the leader is named by its Raft address, never by a URL.
+     *
+     * @return array{isLeader: bool, nodeId: string, leaderRaftAddress: string|null, state: string|null}
      *
      * @throws RaftUnavailableException
      */
-    public function leader(): array
+    public function status(): array
     {
         $payload = $this->send(
-            '/leader',
-            (float) config('ha.raft.timeout.leader'),
-            fn (PendingRequest $request): Response => $request->get('/leader'),
+            '/status',
+            (float) config('ha.raft.timeout.status'),
+            fn (PendingRequest $request): Response => $request->get('/status'),
         );
 
+        $leaderRaftAddress = (string) ($payload['leader'] ?? '');
+
         return [
-            'isLeader' => (bool) ($payload['isLeader'] ?? false),
-            'nodeId' => (string) ($payload['nodeId'] ?? ''),
-            'leaderId' => $payload['leaderId'] ?? null,
-            'leaderAddress' => $payload['leaderAddress'] ?? null,
-            'term' => isset($payload['term']) ? (int) $payload['term'] : null,
+            'isLeader' => (bool) ($payload['is_leader'] ?? false),
+            'nodeId' => (string) ($payload['node_id'] ?? ''),
+            'leaderRaftAddress' => $leaderRaftAddress === '' ? null : $leaderRaftAddress,
+            'state' => isset($payload['state']) ? (string) $payload['state'] : null,
         ];
     }
 
@@ -44,42 +54,68 @@ class RaftClient
      * Replicate a single key. A null value is a tombstone: the sidecar deletes
      * the key and replicates the delete.
      *
+     * Only the leader accepts a write. A follower answers 500 with
+     * "not the leader" and there is no redirect, so the caller has to give up
+     * and let the node that does lead publish the slot.
+     *
      * @param  array<string, mixed>|null  $value
-     * @return array{ok: bool, index: int|null}
      *
      * @throws RaftUnavailableException
      */
-    public function save(string $key, ?array $value): array
+    public function set(string $key, ?array $value): void
     {
-        $payload = $this->send(
-            '/save',
-            (float) config('ha.raft.timeout.save'),
-            fn (PendingRequest $request): Response => $request->post('/save', [$key => $value]),
+        $this->send(
+            '/set',
+            (float) config('ha.raft.timeout.set'),
+            fn (PendingRequest $request): Response => $request->post('/set', ['key' => $key, 'value' => $value]),
         );
-
-        return [
-            'ok' => (bool) ($payload['ok'] ?? false),
-            'index' => isset($payload['index']) ? (int) $payload['index'] : null,
-        ];
     }
 
     /**
-     * @return array{index: int|null, data: array<string, array<string, mixed>>}
+     * Every key this node's local FSM holds, decoded back from stored JSON
+     * text. Reads are local, so the answer may lag the leader by a moment.
+     *
+     * @return array<string, array<string, mixed>|null>
      *
      * @throws RaftUnavailableException
      */
-    public function state(): array
+    public function getAll(): array
     {
         $payload = $this->send(
-            '/state',
-            (float) config('ha.raft.timeout.state'),
-            fn (PendingRequest $request): Response => $request->get('/state'),
+            '/get',
+            (float) config('ha.raft.timeout.get'),
+            fn (PendingRequest $request): Response => $request->get('/get'),
         );
 
-        return [
-            'index' => isset($payload['index']) ? (int) $payload['index'] : null,
-            'data' => $payload['data'] ?? [],
-        ];
+        $data = [];
+
+        foreach ($payload as $key => $stored) {
+            $data[(string) $key] = self::decodeStoredValue($stored);
+        }
+
+        return $data;
+    }
+
+    /**
+     * Reverses the sidecar's storage format. Anything that is not an object is
+     * read as an absent slot: the log only ever carries slot documents, and a
+     * tombstone arrives as null.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function decodeStoredValue(mixed $stored): ?array
+    {
+        if (is_array($stored)) {
+            return $stored;
+        }
+
+        if (! is_string($stored)) {
+            return null;
+        }
+
+        $decoded = json_decode($stored, true);
+
+        return is_array($decoded) ? $decoded : null;
     }
 
     /**
@@ -111,8 +147,22 @@ class RaftClient
             ->retry(
                 (int) config('ha.raft.retry_attempts'),
                 (int) config('ha.raft.retry_sleep_milliseconds'),
+                $this->shouldRetry(...),
                 throw: false,
             )
             ->acceptJson();
+    }
+
+    /**
+     * A rejected write is the one failure worth giving up on straight away:
+     * this node is not the leader and asking it twice will not change that.
+     */
+    private function shouldRetry(Throwable $exception): bool
+    {
+        if (! $exception instanceof RequestException) {
+            return true;
+        }
+
+        return ! RaftUnavailableException::mentionsNotLeader((string) $exception->response?->body());
     }
 }

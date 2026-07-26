@@ -23,7 +23,12 @@ x-back-env: &back-env
   - HA_NODE_ID=node-1
 #  Change the secret, and use the same value for the raft sidecar's RAFT_NOTIFY_SECRET
   - HA_NODE_SECRET=changeme-ha-secret
+#  HTTP API of the raft sidecar in this stack
   - RAFT_URL=http://raft:8000
+#  Backend base URL per node, keyed by that node's RAFT_ADV_ADDR. Raft names the
+#  leader only by its raft address, so a follower needs this map to know which
+#  backend to pull configuration from. Fill it in on every node of a cluster.
+  - HA_PEER_URLS=172.28.7.11=http://nginx_back:80
 
 x-front-env: &front-env
   environment:
@@ -110,15 +115,24 @@ services:
     restart: unless-stopped
     environment:
       - RAFT_NODE_ID=node1
+#     Address the OTHER nodes use to reach this one, no port. Must match the key
+#     used for this node in HA_PEER_URLS.
       - RAFT_ADV_ADDR=172.28.7.11
+#     --bootstrap on the first node only; the others use
+#     RAFT_START_MODE=--join http://<first-node>:8000, and an empty value once a
+#     node already has /data and is only being restarted.
       - RAFT_START_MODE=--bootstrap
 #     Same Docker network as skylogs-back / nginx_back
       - RAFT_NOTIFY_URL=http://nginx_back:80/api/ha/apply
 #     Must match HA_NODE_SECRET in x-back-env
       - RAFT_NOTIFY_SECRET=changeme-ha-secret
       - RAFT_NOTIFY_HEADER=X-Skylogs-HA-Secret
+    ports:
+#     7000 raft TCP between nodes, 8000 HTTP API
+      - "7000:7000"
+      - "8000:8000"
     volumes:
-      - raft_data:/var/lib/raft
+      - raft_data:/data
     networks:
       - skylogs
     depends_on:

@@ -40,11 +40,15 @@ class SyncHaConfigJob implements ShouldBeUnique, ShouldQueue
             $result = $puller->pull();
         } catch (LeaderUnavailableException $exception) {
             /*
-             | An election in progress or a leader mid restart both land here.
-             | The follower keeps serving the configuration it already has and
-             | the next tick retries, so this is not worth failing over.
+             | An election in progress, a leader mid restart, and a leader with
+             | no entry in HA_PEER_URLS all land here. The follower keeps serving
+             | the configuration it already has and the next tick retries, so
+             | this is not worth failing over; the message says which it was.
              */
-            Log::warning('HA config sync skipped, the leader is unreachable.', $exception->context());
+            Log::warning('HA config sync skipped, the leader is unreachable.', [
+                'reason' => $exception->getMessage(),
+                ...$exception->context(),
+            ]);
 
             return;
         }
