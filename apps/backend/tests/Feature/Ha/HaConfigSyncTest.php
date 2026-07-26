@@ -6,6 +6,7 @@ use App\Http\Middleware\HaNodeAuth;
 use App\Models\AlertRule;
 use App\Models\HaConfigVersion;
 use App\Models\PrometheusCheck;
+use App\Models\User;
 use App\Services\Ha\HaConfigPuller;
 use App\Services\Ha\HaConfigSyncService;
 use App\Services\Ha\HaConfigVersionStore;
@@ -345,6 +346,54 @@ describe('HaConfigSyncService apply', function () {
         app(HaConfigSyncService::class)->apply($snapshot);
 
         expect(AlertRule::query()->where('_id', $alertRule->_id)->first())->toBeNull();
+    });
+
+    /*
+     | Each node that boots alone seeds admin/roles under its own ObjectIds.
+     | Sync must drop the follower's copy and insert the leader's id, or unique
+     | indexes block apply and foreign keys such as userId stay broken.
+     */
+    it('replaces a uniquely keyed row that already exists under a different id', function () {
+        $localId = new ObjectId;
+        $leaderId = new ObjectId;
+        $username = 'seeded_admin_'.uniqid();
+
+        $snapshot = haLiveSnapshot();
+        $template = collect($snapshot['collections']['users'])
+            ->first(fn (array $document): bool => ($document['username'] ?? null) === $this->owner->username);
+
+        expect($template)->not->toBeNull();
+
+        /*
+         | Follower already has this logical user under a local ObjectId. The
+         | leader snapshot must not list that id — only the leader's — so
+         | delete-absent removes the local row before the upsert.
+         */
+        $local = new User;
+        $local->_id = $localId;
+        $local->username = $username;
+        $local->name = 'local seed';
+        $local->password = 'hash';
+        $local->save();
+
+        $snapshot['collections']['users'][] = [
+            ...$template,
+            '_id' => ['$oid' => (string) $leaderId],
+            'username' => $username,
+            'name' => 'leader seed',
+        ];
+
+        $summary = app(HaConfigSyncService::class)->apply($snapshot);
+
+        expect(User::query()->where('_id', $localId)->first())->toBeNull()
+            ->and(User::query()->where('_id', $leaderId)->first())
+            ->not->toBeNull()
+            ->and(User::query()->where('_id', $leaderId)->value('name'))->toBe('leader seed')
+            ->and(User::query()->where('username', $username)->count())->toBe(1)
+            ->and($summary['users']['deleted'])->toBeGreaterThanOrEqual(1)
+            ->and($summary['users']['written'])->toBeGreaterThanOrEqual(1);
+
+        User::query()->where('_id', $leaderId)->delete();
     });
 
     /*
