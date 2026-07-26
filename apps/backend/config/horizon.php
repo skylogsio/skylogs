@@ -1,5 +1,9 @@
 <?php
 
+use App\Jobs\AddChecksJob;
+use App\Jobs\AutoResolveApiAlertsJob;
+use App\Jobs\CheckPrometheusJob;
+use App\Jobs\RefreshStatusHistoryJob;
 use Illuminate\Support\Str;
 
 return [
@@ -119,10 +123,10 @@ return [
     */
 
     'silenced' => [
-        App\Jobs\AddChecksJob::class,
-        App\Jobs\CheckPrometheusJob::class,
-        App\Jobs\AutoResolveApiAlertsJob::class,
-        App\Jobs\RefreshStatusHistoryJob::class,
+        AddChecksJob::class,
+        CheckPrometheusJob::class,
+        AutoResolveApiAlertsJob::class,
+        RefreshStatusHistoryJob::class,
     ],
 
     /*
@@ -232,6 +236,18 @@ return [
             'timeout' => 0,
             'nice' => 0,
         ],
+        'supervisor-ha' => [
+            'connection' => 'redis',
+            'queue' => ['ha'],
+            'balance' => 'auto',
+            'maxProcesses' => 2,
+            'maxTime' => 0,
+            'maxJobs' => 500,
+            'memory' => 64,
+            'tries' => 5,
+            'timeout' => 0,
+            'nice' => 0,
+        ],
     ],
 
     'environments' => [
@@ -281,6 +297,18 @@ return [
                 'maxJobs' => 500,
                 'memory' => 64,
                 'tries' => 1,
+                'timeout' => 0,
+                'nice' => 0,
+            ],
+            'supervisor-ha' => [
+                'connection' => 'redis',
+                'queue' => ['ha'],
+                'balance' => 'auto',
+                'maxProcesses' => 2,
+                'maxTime' => 0,
+                'maxJobs' => 500,
+                'memory' => 64,
+                'tries' => 5,
                 'timeout' => 0,
                 'nice' => 0,
             ],
@@ -336,6 +364,18 @@ return [
                 'timeout' => 0,
                 'nice' => 0,
             ],
+            'supervisor-ha' => [
+                'connection' => 'redis',
+                'queue' => ['ha'],
+                'balance' => 'auto',
+                'maxProcesses' => 2,
+                'maxTime' => 0,
+                'maxJobs' => 500,
+                'memory' => 64,
+                'tries' => 5,
+                'timeout' => 0,
+                'nice' => 0,
+            ],
         ],
 
         'local' => [
@@ -384,6 +424,18 @@ return [
                 'maxJobs' => 500,
                 'memory' => 512,
                 'tries' => 1,
+                'timeout' => 0,
+                'nice' => 0,
+            ],
+            'supervisor-ha' => [
+                'connection' => 'redis',
+                'queue' => ['ha'],
+                'balance' => 'auto',
+                'maxProcesses' => 1,
+                'maxTime' => 0,
+                'maxJobs' => 500,
+                'memory' => 512,
+                'tries' => 5,
                 'timeout' => 0,
                 'nice' => 0,
             ],
