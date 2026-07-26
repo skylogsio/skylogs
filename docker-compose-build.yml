@@ -121,6 +121,29 @@ services:
           - "9191:9191"
         networks:
           - skylogs_net
+
+
+
+    skylogs-raft:
+      build: apps/raft
+      container_name: skylogs-raft
+      environment:
+        - RAFT_NODE_ID=node1
+        - RAFT_ADV_ADDR=172.28.7.11
+        - RAFT_START_MODE=--bootstrap
+
+      # command:
+      #  - "--node-id=${RAFT_NODE_ID}"
+      #  - "--bind-address=0.0.0.0"
+      #  - "--advertise-address=${RAFT_ADV_ADDR}"
+      #  - "--raft-port=7000"
+      #  - "--http-port=7001"
+      #  - "--data-dir=/data"
+      #  - "${RAFT_START_MODE}"
+      # Using a different way for these command injections
+      env_file:
+        - apps/raft/raft.env
+
 networks:
     skylogs_net:
         driver: bridge
