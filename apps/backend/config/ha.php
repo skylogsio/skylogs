@@ -39,6 +39,20 @@ return [
 
     'state_retention_days' => (int) env('HA_STATE_RETENTION_DAYS', 7),
 
+    /*
+    | Configuration pull, follower to leader. The timeout is generous because a
+    | first sync carries every replicated collection at once; the steady state
+    | is a version check that returns a handful of bytes.
+    */
+    'config_sync' => [
+
+        'enabled' => (bool) env('HA_CONFIG_SYNC_ENABLED', true),
+
+        'connect_timeout' => (float) env('HA_CONFIG_SYNC_CONNECT_TIMEOUT', 2),
+
+        'timeout' => (float) env('HA_CONFIG_SYNC_TIMEOUT', 30),
+    ],
+
     'raft' => [
 
         'url' => env('RAFT_URL', 'http://raft:8090'),

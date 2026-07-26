@@ -2,6 +2,8 @@
 
 use App\Enums\Constants;
 use App\Http\Controllers\Cluster\SyncController;
+use App\Http\Controllers\Ha\ConfigSyncController;
+use App\Http\Controllers\Ha\StateController;
 use App\Http\Controllers\V1\AlertRule\AccessUserController;
 use App\Http\Controllers\V1\AlertRule\AlertingController;
 use App\Http\Controllers\V1\AlertRule\BehaviorRuleController;
@@ -36,6 +38,18 @@ Route::prefix('cluster')
     ->middleware('clusterAuth')
     ->group(function () {
         Route::get('/sync-data', 'Data')->name('cluster.data');
+    });
+
+/*
+| High availability, spoken between the nodes of one cluster and their Raft
+| sidecars. Deliberately outside v1: this is not the client API and it does not
+| version with it.
+*/
+Route::prefix('ha')
+    ->middleware('haNodeAuth')
+    ->group(function () {
+        Route::post('/apply', [StateController::class, 'apply'])->name('ha.apply');
+        Route::get('/config-sync', [ConfigSyncController::class, 'show'])->name('ha.configSync');
     });
 
 Route::prefix('v1')->group(function () {

@@ -4,6 +4,7 @@ namespace App\Services\Ha;
 
 use App\Models\AlertRule;
 use App\Models\HaStateVersion;
+use DateTimeInterface;
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
 use MongoDB\Laravel\Eloquent\Builder;
@@ -50,6 +51,66 @@ class HaStateVersionStore
     public function current(string $key): int
     {
         return (int) (HaStateVersion::where('key', $key)->value('version') ?? 0);
+    }
+
+    /**
+     * The version and the node that produced it. The node is what breaks a tie
+     * between two writers that reached the same version during a split.
+     *
+     * @return array{version: int, nodeId: string}
+     */
+    public function entry(string $key): array
+    {
+        $document = HaStateVersion::where('key', $key)->first();
+
+        return [
+            'version' => (int) ($document->version ?? 0),
+            'nodeId' => (string) ($document->nodeId ?? ''),
+        ];
+    }
+
+    /**
+     * Adopt a version produced elsewhere: a follower recording what it applied,
+     * or a freshly promoted leader inheriting the log's counters so that its
+     * next publish does not restart from one and lose to its own history.
+     */
+    public function record(string $key, int $version, string $nodeId, ?string $state = null): void
+    {
+        HaStateVersion::raw(fn (Collection $collection) => $collection->updateOne(
+            ['key' => $key],
+            [
+                '$set' => [
+                    'version' => $version,
+                    'nodeId' => $nodeId,
+                    'state' => $state,
+                    'updatedAt' => new UTCDateTime,
+                ],
+                '$setOnInsert' => ['createdAt' => new UTCDateTime],
+            ],
+            ['upsert' => true],
+        ));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function allKeys(): array
+    {
+        return $this->pluckKeys(HaStateVersion::query());
+    }
+
+    /**
+     * Resolved slots that have sat untouched past the retention window. They
+     * are what the leader tombstones so the replicated log stays bounded.
+     *
+     * @return array<int, string>
+     */
+    public function resolvedKeysUpdatedBefore(DateTimeInterface $before): array
+    {
+        return $this->pluckKeys(
+            HaStateVersion::where('state', AlertRule::RESOlVED)
+                ->where('updatedAt', '<', $before)
+        );
     }
 
     /**

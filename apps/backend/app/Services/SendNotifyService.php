@@ -18,13 +18,24 @@ use App\Jobs\SendNotifyJob;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\Notify;
+use App\Services\Ha\HaReplicationContext;
 use App\Support\NotifyMessagePayload;
 use Illuminate\Support\Collection;
 
 class SendNotifyService
 {
+    /**
+     * A follower applying the leader's state must never notify: the leader has
+     * already paged whoever needed paging, and a second message for the same
+     * alert reaches the same on-call phone. Guarded here rather than at the
+     * fourteen call sites so a new caller cannot forget.
+     */
     public function createNotify($type, $alert, $alertRuleId = 0)
     {
+        if (HaReplicationContext::isApplying()) {
+            return null;
+        }
+
         $notify = new Notify;
         $notify->type = $type;
         $notify->alertRuleId = $alertRuleId;
