@@ -16,6 +16,11 @@ type Config struct {
 	Bootstrap   bool
 	JoinAddress string
 	NodeID      string
+
+	// Optional sidecar → local app push after each committed FSM change.
+	NotifyURL    string
+	NotifySecret string
+	NotifyHeader string
 }
 
 func ParseConfig() *Config {
@@ -34,6 +39,9 @@ func ParseConfig() *Config {
 	flag.BoolVar(&config.Bootstrap, "bootstrap", false, "Bootstrap a new cluster")
 	flag.StringVar(&config.JoinAddress, "join", "", "Address of leader to join (e.g., http://127.0.0.1:8000)")
 	flag.StringVar(&config.NodeID, "node-id", "", "Unique node ID (required)")
+	flag.StringVar(&config.NotifyURL, "notify-url", "", "POST committed key/value changes here (optional)")
+	flag.StringVar(&config.NotifySecret, "notify-secret", "", "Shared secret sent on notify requests")
+	flag.StringVar(&config.NotifyHeader, "notify-header", "X-Raft-Notify-Secret", "Header name for notify-secret")
 
 	flag.Parse()
 

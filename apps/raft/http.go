@@ -43,11 +43,6 @@ func (h *HTTPServer) Start() error {
 	return http.ListenAndServe(addr, mux)
 }
 
-type SetRequest struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
 type JoinRequest struct {
 	NodeID      string `json:"node_id"`
 	RaftAddress string `json:"raft_address"`
@@ -66,7 +61,6 @@ func (h *HTTPServer) handleSet(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	// تعریف یک ساختار محلی موقت با RawMessage برای جلوگیری از خطای Unmarshal
 	var req struct {
 		Key   string          `json:"key"`
 		Value json.RawMessage `json:"value"`
@@ -76,11 +70,18 @@ func (h *HTTPServer) handleSet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// تبدیل بایت‌های JSON فیلد value به string جهت سازگاری با ساختارهای قدیمی پروژه شما
-	cmd := Command{
-		Op:    "set",
-		Key:   req.Key,
-		Value: string(req.Value),
+	if req.Key == "" {
+		http.Error(w, "key is required", http.StatusBadRequest)
+		return
+	}
+
+	// value: null (or omitted) is a tombstone delete; otherwise store raw JSON text.
+	cmd := Command{Key: req.Key}
+	if len(req.Value) == 0 || string(req.Value) == "null" {
+		cmd.Op = "delete"
+	} else {
+		cmd.Op = "set"
+		cmd.Value = string(req.Value)
 	}
 
 	cmdBytes, err := json.Marshal(cmd)
@@ -95,7 +96,11 @@ func (h *HTTPServer) handleSet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Info().Str("key", req.Key).Str("value", string(req.Value)).Msg("key set")
+	if cmd.Op == "delete" {
+		h.logger.Info().Str("key", req.Key).Msg("key deleted")
+	} else {
+		h.logger.Info().Str("key", req.Key).Str("value", string(req.Value)).Msg("key set")
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})

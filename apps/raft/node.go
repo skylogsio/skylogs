@@ -20,7 +20,7 @@ type Node struct {
 	transport *raft.NetworkTransport
 }
 
-func NewNode(config *Config) (*Node, error) {
+func NewNode(config *Config, notify *Notifier) (*Node, error) {
 	// Create logger for Raft (must use hclog)
 	logger := hclog.New(&hclog.LoggerOptions{
 		Name:   "raft",
@@ -30,7 +30,7 @@ func NewNode(config *Config) (*Node, error) {
 	})
 
 	// Create FSM
-	fsm := NewFSM()
+	fsm := NewFSM(notify)
 
 	node := &Node{
 		config: config,

@@ -29,8 +29,10 @@ func main() {
 		config.JoinAddress = ""
 	}
 
+	notifier := NewNotifier(config.NotifyURL, config.NotifySecret, config.NotifyHeader, log.Logger)
+
 	// Create and start node
-	node, err := NewNode(config)
+	node, err := NewNode(config, notifier)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create node")
 	}
@@ -79,6 +81,7 @@ func main() {
 		Str("node_id", config.NodeID).
 		Int("raft_port", config.RaftPort).
 		Int("http_port", config.HTTPPort).
+		Str("notify_url", config.NotifyURL).
 		Msg("node started")
 
 	// Wait for shutdown signal
