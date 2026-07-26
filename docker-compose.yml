@@ -11,7 +11,7 @@ x-back-env: &back-env
     - HA_ENABLED=false
     - HA_NODE_ID=node-1
     - HA_NODE_SECRET=changeme-ha-secret
-    - RAFT_URL=http://skylogs-raft:8000
+    - RAFT_URL=http://raft:8000
     #  Change the secret
     - JWT_SECRET=mysecretmysecretmysecretmysecret
 
@@ -24,7 +24,7 @@ x-front-env: &front-env
 
 
 services:
-  skylogs-back:
+  back:
     build: apps/backend
     container_name: skylogs_app
     restart: unless-stopped
@@ -37,7 +37,7 @@ services:
       - mongo
       - redis
     <<: *back-env
-
+  
   nginx:
     image: nginx:latest
     container_name: skylogs_nginx
@@ -50,8 +50,8 @@ services:
     networks:
       - skylogs_net
     depends_on:
-      - skylogs-back
-
+      - back
+  
   mongo:
     image: mongo:latest
     container_name: skylogs_mongo
@@ -62,7 +62,7 @@ services:
       - skylogs_net
     volumes:
       - mongo_data:/data/db
-
+  
   redis:
     image: redis:latest
     container_name: skylogs_redis
@@ -71,7 +71,7 @@ services:
       - "6380:6379"
     networks:
       - skylogs_net
-
+  
   horizon:
     build:
       context: apps/backend
@@ -82,14 +82,14 @@ services:
     volumes:
       - app_data:/var/www/html
     depends_on:
-      - skylogs-back
+      - back
       - mongo
       - redis
     networks:
       - skylogs_net
     <<: *back-env
-
-
+  
+  
   front:
     build: apps/frontend
     restart: unless-stopped
@@ -100,13 +100,13 @@ services:
     depends_on:
       - nginx
     <<: *front-env
-
-  skylogs-sentinel:
+  
+  sentinel:
     build: apps/sentinel
-    container_name: skylogs-sentinel
+    container_name: sentinel
     restart: always
     depends_on:
-      - skylogs-back
+      - back
     environment:
       - SENTINEL_ID=dc2-sentinel
       - SENTINEL_ROLE=secondary
@@ -121,16 +121,16 @@ services:
       - "9191:9191"
     networks:
       - skylogs_net
-
-
-
-  skylogs-raft:
+  
+  
+  
+  raft:
     build: apps/raft
-    container_name: skylogs-raft
+    container_name: raft
     restart: unless-stopped
     environment:
       - RAFT_NODE_ID=node1
-      - RAFT_ADV_ADDR=skylogs-raft
+      - RAFT_ADV_ADDR=raft
       - RAFT_START_MODE=--bootstrap
       # This raft's own backend on the same compose network (nginx fronts php-fpm).
       # Multi-node: each raft-N must use http://nginx-N:80/api/ha/apply — never a shared VIP.
