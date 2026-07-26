@@ -7,7 +7,7 @@ x-back-env: &back-env
     - KAVENEGAR_TOKEN=
     - KAVENEGAR_SENDER_NUMBER=
     - TELEGRAM_BOT_TOKEN=
-    #  High availability. Off here: this stack has no raft sidecar to elect a leader.
+    #  High availability. Off for single-node; ha/*.yml flips this on for a cluster.
     - HA_ENABLED=false
     - HA_NODE_ID=node-1
     - HA_NODE_SECRET=changeme-ha-secret
@@ -110,6 +110,7 @@ services:
 
   
   front:
+    profiles: ["full"]
     build: apps/frontend
     restart: unless-stopped
     ports:
@@ -121,6 +122,7 @@ services:
     <<: *front-env
   
   sentinel:
+    profiles: ["full"]
     build: apps/sentinel
 #    container_name: sentinel
     restart: always

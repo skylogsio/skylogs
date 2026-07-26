@@ -1,0 +1,65 @@
+# Node 1 — bootstrap Raft leader. Merge: docker compose -p skylogs1 -f docker-compose.yml -f ha/docker-compose.node1.yml up -d
+services:
+  back:
+    container_name: skylogs_back-1
+    env_file:
+      - ha/node.env
+    environment:
+      - HA_ENABLED=true
+      - HA_NODE_ID=node-1
+      - HA_NODE_SECRET=changeme-ha-secret
+      - RAFT_URL=http://raft:8000
+      - HA_PEER_URLS=172.28.7.11=http://nginx-1:80,172.28.7.12=http://nginx-2:80,172.28.7.13=http://nginx-3:80
+    networks: !override
+      skylogs_net:
+      skylogs_ha:
+
+  nginx:
+    container_name: nginx-1
+    ports: !override
+      - "8083:80"
+    networks: !override
+      skylogs_net:
+      skylogs_ha:
+
+  mongo:
+    ports: !override
+      - "27117:27017"
+
+  redis:
+    ports: !override
+      - "6479:6379"
+
+  horizon:
+    container_name: skylogs_horizon-1
+    env_file:
+      - ha/node.env
+    environment:
+      - HA_ENABLED=true
+      - HA_NODE_ID=node-1
+      - HA_NODE_SECRET=changeme-ha-secret
+      - RAFT_URL=http://raft:8000
+      - HA_PEER_URLS=172.28.7.11=http://nginx-1:80,172.28.7.12=http://nginx-2:80,172.28.7.13=http://nginx-3:80
+    networks: !override
+      skylogs_net:
+      skylogs_ha:
+
+  raft:
+    container_name: skylogs_raft-1
+    environment: !override
+      - RAFT_NODE_ID=node1
+      - RAFT_ADV_ADDR=172.28.7.11
+      - RAFT_START_MODE=--bootstrap
+      - RAFT_NOTIFY_URL=http://nginx:80/api/ha/apply
+      - RAFT_NOTIFY_SECRET=changeme-ha-secret
+      - RAFT_NOTIFY_HEADER=X-Skylogs-HA-Secret
+    ports: !override
+      - "8801:8000"
+    networks: !override
+      skylogs_net:
+      skylogs_ha:
+        ipv4_address: 172.28.7.11
+
+networks:
+  skylogs_ha:
+    external: true
