@@ -17,13 +17,15 @@ type Command struct {
 
 // FSM is the finite state machine that manages the key-value store
 type FSM struct {
-	mu   sync.RWMutex
-	data map[string]string
+	mu     sync.RWMutex
+	data   map[string]string
+	notify *Notifier
 }
 
-func NewFSM() *FSM {
+func NewFSM(notify *Notifier) *FSM {
 	return &FSM{
-		data: make(map[string]string),
+		data:   make(map[string]string),
+		notify: notify,
 	}
 }
 
@@ -35,18 +37,22 @@ func (f *FSM) Apply(log *raft.Log) interface{} {
 	}
 
 	f.mu.Lock()
-	defer f.mu.Unlock()
-
 	switch cmd.Op {
 	case "set":
 		f.data[cmd.Key] = cmd.Value
-		return nil
 	case "delete":
 		delete(f.data, cmd.Key)
-		return nil
-	default:
-		return nil
 	}
+	f.mu.Unlock()
+
+	switch cmd.Op {
+	case "set":
+		f.notify.Notify(cmd.Key, json.RawMessage(cmd.Value))
+	case "delete":
+		f.notify.Notify(cmd.Key, nil)
+	}
+
+	return nil
 }
 
 // Snapshot returns a snapshot of the FSM

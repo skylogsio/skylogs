@@ -10,8 +10,8 @@ x-back-env: &back-env
 #  High availability. Off here: this stack has no raft sidecar to elect a leader.
   - HA_ENABLED=false
   - HA_NODE_ID=node-1
-  - HA_NODE_SECRET=
-  - RAFT_URL=http://raft:8090
+  - HA_NODE_SECRET=changeme-ha-secret
+  - RAFT_URL=http://skylogs-raft:8000
 #  Change the secret
   - JWT_SECRET=mysecretmysecretmysecretmysecret
 
@@ -127,10 +127,16 @@ services:
     skylogs-raft:
       build: apps/raft
       container_name: skylogs-raft
+      restart: unless-stopped
       environment:
         - RAFT_NODE_ID=node1
-        - RAFT_ADV_ADDR=172.28.7.11
+        - RAFT_ADV_ADDR=skylogs-raft
         - RAFT_START_MODE=--bootstrap
+        # This raft's own backend on the same compose network (nginx fronts php-fpm).
+        # Multi-node: each raft-N must use http://nginx-N:80/api/ha/apply — never a shared VIP.
+        - RAFT_NOTIFY_URL=http://nginx:80/api/ha/apply
+        - RAFT_NOTIFY_SECRET=changeme-ha-secret
+        - RAFT_NOTIFY_HEADER=X-Skylogs-HA-Secret
       # command:
       #  - "--node-id=${RAFT_NODE_ID}"
       #  - "--bind-address=0.0.0.0"
@@ -140,6 +146,10 @@ services:
       #  - "--data-dir=/data"
       #  - "${RAFT_START_MODE}"
       # Using a different way for these command injections
+      networks:
+        - skylogs_net
+      depends_on:
+        - nginx
 
 networks:
     skylogs_net:

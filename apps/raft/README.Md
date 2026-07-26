@@ -129,7 +129,7 @@ Replicate a key/value through the leader FSM.
 | Field | Required | Notes |
 |-------|----------|--------|
 | `key` | yes | string |
-| `value` | yes | any JSON value (string, number, object, array, bool, null). Stored as the **raw JSON text** of that field (e.g. string `"mobin"` is stored including the JSON quotes as characters). |
+| `value` | yes for set | any JSON value (string, number, object, array, bool). Stored as the **raw JSON text** of that field (e.g. string `"mobin"` is stored including the JSON quotes as characters). **`null` (or omitted) deletes the key** (tombstone). |
 
 **Success (`200`):**
 
@@ -151,6 +151,11 @@ not the leader
 curl -i -X POST http://127.0.0.1:8001/set \
   -H "Content-Type: application/json" \
   -d '{"key":"username","value":"mobin"}'
+
+# Delete
+curl -i -X POST http://127.0.0.1:8001/set \
+  -H "Content-Type: application/json" \
+  -d '{"key":"username","value":null}'
 ```
 
 ---
@@ -251,6 +256,9 @@ Binary flags (entrypoint builds these from env):
 | `--data-dir` | fixed `/data` | yes | — | Persistent Raft + FSM data |
 | `--bootstrap` | via `RAFT_START_MODE` | first node only | false | Create a new single-node cluster |
 | `--join` | via `RAFT_START_MODE` | joining nodes | — | Leader HTTP base, e.g. `http://172.28.7.11:8000` |
+| `--notify-url` | `RAFT_NOTIFY_URL` | no | — | If set, POST each committed change to this URL (local app apply hook) |
+| `--notify-secret` | `RAFT_NOTIFY_SECRET` | no | — | Shared secret for notify requests |
+| `--notify-header` | `RAFT_NOTIFY_HEADER` | no | `X-Raft-Notify-Secret` | Header name that carries `--notify-secret` |
 
 `RAFT_START_MODE` examples:
 
@@ -260,6 +268,41 @@ Binary flags (entrypoint builds these from env):
 
 If `--data-dir` already has files, the process **ignores** bootstrap and join flags and resumes membership from disk (no second `/join`). Wipe volumes (`docker compose down -v`) to form a brand-new cluster.
 
+---
+
+## Local apply notify (optional)
+
+When `--notify-url` is set, **every node** (leader and followers) POSTs to that URL after a log entry is applied to the local FSM. Snapshot restore does **not** notify; the app should reconcile with `GET /get` after restart.
+
+Request:
+
+```http
+POST <notify-url>
+Content-Type: application/json
+<notify-header>: <notify-secret>   # only if --notify-secret is set
+```
+
+```json
+{ "key": "username", "value": "\"mobin\"" }
+```
+
+Delete / tombstone:
+
+```json
+{ "key": "username", "value": null }
+```
+
+`value` is the stored raw JSON text for sets (same as `/get`), or JSON `null` for deletes. Notify is asynchronous and best-effort: Raft commit succeeds even if the app is down; the app must reconcile later.
+
+Example (same Docker Compose network — this raft’s own nginx/backend service name):
+
+```bash
+RAFT_NOTIFY_URL=http://nginx_back:80/api/ha/apply
+RAFT_NOTIFY_SECRET=shared-secret
+RAFT_NOTIFY_HEADER=X-Skylogs-HA-Secret
+```
+
+Do **not** use `localhost`, a public VIP, or another node’s backend. In a multi-node compose, `raft-2` must notify `http://nginx_back-2:80/api/ha/apply` (its pair), not node 1.
 ---
 
 ## Local HA test environment
