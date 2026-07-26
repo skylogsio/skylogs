@@ -17,7 +17,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 FROM debian:bookworm-slim
 
 RUN apt-get update && \
-    apt-get install -y ca-certificates gosu && \
+    apt-get install -y ca-certificates curl gosu && \
     rm -rf /var/lib/apt/lists/*
 
 RUN useradd -u 10001 -r -s /usr/sbin/nologin raft

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -18,14 +17,16 @@ import (
 func main() {
 	config := ParseConfig()
 
-	//Check for data existence or new cluster creation
+	// Existing data means this node is already a cluster member; resume from disk.
+	// Do not re-bootstrap or re-POST /join (that requires the current leader and
+	// fails hard during failover when VIP points at a follower or at this node).
 	if hasExistingData(config.DataDir) {
 		log.Info().
 			Str("data_dir", config.DataDir).
 			Msg("existing raft data found, ignoring bootstrap and join flags")
 
-		config.JoinAddress = "http://" + os.Getenv("VIP") + ":" + strconv.Itoa(config.HTTPPort)
 		config.Bootstrap = false
+		config.JoinAddress = ""
 	}
 
 	// Create and start node
