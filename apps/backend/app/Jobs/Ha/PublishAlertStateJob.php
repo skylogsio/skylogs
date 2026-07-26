@@ -56,13 +56,21 @@ class PublishAlertStateJob implements ShouldQueue
     public function handle(RaftClient $raft): void
     {
         try {
-            $raft->save($this->key, $this->value);
+            $raft->set($this->key, $this->value);
         } catch (RaftUnavailableException $exception) {
-            Log::warning('Publishing alert state to Raft failed.', [
-                'key' => $this->key,
-                'attempt' => $this->attempts(),
-                ...$exception->context(),
-            ]);
+            /*
+             | A rejected write means this node lost leadership between the
+             | dispatch and the attempt. Retrying is still the right move: the
+             | EnsureLeader middleware drops the job on the next attempt, once
+             | the cached role has caught up with the sidecar.
+             */
+            Log::warning($exception->isNotLeader()
+                ? 'Publishing alert state was refused: this node is not the Raft leader.'
+                : 'Publishing alert state to Raft failed.', [
+                    'key' => $this->key,
+                    'attempt' => $this->attempts(),
+                    ...$exception->context(),
+                ]);
 
             throw $exception;
         }

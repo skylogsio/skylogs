@@ -11,6 +11,12 @@ use Throwable;
  */
 class RaftUnavailableException extends Exception
 {
+    /**
+     * The sidecar rejects a write on a follower with this plain text body and
+     * HTTP 500; it is the only way it says "wrong node".
+     */
+    public const NOT_LEADER_BODY = 'not the leader';
+
     public function __construct(
         string $message,
         public readonly string $endpoint,
@@ -34,12 +40,25 @@ class RaftUnavailableException extends Exception
 
     public static function badResponse(string $endpoint, int $status, string $body): self
     {
-        return new self(
-            "Raft sidecar answered {$status} for {$endpoint}",
-            $endpoint,
-            $status,
-            $body,
-        );
+        $message = self::mentionsNotLeader($body)
+            ? "Raft sidecar refused {$endpoint}: this node is not the leader"
+            : "Raft sidecar answered {$status} for {$endpoint}";
+
+        return new self($message, $endpoint, $status, $body);
+    }
+
+    public static function mentionsNotLeader(string $body): bool
+    {
+        return str_contains(strtolower($body), self::NOT_LEADER_BODY);
+    }
+
+    /**
+     * A write that reached a follower. Publishing has to stop here: there is no
+     * redirect to the leader, and the node that leads will publish the slot.
+     */
+    public function isNotLeader(): bool
+    {
+        return self::mentionsNotLeader((string) $this->body);
     }
 
     /**

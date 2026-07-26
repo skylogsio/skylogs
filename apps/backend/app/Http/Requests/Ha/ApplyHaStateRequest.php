@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Ha;
 
+use App\Services\Ha\RaftClient;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -14,6 +15,29 @@ class ApplyHaStateRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * The sidecar notifies with the value exactly as it stored it, which is the
+     * raw JSON text of the slot rather than an object. Decoding here keeps the
+     * rules below, and everything downstream, working on one shape.
+     *
+     * A string that is not an object is left alone so validation rejects it: a
+     * payload nobody can read must not be mistaken for a tombstone.
+     */
+    protected function prepareForValidation(): void
+    {
+        $value = $this->input('value');
+
+        if (! is_string($value)) {
+            return;
+        }
+
+        $decoded = RaftClient::decodeStoredValue($value);
+
+        if ($decoded !== null) {
+            $this->merge(['value' => $decoded]);
+        }
     }
 
     /**

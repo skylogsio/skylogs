@@ -28,7 +28,7 @@ function haRemoteSlot(string $instanceId, int $version, string $state = AlertRul
 function haReconciler(bool $isLeader, array $remoteData): HaReconciler
 {
     $raft = Mockery::mock(RaftClient::class);
-    $raft->shouldReceive('state')->andReturn(['index' => 1, 'data' => $remoteData]);
+    $raft->shouldReceive('getAll')->andReturn($remoteData);
 
     $leader = Mockery::mock(HaLeaderService::class);
     $leader->shouldReceive('isLeader')->andReturn($isLeader);
@@ -190,7 +190,7 @@ describe('HaReconciler with ha switched off', function () {
         config(['ha.enabled' => false]);
 
         $raft = Mockery::mock(RaftClient::class);
-        $raft->shouldNotReceive('state');
+        $raft->shouldNotReceive('getAll');
 
         $leader = Mockery::mock(HaLeaderService::class);
 

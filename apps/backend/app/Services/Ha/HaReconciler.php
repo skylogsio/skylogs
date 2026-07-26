@@ -37,7 +37,7 @@ class HaReconciler
             return ['role' => 'standalone'];
         }
 
-        $data = $this->raft->state()['data'];
+        $data = $this->raft->getAll();
 
         return $this->leader->isLeader()
             ? $this->reconcileAsLeader($data)
@@ -49,7 +49,7 @@ class HaReconciler
      * version gate a live delivery goes through, then drop the slots the log no
      * longer carries.
      *
-     * @param  array<string, mixed>  $data
+     * @param  array<string, array<string, mixed>|null>  $data
      * @return array<string, mixed>
      */
     private function reconcileAsFollower(array $data): array
@@ -83,7 +83,7 @@ class HaReconciler
      * the log's counters: a node promoted mid-life has never published these
      * slots, and publishing from version one would lose to its own history.
      *
-     * @param  array<string, mixed>  $data
+     * @param  array<string, array<string, mixed>|null>  $data
      * @return array<string, mixed>
      */
     private function reconcileAsLeader(array $data): array
@@ -106,7 +106,7 @@ class HaReconciler
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param  array<string, array<string, mixed>|null>  $data
      */
     private function inheritVersions(array $data): int
     {
@@ -137,7 +137,7 @@ class HaReconciler
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param  array<string, array<string, mixed>|null>  $data
      */
     private function republishStaleSlots(array $data): int
     {

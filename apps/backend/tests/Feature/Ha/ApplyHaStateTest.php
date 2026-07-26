@@ -29,7 +29,7 @@ use Tests\Support\TeamTestData;
 
 const HA_SECRET = 'test-ha-node-secret';
 
-function haApply(string $key, ?array $value, ?string $secret = HA_SECRET): TestResponse
+function haApply(string $key, array|string|null $value, ?string $secret = HA_SECRET): TestResponse
 {
     $headers = $secret === null ? [] : [HaNodeAuth::SECRET_HEADER => $secret];
 
@@ -153,6 +153,57 @@ describe('POST /api/ha/apply authentication', function () {
 
     it('rejects a malformed key before touching anything', function () {
         haApply('not-a-key', null)->assertStatus(422);
+    });
+});
+
+/*
+ | The sidecar notifies with the value exactly as it stored it: the raw JSON
+ | text of the slot, not an object.
+ */
+describe('POST /api/ha/apply sidecar payload', function () {
+    it('decodes a value the sidecar sent as json text', function () {
+        $alertRule = haAlertRuleOfType(AlertRuleType::PROMETHEUS);
+        $entry = haPrometheusEntry('10.0.0.4:9100');
+        $instanceId = AlertStateKey::prometheusInstanceId($entry['labels']);
+        $key = 'alert:'.$alertRule->_id.':prometheus:'.$instanceId;
+
+        $value = haValue($alertRule, 'prometheus', $instanceId, AlertRule::CRITICAL, 1, [
+            'instance' => ['labels' => $entry['labels']],
+            'extra' => ['entry' => $entry],
+        ]);
+
+        haApply($key, json_encode($value))->assertOk()->assertJson(['applied' => true]);
+
+        expect(PrometheusCheck::where('alertRuleId', $alertRule->_id)->first()->alerts)->toHaveCount(1)
+            ->and((int) HaStateVersion::where('key', $key)->value('version'))->toBe(1);
+    });
+
+    it('removes the slot on a json null, the tombstone the sidecar replicates', function () {
+        $alertRule = haAlertRuleOfType(AlertRuleType::PROMETHEUS);
+        $entry = haPrometheusEntry('10.0.0.4:9100');
+        $instanceId = AlertStateKey::prometheusInstanceId($entry['labels']);
+        $key = 'alert:'.$alertRule->_id.':prometheus:'.$instanceId;
+
+        haApply($key, json_encode(haValue($alertRule, 'prometheus', $instanceId, AlertRule::CRITICAL, 1, [
+            'instance' => ['labels' => $entry['labels']],
+            'extra' => ['entry' => $entry],
+        ])))->assertOk();
+
+        haApply($key, null)->assertOk()->assertJson(['applied' => true]);
+
+        expect(HaStateVersion::where('key', $key)->count())->toBe(0);
+    });
+
+    /*
+     | A payload nobody can read must not be mistaken for a tombstone: dropping
+     | the slot on unreadable input would delete state the leader still holds.
+     */
+    it('rejects a value that is not a slot document rather than treating it as a delete', function () {
+        $alertRule = haAlertRuleOfType(AlertRuleType::PROMETHEUS);
+        $key = 'alert:'.$alertRule->_id.':prometheus:9f8a1c';
+
+        haApply($key, '"mobin"')->assertStatus(422);
+        haApply($key, 'not json at all')->assertStatus(422);
     });
 });
 

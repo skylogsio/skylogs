@@ -137,15 +137,11 @@ services:
         - RAFT_NOTIFY_URL=http://nginx:80/api/ha/apply
         - RAFT_NOTIFY_SECRET=changeme-ha-secret
         - RAFT_NOTIFY_HEADER=X-Skylogs-HA-Secret
-      # command:
-      #  - "--node-id=${RAFT_NODE_ID}"
-      #  - "--bind-address=0.0.0.0"
-      #  - "--advertise-address=${RAFT_ADV_ADDR}"
-      #  - "--raft-port=7000"
-      #  - "--http-port=7001"
-      #  - "--data-dir=/data"
-      #  - "${RAFT_START_MODE}"
-      # Using a different way for these command injections
+      # The entrypoint builds the flags from RAFT_* above: raft TCP 7000, HTTP 8000, data in /data.
+      ports:
+        - "8001:8000"
+      volumes:
+        - raft_data:/data
       networks:
         - skylogs_net
       depends_on:
@@ -158,4 +154,6 @@ networks:
 volumes:
     app_data:
     mongo_data:
+        driver: local
+    raft_data:
         driver: local
