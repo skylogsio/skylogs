@@ -43,7 +43,8 @@ class HaConfigSyncService
     /**
      * Leader wins outright: the leader is the sole writer by deployment, so a
      * stray write on a follower is a symptom, not a conflict to merge, and the
-     * next snapshot simply overwrites it.
+     * next snapshot replaces local rows — including re-keying the same logical
+     * document onto the leader's ObjectId when seed data diverged.
      *
      * @param  array{collections?: mixed}  $snapshot
      * @return array<string, array{written: int, deleted: int}>
@@ -132,8 +133,16 @@ class HaConfigSyncService
     {
         $protected = HaConfigCatalog::protectedFields($alias);
         $seen = [];
-        $written = 0;
+        $pending = [];
 
+        /*
+         | Collect leader ids first, then delete anything else on this node,
+         | then upsert. Order matters: independently seeded followers often
+         | already hold the same logical row (admin, owner role, …) under a
+         | different ObjectId. Upserting the leader's id first hits the unique
+         | index; removing the stale id first lets the leader's document land
+         | and keeps foreign keys such as userId pointing at one shared id.
+         */
         foreach ($documents as $document) {
             if (! is_array($document)) {
                 continue;
@@ -146,13 +155,19 @@ class HaConfigSyncService
             }
 
             $seen[] = $id;
+            $pending[] = [$id, $document];
+        }
 
+        $deleted = $this->deleteAbsent($model, $seen);
+        $written = 0;
+
+        foreach ($pending as [$id, $document]) {
             if ($this->upsert($model, $id, $protected, Arr::except($document, $protected))) {
                 $written++;
             }
         }
 
-        return ['written' => $written, 'deleted' => $this->deleteAbsent($model, $seen)];
+        return ['written' => $written, 'deleted' => $deleted];
     }
 
     /**
