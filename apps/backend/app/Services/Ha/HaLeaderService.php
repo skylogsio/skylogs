@@ -31,8 +31,8 @@ class HaLeaderService
      * Base URL of the leader's backend, used by followers to pull config. This
      * is the node's own address, never the load balancer's.
      *
-     * The sidecar cannot answer this on its own: it knows the leader only as a
-     * Raft address, so the ha.peers map supplies the backend half.
+     * Followers now receive that backend URL directly from the sidecar. While
+     * leading, this node still resolves its own URL from the configured peers.
      */
     public function leaderAddress(): ?string
     {
@@ -40,12 +40,12 @@ class HaLeaderService
 
         return $status['isLeader']
             ? $this->peerUrl($status['nodeId'] !== '' ? $status['nodeId'] : $this->nodeId())
-            : $this->peerUrl($status['leaderRaftAddress']);
+            : $status['leaderRaftAddress'];
     }
 
     /**
-     * Raft address of the current leader, e.g. 172.28.7.11:7000. Useful for
-     * diagnostics; it is not a URL and nothing can be fetched from it.
+     * Identifier reported for the current leader. Older sidecars returned a
+     * Raft address; newer ones return the leader backend URL directly.
      */
     public function leaderRaftAddress(): ?string
     {
@@ -68,9 +68,9 @@ class HaLeaderService
     }
 
     /**
-     * Resolves an identifier the sidecar reported, a Raft address or a node id,
-     * to the backend base URL configured for that node. A Raft address is
-     * matched with and without its port so one entry covers both spellings.
+     * Resolves this node's configured backend URL from a node id or legacy
+     * Raft address. A Raft address is matched with and without its port so one
+     * entry covers both spellings.
      */
     private function peerUrl(?string $identifier): ?string
     {

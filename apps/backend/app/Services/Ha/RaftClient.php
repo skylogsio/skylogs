@@ -24,9 +24,9 @@ use Throwable;
 class RaftClient
 {
     /**
-     * How the sidecar sees the cluster from this node. /status answers 200
+     * How the sidecar sees the cluster from this node. /leader answers 200
      * whatever role the node holds, so a follower is an answer rather than a
-     * failure, and the leader is named by its Raft address, never by a URL.
+     * failure, and the leader may be named directly by its backend URL.
      *
      * @return array{isLeader: bool, nodeId: string, leaderRaftAddress: string|null, state: string|null}
      *
@@ -35,12 +35,12 @@ class RaftClient
     public function status(): array
     {
         $payload = $this->send(
-            '/status',
+            '/leader',
             (float) config('ha.raft.timeout.status'),
-            fn (PendingRequest $request): Response => $request->get('/status'),
+            fn (PendingRequest $request): Response => $request->get('/leader'),
         );
 
-        $leaderRaftAddress = (string) ($payload['leader'] ?? '');
+        $leaderRaftAddress = (string) ($payload['address'] ?? $payload['leader'] ?? '');
 
         return [
             'isLeader' => (bool) ($payload['is_leader'] ?? false),

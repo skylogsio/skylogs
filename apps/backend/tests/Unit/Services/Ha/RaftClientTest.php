@@ -17,10 +17,10 @@ describe('RaftClient', function () {
 
     it('reads the cluster status of the local node', function () {
         Http::fake([
-            'raft.test:8000/status' => Http::response([
+            'raft.test:8000/leader' => Http::response([
                 'node_id' => 'node1',
                 'is_leader' => true,
-                'leader' => '172.28.7.11:7000',
+                'address' => 'http://nginx_back-1:80',
                 'state' => 'Leader',
             ]),
         ]);
@@ -28,17 +28,17 @@ describe('RaftClient', function () {
         expect(app(RaftClient::class)->status())->toBe([
             'isLeader' => true,
             'nodeId' => 'node1',
-            'leaderRaftAddress' => '172.28.7.11:7000',
+            'leaderRaftAddress' => 'http://nginx_back-1:80',
             'state' => 'Leader',
         ]);
     });
 
     it('reads a follower without treating it as a failure', function () {
         Http::fake([
-            'raft.test:8000/status' => Http::response([
+            'raft.test:8000/leader' => Http::response([
                 'node_id' => 'node2',
                 'is_leader' => false,
-                'leader' => '172.28.7.11:7000',
+                'address' => 'http://nginx_back-1:80',
                 'state' => 'Follower',
             ]),
         ]);
@@ -46,17 +46,17 @@ describe('RaftClient', function () {
         expect(app(RaftClient::class)->status())->toBe([
             'isLeader' => false,
             'nodeId' => 'node2',
-            'leaderRaftAddress' => '172.28.7.11:7000',
+            'leaderRaftAddress' => 'http://nginx_back-1:80',
             'state' => 'Follower',
         ]);
     });
 
     it('reports no leader address at all while an election is running', function () {
         Http::fake([
-            'raft.test:8000/status' => Http::response([
+            'raft.test:8000/leader' => Http::response([
                 'node_id' => 'node2',
                 'is_leader' => false,
-                'leader' => '',
+                'address' => '',
                 'state' => 'Candidate',
             ]),
         ]);
@@ -123,7 +123,7 @@ describe('RaftClient', function () {
     });
 
     it('reports an unreachable sidecar as a raft failure', function () {
-        Http::fake(['raft.test:8000/status' => Http::failedConnection()]);
+        Http::fake(['raft.test:8000/leader' => Http::failedConnection()]);
 
         expect(fn () => app(RaftClient::class)->status())
             ->toThrow(RaftUnavailableException::class);
@@ -156,7 +156,7 @@ describe('RaftClient', function () {
     });
 
     it('retries once before giving up', function () {
-        Http::fake(['raft.test:8000/status' => Http::response('boom', 500)]);
+        Http::fake(['raft.test:8000/leader' => Http::response('boom', 500)]);
 
         expect(fn () => app(RaftClient::class)->status())
             ->toThrow(RaftUnavailableException::class);

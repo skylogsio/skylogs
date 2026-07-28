@@ -6,15 +6,15 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * The shape of GET /status: the leader is named by its Raft address, never by
- * an HTTP URL.
+ * The shape of GET /leader: the leader backend URL is returned directly in the
+ * address field.
  */
-function haStatusResponse(bool $isLeader, string $leaderRaftAddress = '172.28.7.11:7000'): array
+function haStatusResponse(bool $isLeader, string $leaderAddress = 'http://nginx_back-1:80'): array
 {
     return [
         'node_id' => 'node-1',
         'is_leader' => $isLeader,
-        'leader' => $leaderRaftAddress,
+        'address' => $leaderAddress,
         'state' => $isLeader ? 'Leader' : 'Follower',
     ];
 }
@@ -45,67 +45,51 @@ describe('HaLeaderService', function () {
     });
 
     it('reports leadership when the sidecar says this node leads', function () {
-        Http::fake(['raft.test:8000/status' => Http::response(haStatusResponse(true))]);
+        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(true))]);
 
         expect(haLeaderService()->isLeader())->toBeTrue()
-            ->and(haLeaderService()->leaderRaftAddress())->toBe('172.28.7.11:7000');
+            ->and(haLeaderService()->leaderRaftAddress())->toBe('http://nginx_back-1:80');
     });
 
     it('reports follower when another node leads', function () {
-        Http::fake(['raft.test:8000/status' => Http::response(haStatusResponse(false, '172.28.7.12:7000'))]);
+        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(false, 'http://nginx_back-2:80'))]);
 
         expect(haLeaderService()->isLeader())->toBeFalse();
     });
 
-    /*
-     | The sidecar knows the leader only as a Raft address, so config sync can
-     | only find the leader's backend through the configured peer map.
-     */
-    it('resolves the leader backend url from the peer map', function () {
-        Http::fake(['raft.test:8000/status' => Http::response(haStatusResponse(false, '172.28.7.12:7000'))]);
+    it('uses the leader backend url returned by the sidecar', function () {
+        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(false, 'http://nginx_back-2:80'))]);
 
         expect(haLeaderService()->leaderAddress())->toBe('http://nginx_back-2:80');
     });
 
-    it('matches a peer entry written without the raft port', function () {
-        Http::fake(['raft.test:8000/status' => Http::response(haStatusResponse(false, '172.28.7.11:7000'))]);
-
-        expect(haLeaderService()->leaderAddress())->toBe('http://nginx_back-1:80');
-    });
-
-    it('reports no leader url when the leader is missing from the peer map', function () {
-        Http::fake(['raft.test:8000/status' => Http::response(haStatusResponse(false, '172.28.7.99:7000'))]);
-
-        expect(haLeaderService()->leaderAddress())->toBeNull();
-    });
-
     it('reports no leader url while an election is running', function () {
-        Http::fake(['raft.test:8000/status' => Http::response(haStatusResponse(false, ''))]);
+        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(false, ''))]);
 
         expect(haLeaderService()->leaderAddress())->toBeNull();
     });
 
     it('resolves its own url by node id while it leads', function () {
-        Http::fake(['raft.test:8000/status' => Http::response(haStatusResponse(true))]);
+        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(true))]);
 
         expect(haLeaderService()->leaderAddress())->toBe('http://nginx_back-1:80');
     });
 
     it('treats an unreachable sidecar as a follower', function () {
-        Http::fake(['raft.test:8000/status' => Http::failedConnection()]);
+        Http::fake(['raft.test:8000/leader' => Http::failedConnection()]);
 
         expect(haLeaderService()->isLeader())->toBeFalse()
             ->and(haLeaderService()->leaderAddress())->toBeNull();
     });
 
     it('treats a failing sidecar as a follower', function () {
-        Http::fake(['raft.test:8000/status' => Http::response('boom', 500)]);
+        Http::fake(['raft.test:8000/leader' => Http::response('boom', 500)]);
 
         expect(haLeaderService()->isLeader())->toBeFalse();
     });
 
     it('caches the sidecar answer for the configured window', function () {
-        Http::fake(['raft.test:8000/status' => Http::response(haStatusResponse(true))]);
+        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(true))]);
 
         haLeaderService()->isLeader();
         haLeaderService()->isLeader();
@@ -115,7 +99,7 @@ describe('HaLeaderService', function () {
     });
 
     it('polls the sidecar again once the cached answer expires', function () {
-        Http::fake(['raft.test:8000/status' => Http::response(haStatusResponse(true))]);
+        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(true))]);
 
         haLeaderService()->isLeader();
 
@@ -143,8 +127,8 @@ describe('HaLeaderService', function () {
 
     it('runs leader work only on the leader while ha is enabled', function () {
         Http::fake([
-            'raft.test:8000/status' => Http::sequence()
-                ->push(haStatusResponse(false, '172.28.7.12:7000'))
+            'raft.test:8000/leader' => Http::sequence()
+                ->push(haStatusResponse(false, 'http://nginx_back-2:80'))
                 ->push(haStatusResponse(true)),
         ]);
 
@@ -156,7 +140,7 @@ describe('HaLeaderService', function () {
     });
 
     it('records the current role', function () {
-        Http::fake(['raft.test:8000/status' => Http::response(haStatusResponse(false, '172.28.7.12:7000'))]);
+        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(false, 'http://nginx_back-2:80'))]);
 
         haLeaderService()->isLeader();
 
@@ -167,8 +151,8 @@ describe('HaLeaderService', function () {
         Log::spy();
 
         Http::fake([
-            'raft.test:8000/status' => Http::sequence()
-                ->push(haStatusResponse(false, '172.28.7.12:7000'))
+            'raft.test:8000/leader' => Http::sequence()
+                ->push(haStatusResponse(false, 'http://nginx_back-2:80'))
                 ->push(haStatusResponse(true)),
         ]);
 

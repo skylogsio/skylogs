@@ -26,10 +26,10 @@ function haFakeSidecar(bool $isLeader, array $data): void
     Http::swap(new Factory(app(Dispatcher::class)));
 
     Http::fake([
-        'raft:8000/status' => Http::response([
+        'raft:8000/leader' => Http::response([
             'node_id' => 'node-2',
             'is_leader' => $isLeader,
-            'leader' => $isLeader ? '172.28.7.12:7000' : '172.28.7.11:7000',
+            'address' => $isLeader ? 'http://nginx_back-2:80' : 'http://nginx_back-1:80',
             'state' => $isLeader ? 'Leader' : 'Follower',
         ]),
         'raft:8000/get' => Http::response(array_map(json_encode(...), $data)),
