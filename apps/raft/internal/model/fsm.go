@@ -1,4 +1,4 @@
-package main
+package model
 
 import (
 	"encoding/json"
@@ -9,49 +9,43 @@ import (
 )
 
 // Command represents a command to be applied to the FSM
-type Command struct {
-	Op    string `json:"op"`
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
 
 // FSM is the finite state machine that manages the key-value store
 type FSM struct {
-	mu     sync.RWMutex
-	data   map[string]string
-	notify *Notifier
+	mu       sync.RWMutex
+	data     map[string]string
+	notifier *Notifier
 }
 
-func NewFSM(notify *Notifier) *FSM {
+func NewFSM(notifier *Notifier) *FSM {
 	return &FSM{
-		data:   make(map[string]string),
-		notify: notify,
+		data:     make(map[string]string),
+		notifier: notifier,
 	}
 }
 
-// Apply applies a Raft log entry to the FSM
 func (f *FSM) Apply(log *raft.Log) interface{} {
+	//here we can persist our data on another database
+	//redisDB := db.NewRedis()
 	var cmd Command
 	if err := json.Unmarshal(log.Data, &cmd); err != nil {
 		return err
 	}
 
 	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	switch cmd.Op {
 	case "set":
 		f.data[cmd.Key] = cmd.Value
+		f.notifier.Notify(cmd.Key, json.RawMessage(cmd.Value))
+		//if err := redisDB.Save(cmd); err != nil {
+		//	return err
+		//}
 	case "delete":
 		delete(f.data, cmd.Key)
+		f.notifier.Notify(cmd.Key, nil)
 	}
-	f.mu.Unlock()
-
-	switch cmd.Op {
-	case "set":
-		f.notify.Notify(cmd.Key, json.RawMessage(cmd.Value))
-	case "delete":
-		f.notify.Notify(cmd.Key, nil)
-	}
-
 	return nil
 }
 
@@ -105,33 +99,3 @@ func (f *FSM) GetAll() map[string]string {
 	}
 	return result
 }
-
-// fsmSnapshot implements raft.FSMSnapshot
-type fsmSnapshot struct {
-	data map[string]string
-}
-
-// Persist writes the snapshot to the given sink
-func (s *fsmSnapshot) Persist(sink raft.SnapshotSink) error {
-	err := func() error {
-		b, err := json.Marshal(s.data)
-		if err != nil {
-			return err
-		}
-
-		if _, err := sink.Write(b); err != nil {
-			return err
-		}
-
-		return sink.Close()
-	}()
-
-	if err != nil {
-		sink.Cancel()
-	}
-
-	return err
-}
-
-// Release is called when we are finished with the snapshot
-func (s *fsmSnapshot) Release() {}

@@ -1,4 +1,4 @@
-package main
+package model
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 )
 
 // Notifier pushes each committed FSM change to a local app (sidecar pattern).
-// Failures are logged only: Raft must not stall or roll back on notify errors.
+// Failures are logged only: Raft must not stall or roll back on notifier errors.
 type Notifier struct {
 	url    string
 	secret string
@@ -31,7 +31,7 @@ func NewNotifier(url, secret, header string, logger zerolog.Logger) *Notifier {
 		secret: secret,
 		header: header,
 		client: &http.Client{Timeout: 3 * time.Second},
-		logger: logger.With().Str("component", "notify").Logger(),
+		logger: logger.With().Str("component", "notifier").Logger(),
 	}
 }
 
@@ -57,13 +57,13 @@ func (n *Notifier) send(key string, value json.RawMessage) {
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		n.logger.Error().Err(err).Str("key", key).Msg("failed to marshal notify payload")
+		n.logger.Error().Err(err).Str("key", key).Msg("failed to marshal notifier payload")
 		return
 	}
 
 	req, err := http.NewRequest(http.MethodPost, n.url, bytes.NewReader(body))
 	if err != nil {
-		n.logger.Error().Err(err).Str("key", key).Msg("failed to build notify request")
+		n.logger.Error().Err(err).Str("key", key).Msg("failed to build notifier request")
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -73,7 +73,7 @@ func (n *Notifier) send(key string, value json.RawMessage) {
 
 	resp, err := n.client.Do(req)
 	if err != nil {
-		n.logger.Error().Err(err).Str("key", key).Str("url", n.url).Msg("notify failed")
+		n.logger.Error().Err(err).Str("key", key).Str("url", n.url).Msg("notifier failed")
 		return
 	}
 	defer resp.Body.Close()
@@ -83,9 +83,9 @@ func (n *Notifier) send(key string, value json.RawMessage) {
 			Int("status", resp.StatusCode).
 			Str("key", key).
 			Str("url", n.url).
-			Msg("notify rejected")
+			Msg("notifier rejected")
 		return
 	}
 
-	n.logger.Debug().Str("key", key).Msg("notify ok")
+	n.logger.Debug().Str("key", key).Msg("notifier ok")
 }

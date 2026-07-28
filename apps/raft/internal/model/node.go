@@ -1,4 +1,4 @@
-package main
+package model
 
 import (
 	"fmt"
@@ -13,48 +13,46 @@ import (
 )
 
 type Node struct {
-	config    *Config
+	Config    *Config
 	raft      *raft.Raft
-	fsm       *FSM
-	logger    hclog.Logger
+	FSM       *FSM
+	Logger    hclog.Logger
 	transport *raft.NetworkTransport
 }
 
-func NewNode(config *Config, notify *Notifier) (*Node, error) {
-	// Create logger for Raft (must use hclog)
-	logger := hclog.New(&hclog.LoggerOptions{
-		Name:   "raft",
-		Level:  hclog.Info,
-		Output: os.Stdout,
-		// Color:  hclog.ColorOff, //for removing colors and readable log
-	})
-
-	// Create FSM
-	fsm := NewFSM(notify)
-
-	node := &Node{
-		config: config,
-		fsm:    fsm,
-		logger: logger,
-	}
-
-	if err := node.setupRaft(); err != nil {
-		return nil, err
-	}
-
-	return node, nil
+// IsLeader checks if this node is the leader
+func (n *Node) IsLeader() bool {
+	return n.raft.State() == raft.Leader
 }
 
-func (n *Node) setupRaft() error {
+// GetLeader returns the current leader address
+func (n *Node) GetLeader() string {
+	addr, _ := n.raft.LeaderWithID()
+	return string(addr)
+}
+
+func (n *Node) State() string {
+	return n.raft.State().String()
+}
+
+func (n *Node) NodeID() string {
+	return n.Config.NodeID
+}
+
+func (n *Node) RemoveServer() raft.IndexFuture {
+	return n.raft.RemoveServer(raft.ServerID(n.NodeID()), 0, 0)
+}
+
+func (n *Node) SetupRaft() error {
 	// Create data directory
-	if err := os.MkdirAll(n.config.DataDir, 0755); err != nil {
+	if err := os.MkdirAll(n.Config.DataDir, 0755); err != nil {
 		return fmt.Errorf("failed to create data directory: %w", err)
 	}
 
 	// Setup Raft configuration
 	raftConfig := raft.DefaultConfig()
-	raftConfig.LocalID = raft.ServerID(n.config.NodeID)
-	raftConfig.Logger = n.logger
+	raftConfig.LocalID = raft.ServerID(n.Config.NodeID)
+	raftConfig.Logger = n.Logger
 
 	// Tune timeouts for faster leader election in testing
 	raftConfig.HeartbeatTimeout = 1000 * time.Millisecond
@@ -65,14 +63,14 @@ func (n *Node) setupRaft() error {
 	// Setup TCP transport
 	listenAddr := fmt.Sprintf(
 		"%s:%d",
-		n.config.BindAddress,
-		n.config.RaftPort,
+		n.Config.BindAddress,
+		n.Config.RaftPort,
 	)
 
 	advertiseAddr := fmt.Sprintf(
 		"%s:%d",
-		n.config.AdvertiseAddress,
-		n.config.RaftPort,
+		n.Config.AdvertiseAddress,
+		n.Config.RaftPort,
 	)
 
 	advertiseTCP, err := net.ResolveTCPAddr(
@@ -97,25 +95,25 @@ func (n *Node) setupRaft() error {
 	n.transport = transport
 
 	// Create log store (BoltDB)
-	logStore, err := raftboltdb.NewBoltStore(filepath.Join(n.config.DataDir, "raft-log.db"))
+	logStore, err := raftboltdb.NewBoltStore(filepath.Join(n.Config.DataDir, "raft-log.db"))
 	if err != nil {
 		return fmt.Errorf("failed to create log store: %w", err)
 	}
 
 	// Create stable store (BoltDB)
-	stableStore, err := raftboltdb.NewBoltStore(filepath.Join(n.config.DataDir, "raft-stable.db"))
+	stableStore, err := raftboltdb.NewBoltStore(filepath.Join(n.Config.DataDir, "raft-stable.db"))
 	if err != nil {
 		return fmt.Errorf("failed to create stable store: %w", err)
 	}
 
 	// Create snapshot store
-	snapshotStore, err := raft.NewFileSnapshotStore(n.config.DataDir, 2, os.Stdout)
+	snapshotStore, err := raft.NewFileSnapshotStore(n.Config.DataDir, 2, os.Stdout)
 	if err != nil {
 		return fmt.Errorf("failed to create snapshot store: %w", err)
 	}
 
 	// Create Raft instance
-	r, err := raft.NewRaft(raftConfig, n.fsm, logStore, stableStore, snapshotStore, transport)
+	r, err := raft.NewRaft(raftConfig, n.FSM, logStore, stableStore, snapshotStore, transport)
 	if err != nil {
 		return fmt.Errorf("failed to create raft: %w", err)
 	}
@@ -127,7 +125,7 @@ func (n *Node) setupRaft() error {
 			if isLeader {
 				fmt.Printf(
 					"Node %s became leader at %s\n",
-					n.config.NodeID,
+					n.Config.NodeID,
 					time.Now().Format("2006-01-02 15:04:05.000"),
 				)
 			}
@@ -135,11 +133,11 @@ func (n *Node) setupRaft() error {
 	}()
 
 	// Bootstrap cluster if requested
-	if n.config.Bootstrap {
+	if n.Config.Bootstrap {
 		configuration := raft.Configuration{
 			Servers: []raft.Server{
 				{
-					ID:      raft.ServerID(n.config.NodeID),
+					ID:      raft.ServerID(n.Config.NodeID),
 					Address: transport.LocalAddr(),
 				},
 			},
@@ -148,21 +146,38 @@ func (n *Node) setupRaft() error {
 		if err := f.Error(); err != nil {
 			return fmt.Errorf("failed to bootstrap cluster: %w", err)
 		}
-		n.logger.Info("cluster bootstrapped", "node_id", n.config.NodeID)
+		n.Logger.Info("cluster bootstrapped", "node_id", n.Config.NodeID)
 	}
 
 	return nil
 }
 
-// IsLeader checks if this node is the leader
-func (n *Node) IsLeader() bool {
-	return n.raft.State() == raft.Leader
+// Join adds a new node to the cluster
+func (n *Node) Join(nodeID, addr string) error {
+	if !n.IsLeader() {
+		return fmt.Errorf("not the leader")
+	}
+
+	n.Logger.Info("received join request", "node_id", nodeID, "addr", addr)
+
+	f := n.raft.AddVoter(raft.ServerID(nodeID), raft.ServerAddress(addr), 0, 0)
+	if err := f.Error(); err != nil {
+		return err
+	}
+
+	n.Logger.Info("node joined successfully", "node_id", nodeID)
+	return nil
 }
 
-// GetLeader returns the current leader address
-func (n *Node) GetLeader() string {
-	addr, _ := n.raft.LeaderWithID()
-	return string(addr)
+// Shutdown shuts down the Raft node
+func (n *Node) Shutdown() error {
+	if n.raft != nil {
+		f := n.raft.Shutdown()
+		if err := f.Error(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Apply applies a command to the Raft cluster
@@ -176,33 +191,5 @@ func (n *Node) Apply(cmd []byte) error {
 		return err
 	}
 
-	return nil
-}
-
-// Join adds a new node to the cluster
-func (n *Node) Join(nodeID, addr string) error {
-	if !n.IsLeader() {
-		return fmt.Errorf("not the leader")
-	}
-
-	n.logger.Info("received join request", "node_id", nodeID, "addr", addr)
-
-	f := n.raft.AddVoter(raft.ServerID(nodeID), raft.ServerAddress(addr), 0, 0)
-	if err := f.Error(); err != nil {
-		return err
-	}
-
-	n.logger.Info("node joined successfully", "node_id", nodeID)
-	return nil
-}
-
-// Shutdown shuts down the Raft node
-func (n *Node) Shutdown() error {
-	if n.raft != nil {
-		f := n.raft.Shutdown()
-		if err := f.Error(); err != nil {
-			return err
-		}
-	}
 	return nil
 }
