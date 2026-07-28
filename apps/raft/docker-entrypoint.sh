@@ -3,7 +3,7 @@ set -e
 
 mkdir -p /data
 
-# Accessing the folder of data to write data on that 
+# Accessing the folder of data to write data on that
 chown -R raft:raft /data
 
 ARGS=""

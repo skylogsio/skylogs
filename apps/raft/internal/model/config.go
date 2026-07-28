@@ -1,4 +1,4 @@
-package main
+package model
 
 import (
 	"flag"
@@ -9,14 +9,12 @@ import (
 type Config struct {
 	BindAddress      string
 	AdvertiseAddress string
-
-	RaftPort    int
-	HTTPPort    int
-	DataDir     string
-	Bootstrap   bool
-	JoinAddress string
-	NodeID      string
-
+	RaftPort         int
+	HTTPPort         int
+	DataDir          string
+	Bootstrap        bool
+	JoinAddress      string
+	NodeID           string
 	// Optional sidecar → local app push after each committed FSM change.
 	NotifyURL    string
 	NotifySecret string
@@ -39,10 +37,10 @@ func ParseConfig() *Config {
 	flag.BoolVar(&config.Bootstrap, "bootstrap", false, "Bootstrap a new cluster")
 	flag.StringVar(&config.JoinAddress, "join", "", "Address of leader to join (e.g., http://127.0.0.1:8000)")
 	flag.StringVar(&config.NodeID, "node-id", "", "Unique node ID (required)")
+	// New ones for notifier
 	flag.StringVar(&config.NotifyURL, "notify-url", "", "POST committed key/value changes here (optional)")
-	flag.StringVar(&config.NotifySecret, "notify-secret", "", "Shared secret sent on notify requests")
-	flag.StringVar(&config.NotifyHeader, "notify-header", "X-Raft-Notify-Secret", "Header name for notify-secret")
-
+	flag.StringVar(&config.NotifySecret, "notify-secret", "", "Shared secret sent on notifier requests")
+	flag.StringVar(&config.NotifyHeader, "notify-header", "X-Raft-Notify-Secret", "Header name for notifier-secret")
 	flag.Parse()
 
 	if config.DataDir == "" {
