@@ -3,18 +3,19 @@
 namespace App\Services\Ha;
 
 use App\Exceptions\Ha\RaftUnavailableException;
-use App\Jobs\Ha\PublishAlertStateJob;
 use App\Models\AlertRule;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
 /**
  * Brings this node back into agreement with the replicated log.
  *
- * Replication is best effort by design: a publish is queued so that a slow
- * sidecar cannot stall alert evaluation, which means a publish can be lost.
- * Reconciliation is what makes that acceptable. It runs every minute on every
- * node, at boot, and immediately after a role change, when a freshly promoted
- * leader would otherwise evaluate against state it never received.
+ * Replication is best effort by design: a publish that fails against a slow
+ * or unreachable sidecar is logged and skipped so alert evaluation is never
+ * stalled, which means a publish can be lost. Reconciliation is what makes
+ * that acceptable. It runs every minute on every node, at boot, and
+ * immediately after a role change, when a freshly promoted leader would
+ * otherwise evaluate against state it never received.
  */
 class HaReconciler
 {
@@ -190,7 +191,15 @@ class HaReconciler
 
         foreach ($keys as $key) {
             $this->versions->forget($key);
-            PublishAlertStateJob::dispatch($key, null);
+
+            try {
+                $this->raft->set($key, null);
+            } catch (RaftUnavailableException $exception) {
+                Log::error('Tombstoning expired alert state in Raft failed.', [
+                    'key' => $key,
+                    'exception' => $exception->getMessage(),
+                ]);
+            }
         }
 
         return count($keys);
