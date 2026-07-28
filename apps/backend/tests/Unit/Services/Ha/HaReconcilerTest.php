@@ -1,6 +1,5 @@
 <?php
 
-use App\Jobs\Ha\PublishAlertStateJob;
 use App\Models\AlertRule;
 use App\Services\Ha\AlertStateReplicator;
 use App\Services\Ha\HaLeaderService;
@@ -8,7 +7,6 @@ use App\Services\Ha\HaReconciler;
 use App\Services\Ha\HaStateApplier;
 use App\Services\Ha\RaftClient;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Queue;
 use Tests\Support\Ha\InMemoryHaStateVersionStore;
 
 const RECONCILE_RULE_ID = '6512ab000000000000000001';
@@ -25,10 +23,17 @@ function haRemoteSlot(string $instanceId, int $version, string $state = AlertRul
     ];
 }
 
+/**
+ * @param  array<string, array<string, mixed>|null>  $remoteData
+ */
 function haReconciler(bool $isLeader, array $remoteData): HaReconciler
 {
+    $raftSets = test()->raftSets;
     $raft = Mockery::mock(RaftClient::class);
     $raft->shouldReceive('getAll')->andReturn($remoteData);
+    $raft->shouldReceive('set')->andReturnUsing(function (string $key, ?array $value) use ($raftSets): void {
+        $raftSets->append(['key' => $key, 'value' => $value]);
+    })->byDefault();
 
     $leader = Mockery::mock(HaLeaderService::class);
     $leader->shouldReceive('isLeader')->andReturn($isLeader);
@@ -55,8 +60,7 @@ beforeEach(function () {
     $this->versions = new InMemoryHaStateVersionStore;
     $this->applier = Mockery::mock(HaStateApplier::class);
     $this->replicator = Mockery::mock(AlertStateReplicator::class);
-
-    Queue::fake();
+    $this->raftSets = new ArrayObject;
 });
 
 afterEach(function () {
@@ -114,7 +118,7 @@ describe('HaReconciler on a follower', function () {
             'alert:'.RECONCILE_RULE_ID.':prometheus:aaa' => haRemoteSlot('aaa', 4),
         ])->reconcile();
 
-        Queue::assertNothingPushed();
+        expect($this->raftSets->count())->toBe(0);
     });
 });
 
@@ -155,13 +159,10 @@ describe('HaReconciler on a leader', function () {
         ])->reconcile();
 
         expect($summary['swept'])->toBe(1)
-            ->and($this->versions->allKeys())->toBe([$recent]);
-
-        Queue::assertPushed(PublishAlertStateJob::class, 1);
-        Queue::assertPushed(
-            PublishAlertStateJob::class,
-            fn (PublishAlertStateJob $job): bool => $job->key === $expired && $job->value === null,
-        );
+            ->and($this->versions->allKeys())->toBe([$recent])
+            ->and($this->raftSets->getArrayCopy())->toBe([
+                ['key' => $expired, 'value' => null],
+            ]);
     });
 
     it('keeps resolved slots when retention is switched off', function () {

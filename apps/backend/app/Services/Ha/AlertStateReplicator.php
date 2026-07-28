@@ -3,7 +3,7 @@
 namespace App\Services\Ha;
 
 use App\Enums\AlertRuleType;
-use App\Jobs\Ha\PublishAlertStateJob;
+use App\Exceptions\Ha\RaftUnavailableException;
 use App\Models\AlertRule;
 use App\Models\BaseModel;
 use App\Services\Ha\Projectors\StateProjector;
@@ -17,6 +17,9 @@ use Throwable;
  * Model observers are the choke point rather than explicit calls in the
  * evaluation services: there are a dozen writers of alert state today, and the
  * next one someone adds would otherwise silently stop replicating.
+ *
+ * Writes go to the Raft sidecar immediately so followers see the change without
+ * waiting on a queue worker. Failures are logged and left for reconciliation.
  */
 class AlertStateReplicator
 {
@@ -42,6 +45,7 @@ class AlertStateReplicator
         private readonly HaLeaderService $leader,
         private readonly StateProjectorFactory $projectors,
         private readonly HaStateVersionStore $versions,
+        private readonly RaftClient $raft,
     ) {}
 
     /**
@@ -150,13 +154,17 @@ class AlertStateReplicator
 
         $version = $this->versions->next($key, $change->value['state'] ?? null);
 
-        PublishAlertStateJob::dispatch($key, [
+        $payload = [
             'key' => $key,
             'version' => $version,
             'nodeId' => $this->leader->nodeId(),
             'timestamp' => time(),
             ...$change->value,
-        ]);
+        ];
+
+        if (! $this->publishToRaft($key, $payload)) {
+            return;
+        }
 
         $this->remember($key, $fingerprint);
     }
@@ -169,9 +177,30 @@ class AlertStateReplicator
 
         $this->versions->forget($key);
 
-        PublishAlertStateJob::dispatch($key, null);
+        if (! $this->publishToRaft($key, null)) {
+            return;
+        }
 
         $this->remember($key, 'tombstone');
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $value
+     */
+    private function publishToRaft(string $key, ?array $value): bool
+    {
+        try {
+            $this->raft->set($key, $value);
+
+            return true;
+        } catch (RaftUnavailableException $exception) {
+            $this->reportFailure($exception, [
+                'key' => $key,
+                'notLeader' => $exception->isNotLeader(),
+            ]);
+
+            return false;
+        }
     }
 
     /**

@@ -1,7 +1,6 @@
 <?php
 
 use App\Enums\AlertRuleType;
-use App\Jobs\Ha\PublishAlertStateJob;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
 use App\Models\BaseModel;
@@ -15,7 +14,7 @@ use App\Services\Ha\HaLeaderService;
 use App\Services\Ha\HaReplicationContext;
 use App\Services\Ha\HaStateVersionStore;
 use App\Services\Ha\Projectors\StateProjectorFactory;
-use Illuminate\Support\Facades\Queue;
+use App\Services\Ha\RaftClient;
 use Tests\Support\Factories\AlertRuleFactory;
 
 const HA_RULE_ID = '6512ab000000000000000001';
@@ -70,6 +69,14 @@ final class HaVersionStoreStub extends HaStateVersionStore
     }
 }
 
+/**
+ * @return list<array{key: string, value: array<string, mixed>|null}>
+ */
+function haPublished(): array
+{
+    return test()->published->getArrayCopy();
+}
+
 function haVersions(): HaVersionStoreStub
 {
     return test()->versions;
@@ -81,7 +88,13 @@ function haReplicator(bool $isLeader = true): AlertStateReplicator
     $leader->shouldReceive('isLeader')->andReturn($isLeader);
     $leader->shouldReceive('nodeId')->andReturn('node-1');
 
-    return new AlertStateReplicator($leader, new StateProjectorFactory, haVersions());
+    $published = test()->published;
+    $raft = Mockery::mock(RaftClient::class);
+    $raft->shouldReceive('set')->andReturnUsing(function (string $key, ?array $value) use ($published): void {
+        $published->append(['key' => $key, 'value' => $value]);
+    });
+
+    return new AlertStateReplicator($leader, new StateProjectorFactory, haVersions(), $raft);
 }
 
 function haAlertRule(AlertRuleType $type, array $attributes = []): AlertRule
@@ -132,19 +145,6 @@ function haPrometheusAlert(string $instance, int $status = PrometheusCheck::FIRE
     ];
 }
 
-function haPublishedJobs(): array
-{
-    $jobs = [];
-
-    Queue::assertPushed(PublishAlertStateJob::class, function (PublishAlertStateJob $job) use (&$jobs): bool {
-        $jobs[] = $job;
-
-        return true;
-    });
-
-    return $jobs;
-}
-
 beforeEach(function () {
     config([
         'cache.default' => 'array',
@@ -153,8 +153,7 @@ beforeEach(function () {
     ]);
 
     $this->versions = new HaVersionStoreStub;
-
-    Queue::fake();
+    $this->published = new ArrayObject;
 });
 
 describe('AlertStateReplicator prometheus', function () {
@@ -171,14 +170,14 @@ describe('AlertStateReplicator prometheus', function () {
 
         haReplicator()->replicateCheck($check, $rule);
 
-        Queue::assertPushed(PublishAlertStateJob::class, 1);
+        expect(haPublished())->toHaveCount(1);
 
-        $job = haPublishedJobs()[0];
+        $publish = haPublished()[0];
         $instanceId = AlertStateKey::prometheusInstanceId(['alertname' => 'NodeDown', 'instance' => 'n2']);
 
-        expect($job->key)->toBe('alert:'.HA_RULE_ID.':prometheus:'.$instanceId)
-            ->and($job->value['state'])->toBe(AlertRule::RESOlVED)
-            ->and($job->value['instance'])->toBe(['labels' => ['alertname' => 'NodeDown', 'instance' => 'n2']]);
+        expect($publish['key'])->toBe('alert:'.HA_RULE_ID.':prometheus:'.$instanceId)
+            ->and($publish['value']['state'])->toBe(AlertRule::RESOlVED)
+            ->and($publish['value']['instance'])->toBe(['labels' => ['alertname' => 'NodeDown', 'instance' => 'n2']]);
     });
 
     it('stamps the key, version, node and rule aggregate onto the payload', function () {
@@ -193,24 +192,24 @@ describe('AlertStateReplicator prometheus', function () {
 
         haReplicator()->replicateCheck($check, $rule);
 
-        $job = haPublishedJobs()[0];
+        $publish = haPublished()[0];
 
-        expect($job->value['key'])->toBe($job->key)
-            ->and($job->value['version'])->toBe(1)
-            ->and($job->value['nodeId'])->toBe('node-1')
-            ->and($job->value['alertRuleId'])->toBe(HA_RULE_ID)
-            ->and($job->value['alertRuleName'])->toBe('node down')
-            ->and($job->value['type'])->toBe('prometheus')
-            ->and($job->value['state'])->toBe(AlertRule::CRITICAL)
-            ->and($job->value['resolvedAt'])->toBeNull()
-            ->and($job->value['firedAt'])->toBeInt()
-            ->and($job->value['rule'])->toBe([
+        expect($publish['value']['key'])->toBe($publish['key'])
+            ->and($publish['value']['version'])->toBe(1)
+            ->and($publish['value']['nodeId'])->toBe('node-1')
+            ->and($publish['value']['alertRuleId'])->toBe(HA_RULE_ID)
+            ->and($publish['value']['alertRuleName'])->toBe('node down')
+            ->and($publish['value']['type'])->toBe('prometheus')
+            ->and($publish['value']['state'])->toBe(AlertRule::CRITICAL)
+            ->and($publish['value']['resolvedAt'])->toBeNull()
+            ->and($publish['value']['firedAt'])->toBeInt()
+            ->and($publish['value']['rule'])->toBe([
                 'state' => AlertRule::CRITICAL,
                 'fireCount' => 3,
                 'notifyAt' => 1785000000,
                 'acknowledgedBy' => null,
             ])
-            ->and($job->value['extra']['annotations'])->toBe(['summary' => 'down']);
+            ->and($publish['value']['extra']['annotations'])->toBe(['summary' => 'down']);
     });
 
     it('publishes a pruned instance as resolved so the follower can close its timeline', function () {
@@ -226,7 +225,7 @@ describe('AlertStateReplicator prometheus', function () {
 
         haReplicator()->replicateCheck($check, $rule);
 
-        expect(haPublishedJobs()[0]->value['state'])->toBe(AlertRule::RESOlVED);
+        expect(haPublished()[0]['value']['state'])->toBe(AlertRule::RESOlVED);
     });
 
     it('publishes nothing when no instance moved', function () {
@@ -242,7 +241,7 @@ describe('AlertStateReplicator prometheus', function () {
 
         haReplicator()->replicateCheck($check, $rule);
 
-        Queue::assertNothingPushed();
+        expect(haPublished())->toBeEmpty();
     });
 });
 
@@ -264,10 +263,10 @@ describe('AlertStateReplicator grafana', function () {
 
         haReplicator()->replicateCheck($check, $rule);
 
-        $job = haPublishedJobs()[0];
+        $publish = haPublished()[0];
 
-        expect($job->key)->toBe('alert:'.HA_RULE_ID.':grafana:deadbeef')
-            ->and($job->value['state'])->toBe(AlertRule::CRITICAL);
+        expect($publish['key'])->toBe('alert:'.HA_RULE_ID.':grafana:deadbeef')
+            ->and($publish['value']['state'])->toBe(AlertRule::CRITICAL);
     });
 
     it('publishes a resolve when the instance leaves the batch', function () {
@@ -286,11 +285,11 @@ describe('AlertStateReplicator grafana', function () {
 
         haReplicator()->replicateCheck($check, $rule);
 
-        $job = haPublishedJobs()[0];
+        $publish = haPublished()[0];
 
-        expect($job->key)->toBe('alert:'.HA_RULE_ID.':grafana:deadbeef')
-            ->and($job->value['state'])->toBe(AlertRule::RESOlVED)
-            ->and($job->value['resolvedAt'])->toBeInt();
+        expect($publish['key'])->toBe('alert:'.HA_RULE_ID.':grafana:deadbeef')
+            ->and($publish['value']['state'])->toBe(AlertRule::RESOlVED)
+            ->and($publish['value']['resolvedAt'])->toBeInt();
     });
 });
 
@@ -307,7 +306,7 @@ describe('AlertStateReplicator zabbix', function () {
 
         haReplicator()->replicateCheck($check, $rule);
 
-        expect(haPublishedJobs()[0]->key)->toBe('alert:'.HA_RULE_ID.':zabbix:9001');
+        expect(haPublished()[0]['key'])->toBe('alert:'.HA_RULE_ID.':zabbix:9001');
     });
 
     it('publishes a resolve for an event that was pulled from the check', function () {
@@ -322,12 +321,12 @@ describe('AlertStateReplicator zabbix', function () {
 
         haReplicator()->replicateCheck($check, $rule);
 
-        Queue::assertPushed(PublishAlertStateJob::class, 1);
+        expect(haPublished())->toHaveCount(1);
 
-        $job = haPublishedJobs()[0];
+        $publish = haPublished()[0];
 
-        expect($job->key)->toBe('alert:'.HA_RULE_ID.':zabbix:9002')
-            ->and($job->value['state'])->toBe(AlertRule::RESOlVED);
+        expect($publish['key'])->toBe('alert:'.HA_RULE_ID.':zabbix:9002')
+            ->and($publish['value']['state'])->toBe(AlertRule::RESOlVED);
     });
 });
 
@@ -345,11 +344,11 @@ describe('AlertStateReplicator api', function () {
 
         haReplicator()->replicateCheck($instance, $rule);
 
-        $job = haPublishedJobs()[0];
+        $publish = haPublished()[0];
 
-        expect($job->key)->toBe('alert:'.HA_RULE_ID.':api:'.sha1('srv-1'))
-            ->and($job->value['instance'])->toBe(['instance' => 'srv-1'])
-            ->and($job->value['state'])->toBe(AlertRule::CRITICAL);
+        expect($publish['key'])->toBe('alert:'.HA_RULE_ID.':api:'.sha1('srv-1'))
+            ->and($publish['value']['instance'])->toBe(['instance' => 'srv-1'])
+            ->and($publish['value']['state'])->toBe(AlertRule::CRITICAL);
     });
 
     it('tombstones a deleted instance', function () {
@@ -363,10 +362,10 @@ describe('AlertStateReplicator api', function () {
 
         haReplicator()->replicateCheckDeletion($instance, $rule);
 
-        $job = haPublishedJobs()[0];
+        $publish = haPublished()[0];
 
-        expect($job->key)->toBe('alert:'.HA_RULE_ID.':api:'.sha1('srv-1'))
-            ->and($job->value)->toBeNull();
+        expect($publish['key'])->toBe('alert:'.HA_RULE_ID.':api:'.sha1('srv-1'))
+            ->and($publish['value'])->toBeNull();
     });
 });
 
@@ -385,11 +384,11 @@ describe('AlertStateReplicator single slot types', function () {
 
         haReplicator()->replicateCheck($check, $rule);
 
-        $job = haPublishedJobs()[0];
+        $publish = haPublished()[0];
 
-        expect($job->key)->toBe('alert:'.HA_RULE_ID.':health:_')
-            ->and($job->value['state'])->toBe(AlertRule::CRITICAL)
-            ->and($job->value['extra']['check']['counter'])->toBe(3);
+        expect($publish['key'])->toBe('alert:'.HA_RULE_ID.':health:_')
+            ->and($publish['value']['state'])->toBe(AlertRule::CRITICAL)
+            ->and($publish['value']['extra']['check']['counter'])->toBe(3);
     });
 });
 
@@ -402,10 +401,10 @@ describe('AlertStateReplicator alert rule aggregate', function () {
 
         haReplicator()->replicateRule($rule);
 
-        $job = haPublishedJobs()[0];
+        $publish = haPublished()[0];
 
-        expect($job->key)->toBe('alert:'.HA_RULE_ID.':sentry:_')
-            ->and($job->value['state'])->toBe(AlertRule::RESOlVED);
+        expect($publish['key'])->toBe('alert:'.HA_RULE_ID.':sentry:_')
+            ->and($publish['value']['state'])->toBe(AlertRule::RESOlVED);
     });
 
     it('publishes nothing when the save did not move the aggregate', function () {
@@ -416,7 +415,7 @@ describe('AlertStateReplicator alert rule aggregate', function () {
 
         haReplicator()->replicateRule($rule);
 
-        Queue::assertNothingPushed();
+        expect(haPublished())->toBeEmpty();
     });
 
     it('tombstones every slot of a deleted rule', function () {
@@ -428,9 +427,8 @@ describe('AlertStateReplicator alert rule aggregate', function () {
 
         haReplicator()->replicateRuleDeletion($rule);
 
-        Queue::assertPushed(PublishAlertStateJob::class, 2);
-
-        expect(collect(haPublishedJobs())->every(fn (PublishAlertStateJob $job): bool => $job->value === null))->toBeTrue()
+        expect(haPublished())->toHaveCount(2)
+            ->and(collect(haPublished())->every(fn (array $publish): bool => $publish['value'] === null))->toBeTrue()
             ->and(haVersions()->forgotten)->toBe([
                 'alert:'.HA_RULE_ID.':prometheus:aaa',
                 'alert:'.HA_RULE_ID.':prometheus:bbb',
@@ -451,7 +449,7 @@ describe('AlertStateReplicator guards', function () {
 
         haReplicator(isLeader: false)->replicateCheck($check, $rule);
 
-        Queue::assertNothingPushed();
+        expect(haPublished())->toBeEmpty();
     });
 
     it('publishes nothing while applying replicated state', function () {
@@ -466,7 +464,7 @@ describe('AlertStateReplicator guards', function () {
 
         HaReplicationContext::apply(fn () => haReplicator()->replicateCheck($check, $rule));
 
-        Queue::assertNothingPushed();
+        expect(haPublished())->toBeEmpty();
     });
 
     it('publishes nothing while ha is disabled', function () {
@@ -483,7 +481,7 @@ describe('AlertStateReplicator guards', function () {
 
         haReplicator()->replicateCheck($check, $rule);
 
-        Queue::assertNothingPushed();
+        expect(haPublished())->toBeEmpty();
     });
 
     it('does not publish the same payload twice', function () {
@@ -500,7 +498,7 @@ describe('AlertStateReplicator guards', function () {
         $replicator->replicateCheck($check, $rule);
         $replicator->replicateCheck($check, $rule);
 
-        Queue::assertPushed(PublishAlertStateJob::class, 1);
+        expect(haPublished())->toHaveCount(1);
     });
 
     it('gives every publish of a key a newer version', function () {
@@ -524,7 +522,7 @@ describe('AlertStateReplicator guards', function () {
         $replicator->replicateCheck($firing, $rule);
         $replicator->replicateCheck($resolving, $rule);
 
-        $versions = collect(haPublishedJobs())->map(fn (PublishAlertStateJob $job): int => $job->value['version']);
+        $versions = collect(haPublished())->map(fn (array $publish): int => $publish['value']['version']);
 
         expect($versions->all())->toBe([1, 2]);
     });
