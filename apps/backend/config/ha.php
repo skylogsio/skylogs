@@ -31,14 +31,11 @@ return [
     )),
 
     /*
-    | Backend base URL per node, comma separated, used by a follower to pull
-    | configuration from the leader.
+    | Backend base URL per node, comma separated. A leader resolves its own URL
+    | from this map, and older sidecars may still report peers by Raft address.
     |
-    | The sidecar names the leader by its Raft address (172.28.7.11:7000) and
-    | never by an HTTP URL, so this map is the only place that knows where a
-    | node's backend answers. Key each entry by that node's Raft advertise
-    | address, with or without the Raft port; a node id key resolves too, but
-    | only for this node's own entry, because the sidecar never names its peers:
+    | Key each entry by that node's Raft advertise address, with or without the
+    | Raft port. A node id key resolves too, which is how a leader maps itself:
     |
     | HA_PEER_URLS=172.28.7.11=http://nginx_back-1:80,172.28.7.12=http://nginx_back-2:80
     */
@@ -61,7 +58,7 @@ return [
     })(),
 
     /*
-    | How long a /status answer stays cached. Keep it well below the scheduler
+    | How long a /leader answer stays cached. Keep it well below the scheduler
     | tick so a failover is picked up within a couple of seconds while a five
     | second tick still costs at most one sidecar call.
     */
@@ -90,7 +87,7 @@ return [
         'connect_timeout' => (float) env('RAFT_CONNECT_TIMEOUT', 0.5),
 
         /*
-        | Per endpoint request timeouts, in seconds. /status is polled on every
+        | Per endpoint request timeouts, in seconds. /leader is polled on every
         | scheduler tick so it is kept short; /set and /get carry payloads.
         */
         'timeout' => [
