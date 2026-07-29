@@ -50,6 +50,7 @@ services:
       - RAFT_NODE_ID=node1
       - RAFT_ADV_ADDR=172.28.7.11
       - RAFT_START_MODE=--bootstrap
+      - VIP=172.28.7.10
       - RAFT_NOTIFY_URL=http://nginx:80/api/ha/apply
       - RAFT_NOTIFY_SECRET=changeme-ha-secret
       - RAFT_NOTIFY_HEADER=X-Skylogs-HA-Secret
@@ -59,6 +60,17 @@ services:
       skylogs_net:
       skylogs_ha:
         ipv4_address: 172.28.7.11
+
+  # VIP keep-alive endpoint inside the HA docker network.
+  # It occupies 172.28.7.10 so raft/http clients can target a stable IP in tests.
+  # HAProxy forwards requests to whichever Raft node is currently leader.
+  vip:
+    image: haproxy:2.9
+    volumes:
+      - ./ha/vip-haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      skylogs_ha:
+        ipv4_address: 172.28.7.10
 
 networks:
   skylogs_ha:
