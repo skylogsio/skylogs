@@ -14,7 +14,9 @@ use Throwable;
  *
  * Everything here runs inside HaReplicationContext so the models this touches
  * do not publish the state straight back into the log, and so that no apply can
- * notify: the leader already paged whoever needed paging.
+ * notify: the leader already paged whoever needed paging. When history sync is
+ * enabled, writeHistory is skipped so followers do not invent local timeline
+ * rows that would duplicate the leader documents pulled by ha:history-sync.
  */
 class HaStateApplier
 {
@@ -80,7 +82,7 @@ class HaStateApplier
             $writer->write($alertRule, $value);
             $this->writeRuleAggregate($alertRule, $value);
 
-            if ($previousState !== $value->state) {
+            if ($previousState !== $value->state && ! config('ha.history_sync.enabled')) {
                 $writer->writeHistory($alertRule, $value);
             }
         });

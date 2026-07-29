@@ -80,6 +80,30 @@ return [
         'timeout' => (float) env('HA_CONFIG_SYNC_TIMEOUT', 30),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | History / notify pull (follower → leader)
+    |--------------------------------------------------------------------------
+    |
+    | Incremental pages of alert timeline documents and Notify rows. Separate
+    | from config_sync so archives can be multi‑GB without bloating every
+    | configuration snapshot. Catch-up is bounded per tick by page_size and
+    | max_pages_per_tick.
+    |
+    */
+    'history_sync' => [
+
+        'enabled' => (bool) env('HA_HISTORY_SYNC_ENABLED', true),
+
+        'connect_timeout' => (float) env('HA_HISTORY_SYNC_CONNECT_TIMEOUT', 2),
+
+        'timeout' => (float) env('HA_HISTORY_SYNC_TIMEOUT', 30),
+
+        'page_size' => (int) env('HA_HISTORY_SYNC_PAGE_SIZE', 500),
+
+        'max_pages_per_tick' => (int) env('HA_HISTORY_SYNC_MAX_PAGES_PER_TICK', 5),
+    ],
+
     'raft' => [
 
         'url' => env('RAFT_URL', 'http://raft:8000'),

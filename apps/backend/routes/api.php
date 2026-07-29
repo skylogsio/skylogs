@@ -3,6 +3,7 @@
 use App\Enums\Constants;
 use App\Http\Controllers\Cluster\SyncController;
 use App\Http\Controllers\Ha\ConfigSyncController;
+use App\Http\Controllers\Ha\HistorySyncController;
 use App\Http\Controllers\Ha\StateController;
 use App\Http\Controllers\V1\AlertRule\AccessUserController;
 use App\Http\Controllers\V1\AlertRule\AlertingController;
@@ -50,6 +51,7 @@ Route::prefix('ha')
     ->group(function () {
         Route::post('/apply', [StateController::class, 'apply'])->name('ha.apply');
         Route::get('/config-sync', [ConfigSyncController::class, 'show'])->name('ha.configSync');
+        Route::get('/history-sync', [HistorySyncController::class, 'show'])->name('ha.historySync');
     });
 
 Route::prefix('v1')->group(function () {

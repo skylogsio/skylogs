@@ -24,11 +24,12 @@ describe('HaConfigCatalog membership', function () {
         GrafanaWebhookAlert::class,
     ]);
 
-    it('leaves node local derivations out too, since each node computes its own', function (string $model) {
+    it('leaves node local derivations and history-sync collections out of config sync', function (string $model) {
         expect(HaConfigCatalog::models())->not->toContain($model);
     })->with([
         'status history' => StatusHistory::class,
         'notifications' => Notify::class,
+        'prometheus history' => PrometheusHistory::class,
     ]);
 
     it('carries the collections a follower needs to serve traffic after a failover', function (string $alias) {

@@ -100,6 +100,7 @@ beforeEach(function () {
         'ha.node_id' => 'node-2',
         'ha.node_secret' => HA_SECRET,
         'ha.allowed_cidrs' => [],
+        'ha.history_sync.enabled' => false,
     ]);
 
     $this->owner = TeamTestData::createUser(Constants::ROLE_OWNER);
@@ -467,6 +468,25 @@ describe('POST /api/ha/apply notifications', function () {
         Queue::assertNotPushed(SendNotifyJob::class);
 
         expect(Notify::where('alertRuleId', $alertRule->_id)->count())->toBe(0);
+    });
+});
+
+describe('POST /api/ha/apply with history sync enabled', function () {
+    it('does not synthesise local history rows', function () {
+        config(['ha.history_sync.enabled' => true]);
+
+        $alertRule = haAlertRuleOfType(AlertRuleType::PROMETHEUS);
+        $entry = haPrometheusEntry('10.0.0.9:9100');
+        $instanceId = AlertStateKey::prometheusInstanceId($entry['labels']);
+        $key = 'alert:'.$alertRule->_id.':prometheus:'.$instanceId;
+
+        haApply($key, haValue($alertRule, 'prometheus', $instanceId, AlertRule::CRITICAL, 1, [
+            'instance' => ['labels' => $entry['labels']],
+            'extra' => ['check' => ['alerts' => [$entry]]],
+        ]))->assertOk()->assertJson(['applied' => true]);
+
+        expect(PrometheusCheck::where('alertRuleId', $alertRule->_id)->count())->toBe(1)
+            ->and(PrometheusHistory::where('alertRuleId', $alertRule->_id)->count())->toBe(0);
     });
 });
 

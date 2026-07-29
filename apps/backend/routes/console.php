@@ -6,6 +6,7 @@ use App\Jobs\AutoResolveApiAlertsJob;
 use App\Jobs\CheckPrometheusJob;
 use App\Jobs\Ha\ReconcileHaStateJob;
 use App\Jobs\Ha\SyncHaConfigJob;
+use App\Jobs\Ha\SyncHaHistoryJob;
 use App\Jobs\RefreshStatusHistoryJob;
 use App\Jobs\SyncCluster;
 use App\Services\ClusterService;
@@ -63,3 +64,11 @@ Schedule::job(new ReconcileHaStateJob)->everyMinute()->when(fn (): bool => (bool
 Schedule::job(new SyncHaConfigJob)
     ->everyThirtySeconds()
     ->when(fn (): bool => (bool) config('ha.enabled') && (bool) config('ha.config_sync.enabled'));
+
+/*
+| Followers pull alert history and Notify documents in pages. Same interval as
+| config sync; catch-up is bounded by HA_HISTORY_SYNC_MAX_PAGES_PER_TICK.
+*/
+Schedule::job(new SyncHaHistoryJob)
+    ->everyThirtySeconds()
+    ->when(fn (): bool => (bool) config('ha.enabled') && (bool) config('ha.history_sync.enabled'));

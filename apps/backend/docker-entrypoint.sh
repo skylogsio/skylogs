@@ -32,6 +32,9 @@ php artisan db:seed --force
 echo "Syncing HA configuration..."
 php artisan ha:config-sync || true
 
+echo "Syncing HA history and notifies..."
+php artisan ha:history-sync || true
+
 echo "Reconciling HA state..."
 php artisan ha:reconcile || true
 

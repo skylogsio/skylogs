@@ -13,6 +13,7 @@ It is **not** the main/agent multi-cluster feature (`CLUSTER_TYPE=main|agent`, `
 | Leadership | HashiCorp Raft sidecar elects one leader |
 | Alert runtime state | Raft KV log + `POST /api/ha/apply` on every node |
 | Users, rules, endpoints, configs | Followers pull snapshots from the leader via `GET /api/ha/config-sync` |
+| Alert history + notifies | Followers pull incremental pages via `GET /api/ha/history-sync` |
 | Evaluation & notifications | **Leader only** |
 | MongoDB / Redis | **Independent per node** (not shared, not DB replicas) |
 | Queues | Per-node Redis + Horizon; dedicated `ha` queue |
@@ -51,12 +52,13 @@ It is **not** the main/agent multi-cluster feature (`CLUSTER_TYPE=main|agent`, `
                  POST /api/ha/apply on THIS node's nginx
 ```
 
-### Two replication paths (do not merge them)
+### Three replication paths (do not merge them)
 
 1. **Raft (hot / alert state)** — check documents and alert-rule fields `state`, `fireCount`, `notifyAt`, `acknowledgedBy`. Near real-time via Raft commit + local notify; repaired every minute by reconcile.
 2. **Config sync (cold / configuration)** — users, roles, teams, endpoints, datasources, alert-rule *config* (excluding Raft-owned fields), silent rules, notification configs, etc. Followers pull every **30 seconds**.
+3. **History sync (cold / timelines + notifies)** — alert history collections and `notifies` documents. Followers pull **incremental pages** every **30 seconds** (separate from config sync so archives can be multi‑GB).
 
-They share `alertRules`; config sync deliberately excludes Raft-owned fields so the paths do not fight.
+They share `alertRules`; config sync deliberately excludes Raft-owned fields so the paths do not fight. When history sync is enabled, Raft apply does **not** synthesise local history rows — followers wait for the leader’s real documents.
 
 ---
 
@@ -105,6 +107,11 @@ Production hosts/IPs will differ; keep the same *patterns* (unique `RAFT_ADV_ADD
 | `HA_CONFIG_SYNC_ENABLED` | no | `true` | Follower config pull. |
 | `HA_CONFIG_SYNC_CONNECT_TIMEOUT` | no | `2` | Seconds. |
 | `HA_CONFIG_SYNC_TIMEOUT` | no | `30` | Seconds (first full snapshot can be large). |
+| `HA_HISTORY_SYNC_ENABLED` | no | `true` | Follower history + notify pull. |
+| `HA_HISTORY_SYNC_CONNECT_TIMEOUT` | no | `2` | Seconds. |
+| `HA_HISTORY_SYNC_TIMEOUT` | no | `30` | Seconds per page. |
+| `HA_HISTORY_SYNC_PAGE_SIZE` | no | `200` | Documents per collection per request. |
+| `HA_HISTORY_SYNC_MAX_PAGES_PER_TICK` | no | `5` | Max pages per collection per job run. |
 | `RAFT_URL` | yes | `http://raft:8000` | **This node's** Raft HTTP API. |
 | `RAFT_CONNECT_TIMEOUT` | no | `0.5` | |
 | `RAFT_STATUS_TIMEOUT` | no | `1` | |
@@ -211,16 +218,18 @@ Each backend container entrypoint (`apps/backend/docker-entrypoint.sh`):
 
 1. migrate / seed  
 2. `php artisan ha:config-sync` (non-fatal)  
-3. `php artisan ha:reconcile` (non-fatal)  
-4. config/route cache, php-fpm  
+3. `php artisan ha:history-sync` (non-fatal)  
+4. `php artisan ha:reconcile` (non-fatal)  
+5. config/route cache, php-fpm  
 
-A node that was down catches up config first, then alert state.
+A node that was down catches up config first, then history/notifies, then alert state.
 
 ### 5.4 Manual commands
 
 ```bash
-php artisan ha:config-sync   # follower pull (no-op on leader / when disabled)
-php artisan ha:reconcile     # apply Raft keys / repair publishes
+php artisan ha:config-sync    # follower pull (no-op on leader / when disabled)
+php artisan ha:history-sync   # follower pull of history + notifies (paged)
+php artisan ha:reconcile      # apply Raft keys / repair publishes
 ```
 
 ---
@@ -233,7 +242,7 @@ php artisan ha:reconcile     # apply Raft keys / repair publishes
 2. `AlertStateReplicator` builds keys `alert:{alertRuleId}:{type}:{instanceId}` with a monotonic version.
 3. `PublishAlertStateJob` on queue `ha` → local Raft `POST /set` (leader only).
 4. After commit, **every** Raft node POSTs to its own `RAFT_NOTIFY_URL` → `POST /api/ha/apply`.
-5. `HaStateApplier` version-gates and writes local Mongo; **notifications are suppressed** on apply (no double-page).
+5. `HaStateApplier` version-gates and writes local Mongo; **notifications are suppressed** on apply (no double-page). When `HA_HISTORY_SYNC_ENABLED=true`, apply also **skips synthesising history** so timeline rows come only from history sync.
 
 Auth: header `X-Skylogs-HA-Secret: <HA_NODE_SECRET>`.
 
@@ -247,7 +256,17 @@ Tombstone: `"value": null` deletes the key.
 4. Leader returns `409` if not leader; otherwise a snapshot (or `{changed:false}` when up to date).
 5. Follower upserts/deletes (leader wins), then records the applied version.
 
-### 6.3 Reconciliation
+### 6.3 History and notifies (HTTP incremental pull)
+
+1. Every 30s, followers run `SyncHaHistoryJob` (also on boot via `ha:history-sync`).
+2. For each collection in `HaHistoryCatalog`, pull up to `HA_HISTORY_SYNC_MAX_PAGES_PER_TICK` pages.
+3. `GET /api/ha/history-sync?collection=…&afterUpdatedAt=…&afterId=…&limit=…` with the HA secret.
+4. Leader returns a page ordered by `(updatedAt, _id)` plus `nextCursor` / `hasMore`.
+5. Follower upserts by leader `_id` inside `HaReplicationContext` (no `SendNotifyJob`), then advances the per-collection cursor.
+
+**Notifies:** documents only — status/messages/alert snapshot. Delivery remains leader-only; apply never re-pages. Deletes of history/notify rows are **not** propagated in v1.
+
+### 6.4 Reconciliation
 
 - Every minute on every HA node: `ReconcileHaStateJob`.
 - On promotion to leader: reconcile is dispatched.
@@ -255,10 +274,15 @@ Tombstone: `"value": null` deletes the key.
 - Follower: apply all Raft keys; tombstone local extras.
 - Leader: inherit version counters, republish stale slots, sweep resolved slots older than `HA_STATE_RETENTION_DAYS`.
 
-### 6.4 What is replicated where
+### 6.5 What is replicated where
 
 **Config sync collections:**  
 `users`, `roles`, `permissions`, `teams`, `endpoints`, `dataSources`, `alertRules` (minus Raft fields), `silentRules`, `statuses`, `services`, `skylogsInstances`, `profileAssets`, `profileEnvironments`, `profileServices`, `configSkylogs`, `configTelegrams`, `configSms`, `configCalls`, `configEmails`.
+
+**History sync collections:**  
+`prometheusHistories`, `grafanaWebhookAlerts`, `zabbixWebhookAlerts`, `elasticHistories`, `victoriaLogsHistories`, `healthHistories`, `apiAlertHistories`, `apiAlertStatusHistories`, `sentryWebhookAlerts`, `metabaseWebhookAlerts`, `notifies`.
+
+**Not history-synced:** `status_histories` (local `RefreshStatusHistoryJob`), Splunk (no history model).
 
 **Raft-owned alert rule fields (not in config sync):**  
 `state`, `fireCount`, `notifyAt`, `acknowledgedBy`.
@@ -266,7 +290,7 @@ Tombstone: `"value": null` deletes the key.
 **Checks via Raft:** Prometheus, Grafana, Zabbix, API alert instances, Elastic, VictoriaLogs, Health.  
 **Splunk:** no state replication (null projector/writer).
 
-**Lag expectations:** alert state ≈ seconds (notify) + ≤1 minute (reconcile); configuration ≤ ~30 seconds.
+**Lag expectations:** alert state ≈ seconds (notify) + ≤1 minute (reconcile); configuration ≤ ~30 seconds; history/notifies ≤ ~30 seconds steady-state (longer while catching up a large backlog, bounded by page size × pages per tick).
 
 ---
 
@@ -278,6 +302,7 @@ All under `/api/ha/*`, middleware `haNodeAuth`. Outside `/api/v1` (not a client 
 |--------|------|-----------|---------|-------|
 | `POST` | `/api/ha/apply` | Local Raft sidecar | `200` JSON | Apply one key/value or tombstone |
 | `GET` | `/api/ha/config-sync` | Peer followers | `200` snapshot | Leader only; `409` if not leader |
+| `GET` | `/api/ha/history-sync` | Peer followers | `200` page | Leader only; `409` if not leader; paged by cursor |
 
 Auth failures: `401` wrong/missing secret; `503` if `HA_ENABLED=false`; `403` if CIDR deny.
 
@@ -421,6 +446,7 @@ Wipe **all** Raft volumes, then bootstrap node1 and re-join others. Application 
 | Parameter | Default | Ops note |
 |-----------|---------|----------|
 | Config sync interval | 30s | Acceptable config lag |
+| History sync interval | 30s | Paged catch-up; see page_size / max_pages_per_tick |
 | Reconcile interval | 1m | Safety net for missed notify |
 | Leader status cache | 2s | Failover detection ~ few seconds |
 | State retention | 7 days | Resolved slot tombstones on leader |
@@ -527,6 +553,7 @@ Shared env: `ha/node.env`.
 | Follower | Replicates state via Raft notify + pulls config; does not evaluate |
 | Notify | Raft → local `POST /api/ha/apply` after a log entry applies |
 | Config sync | Follower HTTP pull of configuration snapshot from leader |
+| History sync | Follower HTTP pull of alert history + Notify documents (paged) |
 | Reconcile | Periodic repair of local Mongo vs Raft KV |
 | Tombstone | Raft delete (`value: null`) |
 | Peer URL map | `HA_PEER_URLS` — Raft address → backend base URL |

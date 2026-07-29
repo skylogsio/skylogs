@@ -26,9 +26,9 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * What the configuration snapshot carries, and what it must keep its hands off.
  *
- * Two boundaries are enforced here. The first is the collection list itself: it
- * is an allowlist, so every check and every history collection is outside the
- * snapshot by construction, because those belong to the replicated Raft log.
+ * The first is the collection list itself: it is an allowlist, so every check
+ * and every history collection is outside the snapshot by construction (checks
+ * belong to Raft; timelines and notifies belong to history sync).
  * The second is the per model field list, which keeps the two replication paths
  * from fighting inside the one collection they share, alert_rules.
  */
