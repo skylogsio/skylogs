@@ -40,10 +40,12 @@ class RaftClient
             fn (PendingRequest $request): Response => $request->get('/leader'),
         );
 
-        $leaderRaftAddress = (string) ($payload['address'] ?? $payload['leader'] ?? '');
+        // The sidecar's `/leader` contract is `{"leader": <bool>, "address": "<raft-address>"}`.
+        // Followers/leaders must be derived from the `leader` boolean, not `is_leader`.
+        $leaderRaftAddress = (string) ($payload['address'] ?? '');
 
         return [
-            'isLeader' => (bool) ($payload['is_leader'] ?? false),
+            'isLeader' => (bool) ($payload['leader'] ?? $payload['is_leader'] ?? false),
             'nodeId' => (string) ($payload['node_id'] ?? ''),
             'leaderRaftAddress' => $leaderRaftAddress === '' ? null : $leaderRaftAddress,
             'state' => isset($payload['state']) ? (string) $payload['state'] : null,
