@@ -50,6 +50,7 @@ services:
       - RAFT_NODE_ID=node2
       - RAFT_ADV_ADDR=172.28.7.12
       - RAFT_START_MODE=--join http://172.28.7.11:8000
+      - VIP=172.28.7.10
       - RAFT_NOTIFY_URL=http://nginx:80/api/ha/apply
       - RAFT_NOTIFY_SECRET=changeme-ha-secret
       - RAFT_NOTIFY_HEADER=X-Skylogs-HA-Secret
