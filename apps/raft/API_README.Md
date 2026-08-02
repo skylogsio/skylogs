@@ -186,7 +186,7 @@ Content-Type: application/json; charset=utf-8
 Date: Sun, 26 Jul 2026 13:45:41 GMT
 Content-Length: 46
 
-{"address":"192.168.56.11:7000","leader":true}
+{"address":"192.168.56.11:7000","leaderNode" :  "node1" ,"leader":true}
 ```
 
 ## Example Response (If the node was Follower)
@@ -197,7 +197,7 @@ Content-Type: application/json; charset=utf-8
 Date: Sun, 26 Jul 2026 13:41:39 GMT
 Content-Length: 47
 
-{"address":"192.168.56.11:7000","leader":false}
+{"address":"192.168.56.11:7000","leaderNode" :  "node1" ,"leader":false}
 ```
 
 

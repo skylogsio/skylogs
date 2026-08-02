@@ -26,9 +26,9 @@ func (n *Node) IsLeader() bool {
 }
 
 // GetLeader returns the current leader address
-func (n *Node) GetLeader() string {
-	addr, _ := n.raft.LeaderWithID()
-	return string(addr)
+func (n *Node) GetLeader() (string, string) {
+	addr, nodeId := n.raft.LeaderWithID()
+	return string(addr), string(nodeId)
 }
 
 func (n *Node) State() string {
