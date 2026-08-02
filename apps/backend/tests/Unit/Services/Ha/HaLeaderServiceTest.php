@@ -6,16 +6,15 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * The shape of GET /leader: the leader backend URL is returned directly in the
- * address field.
+ * Shape of GET /leader: Raft advertise address plus the leader's Raft node id.
+ * Backend URLs are resolved from HA_PEER_URLS using leaderNode.
  */
-function haStatusResponse(bool $isLeader, string $leaderAddress = 'http://nginx_back-1:80'): array
+function haStatusResponse(bool $isLeader, string $leaderNode = 'node1', string $raftAddress = '192.168.56.11:7000'): array
 {
     return [
-        'node_id' => 'node-1',
-        'is_leader' => $isLeader,
-        'address' => $leaderAddress,
-        'state' => $isLeader ? 'Leader' : 'Follower',
+        'leader' => $isLeader,
+        'leaderNode' => $leaderNode,
+        'address' => $raftAddress,
     ];
 }
 
@@ -29,12 +28,12 @@ describe('HaLeaderService', function () {
         config([
             'cache.default' => 'array',
             'ha.enabled' => true,
-            'ha.node_id' => 'node-1',
+            'ha.node_id' => 'node1',
             'ha.leader_cache_seconds' => 2,
             'ha.peers' => [
-                'node-1' => 'http://nginx_back-1:80',
-                '172.28.7.11' => 'http://nginx_back-1:80',
-                '172.28.7.12:7000' => 'http://nginx_back-2:80/',
+                'node1' => 'http://172.28.7.11:8083',
+                'node2' => 'http://172.28.7.12:8083/',
+                'node3' => 'http://172.28.7.13:8083',
             ],
             'ha.raft.url' => 'http://raft.test:8000',
             'ha.raft.retry_attempts' => 2,
@@ -45,34 +44,55 @@ describe('HaLeaderService', function () {
     });
 
     it('reports leadership when the sidecar says this node leads', function () {
-        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(true))]);
+        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(true, 'node1'))]);
 
         expect(haLeaderService()->isLeader())->toBeTrue()
-            ->and(haLeaderService()->leaderRaftAddress())->toBe('http://nginx_back-1:80');
+            ->and(haLeaderService()->leaderNode())->toBe('node1')
+            ->and(haLeaderService()->leaderRaftAddress())->toBe('192.168.56.11:7000');
     });
 
     it('reports follower when another node leads', function () {
-        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(false, 'http://nginx_back-2:80'))]);
+        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(false, 'node2', '192.168.56.12:7000'))]);
 
         expect(haLeaderService()->isLeader())->toBeFalse();
     });
 
-    it('uses the leader backend url returned by the sidecar', function () {
-        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(false, 'http://nginx_back-2:80'))]);
+    it('resolves the leader backend url from leaderNode and HA_PEER_URLS', function () {
+        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(false, 'node2', '192.168.56.12:7000'))]);
 
-        expect(haLeaderService()->leaderAddress())->toBe('http://nginx_back-2:80');
+        expect(haLeaderService()->leaderAddress())->toBe('http://172.28.7.12:8083');
     });
 
     it('reports no leader url while an election is running', function () {
-        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(false, ''))]);
+        Http::fake(['raft.test:8000/leader' => Http::response([
+            'leader' => false,
+            'leaderNode' => '',
+            'address' => '',
+        ])]);
 
-        expect(haLeaderService()->leaderAddress())->toBeNull();
+        expect(haLeaderService()->leaderAddress())->toBeNull()
+            ->and(haLeaderService()->leaderNode())->toBeNull();
     });
 
     it('resolves its own url by node id while it leads', function () {
-        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(true))]);
+        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(true, 'node1'))]);
 
-        expect(haLeaderService()->leaderAddress())->toBe('http://nginx_back-1:80');
+        expect(haLeaderService()->leaderAddress())->toBe('http://172.28.7.11:8083');
+    });
+
+    it('falls back to HA_NODE_ID when leading without leaderNode', function () {
+        Http::fake(['raft.test:8000/leader' => Http::response([
+            'leader' => true,
+            'address' => '192.168.56.11:7000',
+        ])]);
+
+        expect(haLeaderService()->leaderAddress())->toBe('http://172.28.7.11:8083');
+    });
+
+    it('returns null when leaderNode is missing from HA_PEER_URLS', function () {
+        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(false, 'node99', '10.0.0.99:7000'))]);
+
+        expect(haLeaderService()->leaderAddress())->toBeNull();
     });
 
     it('treats an unreachable sidecar as a follower', function () {
@@ -128,8 +148,8 @@ describe('HaLeaderService', function () {
     it('runs leader work only on the leader while ha is enabled', function () {
         Http::fake([
             'raft.test:8000/leader' => Http::sequence()
-                ->push(haStatusResponse(false, 'http://nginx_back-2:80'))
-                ->push(haStatusResponse(true)),
+                ->push(haStatusResponse(false, 'node2', '192.168.56.12:7000'))
+                ->push(haStatusResponse(true, 'node1')),
         ]);
 
         expect(haLeaderService()->shouldRunLeaderWork())->toBeFalse();
@@ -140,7 +160,7 @@ describe('HaLeaderService', function () {
     });
 
     it('records the current role', function () {
-        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(false, 'http://nginx_back-2:80'))]);
+        Http::fake(['raft.test:8000/leader' => Http::response(haStatusResponse(false, 'node2', '192.168.56.12:7000'))]);
 
         haLeaderService()->isLeader();
 
@@ -152,8 +172,8 @@ describe('HaLeaderService', function () {
 
         Http::fake([
             'raft.test:8000/leader' => Http::sequence()
-                ->push(haStatusResponse(false, 'http://nginx_back-2:80'))
-                ->push(haStatusResponse(true)),
+                ->push(haStatusResponse(false, 'node2', '192.168.56.12:7000'))
+                ->push(haStatusResponse(true, 'node1')),
         ]);
 
         haLeaderService()->isLeader();
@@ -172,6 +192,6 @@ describe('HaLeaderService', function () {
     });
 
     it('returns the configured node id', function () {
-        expect(haLeaderService()->nodeId())->toBe('node-1');
+        expect(haLeaderService()->nodeId())->toBe('node1');
     });
 });

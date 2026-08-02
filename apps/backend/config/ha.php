@@ -14,7 +14,7 @@ return [
 
     'enabled' => (bool) env('HA_ENABLED', false),
 
-    'node_id' => env('HA_NODE_ID', 'node-1'),
+    'node_id' => env('HA_NODE_ID', 'node1'),
 
     /*
     | Shared secret the local Raft sidecar sends as X-Skylogs-HA-Secret when it
@@ -31,13 +31,11 @@ return [
     )),
 
     /*
-    | Backend base URL per node, comma separated. A leader resolves its own URL
-    | from this map, and older sidecars may still report peers by Raft address.
+    | Backend base URL per Raft node id (must match RAFT_NODE_ID / HA_NODE_ID).
+    | /leader returns leaderNode; this map turns that id into a backend URL for
+    | config and history sync. Comma separated key=url pairs:
     |
-    | Key each entry by that node's Raft advertise address, with or without the
-    | Raft port. A node id key resolves too, which is how a leader maps itself:
-    |
-    | HA_PEER_URLS=172.28.7.11=http://nginx_back-1:80,172.28.7.12=http://nginx_back-2:80
+    | HA_PEER_URLS=node1=http://172.28.7.11:8083,node2=http://172.28.7.12:8083,node3=http://172.28.7.13:8083
     */
     'peers' => (static function (): array {
         $peers = [];

@@ -31,25 +31,38 @@ class HaLeaderService
      * Base URL of the leader's backend, used by followers to pull config. This
      * is the node's own address, never the load balancer's.
      *
-     * Followers now receive that backend URL directly from the sidecar. While
-     * leading, this node still resolves its own URL from the configured peers.
+     * Resolved from /leader's `leaderNode` (Raft node id) via HA_PEER_URLS.
+     * The sidecar's `address` field is a Raft advertise address and is not used.
      */
     public function leaderAddress(): ?string
     {
         $status = $this->status();
+        $leaderNode = $status['leaderNode'];
 
-        return $status['isLeader']
-            ? $this->peerUrl($status['nodeId'] !== '' ? $status['nodeId'] : $this->nodeId())
-            : $status['leaderRaftAddress'];
+        if ($leaderNode === null || $leaderNode === '') {
+            return $status['isLeader']
+                ? $this->peerUrl($this->nodeId())
+                : null;
+        }
+
+        return $this->peerUrl($leaderNode);
     }
 
     /**
-     * Identifier reported for the current leader. Older sidecars returned a
-     * Raft address; newer ones return the leader backend URL directly.
+     * Raft advertise address of the current leader, as reported by /leader.
+     * Prefer leaderAddress() when contacting the leader's backend.
      */
     public function leaderRaftAddress(): ?string
     {
         return $this->status()['leaderRaftAddress'];
+    }
+
+    /**
+     * Raft node id of the current leader (`leaderNode` from /leader).
+     */
+    public function leaderNode(): ?string
+    {
+        return $this->status()['leaderNode'];
     }
 
     public function nodeId(): string
@@ -68,32 +81,24 @@ class HaLeaderService
     }
 
     /**
-     * Resolves this node's configured backend URL from a node id or legacy
-     * Raft address. A Raft address is matched with and without its port so one
-     * entry covers both spellings.
+     * Resolves a backend base URL from HA_PEER_URLS by Raft node id
+     * (e.g. node1 → http://172.28.7.11:8083).
      */
-    private function peerUrl(?string $identifier): ?string
+    private function peerUrl(?string $nodeId): ?string
     {
-        if ($identifier === null || $identifier === '') {
+        if ($nodeId === null || $nodeId === '') {
             return null;
         }
 
         /** @var array<string, string> $peers */
         $peers = (array) config('ha.peers');
+        $url = $peers[$nodeId] ?? null;
 
-        foreach ([$identifier, strstr($identifier, ':', true)] as $candidate) {
-            $url = is_string($candidate) ? ($peers[$candidate] ?? null) : null;
-
-            if (is_string($url) && $url !== '') {
-                return rtrim($url, '/');
-            }
-        }
-
-        return null;
+        return is_string($url) && $url !== '' ? rtrim($url, '/') : null;
     }
 
     /**
-     * @return array{isLeader: bool, nodeId: string, leaderRaftAddress: string|null, state: string|null}
+     * @return array{isLeader: bool, nodeId: string, leaderNode: string|null, leaderRaftAddress: string|null, state: string|null}
      */
     private function status(): array
     {
@@ -127,7 +132,7 @@ class HaLeaderService
      * evaluation is cheap; two nodes both believing they lead means duplicate
      * calls and messages to on-call staff.
      *
-     * @return array{isLeader: bool, nodeId: string, leaderRaftAddress: string|null, state: string|null}
+     * @return array{isLeader: bool, nodeId: string, leaderNode: string|null, leaderRaftAddress: string|null, state: string|null}
      */
     private function resolveStatus(): array
     {
@@ -144,13 +149,14 @@ class HaLeaderService
     }
 
     /**
-     * @return array{isLeader: bool, nodeId: string, leaderRaftAddress: string|null, state: string|null}
+     * @return array{isLeader: bool, nodeId: string, leaderNode: string|null, leaderRaftAddress: string|null, state: string|null}
      */
     private function followerStatus(): array
     {
         return [
             'isLeader' => false,
             'nodeId' => $this->nodeId(),
+            'leaderNode' => null,
             'leaderRaftAddress' => null,
             'state' => null,
         ];

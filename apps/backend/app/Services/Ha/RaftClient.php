@@ -26,9 +26,10 @@ class RaftClient
     /**
      * How the sidecar sees the cluster from this node. /leader answers 200
      * whatever role the node holds, so a follower is an answer rather than a
-     * failure, and the leader may be named directly by its backend URL.
+     * failure. The leader is identified by Raft node id (`leaderNode`); the
+     * backend maps that id to a backend URL via HA_PEER_URLS.
      *
-     * @return array{isLeader: bool, nodeId: string, leaderRaftAddress: string|null, state: string|null}
+     * @return array{isLeader: bool, nodeId: string, leaderNode: string|null, leaderRaftAddress: string|null, state: string|null}
      *
      * @throws RaftUnavailableException
      */
@@ -40,13 +41,15 @@ class RaftClient
             fn (PendingRequest $request): Response => $request->get('/leader'),
         );
 
-        // The sidecar's `/leader` contract is `{"leader": <bool>, "address": "<raft-address>"}`.
-        // Followers/leaders must be derived from the `leader` boolean, not `is_leader`.
+        // Contract: {"leader": <bool>, "leaderNode": "<raft-node-id>", "address": "<raft-advertise-address>"}.
+        // `address` is the Raft URL, not the backend URL — resolve backend via leaderNode + HA_PEER_URLS.
         $leaderRaftAddress = (string) ($payload['address'] ?? '');
+        $leaderNode = (string) ($payload['leaderNode'] ?? $payload['leader_node'] ?? '');
 
         return [
             'isLeader' => (bool) ($payload['leader'] ?? $payload['is_leader'] ?? false),
-            'nodeId' => (string) ($payload['node_id'] ?? ''),
+            'nodeId' => (string) ($payload['node_id'] ?? $payload['nodeId'] ?? ''),
+            'leaderNode' => $leaderNode === '' ? null : $leaderNode,
             'leaderRaftAddress' => $leaderRaftAddress === '' ? null : $leaderRaftAddress,
             'state' => isset($payload['state']) ? (string) $payload['state'] : null,
         ];

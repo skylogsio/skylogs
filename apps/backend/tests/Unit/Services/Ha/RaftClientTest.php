@@ -18,50 +18,52 @@ describe('RaftClient', function () {
     it('reads the cluster status of the local node', function () {
         Http::fake([
             'raft.test:8000/leader' => Http::response([
-                'node_id' => 'node1',
-                'is_leader' => true,
-                'address' => 'http://nginx_back-1:80',
-                'state' => 'Leader',
+                'leader' => true,
+                'leaderNode' => 'node1',
+                'address' => '192.168.56.11:7000',
             ]),
         ]);
 
         expect(app(RaftClient::class)->status())->toBe([
             'isLeader' => true,
-            'nodeId' => 'node1',
-            'leaderRaftAddress' => 'http://nginx_back-1:80',
-            'state' => 'Leader',
+            'nodeId' => '',
+            'leaderNode' => 'node1',
+            'leaderRaftAddress' => '192.168.56.11:7000',
+            'state' => null,
         ]);
     });
 
     it('reads a follower without treating it as a failure', function () {
         Http::fake([
             'raft.test:8000/leader' => Http::response([
-                'node_id' => 'node2',
-                'is_leader' => false,
-                'address' => 'http://nginx_back-1:80',
-                'state' => 'Follower',
+                'leader' => false,
+                'leaderNode' => 'node1',
+                'address' => '192.168.56.11:7000',
             ]),
         ]);
 
         expect(app(RaftClient::class)->status())->toBe([
             'isLeader' => false,
-            'nodeId' => 'node2',
-            'leaderRaftAddress' => 'http://nginx_back-1:80',
-            'state' => 'Follower',
+            'nodeId' => '',
+            'leaderNode' => 'node1',
+            'leaderRaftAddress' => '192.168.56.11:7000',
+            'state' => null,
         ]);
     });
 
-    it('reports no leader address at all while an election is running', function () {
+    it('reports no leader node while an election is running', function () {
         Http::fake([
             'raft.test:8000/leader' => Http::response([
-                'node_id' => 'node2',
-                'is_leader' => false,
+                'leader' => false,
+                'leaderNode' => '',
                 'address' => '',
-                'state' => 'Candidate',
             ]),
         ]);
 
-        expect(app(RaftClient::class)->status()['leaderRaftAddress'])->toBeNull();
+        $status = app(RaftClient::class)->status();
+
+        expect($status['leaderNode'])->toBeNull()
+            ->and($status['leaderRaftAddress'])->toBeNull();
     });
 
     it('sets a single key as a key and value pair', function () {
