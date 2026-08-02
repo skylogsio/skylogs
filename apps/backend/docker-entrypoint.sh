@@ -15,9 +15,6 @@ chown -R www-data:www-data \
 echo "Clearing caches..."
 php artisan optimize:clear
 
-echo "Waiting for database..."
-sleep 5
-
 echo "Running migrations..."
 php artisan migrate --force
 
