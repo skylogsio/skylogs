@@ -14,44 +14,63 @@ use Throwable;
 /**
  * Thin client for the Raft sidecar running next to this node.
  *
- * The sidecar owns leadership and the replicated log; this class only speaks
- * its three HTTP endpoints and translates every failure into a
- * RaftUnavailableException so callers never have to handle HTTP errors.
+ * Endpoints: /status, /leader, /set, /get. Failures become
+ * RaftUnavailableException so callers never handle HTTP errors.
  *
- * A value is stored as the raw JSON text of whatever was sent, so a slot goes
- * out as an object and comes back as a string: every read decodes.
+ * Stored values are raw JSON text: writes send objects, reads decode.
  */
 class RaftClient
 {
     /**
-     * How the sidecar sees the cluster from this node. /leader answers 200
-     * whatever role the node holds, so a follower is an answer rather than a
-     * failure. The leader is identified by Raft node id (`leaderNode`); the
-     * backend maps that id to a backend URL via HA_PEER_URLS.
+     * Local node view from GET /status.
      *
-     * @return array{isLeader: bool, nodeId: string, leaderNode: string|null, leaderRaftAddress: string|null, state: string|null}
+     * @return array{isLeader: bool, nodeId: string, leaderRaftAddress: string|null, state: string|null}
      *
      * @throws RaftUnavailableException
      */
     public function status(): array
     {
         $payload = $this->send(
-            '/leader',
+            '/status',
             (float) config('ha.raft.timeout.status'),
+            fn (PendingRequest $request): Response => $request->get('/status'),
+        );
+
+        // {"is_leader": bool, "leader": "<raft-address>", "node_id": string, "state": string}
+        $leaderRaftAddress = (string) ($payload['leader'] ?? '');
+
+        return [
+            'isLeader' => (bool) ($payload['is_leader'] ?? false),
+            'nodeId' => (string) ($payload['node_id'] ?? ''),
+            'leaderRaftAddress' => $leaderRaftAddress === '' ? null : $leaderRaftAddress,
+            'state' => isset($payload['state']) ? (string) $payload['state'] : null,
+        ];
+    }
+
+    /**
+     * Cluster leader from GET /leader. `address` is the Raft advertise address;
+     * use `leaderNode` with HA_PEER_URLS for the leader's backend URL.
+     *
+     * @return array{isLeader: bool, leaderNode: string|null, leaderRaftAddress: string|null}
+     *
+     * @throws RaftUnavailableException
+     */
+    public function leader(): array
+    {
+        $payload = $this->send(
+            '/leader',
+            (float) config('ha.raft.timeout.leader'),
             fn (PendingRequest $request): Response => $request->get('/leader'),
         );
 
-        // Contract: {"leader": <bool>, "leaderNode": "<raft-node-id>", "address": "<raft-advertise-address>"}.
-        // `address` is the Raft URL, not the backend URL — resolve backend via leaderNode + HA_PEER_URLS.
+        // {"leader": bool, "leaderNode": "<raft-node-id>", "address": "<raft-address>"}
+        $leaderNode = (string) ($payload['leaderNode'] ?? '');
         $leaderRaftAddress = (string) ($payload['address'] ?? '');
-        $leaderNode = (string) ($payload['leaderNode'] ?? $payload['leader_node'] ?? '');
 
         return [
-            'isLeader' => (bool) ($payload['leader'] ?? $payload['is_leader'] ?? false),
-            'nodeId' => (string) ($payload['node_id'] ?? $payload['nodeId'] ?? ''),
+            'isLeader' => (bool) ($payload['leader'] ?? false),
             'leaderNode' => $leaderNode === '' ? null : $leaderNode,
             'leaderRaftAddress' => $leaderRaftAddress === '' ? null : $leaderRaftAddress,
-            'state' => isset($payload['state']) ? (string) $payload['state'] : null,
         ];
     }
 

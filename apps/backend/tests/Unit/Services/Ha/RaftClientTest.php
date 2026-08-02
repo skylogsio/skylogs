@@ -9,13 +9,31 @@ describe('RaftClient', function () {
         config([
             'ha.raft.url' => 'http://raft.test:8000/',
             'ha.raft.connect_timeout' => 0.5,
-            'ha.raft.timeout' => ['status' => 1, 'set' => 3, 'get' => 3],
+            'ha.raft.timeout' => ['status' => 1, 'leader' => 1, 'set' => 3, 'get' => 3],
             'ha.raft.retry_attempts' => 2,
             'ha.raft.retry_sleep_milliseconds' => 0,
         ]);
     });
 
-    it('reads the cluster status of the local node', function () {
+    it('reads local node status from /status', function () {
+        Http::fake([
+            'raft.test:8000/status' => Http::response([
+                'is_leader' => false,
+                'leader' => '192.168.56.11:7000',
+                'node_id' => 'node2',
+                'state' => 'Follower',
+            ]),
+        ]);
+
+        expect(app(RaftClient::class)->status())->toBe([
+            'isLeader' => false,
+            'nodeId' => 'node2',
+            'leaderRaftAddress' => '192.168.56.11:7000',
+            'state' => 'Follower',
+        ]);
+    });
+
+    it('reads the cluster leader from /leader', function () {
         Http::fake([
             'raft.test:8000/leader' => Http::response([
                 'leader' => true,
@@ -24,16 +42,14 @@ describe('RaftClient', function () {
             ]),
         ]);
 
-        expect(app(RaftClient::class)->status())->toBe([
+        expect(app(RaftClient::class)->leader())->toBe([
             'isLeader' => true,
-            'nodeId' => '',
             'leaderNode' => 'node1',
             'leaderRaftAddress' => '192.168.56.11:7000',
-            'state' => null,
         ]);
     });
 
-    it('reads a follower without treating it as a failure', function () {
+    it('reads a follower /leader response without treating it as a failure', function () {
         Http::fake([
             'raft.test:8000/leader' => Http::response([
                 'leader' => false,
@@ -42,12 +58,10 @@ describe('RaftClient', function () {
             ]),
         ]);
 
-        expect(app(RaftClient::class)->status())->toBe([
+        expect(app(RaftClient::class)->leader())->toBe([
             'isLeader' => false,
-            'nodeId' => '',
             'leaderNode' => 'node1',
             'leaderRaftAddress' => '192.168.56.11:7000',
-            'state' => null,
         ]);
     });
 
@@ -60,10 +74,10 @@ describe('RaftClient', function () {
             ]),
         ]);
 
-        $status = app(RaftClient::class)->status();
+        $leader = app(RaftClient::class)->leader();
 
-        expect($status['leaderNode'])->toBeNull()
-            ->and($status['leaderRaftAddress'])->toBeNull();
+        expect($leader['leaderNode'])->toBeNull()
+            ->and($leader['leaderRaftAddress'])->toBeNull();
     });
 
     it('sets a single key as a key and value pair', function () {
@@ -127,7 +141,7 @@ describe('RaftClient', function () {
     it('reports an unreachable sidecar as a raft failure', function () {
         Http::fake(['raft.test:8000/leader' => Http::failedConnection()]);
 
-        expect(fn () => app(RaftClient::class)->status())
+        expect(fn () => app(RaftClient::class)->leader())
             ->toThrow(RaftUnavailableException::class);
     });
 
@@ -160,7 +174,7 @@ describe('RaftClient', function () {
     it('retries once before giving up', function () {
         Http::fake(['raft.test:8000/leader' => Http::response('boom', 500)]);
 
-        expect(fn () => app(RaftClient::class)->status())
+        expect(fn () => app(RaftClient::class)->leader())
             ->toThrow(RaftUnavailableException::class);
 
         Http::assertSentCount(2);

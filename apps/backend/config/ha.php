@@ -56,9 +56,8 @@ return [
     })(),
 
     /*
-    | How long a /leader answer stays cached. Keep it well below the scheduler
-    | tick so a failover is picked up within a couple of seconds while a five
-    | second tick still costs at most one sidecar call.
+    | How long a GET /leader answer stays cached. Keep it well below the
+    | scheduler tick so a failover is picked up within a couple of seconds.
     */
     'leader_cache_seconds' => (int) env('HA_LEADER_CACHE_SECONDS', 2),
 
@@ -109,11 +108,12 @@ return [
         'connect_timeout' => (float) env('RAFT_CONNECT_TIMEOUT', 0.5),
 
         /*
-        | Per endpoint request timeouts, in seconds. /leader is polled on every
-        | scheduler tick so it is kept short; /set and /get carry payloads.
+        | Per endpoint request timeouts, in seconds. /status and /leader are
+        | polled often so they stay short; /set and /get carry payloads.
         */
         'timeout' => [
             'status' => (float) env('RAFT_STATUS_TIMEOUT', 1),
+            'leader' => (float) env('RAFT_LEADER_TIMEOUT', 1),
             'set' => (float) env('RAFT_SET_TIMEOUT', 3),
             'get' => (float) env('RAFT_GET_TIMEOUT', 3),
         ],
