@@ -6,10 +6,12 @@ services:
       - ha/node.env
     environment:
       - HA_ENABLED=true
-      - HA_NODE_ID=node-1
+      - HA_NODE_ID=node1
       - HA_NODE_SECRET=changeme-ha-secret
       - RAFT_URL=http://raft:8000
-      - HA_PEER_URLS=172.28.7.11=http://nginx-1:80,172.28.7.12=http://nginx-2:80,172.28.7.13=http://nginx-3:80
+      - HA_PEER_URLS=node1=http://host.docker.internal:8083,node2=http://host.docker.internal:8183,node3=http://host.docker.internal:8283
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks: !override
       skylogs_net:
       skylogs_ha:
@@ -36,10 +38,12 @@ services:
       - ha/node.env
     environment:
       - HA_ENABLED=true
-      - HA_NODE_ID=node-1
+      - HA_NODE_ID=node1
       - HA_NODE_SECRET=changeme-ha-secret
       - RAFT_URL=http://raft:8000
-      - HA_PEER_URLS=172.28.7.11=http://nginx-1:80,172.28.7.12=http://nginx-2:80,172.28.7.13=http://nginx-3:80
+      - HA_PEER_URLS=node1=http://host.docker.internal:8083,node2=http://host.docker.internal:8183,node3=http://host.docker.internal:8283
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks: !override
       skylogs_net:
       skylogs_ha:

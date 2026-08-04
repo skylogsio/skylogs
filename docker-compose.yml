@@ -7,6 +7,9 @@ x-back-env: &back-env
     - KAVENEGAR_TOKEN=
     - KAVENEGAR_SENDER_NUMBER=
     - TELEGRAM_BOT_TOKEN=
+    # Override hosts from a developer .env that may be baked into the image.
+    - DB_HOST=mongo
+    - REDIS_HOST=redis
     #  High availability. Off for single-node; ha/*.yml flips this on for a cluster.
     - HA_ENABLED=false
     - HA_NODE_ID=node-1
