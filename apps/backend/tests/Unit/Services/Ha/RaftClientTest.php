@@ -55,7 +55,7 @@ describe('RaftClient', function () {
                 'leader' => false,
                 'leaderNode' => 'node1',
                 'address' => '192.168.56.11:7000',
-            ]),
+            ], 503),
         ]);
 
         expect(app(RaftClient::class)->leader())->toBe([

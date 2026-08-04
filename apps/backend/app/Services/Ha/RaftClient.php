@@ -61,6 +61,9 @@ class RaftClient
             '/leader',
             (float) config('ha.raft.timeout.leader'),
             fn (PendingRequest $request): Response => $request->get('/leader'),
+            // Raft returns 503 on followers so VIP health checks only pass the
+            // current leader. The JSON body still names leaderNode for peers.
+            acceptStatuses: [200, 503],
         );
 
         // {"leader": bool, "leaderNode": "<raft-node-id>", "address": "<raft-address>"}
@@ -144,11 +147,12 @@ class RaftClient
 
     /**
      * @param  Closure(PendingRequest): Response  $call
+     * @param  list<int>  $acceptStatuses
      * @return array<string, mixed>
      *
      * @throws RaftUnavailableException
      */
-    private function send(string $endpoint, float $timeout, Closure $call): array
+    private function send(string $endpoint, float $timeout, Closure $call, array $acceptStatuses = [200]): array
     {
         try {
             $response = $call($this->request($timeout));
@@ -156,7 +160,7 @@ class RaftClient
             throw RaftUnavailableException::unreachable($endpoint, $exception);
         }
 
-        if ($response->failed()) {
+        if (! in_array($response->status(), $acceptStatuses, true)) {
             throw RaftUnavailableException::badResponse($endpoint, $response->status(), $response->body());
         }
 
