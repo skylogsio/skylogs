@@ -2,7 +2,7 @@
 # SkyLogs Sentinel Configuration
 # ----------------------------------------
 server:
-  listen: ":9192"
+  listen: ":9191"
 sentinel:
   id: arvan-bamdad-sentinel       # Unique identifier for this Sentinel instance
   role: secondary        # Role: primary / secondary (informational)

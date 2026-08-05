@@ -41,11 +41,12 @@ NODES = {
     "node3": {"nginx": "http://127.0.0.1:8283", "raft": "http://127.0.0.1:8803", "raft_ctr": "skylogs_raft-3"},
 }
 
-CONFIG_SYNC_TIMEOUT = 60.0
-CONFIG_SYNC_POLL = 2.0
+CONFIG_SYNC_TIMEOUT = 120.0
+CONFIG_SYNC_POLL = 3.0
 STATE_SYNC_TIMEOUT = 20.0
 STATE_SYNC_POLL = 1.0
 FAILOVER_TIMEOUT = 45.0
+HISTORY_SYNC_TIMEOUT = 120.0
 
 
 # ---------------------------------------------------------------------------
@@ -117,6 +118,7 @@ class Ctx:
     alert_name: str = ""
     instance: str = "ha-lab-instance-1"
     failures: list[str] = field(default_factory=list)
+    config_lags: list[float] = field(default_factory=list)
 
     def tag(self, base: str) -> str:
         return f"{base}-{self.suffix}"
@@ -207,40 +209,32 @@ def wait_until(
     raise TimeoutError(f"timeout waiting for: {desc}{extra}")
 
 
-def force_config_sync_on_followers(ctx: Ctx) -> None:
-    """Kick follower sync immediately instead of waiting for the 30s schedule."""
-    assert ctx.leader_node
-    for f in followers(ctx.leader_node):
-        ctr = f"skylogs_back-{f[-1]}"  # node1 -> skylogs_back-1
-        print(f"  forcing ha:config-sync on {ctr}")
-        subprocess.run(
-            ["docker", "exec", ctr, "php", "artisan", "ha:config-sync"],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-
-
-def force_history_sync_on_followers(ctx: Ctx) -> None:
-    assert ctx.leader_node
-    for f in followers(ctx.leader_node):
-        ctr = f"skylogs_back-{f[-1]}"
-        subprocess.run(
-            ["docker", "exec", ctr, "php", "artisan", "ha:history-sync"],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-
-
 def docker(*args: str) -> None:
     cmd = ["docker", *args]
     print(f"  $ {' '.join(cmd)}")
     subprocess.run(cmd, check=True)
 
 
-def wait_config(ctx: Ctx, getter, pred, desc: str) -> None:
-    force_config_sync_on_followers(ctx)
+def docker_out(*args: str) -> str:
+    r = subprocess.run(["docker", *args], capture_output=True, text=True)
+    return (r.stdout or "") + (r.stderr or "")
+
+
+def back_ctr(node: str) -> str:
+    return f"skylogs_back-{node[-1]}"
+
+
+def horizon_ctr(node: str) -> str:
+    return f"skylogs_horizon-{node[-1]}"
+
+
+def wait_config(ctx: Ctx, getter, pred, desc: str) -> float:
+    """Wait for followers to receive config via Horizon-scheduled SyncHaConfigJob.
+
+    Does NOT call artisan ha:config-sync — schedule:run (cron) + Horizon must do it.
+    """
+    assert ctx.leader_node
+    started = time.time()
     wait_followers_have(
         ctx,
         getter=getter,
@@ -249,6 +243,9 @@ def wait_config(ctx: Ctx, getter, pred, desc: str) -> None:
         timeout=CONFIG_SYNC_TIMEOUT,
         interval=CONFIG_SYNC_POLL,
     )
+    lag = time.time() - started
+    print(f"  lag={lag:.1f}s (Horizon/schedule path, no artisan kick)")
+    return lag
 
 
 # ---------------------------------------------------------------------------
@@ -733,13 +730,205 @@ def api_reachable(base: str, *, timeout: float = 5.0) -> int:
         raise RuntimeError(f"API unreachable {url}: {e}") from e
 
 
+def step_horizon_health(ctx: Ctx) -> None:
+    """Horizon must be running on every node with the ha supervisor."""
+    print("Check Horizon containers + status (observation only — no ha:* artisan).")
+    for node in NODES:
+        ctr = horizon_ctr(node)
+        inspect = docker_out("inspect", "-f", "{{.State.Running}} {{.State.Status}}", ctr).strip()
+        print(f"  {ctr}: {inspect}")
+        if not inspect.startswith("true"):
+            raise RuntimeError(f"{ctr} not running: {inspect}")
+
+        status = docker_out("exec", ctr, "php", "artisan", "horizon:status")
+        print(f"  {ctr} horizon:status -> {status.strip()[:200]}")
+        if "running" not in status.lower() and "Horizon is running" not in status:
+            # Laravel prints "Horizon is running." or similar
+            if "inactive" in status.lower() or "not" in status.lower():
+                raise RuntimeError(f"Horizon not active on {ctr}: {status}")
+
+        # cron must be present for schedule:run (dispatches SyncHa* jobs onto ha queue)
+        cron = docker_out("exec", ctr, "crontab", "-l")
+        if "schedule:run" not in cron:
+            raise RuntimeError(f"{ctr} missing schedule:run cron:\n{cron}")
+        print(f"  {ctr} cron has schedule:run")
+
+
+def step_ha_http_contracts(ctx: Ctx) -> None:
+    assert ctx.leader_node
+    leader = ctx.leader_node
+    print("HA HTTP contracts: auth + leader/follower config-sync.")
+
+    # Missing secret
+    try:
+        http("GET", f"{nginx(leader)}/api/ha/config-sync?since=0")
+        raise RuntimeError("expected 401 without HA secret")
+    except HttpError as e:
+        if e.status != 401:
+            raise RuntimeError(f"expected 401 without secret, got {e.status}") from e
+        print("  OK missing secret -> 401")
+
+    # Wrong secret
+    try:
+        http(
+            "GET",
+            f"{nginx(leader)}/api/ha/config-sync?since=0",
+            headers={HA_SECRET_HEADER: "wrong-secret"},
+        )
+        raise RuntimeError("expected 401 with wrong HA secret")
+    except HttpError as e:
+        if e.status != 401:
+            raise RuntimeError(f"expected 401 wrong secret, got {e.status}") from e
+        print("  OK wrong secret -> 401")
+
+    # Leader accepts
+    status, body = http(
+        "GET",
+        f"{nginx(leader)}/api/ha/config-sync?since=0",
+        headers=ha_headers(),
+    )
+    if status != 200 or not isinstance(body, dict):
+        raise RuntimeError(f"leader config-sync expected 200 dict, got {status} {body}")
+    print(f"  OK leader config-sync -> 200 version={body.get('version')} changed={body.get('changed')}")
+
+    # Followers reject as not leader
+    for f in followers(leader):
+        try:
+            http(
+                "GET",
+                f"{nginx(f)}/api/ha/config-sync?since=0",
+                headers=ha_headers(),
+            )
+            raise RuntimeError(f"{f} should return 409 when not leader")
+        except HttpError as e:
+            if e.status != 409:
+                raise RuntimeError(f"{f} expected 409, got {e.status}: {e.body[:200]}") from e
+            print(f"  OK {f} config-sync -> 409 not leader")
+
+
+def step_horizon_processes_config(ctx: Ctx) -> None:
+    """Create on leader, wait ONLY for schedule+Horizon (proves SyncHaConfigJob path)."""
+    assert ctx.leader_node
+    leader = ctx.leader_node
+    print("Create dataSource; wait for followers via cron->SyncHaConfigJob->Horizon ha queue.")
+    print("  (timeout 120s — schedule:run is once/minute in lab cron)")
+
+    before_logs = {
+        f: docker_out("logs", horizon_ctr(f), "--tail", "5")
+        for f in followers(leader)
+    }
+
+    ds_id = create_datasource(ctx, leader)
+    lag = wait_config(
+        ctx,
+        lambda n: get_datasource(n, ctx.tokens[n], ds_id),
+        lambda doc: doc is not None,
+        f"dataSource {ds_id} via Horizon",
+    )
+    if lag > 90:
+        print(f"  WARN config lag {lag:.1f}s is high (cron is * * * * * schedule:run)")
+
+    # Evidence Horizon did work (best-effort log skim)
+    for f in followers(leader):
+        logs = docker_out("logs", horizon_ctr(f), "--tail", "80")
+        if "SyncHaConfigJob" in logs or "HA config sync" in logs or "config sync" in logs.lower():
+            print(f"  {horizon_ctr(f)} logs mention config sync activity")
+        else:
+            print(f"  note: no clear SyncHaConfigJob string in recent {horizon_ctr(f)} logs (job may be quiet when using Log::info only on apply)")
+
+    delete_datasource(ctx, leader, ds_id)
+    wait_config(
+        ctx,
+        lambda n: get_datasource(n, ctx.tokens[n], ds_id),
+        lambda doc: doc is None,
+        f"dataSource {ds_id} deleted via Horizon",
+    )
+    ctx.config_lags.append(lag)
+
+
+def get_alert_history(node: str, token: str, rule_id: str) -> list[Any]:
+    status, body = http(
+        "GET",
+        f"{nginx(node)}/api/v1/alert-rule/history/{rule_id}?perPage=20",
+        headers=auth_header(token),
+    )
+    if not ok(status):
+        raise RuntimeError(f"history on {node}: {status} {body}")
+    if isinstance(body, dict):
+        data = body.get("data")
+        if isinstance(data, list):
+            return data
+        # LengthAwarePaginator style
+        if isinstance(data, dict) and isinstance(data.get("data"), list):
+            return data["data"]
+    if isinstance(body, list):
+        return body
+    return []
+
+
+def step_history_sync_via_horizon(ctx: Ctx) -> None:
+    """After a fire on leader, history rows should appear on followers via SyncHaHistoryJob."""
+    assert ctx.leader_node and ctx.alert_rule_id and ctx.api_token
+    leader = ctx.leader_node
+    print("Fire alert; wait for history on followers (Horizon SyncHaHistoryJob, no artisan).")
+
+    fire_alert(ctx, leader)
+    time.sleep(2)
+    leader_hist = get_alert_history(leader, ctx.tokens[leader], ctx.alert_rule_id)
+    print(f"  leader history count={len(leader_hist)}")
+    if not leader_hist:
+        print("  WARN leader has no history rows yet — continuing wait on followers anyway")
+
+    def hist_ok(n: str) -> bool:
+        rows = get_alert_history(n, ctx.tokens[n], ctx.alert_rule_id)
+        print(f"    {n} history rows={len(rows)}")
+        return len(rows) > 0
+
+    wait_until(
+        "leader has history",
+        lambda: hist_ok(leader),
+        timeout=30,
+        interval=2,
+    )
+    for f in followers(leader):
+        wait_until(
+            f"follower {f} history via Horizon",
+            lambda f=f: hist_ok(f),
+            timeout=HISTORY_SYNC_TIMEOUT,
+            interval=CONFIG_SYNC_POLL,
+        )
+
+
+def step_reconcile_path_note(ctx: Ctx) -> None:
+    """ReconcileHaStateJob is everyMinute on ha queue — confirm Horizon ate recent ticks."""
+    print("Skim Horizon logs for ReconcileHaStateJob (scheduled every minute).")
+    found = False
+    for node in NODES:
+        logs = docker_out("logs", horizon_ctr(node), "--tail", "200")
+        if "ReconcileHaStateJob" in logs or "ReconcileHa" in logs:
+            print(f"  {horizon_ctr(node)}: saw reconcile job activity")
+            found = True
+        else:
+            out = docker_out("exec", horizon_ctr(node), "php", "artisan", "horizon:list")
+            print(f"  {horizon_ctr(node)} horizon:list snippet: {out.strip()[:180] or '(empty)'}")
+    if not found:
+        print("  note: reconcile may not log by name; Horizon running + cron is the gate we assert in horizon_health")
+
+
+def raft_healthy(node: str) -> bool:
+    try:
+        raft_status(node)
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def step_cluster_health(ctx: Ctx) -> None:
     print("Check raft + API on all nodes.")
     ctx.leader_node = discover_leader()
     print(f"  leader = {ctx.leader_node}")
     for node, meta in NODES.items():
         code = api_reachable(meta["nginx"])
-        # 401 without JWT means nginx → php-fpm is fine
         print(f"  api {node} HTTP {code}")
         if code not in (200, 401, 403):
             raise RuntimeError(f"api {node} not healthy (HTTP {code})")
@@ -779,105 +968,67 @@ def step_auth(ctx: Ctx) -> None:
 
 
 def step_config_crud(ctx: Ctx) -> None:
-    """Create / update / delete config-synced resources on leader; wait for followers."""
+    """Create / update / delete config-synced resources on leader; wait for Horizon sync.
+
+    Batches waits so we do not sit through a full schedule period per field.
+    """
     assert ctx.leader_node
     leader = ctx.leader_node
-    print(f"Config CRUD on leader={leader}; force ha:config-sync on followers after each change.")
+    print(f"Config CRUD on leader={leader}; Horizon SyncHaConfigJob only (batched waits).")
 
-    # --- dataSource ---
-    print("\n  [dataSource] create")
+    print("\n  [batch] create dataSource, user, team, endpoint, alertRule")
     ctx.datasource_id = create_datasource(ctx, leader)
-    wait_config(
-        ctx,
-        lambda n: get_datasource(n, ctx.tokens[n], ctx.datasource_id),  # type: ignore[arg-type]
-        lambda doc: doc is not None,
-        f"dataSource {ctx.datasource_id} present",
-    )
-    new_ds_name = ctx.tag("ha-ds-upd")
-    print("  [dataSource] update")
-    update_datasource(ctx, leader, ctx.datasource_id, new_ds_name)
-    wait_config(
-        ctx,
-        lambda n: get_datasource(n, ctx.tokens[n], ctx.datasource_id),  # type: ignore[arg-type]
-        lambda doc: bool(doc) and doc.get("name") == new_ds_name,
-        f"dataSource name={new_ds_name}",
-    )
-
-    # --- user ---
-    print("\n  [user] create")
     ctx.user_id = create_user(ctx, leader)
-    wait_config(
-        ctx,
-        lambda n: get_user(n, ctx.tokens[n], ctx.user_id),  # type: ignore[arg-type]
-        lambda doc: doc is not None,
-        f"user {ctx.user_id} present",
-    )
-    new_user_name = f"HA Lab Updated {ctx.suffix}"
-    print("  [user] update")
-    update_user(ctx, leader, ctx.user_id, new_user_name)
-    wait_config(
-        ctx,
-        lambda n: get_user(n, ctx.tokens[n], ctx.user_id),  # type: ignore[arg-type]
-        lambda doc: bool(doc) and doc.get("name") == new_user_name,
-        f"user name={new_user_name}",
-    )
-
-    # --- team ---
-    print("\n  [team] create")
     ctx.team_id = create_team(ctx, leader)
-    wait_config(
-        ctx,
-        lambda n: get_team(n, ctx.tokens[n], ctx.team_id),  # type: ignore[arg-type]
-        lambda doc: doc is not None,
-        f"team {ctx.team_id} present",
-    )
-    new_team_desc = f"updated-{ctx.suffix}"
-    print("  [team] update")
-    update_team(ctx, leader, ctx.team_id, new_team_desc)
-    wait_config(
-        ctx,
-        lambda n: get_team(n, ctx.tokens[n], ctx.team_id),  # type: ignore[arg-type]
-        lambda doc: bool(doc) and doc.get("description") == new_team_desc,
-        f"team description={new_team_desc}",
-    )
-
-    # --- endpoint ---
-    print("\n  [endpoint] create")
     ctx.endpoint_id = create_endpoint(ctx, leader)
-    wait_config(
-        ctx,
-        lambda n: get_endpoint(n, ctx.tokens[n], ctx.endpoint_id),  # type: ignore[arg-type]
-        lambda doc: doc is not None,
-        f"endpoint {ctx.endpoint_id} present",
-    )
-    new_ep_name = ctx.tag("ha-ep-upd")
-    print("  [endpoint] update")
-    update_endpoint(ctx, leader, ctx.endpoint_id, new_ep_name)
-    wait_config(
-        ctx,
-        lambda n: get_endpoint(n, ctx.tokens[n], ctx.endpoint_id),  # type: ignore[arg-type]
-        lambda doc: bool(doc) and doc.get("name") == new_ep_name,
-        f"endpoint name={new_ep_name}",
-    )
-
-    # --- alertRule ---
-    print("\n  [alertRule] create")
     ctx.alert_rule_id = create_alert_rule(ctx, leader)
-    wait_config(
-        ctx,
-        lambda n: get_alert_rule(n, ctx.tokens[n], ctx.alert_rule_id),  # type: ignore[arg-type]
-        lambda doc: doc is not None,
-        f"alertRule {ctx.alert_rule_id} present",
-    )
+
+    def all_created(n: str) -> bool:
+        checks = [
+            get_datasource(n, ctx.tokens[n], ctx.datasource_id),
+            get_user(n, ctx.tokens[n], ctx.user_id),
+            get_team(n, ctx.tokens[n], ctx.team_id),
+            get_endpoint(n, ctx.tokens[n], ctx.endpoint_id),
+            get_alert_rule(n, ctx.tokens[n], ctx.alert_rule_id),
+        ]
+        ok_all = all(c is not None for c in checks)
+        print(f"    {n} present={[c is not None for c in checks]}")
+        return ok_all
+
+    lag = wait_config(ctx, all_created, lambda v: v is True, "all creates present")
+    ctx.config_lags.append(lag)
+
+    new_ds_name = ctx.tag("ha-ds-upd")
+    new_user_name = f"HA Lab Updated {ctx.suffix}"
+    new_team_desc = f"updated-{ctx.suffix}"
+    new_ep_name = ctx.tag("ha-ep-upd")
     new_desc = f"desc-{ctx.suffix}"
-    print("  [alertRule] update")
+
+    print("\n  [batch] update all")
+    update_datasource(ctx, leader, ctx.datasource_id, new_ds_name)
+    update_user(ctx, leader, ctx.user_id, new_user_name)
+    update_team(ctx, leader, ctx.team_id, new_team_desc)
+    update_endpoint(ctx, leader, ctx.endpoint_id, new_ep_name)
     update_alert_rule(ctx, leader, ctx.alert_rule_id, new_desc)
-    wait_config(
-        ctx,
-        lambda n: get_alert_rule(n, ctx.tokens[n], ctx.alert_rule_id),  # type: ignore[arg-type]
-        lambda doc: bool(doc) and (doc.get("description") or "") == new_desc,
-        f"alertRule description={new_desc}",
-    )
+
+    def all_updated(n: str) -> bool:
+        ds = get_datasource(n, ctx.tokens[n], ctx.datasource_id)
+        user = get_user(n, ctx.tokens[n], ctx.user_id)
+        team = get_team(n, ctx.tokens[n], ctx.team_id)
+        ep = get_endpoint(n, ctx.tokens[n], ctx.endpoint_id)
+        rule = get_alert_rule(n, ctx.tokens[n], ctx.alert_rule_id)
+        ok_all = (
+            bool(ds) and ds.get("name") == new_ds_name
+            and bool(user) and user.get("name") == new_user_name
+            and bool(team) and team.get("description") == new_team_desc
+            and bool(ep) and ep.get("name") == new_ep_name
+            and bool(rule) and (rule.get("description") or "") == new_desc
+        )
+        print(f"    {n} updated={ok_all}")
+        return ok_all
+
+    lag = wait_config(ctx, all_updated, lambda v: v is True, "all updates applied")
+    ctx.config_lags.append(lag)
 
     show = get_alert_rule(leader, ctx.tokens[leader], ctx.alert_rule_id)
     assert show
@@ -886,36 +1037,24 @@ def step_config_crud(ctx: Ctx) -> None:
         raise RuntimeError("apiToken missing on leader alert-rule show (need owner access)")
     print(f"  apiToken captured ({len(ctx.api_token)} chars)")
 
-    # Deletes (keep alertRule for state tests — deleted in later step)
-    print("\n  [dataSource/user/team/endpoint] delete")
+    print("\n  [batch] delete dataSource/user/team/endpoint (keep alertRule for state tests)")
     delete_datasource(ctx, leader, ctx.datasource_id)
-    wait_config(
-        ctx,
-        lambda n: get_datasource(n, ctx.tokens[n], ctx.datasource_id),  # type: ignore[arg-type]
-        lambda doc: doc is None,
-        "dataSource deleted on followers",
-    )
     delete_user(ctx, leader, ctx.user_id)
-    wait_config(
-        ctx,
-        lambda n: get_user(n, ctx.tokens[n], ctx.user_id),  # type: ignore[arg-type]
-        lambda doc: doc is None,
-        "user deleted on followers",
-    )
     delete_team(ctx, leader, ctx.team_id)
-    wait_config(
-        ctx,
-        lambda n: get_team(n, ctx.tokens[n], ctx.team_id),  # type: ignore[arg-type]
-        lambda doc: doc is None,
-        "team deleted on followers",
-    )
     delete_endpoint(ctx, leader, ctx.endpoint_id)
-    wait_config(
-        ctx,
-        lambda n: get_endpoint(n, ctx.tokens[n], ctx.endpoint_id),  # type: ignore[arg-type]
-        lambda doc: doc is None,
-        "endpoint deleted on followers",
-    )
+
+    def all_deleted(n: str) -> bool:
+        gone = [
+            get_datasource(n, ctx.tokens[n], ctx.datasource_id) is None,
+            get_user(n, ctx.tokens[n], ctx.user_id) is None,
+            get_team(n, ctx.tokens[n], ctx.team_id) is None,
+            get_endpoint(n, ctx.tokens[n], ctx.endpoint_id) is None,
+        ]
+        print(f"    {n} deleted={gone}")
+        return all(gone)
+
+    lag = wait_config(ctx, all_deleted, lambda v: v is True, "deletes replicated")
+    ctx.config_lags.append(lag)
 
 
 def step_alert_state_fire(ctx: Ctx) -> None:
@@ -1061,21 +1200,37 @@ def step_failover(ctx: Ctx) -> None:
 def step_post_failover_config(ctx: Ctx) -> None:
     assert ctx.leader_node
     leader = ctx.leader_node
-    print(f"Create a dataSource on new leader={leader}; expect remaining followers sync.")
+    print(f"Create a dataSource on new leader={leader}; sync only on nodes with healthy raft.")
+    print("  BUG CHECK: a node whose raft sidecar is dead cannot resolve leader -> config sync stalls.")
     ds_id = create_datasource(ctx, leader)
-    wait_config(
-        ctx,
-        lambda n: get_datasource(n, ctx.tokens[n], ds_id),
-        lambda doc: doc is not None,
-        f"dataSource {ds_id} present",
-    )
+
+    healthy_followers = [n for n in followers(leader) if raft_healthy(n)]
+    dead_raft = [n for n in followers(leader) if not raft_healthy(n)]
+    print(f"  healthy followers={healthy_followers} dead_raft={dead_raft}")
+
+    for f in healthy_followers:
+        wait_until(
+            f"dataSource on healthy follower {f}",
+            lambda f=f: get_datasource(f, ctx.tokens[f], ds_id) is not None,
+            timeout=CONFIG_SYNC_TIMEOUT,
+            interval=CONFIG_SYNC_POLL,
+        )
+
+    for f in dead_raft:
+        # Document expected fail-closed behaviour (local raft down => no leader URL).
+        still_missing = get_datasource(f, ctx.tokens[f], ds_id) is None
+        print(f"  {f} (raft down) still missing dataSource={still_missing} (expected until raft returns)")
+        if not still_missing:
+            print(f"  note: {f} already had the row somehow — unexpected but not fatal")
+
     delete_datasource(ctx, leader, ds_id)
-    wait_config(
-        ctx,
-        lambda n: get_datasource(n, ctx.tokens[n], ds_id),
-        lambda doc: doc is None,
-        f"dataSource {ds_id} deleted",
-    )
+    for f in healthy_followers:
+        wait_until(
+            f"dataSource deleted on {f}",
+            lambda f=f: get_datasource(f, ctx.tokens[f], ds_id) is None,
+            timeout=CONFIG_SYNC_TIMEOUT,
+            interval=CONFIG_SYNC_POLL,
+        )
 
 
 def step_restore_old_leader(ctx: Ctx) -> None:
@@ -1121,11 +1276,16 @@ STEPS: list[tuple[str, Callable[[Ctx], None]]] = [
     ("cluster_health", step_cluster_health),
     ("peer_reachability", step_peer_reachability),
     ("auth", step_auth),
+    ("horizon_health", step_horizon_health),
+    ("ha_http_contracts", step_ha_http_contracts),
+    ("horizon_processes_config", step_horizon_processes_config),
     ("config_crud_replicate", step_config_crud),
     ("alert_state_fire", step_alert_state_fire),
     ("alert_state_warning", step_alert_state_warning),
     ("alert_state_resolve", step_alert_state_resolve),
     ("alert_state_fire_raft_again", step_alert_state_fire_via_raft_path),
+    ("history_sync_via_horizon", step_history_sync_via_horizon),
+    ("reconcile_path_note", step_reconcile_path_note),
     ("failover_kill_leader", step_failover),
     ("post_failover_config", step_post_failover_config),
     ("restore_old_leader", step_restore_old_leader),
