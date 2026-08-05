@@ -35,6 +35,7 @@ export interface IAlertRule {
   status_label: AlertRuleStatus;
   is_silent: boolean;
   isPinned: boolean;
+  isPrivate: boolean;
   count_endpoints: number;
   tags: string[];
   dataSourceAlertName?: string;

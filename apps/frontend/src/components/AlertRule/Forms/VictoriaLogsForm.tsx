@@ -34,7 +34,8 @@ const victoriaLogsSchema = z.object({
   countDocument: z.number("This field is Required.").min(1, "Must be at least 1"),
   minutes: z.number("This field is Required.").min(1, "Must be at least 1"),
   description: z.string(),
-  showAcknowledgeBtn: z.boolean()
+  showAcknowledgeBtn: z.boolean(),
+  isPrivate: z.boolean()
 });
 
 type VictoriaLogsFormType = z.infer<typeof victoriaLogsSchema>;
@@ -56,7 +57,8 @@ const emptyFormValues: VictoriaLogsFormType = {
   countDocument: 5,
   minutes: 5,
   description: "",
-  showAcknowledgeBtn: false
+  showAcknowledgeBtn: false,
+  isPrivate: false
 };
 
 function getFormValues(data: CreateUpdateModal<IAlertRule>): VictoriaLogsFormType {

@@ -52,7 +52,8 @@ const generalAlertRuleSchema = z.object({
   queryType: z.enum(QUERY_TYPE),
   dataSourceAlertName: z.string().nullable().optional(),
   description: z.string(),
-  showAcknowledgeBtn: z.boolean()
+  showAcknowledgeBtn: z.boolean(),
+  isPrivate: z.boolean()
 });
 
 type GeneralAlertRuleType = z.infer<typeof generalAlertRuleSchema>;
@@ -76,7 +77,8 @@ const emptyFormValues: GeneralAlertRuleType = {
   dataSourceAlertName: "",
   queryType: "dynamic",
   description: "",
-  showAcknowledgeBtn: false
+  showAcknowledgeBtn: false,
+  isPrivate: false
 };
 
 function getFormValues(
@@ -345,7 +347,7 @@ export default function GeneralAlertRuleForm({
         spacing={2}
         sx={{
           justifyContent: "flex-end",
-          paddingY: 2
+          paddingTop: 2
         }}
       >
         <Button variant="outlined" disabled={isCreating || isUpdating} onClick={onClose}>

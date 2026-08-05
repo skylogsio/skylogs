@@ -32,6 +32,7 @@ type MustHaveFields = {
   tags: string[];
   description: string;
   showAcknowledgeBtn?: boolean;
+  isPrivate?: boolean;
 };
 
 type AlertRuleEndpointUserSelectorProps<T extends MustHaveFields> = {
@@ -167,45 +168,86 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
           )}
         />
       </Grid>
-      <Controller
-        control={control}
-        name={"showAcknowledgeBtn" as Path<T>}
-        render={({ field }) => (
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{
-              alignItems: "center",
-              width: "100%"
-            }}
-          >
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={Boolean(field.value ?? false)}
-                  onChange={(e) => field.onChange(e.target.checked)}
-                />
-              }
-              label="Show Acknowledge Button in Telegram"
-              sx={{ margin: 0 }}
-            />
-            <Tooltip
-              title={
-                <Typography variant="caption">
-                  When enabled, Telegram alert messages will include an Acknowledge button that
-                  allows users to mark the alert as seen and handled directly from Telegram.
-                </Typography>
-              }
-              arrow
-              placement="top"
+      <Stack spacing={0} sx={{ width: "100%" }}>
+        <Controller
+          control={control}
+          name={"isPrivate" as Path<T>}
+          render={({ field }) => (
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                alignItems: "center",
+                width: "100%"
+              }}
             >
-              <Box sx={{ color: ({ palette }) => palette.primary.light, cursor: "pointer" }}>
-                <MdInfoOutline size={20} />
-              </Box>
-            </Tooltip>
-          </Stack>
-        )}
-      />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={Boolean(field.value ?? false)}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                  />
+                }
+                label="Private"
+                sx={{ margin: 0 }}
+              />
+              <Tooltip
+                title={
+                  <Typography variant="caption">
+                    When enabled, this alert rule is private and only visible to you and the users
+                    or teams you explicitly grant access to.
+                  </Typography>
+                }
+                arrow
+                placement="top"
+              >
+                <Box sx={{ color: ({ palette }) => palette.primary.light, cursor: "pointer" }}>
+                  <MdInfoOutline size={20} />
+                </Box>
+              </Tooltip>
+            </Stack>
+          )}
+        />
+        <Controller
+          control={control}
+          name={"showAcknowledgeBtn" as Path<T>}
+          render={({ field }) => (
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                alignItems: "center",
+                width: "100%"
+              }}
+            >
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={Boolean(field.value ?? false)}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                  />
+                }
+                label="Show Acknowledge Button in Telegram"
+                sx={{ margin: 0 }}
+              />
+              <Tooltip
+                title={
+                  <Typography variant="caption">
+                    When enabled, Telegram alert messages will include an Acknowledge button that
+                    allows users to mark the alert as seen and handled directly from Telegram.
+                  </Typography>
+                }
+                arrow
+                placement="top"
+              >
+                <Box sx={{ color: ({ palette }) => palette.primary.light, cursor: "pointer" }}>
+                  <MdInfoOutline size={20} />
+                </Box>
+              </Tooltip>
+            </Stack>
+          )}
+        />
+      </Stack>
       <Controller
         control={control}
         name={"description" as Path<T>}
