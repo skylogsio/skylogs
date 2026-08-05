@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import React, { ReactElement, useState } from "react";
 
 import {
@@ -27,6 +27,7 @@ import { getAlertRuleById, silenceAlertRule, testAlertRule } from "@/api/alertRu
 import AlertRuleModal from "@/app/[locale]/alert-rule/AlertRuleModal";
 import DeleteAlertRuleModal from "@/app/[locale]/alert-rule/DeleteAlertRuleModal";
 import AdvanceSection from "@/components/AlertRule/advance/AdvanceSection";
+import AlertRuleAccessBadge from "@/components/AlertRule/AlertRuleAccessBadge";
 import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndicator";
 import AlertRuleFiredInstances from "@/components/AlertRule/FiredInstances/AlertRuleFiredInstances";
 import AlertRuleHistory from "@/components/AlertRule/History/AlertRuleHistory";
@@ -34,25 +35,54 @@ import AlertRuleNotifyManager from "@/components/AlertRule/Notify/AlertRuleNotif
 import AlertRuleAccessManager from "@/components/AlertRule/Users/AlertRuleAccessManager";
 import { ALERT_RULE_VARIANTS } from "@/utils/alertRuleUtils";
 
-const TABS = ["fire", "users", "history", "notify", "advance"];
+const TABS = ["fire", "users", "history", "notify", "advance"] as const;
 type TabType = (typeof TABS)[number];
 
-const TABS_ICON: { [key: TabType]: ReactElement } = {
+const READONLY_TABS: TabType[] = ["fire", "history"];
+const DEFAULT_TAB: TabType = "users";
+const READONLY_DEFAULT_TAB: TabType = "history";
+
+const TABS_ICON: Partial<Record<TabType, ReactElement>> = {
   fire: <HiFire size="1.2rem" />,
   users: <FaUsers size="1.2rem" />,
   history: <FaClockRotateLeft size="1.1rem" />,
   notify: <AiFillNotification size="1.2rem" />
 };
 
+function isTabType(value: string | null): value is TabType {
+  return TABS.includes(value as TabType);
+}
+
 export default function ViewAlertRule() {
   const { alertId } = useParams<{ alertId: string }>();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { palette, spacing } = useTheme();
   const [testConfirmationAnchorEl, setTestConfirmationAnchorEl] =
     useState<HTMLButtonElement | null>(null);
-  const [currentTab, setCurrentTab] = useState<TabType>("users");
   const [currentOpenModal, setCurrentOpenModal] = useState<"DELETE" | "EDIT" | null>(null);
+
+  const { data, refetch } = useQuery({
+    queryKey: ["view-alert-rule", alertId],
+    queryFn: () => getAlertRuleById(alertId),
+    enabled: Boolean(alertId),
+    refetchInterval: 10 * 1000
+  });
+
+  const isReadonly = data?.accessLevel === "readonly";
+  const availableTabs = isReadonly ? READONLY_TABS : TABS;
+  const defaultTab = isReadonly ? READONLY_DEFAULT_TAB : DEFAULT_TAB;
+  const tabParam = searchParams.get("tab");
+  const currentTab: TabType =
+    isTabType(tabParam) && availableTabs.includes(tabParam) ? tabParam : defaultTab;
+
+  function setCurrentTab(tab: TabType) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.push(`${pathname}?${params.toString()}`);
+  }
 
   function handleAfterDelete() {
     router.push("/alert-rule");
@@ -67,13 +97,6 @@ export default function ViewAlertRule() {
   };
   const openTestConfirmationPopover = Boolean(testConfirmationAnchorEl);
   const testConfirmationId = openTestConfirmationPopover ? "test-confirmation-popover" : undefined;
-
-  const { data, refetch } = useQuery({
-    queryKey: ["view-alert-rule", alertId],
-    queryFn: () => getAlertRuleById(alertId),
-    enabled: Boolean(alertId),
-    refetchInterval: 10 * 1000
-  });
 
   const { mutate: silenceAlertRuleMutation, isPending: isSilencing } = useMutation({
     mutationFn: () => silenceAlertRule(alertId),
@@ -105,19 +128,21 @@ export default function ViewAlertRule() {
     }
   });
 
+  const activeTab: TabType =
+    currentTab === "fire" && data?.status_label !== "critical" ? defaultTab : currentTab;
+
   function renderTab(tab: TabType) {
     let backgroundColor;
     let color;
 
     if (tab === "fire") {
       if (data?.status_label !== "critical") return null;
-      backgroundColor =
-        currentTab === tab ? palette.error.main : alpha(palette.secondary.main, 0.1);
-      color = currentTab === tab ? palette.background.paper : palette.error.main;
+      backgroundColor = activeTab === tab ? palette.error.main : alpha(palette.secondary.main, 0.1);
+      color = activeTab === tab ? palette.background.paper : palette.error.main;
     } else {
       backgroundColor =
-        currentTab === tab ? palette.secondary.dark : alpha(palette.secondary.main, 0.1);
-      color = currentTab === tab ? palette.background.paper : palette.secondary.dark;
+        activeTab === tab ? palette.secondary.dark : alpha(palette.secondary.main, 0.1);
+      color = activeTab === tab ? palette.background.paper : palette.secondary.dark;
     }
     return (
       <Button
@@ -138,7 +163,7 @@ export default function ViewAlertRule() {
   }
 
   function renderSections() {
-    switch (currentTab) {
+    switch (activeTab) {
       case "users":
         return <AlertRuleAccessManager alertId={alertId} />;
       case "history":
@@ -174,75 +199,79 @@ export default function ViewAlertRule() {
             <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
               <Icon color={defaultColor} size="4rem" />
               <Stack spacing={0.5} sx={{ alignItems: "flex-start" }}>
-                <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                  {data.name}
-                </Typography>
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                  <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                    {data.name} <AlertRuleAccessBadge accessLevel={data.accessLevel} />
+                  </Typography>
+                </Stack>
                 <AlertRuleStatusIndicator
                   status={data.status_label}
-                  id={alertId}
+                  id={isReadonly ? undefined : alertId}
                   onAfterResolve={handleRefreshData}
-                  showAcknowledge={!data.acknowledgedBy}
+                  showAcknowledge={!isReadonly && !data.acknowledgedBy}
                 />
               </Stack>
             </Stack>
             <Stack spacing={1} sx={{ alignItems: "flex-end" }}>
-              <Stack direction="row-reverse" spacing={1}>
-                <Button
-                  startIcon={<HiTrash />}
-                  onClick={() => setCurrentOpenModal("DELETE")}
-                  sx={{
-                    textTransform: "capitalize !important",
-                    color: palette.error.main,
-                    backgroundColor: alpha(palette.error.main, 0.05),
-                    paddingX: 2
-                  }}
-                >
-                  Delete
-                </Button>
-                <Button
-                  startIcon={<HiPencil />}
-                  onClick={() => setCurrentOpenModal("EDIT")}
-                  sx={{
-                    textTransform: "capitalize !important",
-                    color: palette.info.light,
-                    backgroundColor: alpha(palette.info.light, 0.05),
-                    paddingX: 2
-                  }}
-                >
-                  Edit
-                </Button>
-                <Button
-                  startIcon={
-                    data.is_silent ? (
-                      <IoNotificationsOff size="1.4rem" />
-                    ) : (
-                      <IoNotifications size="1.4rem" />
-                    )
-                  }
-                  disabled={isSilencing}
-                  onClick={() => silenceAlertRuleMutation()}
-                  sx={{
-                    textTransform: "capitalize !important",
-                    color: palette.warning.main,
-                    backgroundColor: alpha(palette.warning.main, 0.05),
-                    paddingX: 2
-                  }}
-                >
-                  {data.is_silent ? "Unsilent" : "Silent"}
-                </Button>
-                <Button
-                  onClick={handleTest}
-                  startIcon={<RiTestTubeFill size="1.4rem" />}
-                  sx={{
-                    textTransform: "capitalize !important",
-                    color: palette.primary.light,
-                    backgroundColor: alpha(palette.primary.light, 0.05),
-                    paddingX: 2
-                  }}
-                >
-                  Test
-                </Button>
-              </Stack>
+              {!isReadonly && (
+                <Stack direction="row-reverse" spacing={1}>
+                  <Button
+                    startIcon={<HiTrash />}
+                    onClick={() => setCurrentOpenModal("DELETE")}
+                    sx={{
+                      textTransform: "capitalize !important",
+                      color: palette.error.main,
+                      backgroundColor: alpha(palette.error.main, 0.05),
+                      paddingX: 2
+                    }}
+                  >
+                    Delete
+                  </Button>
+                  <Button
+                    startIcon={<HiPencil />}
+                    onClick={() => setCurrentOpenModal("EDIT")}
+                    sx={{
+                      textTransform: "capitalize !important",
+                      color: palette.info.light,
+                      backgroundColor: alpha(palette.info.light, 0.05),
+                      paddingX: 2
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    startIcon={
+                      data.is_silent ? (
+                        <IoNotificationsOff size="1.4rem" />
+                      ) : (
+                        <IoNotifications size="1.4rem" />
+                      )
+                    }
+                    disabled={isSilencing}
+                    onClick={() => silenceAlertRuleMutation()}
+                    sx={{
+                      textTransform: "capitalize !important",
+                      color: palette.warning.main,
+                      backgroundColor: alpha(palette.warning.main, 0.05),
+                      paddingX: 2
+                    }}
+                  >
+                    {data.is_silent ? "Unsilent" : "Silent"}
+                  </Button>
+                  <Button
+                    onClick={handleTest}
+                    startIcon={<RiTestTubeFill size="1.4rem" />}
+                    sx={{
+                      textTransform: "capitalize !important",
+                      color: palette.primary.light,
+                      backgroundColor: alpha(palette.primary.light, 0.05),
+                      paddingX: 2
+                    }}
+                  >
+                    Test
+                  </Button>
+                </Stack>
+              )}
               {data.apiToken && (
                 <Stack
                   direction="row"
@@ -278,12 +307,14 @@ export default function ViewAlertRule() {
             </Stack>
           </Stack>
           <Stack direction="row" sx={{ marginTop: 3, rowGap: 1, flexWrap: "wrap" }}>
-            <Stack direction="row" spacing={1} sx={{ width: "50%", alignItems: "center" }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-                Owner:
-              </Typography>
-              <Typography>{data.ownerName}</Typography>
-            </Stack>
+            {!isReadonly && (
+              <Stack direction="row" spacing={1} sx={{ width: "50%", alignItems: "center" }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                  Owner:
+                </Typography>
+                <Typography>{data.ownerName}</Typography>
+              </Stack>
+            )}
             {data.dataSourceLabels && (
               <Stack direction="row" spacing={1} sx={{ width: "50%", alignItems: "center" }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
@@ -362,7 +393,7 @@ export default function ViewAlertRule() {
             marginTop: `${spacing(1)}!important`
           }}
         >
-          {TABS.map((tab) => renderTab(tab))}
+          {availableTabs.map((tab) => renderTab(tab))}
         </Stack>
         <Stack
           sx={{ width: "100%", bgcolor: palette.background.paper, borderRadius: 3, padding: 3 }}

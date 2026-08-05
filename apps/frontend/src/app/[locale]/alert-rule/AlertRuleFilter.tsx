@@ -5,17 +5,18 @@ import { type ReactNode, useState, useEffect } from "react";
 import {
   Autocomplete,
   Box,
-  Checkbox,
   Chip,
-  FormControlLabel,
   Grid,
   MenuItem,
   Stack,
+  Switch,
   TextField,
   Typography,
+  alpha,
   useTheme
 } from "@mui/material";
 import { useQueries } from "@tanstack/react-query";
+import { HiOutlineFire, HiOutlineGlobeAlt, HiOutlineUser } from "react-icons/hi";
 import { IoNotifications, IoNotificationsOff } from "react-icons/io5";
 
 import { getAlertFilterEndpointList, getAlertRuleTags } from "@/api/alertRule";
@@ -23,6 +24,7 @@ import type { TableFilterComponentProps } from "@/components/Table/types";
 import { ALERT_RULE_VARIANTS, type AlertRuleType } from "@/utils/alertRuleUtils";
 
 type AlertRuleSilentStatus = "silent" | "not-silent" | "";
+type AlertRuleScope = "organization" | "assigned";
 
 interface IAlertRuleFilters {
   alertname?: string;
@@ -31,14 +33,22 @@ interface IAlertRuleFilters {
   endpointId?: string | string[];
   tags?: string | string[];
   silentStatus?: AlertRuleSilentStatus;
+  scope?: AlertRuleScope;
 }
+
+const DEFAULT_FILTERS: IAlertRuleFilters = {
+  scope: "assigned"
+};
 
 export default function AlertRuleFilter({ onChange }: TableFilterComponentProps) {
   const { palette } = useTheme();
   const searchParams = useSearchParams();
 
   const [silentStatus, setSilentStatus] = useState<AlertRuleSilentStatus>("");
-  const [filter, setFilter] = useState<IAlertRuleFilters>({});
+  const [filter, setFilter] = useState<IAlertRuleFilters>(DEFAULT_FILTERS);
+
+  const showAllAlerts = filter.scope === "organization";
+  const onlyFiredAlerts = filter.status === "critical";
 
   const [{ data: tagsList }, { data: endpointList }] = useQueries({
     queries: [
@@ -58,14 +68,22 @@ export default function AlertRuleFilter({ onChange }: TableFilterComponentProps)
     if (filterParam) {
       try {
         const parsedFilters = JSON.parse(decodeURIComponent(filterParam)) as IAlertRuleFilters;
-        setFilter(parsedFilters);
+        setFilter({
+          ...parsedFilters,
+          scope: parsedFilters.scope === "organization" ? "organization" : "assigned"
+        });
 
         if (parsedFilters.silentStatus) {
           setSilentStatus(parsedFilters.silentStatus);
+        } else {
+          setSilentStatus("");
         }
       } catch (error) {
         console.error("Error parsing filters from URL:", error);
       }
+    } else {
+      setFilter(DEFAULT_FILTERS);
+      setSilentStatus("");
     }
   }, [searchParams]);
 
@@ -81,15 +99,33 @@ export default function AlertRuleFilter({ onChange }: TableFilterComponentProps)
       value = event.target.value;
     }
 
+    const scope = filter.scope ?? "assigned";
     onChange(key, value);
-    setFilter((prev) => ({ ...prev, [key]: value }));
+    onChange("scope", scope);
+    setFilter((prev) => ({ ...prev, [key]: value, scope }));
   }
 
   function handleSilentFilter(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const value = event.target.value as AlertRuleSilentStatus;
+    const scope = filter.scope ?? "assigned";
     onChange("silentStatus", value);
+    onChange("scope", scope);
     setSilentStatus(value);
-    setFilter((prev) => ({ ...prev, silentStatus: value }));
+    setFilter((prev) => ({ ...prev, silentStatus: value, scope }));
+  }
+
+  function handleShowAllAlertsChange(checked: boolean) {
+    const scope: AlertRuleScope = checked ? "organization" : "assigned";
+    onChange("scope", scope);
+    setFilter((prev) => ({ ...prev, scope }));
+  }
+
+  function handleFiredAlertsChange(checked: boolean) {
+    const status = checked ? "critical" : "";
+    const scope = filter.scope ?? "assigned";
+    onChange("status", status);
+    onChange("scope", scope);
+    setFilter((prev) => ({ ...prev, status, scope }));
   }
 
   function renderAlertRuleList() {
@@ -230,7 +266,7 @@ export default function AlertRuleFilter({ onChange }: TableFilterComponentProps)
           </MenuItem>
         </TextField>
       </Grid>
-      <Grid size={9}>
+      <Grid size={6}>
         <Autocomplete
           multiple
           id="alert-tags-filter"
@@ -261,16 +297,127 @@ export default function AlertRuleFilter({ onChange }: TableFilterComponentProps)
         />
       </Grid>
       <Grid size={3}>
-        <FormControlLabel
-          sx={{ margin: 0 }}
-          label="Only Show Fired Alerts"
-          control={
-            <Checkbox
-              checked={filter.status === "critical"}
-              onChange={(_, checked) => handleChange("status", checked ? "critical" : "")}
-            />
-          }
-        />
+        <Box
+          onClick={() => handleShowAllAlertsChange(!showAllAlerts)}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 1,
+            height: 1,
+            minHeight: 48,
+            px: 1.5,
+            borderRadius: 2,
+            cursor: "pointer",
+            bgcolor: showAllAlerts
+              ? alpha(palette.primary.main, 0.1)
+              : alpha(palette.secondary.main, 0.06),
+            border: 1,
+            borderColor: showAllAlerts ? alpha(palette.primary.main, 0.35) : palette.divider,
+            transition: "background-color 0.2s ease, border-color 0.2s ease"
+          }}
+        >
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 28,
+                height: 28,
+                borderRadius: 1.5,
+                flexShrink: 0,
+                bgcolor: showAllAlerts
+                  ? alpha(palette.primary.main, 0.16)
+                  : alpha(palette.secondary.main, 0.12),
+                color: showAllAlerts ? palette.primary.main : palette.text.secondary
+              }}
+            >
+              {showAllAlerts ? <HiOutlineGlobeAlt size="1rem" /> : <HiOutlineUser size="1rem" />}
+            </Box>
+            <Stack spacing={0} sx={{ minWidth: 0 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+                Show All Alerts
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{ color: "text.secondary", lineHeight: 1.2 }}
+                noWrap
+              >
+                {showAllAlerts ? "Organization-wide" : "Assigned to you"}
+              </Typography>
+            </Stack>
+          </Stack>
+          <Switch
+            size="small"
+            checked={showAllAlerts}
+            onChange={(_, checked) => handleShowAllAlertsChange(checked)}
+            onClick={(event) => event.stopPropagation()}
+            slotProps={{ input: { "aria-label": "Show all alerts" } }}
+          />
+        </Box>
+      </Grid>
+      <Grid size={3}>
+        <Box
+          onClick={() => handleFiredAlertsChange(!onlyFiredAlerts)}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 1,
+            height: 1,
+            minHeight: 48,
+            px: 1.5,
+            borderRadius: 2,
+            cursor: "pointer",
+            bgcolor: onlyFiredAlerts
+              ? alpha(palette.error.main, 0.1)
+              : alpha(palette.secondary.main, 0.06),
+            border: 1,
+            borderColor: onlyFiredAlerts ? alpha(palette.error.main, 0.35) : palette.divider,
+            transition: "background-color 0.2s ease, border-color 0.2s ease"
+          }}
+        >
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 28,
+                height: 28,
+                borderRadius: 1.5,
+                flexShrink: 0,
+                bgcolor: onlyFiredAlerts
+                  ? alpha(palette.error.main, 0.16)
+                  : alpha(palette.secondary.main, 0.12),
+                color: onlyFiredAlerts ? palette.error.main : palette.text.secondary
+              }}
+            >
+              <HiOutlineFire size="1rem" />
+            </Box>
+            <Stack spacing={0} sx={{ minWidth: 0 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+                Fired Alerts
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{ color: "text.secondary", lineHeight: 1.2 }}
+                noWrap
+              >
+                {onlyFiredAlerts ? "Critical only" : "All statuses"}
+              </Typography>
+            </Stack>
+          </Stack>
+          <Switch
+            size="small"
+            checked={onlyFiredAlerts}
+            onChange={(_, checked) => handleFiredAlertsChange(checked)}
+            onClick={(event) => event.stopPropagation()}
+            color="error"
+            slotProps={{ input: { "aria-label": "Only show fired alerts" } }}
+          />
+        </Box>
       </Grid>
     </Grid>
   );
