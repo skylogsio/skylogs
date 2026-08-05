@@ -17,6 +17,7 @@ import {
   alpha,
   Typography,
   Button,
+  IconButton,
   useTheme,
   Stack,
   Collapse,
@@ -338,15 +339,21 @@ function Table<T>(
               })`}
           </Button>
           {onCreate && (
-            <Button
-              startIcon={<HiOutlinePlusSm size="1.3rem" />}
+            <IconButton
               onClick={onCreate}
-              size="small"
-              variant="contained"
-              sx={{ paddingRight: 2 }}
+              aria-label={t("createButton")}
+              sx={{
+                backgroundColor: palette.primary.main,
+                color: palette.primary.contrastText,
+                borderRadius: 2,
+                padding: 1,
+                "&:hover": {
+                  backgroundColor: palette.primary.dark
+                }
+              }}
             >
-              {t("createButton")}
-            </Button>
+              <HiOutlinePlusSm size="1.1rem" />
+            </IconButton>
           )}
         </Stack>
       </Box>
