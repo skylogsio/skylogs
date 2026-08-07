@@ -84,15 +84,17 @@ export default function DateTimeInput({
     ...textfieldProps,
     variant: "filled" as const,
     slotProps: {
-      ...textfieldProps?.slotProps,
-      input: { disableUnderline: true, ...textfieldProps?.slotProps?.input }
+      ...textfieldProps?.slotProps
     },
     onClick: () => {
       if (!disabled) setOpen(true);
     },
     sx: {
       [`& .${pickersInputBaseClasses.root}`]: {
-        borderRadius: "0.55rem"
+        borderRadius: "0.55rem",
+        "&:before, &:after": {
+          display: "none"
+        }
       },
 
       ...textfieldProps?.sx

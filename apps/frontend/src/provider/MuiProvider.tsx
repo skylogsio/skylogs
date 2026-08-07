@@ -183,13 +183,16 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
                   opacity: 0.7
                 }
               })
-            },
+            }
+          },
+          MuiInput: {
             defaultProps: {
-              slotProps: {
-                input: {
-                  disableUnderline: true
-                }
-              }
+              disableUnderline: true
+            }
+          },
+          MuiFilledInput: {
+            defaultProps: {
+              disableUnderline: true
             }
           },
           MuiSelect: {
@@ -218,9 +221,6 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
                   color: theme.palette.text.secondary
                 }
               })
-            },
-            defaultProps: {
-              disableUnderline: true
             }
           },
           MuiMenuItem: {
