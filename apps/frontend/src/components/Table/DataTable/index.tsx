@@ -12,7 +12,9 @@ import {
   Checkbox,
   Skeleton,
   Box,
-  alpha
+  Typography,
+  alpha,
+  useTheme
 } from "@mui/material";
 import {
   useReactTable,
@@ -23,6 +25,8 @@ import {
   type Row
 } from "@tanstack/react-table";
 
+import { useScopedI18n } from "@/locales/client";
+
 import type { DataTableComponentProps } from "../types";
 
 export default function DataTable<T>({
@@ -32,6 +36,9 @@ export default function DataTable<T>({
   isLoading,
   onRowClick
 }: DataTableComponentProps<T>) {
+  const { palette } = useTheme();
+  const t = useScopedI18n("table");
+
   const tableColumns = useMemo(() => {
     if (hasCheckbox) {
       return [
@@ -70,10 +77,12 @@ export default function DataTable<T>({
   });
 
   const handleRowClick = (row: Row<T>) => {
-    if (onRowClick) {
-      onRowClick(row.original);
-    }
+    onRowClick?.(row.original);
   };
+
+  const columnCount = tableColumns.length;
+  const hasRows = Boolean(data?.length);
+  const skeletonRows = Math.max(data?.length || 10, 5);
 
   return (
     <Box
@@ -87,12 +96,13 @@ export default function DataTable<T>({
       <Box
         sx={{
           width: 1,
+          maxHeight: "70vh",
+          mt: 1,
           bgcolor: "background.paper",
-          borderRadius: 4,
-          border: 1,
-          borderColor: (theme) => theme.palette.divider,
+          borderRadius: 3,
+          border: `1px solid ${alpha(palette.text.primary, 0.08)}`,
           overflow: "hidden",
-          marginTop: 1
+          boxShadow: `0 1px 2px ${alpha(palette.common.black, palette.mode === "dark" ? 0.2 : 0.04)}`
         }}
       >
         <TableContainer sx={{ width: 1, maxHeight: "70vh", overflow: "auto" }}>
@@ -103,10 +113,11 @@ export default function DataTable<T>({
                   key={headerGroup.id}
                   sx={{
                     "& th": {
-                      backgroundColor: (theme) =>
-                        theme.palette.mode === "dark"
-                          ? theme.palette.grey[900]
-                          : theme.palette.grey[50]
+                      backgroundColor:
+                        palette.mode === "dark"
+                          ? alpha(palette.common.white, 0.04)
+                          : alpha(palette.grey[500], 0.06),
+                      backdropFilter: "blur(8px)"
                     }
                   }}
                 >
@@ -114,14 +125,16 @@ export default function DataTable<T>({
                     <TableCell
                       key={header.id}
                       align="center"
-                      sx={({ typography, palette }) => ({
-                        ...typography.body1,
-                        fontWeight: "bold",
-                        width: header.id === "select" ? "50px" : "auto",
-                        paddingY: 2,
+                      sx={({ typography }) => ({
+                        ...typography.body2,
+                        fontWeight: 700,
+                        width: header.id === "select" ? 52 : "auto",
+                        py: 1.75,
                         textTransform: "capitalize",
-                        borderBottomColor: palette.divider,
-                        fontSize: 14
+                        borderBottomColor: alpha(palette.text.primary, 0.08),
+                        color: palette.text.secondary,
+                        letterSpacing: "0.02em",
+                        fontSize: 13.5
                       })}
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
@@ -131,54 +144,81 @@ export default function DataTable<T>({
               ))}
             </TableHead>
             <TableBody>
-              {isLoading
-                ? Array.from({ length: 10 }).map((_, index) => (
-                    <TableRow key={index}>
-                      {Array.from({ length: tableColumns.length }).map((_, cellIndex) => (
-                        <TableCell
-                          key={cellIndex}
+              {isLoading ? (
+                Array.from({ length: skeletonRows }).map((_, index) => (
+                  <TableRow key={index}>
+                    {Array.from({ length: columnCount }).map((_, cellIndex) => (
+                      <TableCell
+                        key={cellIndex}
+                        sx={{
+                          width: cellIndex === 0 ? 40 : "auto",
+                          borderBottomColor: alpha(palette.text.primary, 0.06),
+                          py: 1.5
+                        }}
+                      >
+                        <Skeleton
+                          variant="rounded"
+                          width={cellIndex === 0 ? 20 : "72%"}
+                          height={18}
+                          animation="wave"
                           sx={{
-                            width: cellIndex === 0 ? 40 : "auto",
-                            borderBottomColor: (theme) => theme.palette.divider
+                            mx: "auto",
+                            bgcolor: alpha(palette.text.primary, 0.06),
+                            borderRadius: 1
                           }}
-                        >
-                          <Skeleton
-                            variant="text"
-                            width={cellIndex === 0 ? 20 : "100%"}
-                            height={30}
-                            className="mx-auto"
-                            animation="wave"
-                            sx={{ bgcolor: (theme) => theme.palette.action.hover }}
-                          />
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                : table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
+                        />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : hasRows ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    hover
+                    sx={{
+                      cursor: onRowClick ? "pointer" : "default",
+                      transition: "background-color 160ms ease",
+                      backgroundColor: row.getIsSelected()
+                        ? alpha(palette.primary.main, 0.06)
+                        : "transparent",
+                      "&:hover": {
+                        backgroundColor: alpha(palette.primary.main, 0.05)
+                      },
+                      "& td": {
+                        borderBottomColor: alpha(palette.text.primary, 0.06)
+                      }
+                    }}
+                    onClick={() => handleRowClick(row)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} align="center" sx={{ py: 1.5 }}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columnCount} align="center" sx={{ py: 8, border: 0 }}>
+                    <Box
                       sx={{
-                        width: row.id === "select" ? 50 : "auto",
-                        transition: "background-color 200ms ease",
-                        backgroundColor: ({ palette }) =>
-                          row.getIsSelected() ? alpha(palette.primary.main, 0.06) : "transparent",
-                        "&:hover": {
-                          backgroundColor: ({ palette }) => alpha(palette.primary.main, 0.06)
-                        }
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 0.75
                       }}
-                      onClick={() => handleRowClick(row)}
                     >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell
-                          key={cell.id}
-                          sx={{ borderBottomColor: (theme) => theme.palette.divider }}
-                          align="center"
-                        >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        {t("emptyStateTitle")}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                        {t("emptyStateSubtitle")}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </MuiTable>
         </TableContainer>
