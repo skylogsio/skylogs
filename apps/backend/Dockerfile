@@ -27,7 +27,6 @@ RUN chmod +x /root/install-php-extensions && /root/install-php-extensions curl \
                            xml \
                            zip
 RUN rm /root/install-php-extensions
-
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 RUN rm -rf /tmp/* /var/cache/apk/*
@@ -36,6 +35,8 @@ USER root
 COPY . /opt/skylogs-api
 WORKDIR /opt/skylogs-api
 
+RUN composer config -g repo.packagist composer https://repo.packagist.org
+RUN composer update
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 RUN chmod 777 -R /opt/skylogs-api/storage && chmod 777 -R /opt/skylogs-api/bootstrap
 COPY ./crontab /etc/cron.d/horizon-cron
