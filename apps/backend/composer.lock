@@ -11,7 +11,7 @@
             "version": "v3.3.3",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/beberlei/assert/v3.3.3/beberlei-assert-v3.3.3.zip",
+                "url": "https://repo.packagist.org/repository/composer/beberlei/assert/v3.3.3/beberlei-assert-v3.3.3.zip",
                 "reference": "b5fd8eacd8915a1b627b8bfc027803f1939734dd",
                 "shasum": ""
             },
@@ -72,7 +72,7 @@
             "version": "0.14.8",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/brick/math/0.14.8/brick-math-0.14.8.zip",
+                "url": "https://repo.packagist.org/repository/composer/brick/math/0.14.8/brick-math-0.14.8.zip",
                 "reference": "63422359a44b7f06cae63c3b429b59e8efcc0629",
                 "shasum": ""
             },
@@ -126,7 +126,7 @@
             "version": "3.2.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/carbonphp/carbon-doctrine-types/3.2.0/carbonphp-carbon-doctrine-types-3.2.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/carbonphp/carbon-doctrine-types/3.2.0/carbonphp-carbon-doctrine-types-3.2.0.zip",
                 "reference": "18ba5ddfec8976260ead6e866180bd5d2f71aa1d",
                 "shasum": ""
             },
@@ -189,7 +189,7 @@
             "version": "3.3.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/composer/pcre/3.3.2/composer-pcre-3.3.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/composer/pcre/3.3.2/composer-pcre-3.3.2.zip",
                 "reference": "b2bed4734f0cc156ee1fe9c0da2550420d99a21e",
                 "shasum": ""
             },
@@ -262,7 +262,7 @@
             "version": "3.4.4",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/composer/semver/3.4.4/composer-semver-3.4.4.zip",
+                "url": "https://repo.packagist.org/repository/composer/composer/semver/3.4.4/composer-semver-3.4.4.zip",
                 "reference": "198166618906cb2de69b95d7d47e5fa8aa1b2b95",
                 "shasum": ""
             },
@@ -333,7 +333,7 @@
             "version": "10.1.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/darkaonline/l5-swagger/10.1.0/darkaonline-l5-swagger-10.1.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/darkaonline/l5-swagger/10.1.0/darkaonline-l5-swagger-10.1.0.zip",
                 "reference": "62582008f851bdcda40d27898a1ec609da9e509c",
                 "shasum": ""
             },
@@ -407,7 +407,7 @@
             "version": "v3.0.3",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/dflydev/dot-access-data/v3.0.3/dflydev-dot-access-data-v3.0.3.zip",
+                "url": "https://repo.packagist.org/repository/composer/dflydev/dot-access-data/v3.0.3/dflydev-dot-access-data-v3.0.3.zip",
                 "reference": "a23a2bf4f31d3518f3ecb38660c95715dfead60f",
                 "shasum": ""
             },
@@ -476,7 +476,7 @@
             "version": "2.1.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/doctrine/inflector/2.1.0/doctrine-inflector-2.1.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/doctrine/inflector/2.1.0/doctrine-inflector-2.1.0.zip",
                 "reference": "6d6c96277ea252fc1304627204c3d5e6e15faa3b",
                 "shasum": ""
             },
@@ -560,7 +560,7 @@
             "version": "3.0.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/doctrine/lexer/3.0.1/doctrine-lexer-3.0.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/doctrine/lexer/3.0.1/doctrine-lexer-3.0.1.zip",
                 "reference": "31ad66abc0fc9e1a1f2d9bc6a42668d2fbbcd6dd",
                 "shasum": ""
             },
@@ -631,7 +631,7 @@
             "version": "v3.6.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/dragonmantank/cron-expression/v3.6.0/dragonmantank-cron-expression-v3.6.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/dragonmantank/cron-expression/v3.6.0/dragonmantank-cron-expression-v3.6.0.zip",
                 "reference": "d61a8a9604ec1f8c3d150d09db6ce98b32675013",
                 "shasum": ""
             },
@@ -689,7 +689,7 @@
             "version": "4.0.4",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/egulias/email-validator/4.0.4/egulias-email-validator-4.0.4.zip",
+                "url": "https://repo.packagist.org/repository/composer/egulias/email-validator/4.0.4/egulias-email-validator-4.0.4.zip",
                 "reference": "d42c8731f0624ad6bdc8d3e5e9a4524f68801cfa",
                 "shasum": ""
             },
@@ -750,7 +750,7 @@
             "version": "v4.19.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/ezyang/htmlpurifier/v4.19.0/ezyang-htmlpurifier-v4.19.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/ezyang/htmlpurifier/v4.19.0/ezyang-htmlpurifier-v4.19.0.zip",
                 "reference": "b287d2a16aceffbf6e0295559b39662612b77fcf",
                 "shasum": ""
             },
@@ -805,7 +805,7 @@
             "version": "v7.0.5",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/firebase/php-jwt/v7.0.5/firebase-php-jwt-v7.0.5.zip",
+                "url": "https://repo.packagist.org/repository/composer/firebase/php-jwt/v7.0.5/firebase-php-jwt-v7.0.5.zip",
                 "reference": "47ad26bab5e7c70ae8a6f08ed25ff83631121380",
                 "shasum": ""
             },
@@ -863,7 +863,7 @@
             "version": "v1.4.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/fruitcake/php-cors/v1.4.0/fruitcake-php-cors-v1.4.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/fruitcake/php-cors/v1.4.0/fruitcake-php-cors-v1.4.0.zip",
                 "reference": "38aaa6c3fd4c157ffe2a4d10aa8b9b16ba8de379",
                 "shasum": ""
             },
@@ -928,7 +928,7 @@
             "version": "v1.1.4",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/graham-campbell/result-type/v1.1.4/graham-campbell-result-type-v1.1.4.zip",
+                "url": "https://repo.packagist.org/repository/composer/graham-campbell/result-type/v1.1.4/graham-campbell-result-type-v1.1.4.zip",
                 "reference": "e01f4a821471308ba86aa202fed6698b6b695e3b",
                 "shasum": ""
             },
@@ -984,7 +984,7 @@
             "version": "7.10.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/guzzlehttp/guzzle/7.10.0/guzzlehttp-guzzle-7.10.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/guzzlehttp/guzzle/7.10.0/guzzlehttp-guzzle-7.10.0.zip",
                 "reference": "b51ac707cfa420b7bfd4e4d5e510ba8008e822b4",
                 "shasum": ""
             },
@@ -1104,7 +1104,7 @@
             "version": "2.3.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/guzzlehttp/promises/2.3.0/guzzlehttp-promises-2.3.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/guzzlehttp/promises/2.3.0/guzzlehttp-promises-2.3.0.zip",
                 "reference": "481557b130ef3790cf82b713667b43030dc9c957",
                 "shasum": ""
             },
@@ -1181,7 +1181,7 @@
             "version": "2.9.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/guzzlehttp/psr7/2.9.0/guzzlehttp-psr7-2.9.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/guzzlehttp/psr7/2.9.0/guzzlehttp-psr7-2.9.0.zip",
                 "reference": "7d0ed42f28e42d61352a7a79de682e5e67fec884",
                 "shasum": ""
             },
@@ -1292,7 +1292,7 @@
             "version": "v1.0.5",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/guzzlehttp/uri-template/v1.0.5/guzzlehttp-uri-template-v1.0.5.zip",
+                "url": "https://repo.packagist.org/repository/composer/guzzlehttp/uri-template/v1.0.5/guzzlehttp-uri-template-v1.0.5.zip",
                 "reference": "4f4bbd4e7172148801e76e3decc1e559bdee34e1",
                 "shasum": ""
             },
@@ -1372,7 +1372,7 @@
             "version": "v12.58.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laravel/framework/v12.58.0/laravel-framework-v12.58.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/laravel/framework/v12.58.0/laravel-framework-v12.58.0.zip",
                 "reference": "6172ae1f44ba5d89e111057ee4a4e7c27f5a610d",
                 "shasum": ""
             },
@@ -1588,7 +1588,7 @@
             "version": "v5.46.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laravel/horizon/v5.46.0/laravel-horizon-v5.46.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/laravel/horizon/v5.46.0/laravel-horizon-v5.46.0.zip",
                 "reference": "bfea968e8aa674fb649d02e55ea0d38bdf5137d5",
                 "shasum": ""
             },
@@ -1662,7 +1662,7 @@
             "version": "v0.3.17",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laravel/prompts/v0.3.17/laravel-prompts-v0.3.17.zip",
+                "url": "https://repo.packagist.org/repository/composer/laravel/prompts/v0.3.17/laravel-prompts-v0.3.17.zip",
                 "reference": "6a82ac19a28b916ae0885828795dbd4c59d9a818",
                 "shasum": ""
             },
@@ -1715,7 +1715,7 @@
             "version": "v4.3.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laravel/sanctum/v4.3.2/laravel-sanctum-v4.3.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/laravel/sanctum/v4.3.2/laravel-sanctum-v4.3.2.zip",
                 "reference": "2a9bccc18e9907808e0018dd15fa643937886b1e",
                 "shasum": ""
             },
@@ -1772,7 +1772,7 @@
             "version": "v1.1.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laravel/sentinel/v1.1.0/laravel-sentinel-v1.1.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/laravel/sentinel/v1.1.0/laravel-sentinel-v1.1.0.zip",
                 "reference": "972d9885d9d14312a118e9565c4e6ecc5e751ea1",
                 "shasum": ""
             },
@@ -1822,7 +1822,7 @@
             "version": "v2.0.13",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laravel/serializable-closure/v2.0.13/laravel-serializable-closure-v2.0.13.zip",
+                "url": "https://repo.packagist.org/repository/composer/laravel/serializable-closure/v2.0.13/laravel-serializable-closure-v2.0.13.zip",
                 "reference": "b566ee0dd251f3c4078bed003a7ce015f5ea6dce",
                 "shasum": ""
             },
@@ -1877,7 +1877,7 @@
             "version": "v2.11.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laravel/tinker/v2.11.1/laravel-tinker-v2.11.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/laravel/tinker/v2.11.1/laravel-tinker-v2.11.1.zip",
                 "reference": "c9f80cc835649b5c1842898fb043f8cc098dd741",
                 "shasum": ""
             },
@@ -1937,7 +1937,7 @@
             "version": "5.6.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/lcobucci/jwt/5.6.0/lcobucci-jwt-5.6.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/lcobucci/jwt/5.6.0/lcobucci-jwt-5.6.0.zip",
                 "reference": "bb3e9f21e4196e8afc41def81ef649c164bca25e",
                 "shasum": ""
             },
@@ -2004,7 +2004,7 @@
             "version": "2.8.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/league/commonmark/2.8.2/league-commonmark-2.8.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/league/commonmark/2.8.2/league-commonmark-2.8.2.zip",
                 "reference": "59fb075d2101740c337c7216e3f32b36c204218b",
                 "shasum": ""
             },
@@ -2105,7 +2105,7 @@
             "version": "v1.2.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/league/config/v1.2.0/league-config-v1.2.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/league/config/v1.2.0/league-config-v1.2.0.zip",
                 "reference": "754b3604fb2984c71f4af4a9cbe7b57f346ec1f3",
                 "shasum": ""
             },
@@ -2181,7 +2181,7 @@
             "version": "3.33.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/league/flysystem/3.33.0/league-flysystem-3.33.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/league/flysystem/3.33.0/league-flysystem-3.33.0.zip",
                 "reference": "570b8871e0ce693764434b29154c54b434905350",
                 "shasum": ""
             },
@@ -2258,7 +2258,7 @@
             "version": "3.31.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/league/flysystem-local/3.31.0/league-flysystem-local-3.31.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/league/flysystem-local/3.31.0/league-flysystem-local-3.31.0.zip",
                 "reference": "2f669db18a4c20c755c2bb7d3a7b0b2340488079",
                 "shasum": ""
             },
@@ -2301,7 +2301,7 @@
             "version": "1.16.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/league/mime-type-detection/1.16.0/league-mime-type-detection-1.16.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/league/mime-type-detection/1.16.0/league-mime-type-detection-1.16.0.zip",
                 "reference": "2d6702ff215bf922936ccc1ad31007edc76451b9",
                 "shasum": ""
             },
@@ -2351,7 +2351,7 @@
             "version": "7.8.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/league/uri/7.8.1/league-uri-7.8.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/league/uri/7.8.1/league-uri-7.8.1.zip",
                 "reference": "08cf38e3924d4f56238125547b5720496fac8fd4",
                 "shasum": ""
             },
@@ -2443,7 +2443,7 @@
             "version": "7.8.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/league/uri-interfaces/7.8.1/league-uri-interfaces-7.8.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/league/uri-interfaces/7.8.1/league-uri-interfaces-7.8.1.zip",
                 "reference": "85d5c77c5d6d3af6c54db4a78246364908f3c928",
                 "shasum": ""
             },
@@ -2521,7 +2521,7 @@
             "version": "3.1.69",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/maatwebsite/excel/3.1.69/maatwebsite-excel-3.1.69.zip",
+                "url": "https://repo.packagist.org/repository/composer/maatwebsite/excel/3.1.69/maatwebsite-excel-3.1.69.zip",
                 "reference": "ae5d65b7c9a2fac43bff4d44f796ac95d7a8e760",
                 "shasum": ""
             },
@@ -2596,7 +2596,7 @@
             "version": "3.2.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/maennchen/zipstream-php/3.2.2/maennchen-zipstream-php-3.2.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/maennchen/zipstream-php/3.2.2/maennchen-zipstream-php-3.2.2.zip",
                 "reference": "77bebeb4c6c340bb3c11c843b2cffd8bbfde4d5e",
                 "shasum": ""
             },
@@ -2668,7 +2668,7 @@
             "version": "3.0.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/markbaker/complex/3.0.2/markbaker-complex-3.0.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/markbaker/complex/3.0.2/markbaker-complex-3.0.2.zip",
                 "reference": "95c56caa1cf5c766ad6d65b6344b807c1e8405b9",
                 "shasum": ""
             },
@@ -2713,7 +2713,7 @@
             "version": "3.0.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/markbaker/matrix/3.0.1/markbaker-matrix-3.0.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/markbaker/matrix/3.0.1/markbaker-matrix-3.0.1.zip",
                 "reference": "728434227fe21be27ff6d86621a1b13107a2562c",
                 "shasum": ""
             },
@@ -2763,7 +2763,7 @@
             "version": "5.7.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/mongodb/laravel-mongodb/5.7.1/mongodb-laravel-mongodb-5.7.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/mongodb/laravel-mongodb/5.7.1/mongodb-laravel-mongodb-5.7.1.zip",
                 "reference": "6e371e8e6deb9193f99a84c578e6c9d0a960e43a",
                 "shasum": ""
             },
@@ -2864,7 +2864,7 @@
             "version": "2.1.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/mongodb/mongodb/2.1.2/mongodb-mongodb-2.1.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/mongodb/mongodb/2.1.2/mongodb-mongodb-2.1.2.zip",
                 "reference": "0a2472ba9cbb932f7e43a8770aedb2fc30612a67",
                 "shasum": ""
             },
@@ -2935,7 +2935,7 @@
             "version": "3.10.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/monolog/monolog/3.10.0/monolog-monolog-3.10.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/monolog/monolog/3.10.0/monolog-monolog-3.10.0.zip",
                 "reference": "b321dd6749f0bf7189444158a3ce785cc16d69b0",
                 "shasum": ""
             },
@@ -3032,7 +3032,7 @@
             "version": "v3.5.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/morilog/jalali/v3.5.0/morilog-jalali-v3.5.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/morilog/jalali/v3.5.0/morilog-jalali-v3.5.0.zip",
                 "reference": "40b906c405b72edd20e73797b40be1e650e872c1",
                 "shasum": ""
             },
@@ -3091,7 +3091,7 @@
             "version": "3.11.4",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/nesbot/carbon/3.11.4/nesbot-carbon-3.11.4.zip",
+                "url": "https://repo.packagist.org/repository/composer/nesbot/carbon/3.11.4/nesbot-carbon-3.11.4.zip",
                 "reference": "e890471a3494740f7d9326d72ce6a8c559ffee60",
                 "shasum": ""
             },
@@ -3190,7 +3190,7 @@
             "version": "v1.3.5",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/nette/schema/v1.3.5/nette-schema-v1.3.5.zip",
+                "url": "https://repo.packagist.org/repository/composer/nette/schema/v1.3.5/nette-schema-v1.3.5.zip",
                 "reference": "f0ab1a3cda782dbc5da270d28545236aa80c4002",
                 "shasum": ""
             },
@@ -3251,7 +3251,7 @@
             "version": "v4.1.4",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/nette/utils/v4.1.4/nette-utils-v4.1.4.zip",
+                "url": "https://repo.packagist.org/repository/composer/nette/utils/v4.1.4/nette-utils-v4.1.4.zip",
                 "reference": "7da6c396d7ebe142bc857c20479d5e70a5e1aac7",
                 "shasum": ""
             },
@@ -3336,7 +3336,7 @@
             "version": "v5.7.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/nikic/php-parser/v5.7.0/nikic-php-parser-v5.7.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/nikic/php-parser/v5.7.0/nikic-php-parser-v5.7.0.zip",
                 "reference": "dca41cd15c2ac9d055ad70dbfd011130757d1f82",
                 "shasum": ""
             },
@@ -3388,7 +3388,7 @@
             "version": "v2.4.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/nunomaduro/termwind/v2.4.0/nunomaduro-termwind-v2.4.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/nunomaduro/termwind/v2.4.0/nunomaduro-termwind-v2.4.0.zip",
                 "reference": "712a31b768f5daea284c2169a7d227031001b9a8",
                 "shasum": ""
             },
@@ -3469,7 +3469,7 @@
             "version": "1.30.4",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/phpoffice/phpspreadsheet/1.30.4/phpoffice-phpspreadsheet-1.30.4.zip",
+                "url": "https://repo.packagist.org/repository/composer/phpoffice/phpspreadsheet/1.30.4/phpoffice-phpspreadsheet-1.30.4.zip",
                 "reference": "02970383cc12e7bf0bc0707ea6e2e8ed23a7aec9",
                 "shasum": ""
             },
@@ -3571,7 +3571,7 @@
             "version": "1.9.5",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/phpoption/phpoption/1.9.5/phpoption-phpoption-1.9.5.zip",
+                "url": "https://repo.packagist.org/repository/composer/phpoption/phpoption/1.9.5/phpoption-phpoption-1.9.5.zip",
                 "reference": "75365b91986c2405cf5e1e012c5595cd487a98be",
                 "shasum": ""
             },
@@ -3640,7 +3640,7 @@
             "version": "2.3.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/phpstan/phpdoc-parser/2.3.2/phpstan-phpdoc-parser-2.3.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/phpstan/phpdoc-parser/2.3.2/phpstan-phpdoc-parser-2.3.2.zip",
                 "reference": "a004701b11273a26cd7955a61d67a7f1e525a45a",
                 "shasum": ""
             },
@@ -3681,7 +3681,7 @@
             "version": "v2.4.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/predis/predis/v2.4.1/predis-predis-v2.4.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/predis/predis/v2.4.1/predis-predis-v2.4.1.zip",
                 "reference": "07105e050622ed80bd60808367ced9e379f31530",
                 "shasum": ""
             },
@@ -3737,7 +3737,7 @@
             "version": "v2.15.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/promphp/prometheus_client_php/v2.15.0/promphp-prometheus_client_php-v2.15.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/promphp/prometheus_client_php/v2.15.0/promphp-prometheus_client_php-v2.15.0.zip",
                 "reference": "da86f1507b04dc44dc37ffb766d7d3a1d42c3050",
                 "shasum": ""
             },
@@ -3801,7 +3801,7 @@
             "version": "1.0.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/psr/clock/1.0.0/psr-clock-1.0.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/psr/clock/1.0.0/psr-clock-1.0.0.zip",
                 "reference": "e41a24703d4560fd0acb709162f73b8adfc3aa0d",
                 "shasum": ""
             },
@@ -3843,7 +3843,7 @@
             "version": "2.0.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/psr/container/2.0.2/psr-container-2.0.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/psr/container/2.0.2/psr-container-2.0.2.zip",
                 "reference": "c71ecc56dfe541dbd90c5360474fbc405f8d5963",
                 "shasum": ""
             },
@@ -3890,7 +3890,7 @@
             "version": "1.0.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/psr/event-dispatcher/1.0.0/psr-event-dispatcher-1.0.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/psr/event-dispatcher/1.0.0/psr-event-dispatcher-1.0.0.zip",
                 "reference": "dbefd12671e8a14ec7f180cab83036ed26714bb0",
                 "shasum": ""
             },
@@ -3934,7 +3934,7 @@
             "version": "1.0.3",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/psr/http-client/1.0.3/psr-http-client-1.0.3.zip",
+                "url": "https://repo.packagist.org/repository/composer/psr/http-client/1.0.3/psr-http-client-1.0.3.zip",
                 "reference": "bb5906edc1c324c9a05aa0873d40117941e5fa90",
                 "shasum": ""
             },
@@ -3980,7 +3980,7 @@
             "version": "1.1.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/psr/http-factory/1.1.0/psr-http-factory-1.1.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/psr/http-factory/1.1.0/psr-http-factory-1.1.0.zip",
                 "reference": "2b4765fddfe3b508ac62f829e852b1501d3f6e8a",
                 "shasum": ""
             },
@@ -4029,7 +4029,7 @@
             "version": "2.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/psr/http-message/2.0/psr-http-message-2.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/psr/http-message/2.0/psr-http-message-2.0.zip",
                 "reference": "402d35bcb92c70c026d1a6a9883f06b2ead23d71",
                 "shasum": ""
             },
@@ -4076,7 +4076,7 @@
             "version": "3.0.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/psr/log/3.0.2/psr-log-3.0.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/psr/log/3.0.2/psr-log-3.0.2.zip",
                 "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
                 "shasum": ""
             },
@@ -4120,7 +4120,7 @@
             "version": "3.0.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/psr/simple-cache/3.0.0/psr-simple-cache-3.0.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/psr/simple-cache/3.0.0/psr-simple-cache-3.0.0.zip",
                 "reference": "764e0b3939f5ca87cb904f570ef9be2d78a07865",
                 "shasum": ""
             },
@@ -4165,7 +4165,7 @@
             "version": "v0.12.22",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/psy/psysh/v0.12.22/psy-psysh-v0.12.22.zip",
+                "url": "https://repo.packagist.org/repository/composer/psy/psysh/v0.12.22/psy-psysh-v0.12.22.zip",
                 "reference": "3be75d5b9244936dd4ac62ade2bfb004d13acf0f",
                 "shasum": ""
             },
@@ -4238,7 +4238,7 @@
             "version": "1.0.7",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/radebatz/type-info-extras/1.0.7/radebatz-type-info-extras-1.0.7.zip",
+                "url": "https://repo.packagist.org/repository/composer/radebatz/type-info-extras/1.0.7/radebatz-type-info-extras-1.0.7.zip",
                 "reference": "95a524a74a61648b44e355cb33d38db4b17ef5ce",
                 "shasum": ""
             },
@@ -4294,7 +4294,7 @@
             "version": "3.0.3",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/ralouphie/getallheaders/3.0.3/ralouphie-getallheaders-3.0.3.zip",
+                "url": "https://repo.packagist.org/repository/composer/ralouphie/getallheaders/3.0.3/ralouphie-getallheaders-3.0.3.zip",
                 "reference": "120b605dfeb996808c31b6477290a714d356e822",
                 "shasum": ""
             },
@@ -4332,7 +4332,7 @@
             "version": "2.1.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/ramsey/collection/2.1.1/ramsey-collection-2.1.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/ramsey/collection/2.1.1/ramsey-collection-2.1.1.zip",
                 "reference": "344572933ad0181accbf4ba763e85a0306a8c5e2",
                 "shasum": ""
             },
@@ -4402,7 +4402,7 @@
             "version": "4.9.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/ramsey/uuid/4.9.2/ramsey-uuid-4.9.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/ramsey/uuid/4.9.2/ramsey-uuid-4.9.2.zip",
                 "reference": "8429c78ca35a09f27565311b98101e2826affde0",
                 "shasum": ""
             },
@@ -4474,7 +4474,7 @@
             "version": "1.93.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/spatie/laravel-package-tools/1.93.0/spatie-laravel-package-tools-1.93.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/spatie/laravel-package-tools/1.93.0/spatie-laravel-package-tools-1.93.0.zip",
                 "reference": "0d097bce95b2bf6802fb1d83e1e753b0f5a948e7",
                 "shasum": ""
             },
@@ -4529,7 +4529,7 @@
             "version": "6.25.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/spatie/laravel-permission/6.25.0/spatie-laravel-permission-6.25.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/spatie/laravel-permission/6.25.0/spatie-laravel-permission-6.25.0.zip",
                 "reference": "d7d4cb0d58616722f1afc90e0484e4825155b9b3",
                 "shasum": ""
             },
@@ -4607,7 +4607,7 @@
             "version": "1.4.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/spatie/laravel-prometheus/1.4.0/spatie-laravel-prometheus-1.4.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/spatie/laravel-prometheus/1.4.0/spatie-laravel-prometheus-1.4.0.zip",
                 "reference": "0d9b10000038a40e7b2738a31d63830c425e3be7",
                 "shasum": ""
             },
@@ -4678,7 +4678,7 @@
             "version": "v5.32.6",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/swagger-api/swagger-ui/v5.32.6/swagger-api-swagger-ui-v5.32.6.zip",
+                "url": "https://repo.packagist.org/repository/composer/swagger-api/swagger-ui/v5.32.6/swagger-api-swagger-ui-v5.32.6.zip",
                 "reference": "dcdca62c8b64a0a54e4decd4e1a6c3c712fdcc60",
                 "shasum": ""
             },
@@ -4733,7 +4733,7 @@
             "version": "v7.4.8",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/clock/v7.4.8/symfony-clock-v7.4.8.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/clock/v7.4.8/symfony-clock-v7.4.8.zip",
                 "reference": "674fa3b98e21531dd040e613479f5f6fa8f32111",
                 "shasum": ""
             },
@@ -4805,7 +4805,7 @@
             "version": "v7.4.11",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/console/v7.4.11/symfony-console-v7.4.11.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/console/v7.4.11/symfony-console-v7.4.11.zip",
                 "reference": "ed0107e43ab452aa77ae99e005b95e56b556e075",
                 "shasum": ""
             },
@@ -4897,7 +4897,7 @@
             "version": "v7.4.9",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/css-selector/v7.4.9/symfony-css-selector-v7.4.9.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/css-selector/v7.4.9/symfony-css-selector-v7.4.9.zip",
                 "reference": "b75663ed96cf4756e28e3105476f220f92886cc4",
                 "shasum": ""
             },
@@ -4960,7 +4960,7 @@
             "version": "v3.7.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/deprecation-contracts/v3.7.0/symfony-deprecation-contracts-v3.7.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/deprecation-contracts/v3.7.0/symfony-deprecation-contracts-v3.7.0.zip",
                 "reference": "50f59d1f3ca46d41ac911f97a78626b6756af35b",
                 "shasum": ""
             },
@@ -5025,7 +5025,7 @@
             "version": "v7.4.8",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/error-handler/v7.4.8/symfony-error-handler-v7.4.8.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/error-handler/v7.4.8/symfony-error-handler-v7.4.8.zip",
                 "reference": "8dd79d8af777ee6cba2fd4d98da6ffb839f3c0fa",
                 "shasum": ""
             },
@@ -5101,7 +5101,7 @@
             "version": "v7.4.9",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/event-dispatcher/v7.4.9/symfony-event-dispatcher-v7.4.9.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/event-dispatcher/v7.4.9/symfony-event-dispatcher-v7.4.9.zip",
                 "reference": "e4a2e29753c7801f7a8340e066cfa788f3bc8101",
                 "shasum": ""
             },
@@ -5180,7 +5180,7 @@
             "version": "v3.7.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/event-dispatcher-contracts/v3.7.0/symfony-event-dispatcher-contracts-v3.7.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/event-dispatcher-contracts/v3.7.0/symfony-event-dispatcher-contracts-v3.7.0.zip",
                 "reference": "ccba7060602b7fed0b03c85bf025257f76d9ef32",
                 "shasum": ""
             },
@@ -5254,7 +5254,7 @@
             "version": "v7.4.8",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/finder/v7.4.8/symfony-finder-v7.4.8.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/finder/v7.4.8/symfony-finder-v7.4.8.zip",
                 "reference": "e0be088d22278583a82da281886e8c3592fbf149",
                 "shasum": ""
             },
@@ -5316,7 +5316,7 @@
             "version": "v7.4.8",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/http-foundation/v7.4.8/symfony-http-foundation-v7.4.8.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/http-foundation/v7.4.8/symfony-http-foundation-v7.4.8.zip",
                 "reference": "9381209597ec66c25be154cbf2289076e64d1eab",
                 "shasum": ""
             },
@@ -5392,7 +5392,7 @@
             "version": "v7.4.11",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/http-kernel/v7.4.11/symfony-http-kernel-v7.4.11.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/http-kernel/v7.4.11/symfony-http-kernel-v7.4.11.zip",
                 "reference": "eb9d68199af3fcfb3fb4d2e227367b68f8c1bb88",
                 "shasum": ""
             },
@@ -5505,7 +5505,7 @@
             "version": "v7.4.8",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/mailer/v7.4.8/symfony-mailer-v7.4.8.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/mailer/v7.4.8/symfony-mailer-v7.4.8.zip",
                 "reference": "f6ea532250b476bfc1b56699b388a1bdbf168f62",
                 "shasum": ""
             },
@@ -5583,7 +5583,7 @@
             "version": "v7.4.9",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/mime/v7.4.9/symfony-mime-v7.4.9.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/mime/v7.4.9/symfony-mime-v7.4.9.zip",
                 "reference": "2d550c4758ba4c47519a6667c36553d535705b0c",
                 "shasum": ""
             },
@@ -5666,7 +5666,7 @@
             "version": "v1.37.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/polyfill-ctype/v1.37.0/symfony-polyfill-ctype-v1.37.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/polyfill-ctype/v1.37.0/symfony-polyfill-ctype-v1.37.0.zip",
                 "reference": "141046a8f9477948ff284fa65be2095baafb94f2",
                 "shasum": ""
             },
@@ -5743,7 +5743,7 @@
             "version": "v1.37.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/polyfill-intl-grapheme/v1.37.0/symfony-polyfill-intl-grapheme-v1.37.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/polyfill-intl-grapheme/v1.37.0/symfony-polyfill-intl-grapheme-v1.37.0.zip",
                 "reference": "4864388bfbd3001ce88e234fab652acd91fdc57e",
                 "shasum": ""
             },
@@ -5819,7 +5819,7 @@
             "version": "v1.37.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/polyfill-intl-idn/v1.37.0/symfony-polyfill-intl-idn-v1.37.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/polyfill-intl-idn/v1.37.0/symfony-polyfill-intl-idn-v1.37.0.zip",
                 "reference": "9614ac4d8061dc257ecc64cba1b140873dce8ad3",
                 "shasum": ""
             },
@@ -5900,7 +5900,7 @@
             "version": "v1.37.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/polyfill-intl-normalizer/v1.37.0/symfony-polyfill-intl-normalizer-v1.37.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/polyfill-intl-normalizer/v1.37.0/symfony-polyfill-intl-normalizer-v1.37.0.zip",
                 "reference": "3833d7255cc303546435cb650316bff708a1c75c",
                 "shasum": ""
             },
@@ -5979,7 +5979,7 @@
             "version": "v1.37.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/polyfill-mbstring/v1.37.0/symfony-polyfill-mbstring-v1.37.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/polyfill-mbstring/v1.37.0/symfony-polyfill-mbstring-v1.37.0.zip",
                 "reference": "6a21eb99c6973357967f6ce3708cd55a6bec6315",
                 "shasum": ""
             },
@@ -6058,7 +6058,7 @@
             "version": "v1.37.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/polyfill-php80/v1.37.0/symfony-polyfill-php80-v1.37.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/polyfill-php80/v1.37.0/symfony-polyfill-php80-v1.37.0.zip",
                 "reference": "dfb55726c3a76ea3b6459fcfda1ec2d80a682411",
                 "shasum": ""
             },
@@ -6136,7 +6136,7 @@
             "version": "v1.37.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/polyfill-php83/v1.37.0/symfony-polyfill-php83-v1.37.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/polyfill-php83/v1.37.0/symfony-polyfill-php83-v1.37.0.zip",
                 "reference": "3600c2cb22399e25bb226e4a135ce91eeb2a6149",
                 "shasum": ""
             },
@@ -6210,7 +6210,7 @@
             "version": "v1.37.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/polyfill-php84/v1.37.0/symfony-polyfill-php84-v1.37.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/polyfill-php84/v1.37.0/symfony-polyfill-php84-v1.37.0.zip",
                 "reference": "88486db2c389b290bf87ff1de7ebc1e13e42bb06",
                 "shasum": ""
             },
@@ -6284,7 +6284,7 @@
             "version": "v1.37.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/polyfill-php85/v1.37.0/symfony-polyfill-php85-v1.37.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/polyfill-php85/v1.37.0/symfony-polyfill-php85-v1.37.0.zip",
                 "reference": "fcfa4973a9917cef23f2e38774da74a2b7d115ee",
                 "shasum": ""
             },
@@ -6358,7 +6358,7 @@
             "version": "v1.37.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/polyfill-uuid/v1.37.0/symfony-polyfill-uuid-v1.37.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/polyfill-uuid/v1.37.0/symfony-polyfill-uuid-v1.37.0.zip",
                 "reference": "26dfec253c4cf3e51b541b52ddf7e42cb0908e94",
                 "shasum": ""
             },
@@ -6435,7 +6435,7 @@
             "version": "v7.4.11",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/process/v7.4.11/symfony-process-v7.4.11.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/process/v7.4.11/symfony-process-v7.4.11.zip",
                 "reference": "d9593c9efa40499eb078b81144de42cbc28a31f0",
                 "shasum": ""
             },
@@ -6494,7 +6494,7 @@
             "version": "v7.4.9",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/routing/v7.4.9/symfony-routing-v7.4.9.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/routing/v7.4.9/symfony-routing-v7.4.9.zip",
                 "reference": "287771d8bc86eacb30678dd10eda6c64a859951f",
                 "shasum": ""
             },
@@ -6573,7 +6573,7 @@
             "version": "v3.7.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/service-contracts/v3.7.0/symfony-service-contracts-v3.7.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/service-contracts/v3.7.0/symfony-service-contracts-v3.7.0.zip",
                 "reference": "d25d82433a80eba6aa0e6c24b61d7370d99e444a",
                 "shasum": ""
             },
@@ -6654,7 +6654,7 @@
             "version": "v7.4.11",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/string/v7.4.11/symfony-string-v7.4.11.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/string/v7.4.11/symfony-string-v7.4.11.zip",
                 "reference": "965f7306a43383d02c6aca1e3f3bd2f0ea5dee15",
                 "shasum": ""
             },
@@ -6739,7 +6739,7 @@
             "version": "v7.4.10",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/translation/v7.4.10/symfony-translation-v7.4.10.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/translation/v7.4.10/symfony-translation-v7.4.10.zip",
                 "reference": "ada7578c30dd5feaa8259cff3e885069ea81ddde",
                 "shasum": ""
             },
@@ -6833,7 +6833,7 @@
             "version": "v3.7.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/translation-contracts/v3.7.0/symfony-translation-contracts-v3.7.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/translation-contracts/v3.7.0/symfony-translation-contracts-v3.7.0.zip",
                 "reference": "0ab302977a952b42fd51475c4ebac81f8da0a95d",
                 "shasum": ""
             },
@@ -6909,7 +6909,7 @@
             "version": "v7.4.9",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/type-info/v7.4.9/symfony-type-info-v7.4.9.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/type-info/v7.4.9/symfony-type-info-v7.4.9.zip",
                 "reference": "cafeedbf157b890e94ac5b83eaed85595106d5d6",
                 "shasum": ""
             },
@@ -6986,7 +6986,7 @@
             "version": "v7.4.9",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/uid/v7.4.9/symfony-uid-v7.4.9.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/uid/v7.4.9/symfony-uid-v7.4.9.zip",
                 "reference": "2676b524340abcfe4d6151ec698463cebafee439",
                 "shasum": ""
             },
@@ -7058,7 +7058,7 @@
             "version": "v7.4.8",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/var-dumper/v7.4.8/symfony-var-dumper-v7.4.8.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/var-dumper/v7.4.8/symfony-var-dumper-v7.4.8.zip",
                 "reference": "9510c3966f749a1d1ff0059e1eabef6cc621e7fd",
                 "shasum": ""
             },
@@ -7139,7 +7139,7 @@
             "version": "v7.4.11",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/symfony/yaml/v7.4.11/symfony-yaml-v7.4.11.zip",
+                "url": "https://repo.packagist.org/repository/composer/symfony/yaml/v7.4.11/symfony-yaml-v7.4.11.zip",
                 "reference": "e2eb64a57763815ccae07ac1c7653d6cc1c326fd",
                 "shasum": ""
             },
@@ -7209,7 +7209,7 @@
             "version": "v2.4.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/tijsverkoyen/css-to-inline-styles/v2.4.0/tijsverkoyen-css-to-inline-styles-v2.4.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/tijsverkoyen/css-to-inline-styles/v2.4.0/tijsverkoyen-css-to-inline-styles-v2.4.0.zip",
                 "reference": "f0292ccf0ec75843d65027214426b6b163b48b41",
                 "shasum": ""
             },
@@ -7258,7 +7258,7 @@
             "version": "2.3.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/tymon/jwt-auth/2.3.0/tymon-jwt-auth-2.3.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/tymon/jwt-auth/2.3.0/tymon-jwt-auth-2.3.0.zip",
                 "reference": "6c70930a92710d97e8e52b182fca2176097f33be",
                 "shasum": ""
             },
@@ -7330,7 +7330,7 @@
             "version": "v5.6.3",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/vlucas/phpdotenv/v5.6.3/vlucas-phpdotenv-v5.6.3.zip",
+                "url": "https://repo.packagist.org/repository/composer/vlucas/phpdotenv/v5.6.3/vlucas-phpdotenv-v5.6.3.zip",
                 "reference": "955e7815d677a3eaa7075231212f2110983adecc",
                 "shasum": ""
             },
@@ -7408,7 +7408,7 @@
             "version": "2.1.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/voku/portable-ascii/2.1.1/voku-portable-ascii-2.1.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/voku/portable-ascii/2.1.1/voku-portable-ascii-2.1.1.zip",
                 "reference": "8e1051fe39379367aecf014f41744ce7539a856f",
                 "shasum": ""
             },
@@ -7476,7 +7476,7 @@
             "version": "6.1.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/zircote/swagger-php/6.1.2/zircote-swagger-php-6.1.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/zircote/swagger-php/6.1.2/zircote-swagger-php-6.1.2.zip",
                 "reference": "f66289ab9c9c3a1cf70222e0bebbe7c6c7109f2f",
                 "shasum": ""
             },
@@ -7562,7 +7562,7 @@
             "version": "v7.8.5",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/brianium/paratest/v7.8.5/brianium-paratest-v7.8.5.zip",
+                "url": "https://repo.packagist.org/repository/composer/brianium/paratest/v7.8.5/brianium-paratest-v7.8.5.zip",
                 "reference": "9b324c8fc319cf9728b581c7a90e1c8f6361c5e5",
                 "shasum": ""
             },
@@ -7649,7 +7649,7 @@
             "version": "1.1.6",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/doctrine/deprecations/1.1.6/doctrine-deprecations-1.1.6.zip",
+                "url": "https://repo.packagist.org/repository/composer/doctrine/deprecations/1.1.6/doctrine-deprecations-1.1.6.zip",
                 "reference": "d4fe3e6fd9bb9e72557a19674f44d8ac7db4c6ca",
                 "shasum": ""
             },
@@ -7691,7 +7691,7 @@
             "version": "v1.24.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/fakerphp/faker/v1.24.1/fakerphp-faker-v1.24.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/fakerphp/faker/v1.24.1/fakerphp-faker-v1.24.1.zip",
                 "reference": "e0ee18eb1e6dc3cda3ce9fd97e5a0689a88a64b5",
                 "shasum": ""
             },
@@ -7748,7 +7748,7 @@
             "version": "1.3.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/fidry/cpu-core-counter/1.3.0/fidry-cpu-core-counter-1.3.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/fidry/cpu-core-counter/1.3.0/fidry-cpu-core-counter-1.3.0.zip",
                 "reference": "db9508f7b1474469d9d3c53b86f817e344732678",
                 "shasum": ""
             },
@@ -7803,7 +7803,7 @@
             "version": "2.18.4",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/filp/whoops/2.18.4/filp-whoops-2.18.4.zip",
+                "url": "https://repo.packagist.org/repository/composer/filp/whoops/2.18.4/filp-whoops-2.18.4.zip",
                 "reference": "d2102955e48b9fd9ab24280a7ad12ed552752c4d",
                 "shasum": ""
             },
@@ -7868,7 +7868,7 @@
             "version": "v2.1.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/hamcrest/hamcrest-php/v2.1.1/hamcrest-hamcrest-php-v2.1.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/hamcrest/hamcrest-php/v2.1.1/hamcrest-hamcrest-php-v2.1.1.zip",
                 "reference": "f8b1c0173b22fa6ec77a81fe63e5b01eba7e6487",
                 "shasum": ""
             },
@@ -7913,7 +7913,7 @@
             "version": "2.1.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/jean85/pretty-package-versions/2.1.1/jean85-pretty-package-versions-2.1.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/jean85/pretty-package-versions/2.1.1/jean85-pretty-package-versions-2.1.1.zip",
                 "reference": "4d7aa5dab42e2a76d99559706022885de0e18e1a",
                 "shasum": ""
             },
@@ -7967,7 +7967,7 @@
             "version": "v4.6.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laradumps/laradumps/v4.6.2/laradumps-laradumps-v4.6.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/laradumps/laradumps/v4.6.2/laradumps-laradumps-v4.6.2.zip",
                 "reference": "805d45f060d2b3badd1d3fc229a9bb893360d776",
                 "shasum": ""
             },
@@ -8033,7 +8033,7 @@
             "version": "v3.2.11",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laradumps/laradumps-core/v3.2.11/laradumps-laradumps-core-v3.2.11.zip",
+                "url": "https://repo.packagist.org/repository/composer/laradumps/laradumps-core/v3.2.11/laradumps-laradumps-core-v3.2.11.zip",
                 "reference": "cfc91afd1a6217ec568960eb996f371c08c380eb",
                 "shasum": ""
             },
@@ -8096,7 +8096,7 @@
             "version": "v2.4.6",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laravel/boost/v2.4.6/laravel-boost-v2.4.6.zip",
+                "url": "https://repo.packagist.org/repository/composer/laravel/boost/v2.4.6/laravel-boost-v2.4.6.zip",
                 "reference": "c9ea6368c66f7c0e6a9b26706b401de900cdb9ac",
                 "shasum": ""
             },
@@ -8156,7 +8156,7 @@
             "version": "v0.7.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laravel/mcp/v0.7.0/laravel-mcp-v0.7.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/laravel/mcp/v0.7.0/laravel-mcp-v0.7.0.zip",
                 "reference": "3513b4feca5f1678be4d2261dcfa8e456436d02a",
                 "shasum": ""
             },
@@ -8223,7 +8223,7 @@
             "version": "v1.2.6",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laravel/pail/v1.2.6/laravel-pail-v1.2.6.zip",
+                "url": "https://repo.packagist.org/repository/composer/laravel/pail/v1.2.6/laravel-pail-v1.2.6.zip",
                 "reference": "aa71a01c309e7f66bc2ec4fb1a59291b82eb4abf",
                 "shasum": ""
             },
@@ -8297,7 +8297,7 @@
             "version": "v1.29.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laravel/pint/v1.29.1/laravel-pint-v1.29.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/laravel/pint/v1.29.1/laravel-pint-v1.29.1.zip",
                 "reference": "0770e9b7fafd50d4586881d456d6eb41c9247a80",
                 "shasum": ""
             },
@@ -8359,7 +8359,7 @@
             "version": "v0.5.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laravel/roster/v0.5.1/laravel-roster-v0.5.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/laravel/roster/v0.5.1/laravel-roster-v0.5.1.zip",
                 "reference": "5089de7615f72f78e831590ff9d0435fed0102bb",
                 "shasum": ""
             },
@@ -8414,7 +8414,7 @@
             "version": "v1.59.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/laravel/sail/v1.59.0/laravel-sail-v1.59.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/laravel/sail/v1.59.0/laravel-sail-v1.59.0.zip",
                 "reference": "a41abad557e487eaefde6c9873085ed086fdf47a",
                 "shasum": ""
             },
@@ -8471,7 +8471,7 @@
             "version": "1.6.12",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/mockery/mockery/1.6.12/mockery-mockery-1.6.12.zip",
+                "url": "https://repo.packagist.org/repository/composer/mockery/mockery/1.6.12/mockery-mockery-1.6.12.zip",
                 "reference": "1f4efdd7d3beafe9807b08156dfcb176d18f1699",
                 "shasum": ""
             },
@@ -8548,7 +8548,7 @@
             "version": "1.13.4",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/myclabs/deep-copy/1.13.4/myclabs-deep-copy-1.13.4.zip",
+                "url": "https://repo.packagist.org/repository/composer/myclabs/deep-copy/1.13.4/myclabs-deep-copy-1.13.4.zip",
                 "reference": "07d290f0c47959fd5eed98c95ee5602db07e0b6a",
                 "shasum": ""
             },
@@ -8602,7 +8602,7 @@
             "version": "v8.9.4",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/nunomaduro/collision/v8.9.4/nunomaduro-collision-v8.9.4.zip",
+                "url": "https://repo.packagist.org/repository/composer/nunomaduro/collision/v8.9.4/nunomaduro-collision-v8.9.4.zip",
                 "reference": "716af8f95a470e9094cfca09ed897b023be191a5",
                 "shasum": ""
             },
@@ -8692,7 +8692,7 @@
             "version": "v3.8.6",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/pestphp/pest/v3.8.6/pestphp-pest-v3.8.6.zip",
+                "url": "https://repo.packagist.org/repository/composer/pestphp/pest/v3.8.6/pestphp-pest-v3.8.6.zip",
                 "reference": "8871a6f5ef1de8e7c8dee2a270991449a7b6af73",
                 "shasum": ""
             },
@@ -8798,7 +8798,7 @@
             "version": "v3.0.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/pestphp/pest-plugin/v3.0.0/pestphp-pest-plugin-v3.0.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/pestphp/pest-plugin/v3.0.0/pestphp-pest-plugin-v3.0.0.zip",
                 "reference": "e79b26c65bc11c41093b10150c1341cc5cdbea83",
                 "shasum": ""
             },
@@ -8862,7 +8862,7 @@
             "version": "v3.1.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/pestphp/pest-plugin-arch/v3.1.1/pestphp-pest-plugin-arch-v3.1.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/pestphp/pest-plugin-arch/v3.1.1/pestphp-pest-plugin-arch-v3.1.1.zip",
                 "reference": "db7bd9cb1612b223e16618d85475c6f63b9c8daa",
                 "shasum": ""
             },
@@ -8926,7 +8926,7 @@
             "version": "v3.2.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/pestphp/pest-plugin-laravel/v3.2.0/pestphp-pest-plugin-laravel-v3.2.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/pestphp/pest-plugin-laravel/v3.2.0/pestphp-pest-plugin-laravel-v3.2.0.zip",
                 "reference": "6801be82fd92b96e82dd72e563e5674b1ce365fc",
                 "shasum": ""
             },
@@ -8994,7 +8994,7 @@
             "version": "v3.0.5",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/pestphp/pest-plugin-mutate/v3.0.5/pestphp-pest-plugin-mutate-v3.0.5.zip",
+                "url": "https://repo.packagist.org/repository/composer/pestphp/pest-plugin-mutate/v3.0.5/pestphp-pest-plugin-mutate-v3.0.5.zip",
                 "reference": "e10dbdc98c9e2f3890095b4fe2144f63a5717e08",
                 "shasum": ""
             },
@@ -9060,7 +9060,7 @@
             "version": "2.0.4",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/phar-io/manifest/2.0.4/phar-io-manifest-2.0.4.zip",
+                "url": "https://repo.packagist.org/repository/composer/phar-io/manifest/2.0.4/phar-io-manifest-2.0.4.zip",
                 "reference": "54750ef60c58e43759730615a392c31c80e23176",
                 "shasum": ""
             },
@@ -9121,7 +9121,7 @@
             "version": "3.2.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/phar-io/version/3.2.1/phar-io-version-3.2.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/phar-io/version/3.2.1/phar-io-version-3.2.1.zip",
                 "reference": "4f7fd7836c6f332bb2933569e566a0d6c4cbed74",
                 "shasum": ""
             },
@@ -9166,7 +9166,7 @@
             "version": "2.2.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/phpdocumentor/reflection-common/2.2.0/phpdocumentor-reflection-common-2.2.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/phpdocumentor/reflection-common/2.2.0/phpdocumentor-reflection-common-2.2.0.zip",
                 "reference": "1d01c49d4ed62f25aa84a747ad35d5a16924662b",
                 "shasum": ""
             },
@@ -9213,7 +9213,7 @@
             "version": "6.0.3",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/phpdocumentor/reflection-docblock/6.0.3/phpdocumentor-reflection-docblock-6.0.3.zip",
+                "url": "https://repo.packagist.org/repository/composer/phpdocumentor/reflection-docblock/6.0.3/phpdocumentor-reflection-docblock-6.0.3.zip",
                 "reference": "7bae67520aa9f5ecc506d646810bd40d9da54582",
                 "shasum": ""
             },
@@ -9272,7 +9272,7 @@
             "version": "2.0.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/phpdocumentor/type-resolver/2.0.0/phpdocumentor-type-resolver-2.0.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/phpdocumentor/type-resolver/2.0.0/phpdocumentor-type-resolver-2.0.0.zip",
                 "reference": "327a05bbee54120d4786a0dc67aad30226ad4cf9",
                 "shasum": ""
             },
@@ -9324,7 +9324,7 @@
             "version": "11.0.12",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/phpunit/php-code-coverage/11.0.12/phpunit-php-code-coverage-11.0.12.zip",
+                "url": "https://repo.packagist.org/repository/composer/phpunit/php-code-coverage/11.0.12/phpunit-php-code-coverage-11.0.12.zip",
                 "reference": "2c1ed04922802c15e1de5d7447b4856de949cf56",
                 "shasum": ""
             },
@@ -9408,7 +9408,7 @@
             "version": "5.1.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/phpunit/php-file-iterator/5.1.1/phpunit-php-file-iterator-5.1.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/phpunit/php-file-iterator/5.1.1/phpunit-php-file-iterator-5.1.1.zip",
                 "reference": "2f3a64888c814fc235386b7387dd5b5ed92ad903",
                 "shasum": ""
             },
@@ -9475,7 +9475,7 @@
             "version": "5.0.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/phpunit/php-invoker/5.0.1/phpunit-php-invoker-5.0.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/phpunit/php-invoker/5.0.1/phpunit-php-invoker-5.0.1.zip",
                 "reference": "c1ca3814734c07492b3d4c5f794f4b0995333da2",
                 "shasum": ""
             },
@@ -9533,7 +9533,7 @@
             "version": "4.0.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/phpunit/php-text-template/4.0.1/phpunit-php-text-template-4.0.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/phpunit/php-text-template/4.0.1/phpunit-php-text-template-4.0.1.zip",
                 "reference": "3e0404dc6b300e6bf56415467ebcb3fe4f33e964",
                 "shasum": ""
             },
@@ -9587,7 +9587,7 @@
             "version": "7.0.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/phpunit/php-timer/7.0.1/phpunit-php-timer-7.0.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/phpunit/php-timer/7.0.1/phpunit-php-timer-7.0.1.zip",
                 "reference": "3b415def83fbcb41f991d9ebf16ae4ad8b7837b3",
                 "shasum": ""
             },
@@ -9641,7 +9641,7 @@
             "version": "11.5.50",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/phpunit/phpunit/11.5.50/phpunit-phpunit-11.5.50.zip",
+                "url": "https://repo.packagist.org/repository/composer/phpunit/phpunit/11.5.50/phpunit-phpunit-11.5.50.zip",
                 "reference": "fdfc727f0fcacfeb8fcb30c7e5da173125b58be3",
                 "shasum": ""
             },
@@ -9744,7 +9744,7 @@
             "version": "3.0.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/cli-parser/3.0.2/sebastian-cli-parser-3.0.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/cli-parser/3.0.2/sebastian-cli-parser-3.0.2.zip",
                 "reference": "15c5dd40dc4f38794d383bb95465193f5e0ae180",
                 "shasum": ""
             },
@@ -9795,7 +9795,7 @@
             "version": "3.0.3",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/code-unit/3.0.3/sebastian-code-unit-3.0.3.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/code-unit/3.0.3/sebastian-code-unit-3.0.3.zip",
                 "reference": "54391c61e4af8078e5b276ab082b6d3c54c9ad64",
                 "shasum": ""
             },
@@ -9846,7 +9846,7 @@
             "version": "4.0.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/code-unit-reverse-lookup/4.0.1/sebastian-code-unit-reverse-lookup-4.0.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/code-unit-reverse-lookup/4.0.1/sebastian-code-unit-reverse-lookup-4.0.1.zip",
                 "reference": "183a9b2632194febd219bb9246eee421dad8d45e",
                 "shasum": ""
             },
@@ -9896,7 +9896,7 @@
             "version": "6.3.3",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/comparator/6.3.3/sebastian-comparator-6.3.3.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/comparator/6.3.3/sebastian-comparator-6.3.3.zip",
                 "reference": "2c95e1e86cb8dd41beb8d502057d1081ccc8eca9",
                 "shasum": ""
             },
@@ -9982,7 +9982,7 @@
             "version": "4.0.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/complexity/4.0.1/sebastian-complexity-4.0.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/complexity/4.0.1/sebastian-complexity-4.0.1.zip",
                 "reference": "ee41d384ab1906c68852636b6de493846e13e5a0",
                 "shasum": ""
             },
@@ -10034,7 +10034,7 @@
             "version": "6.0.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/diff/6.0.2/sebastian-diff-6.0.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/diff/6.0.2/sebastian-diff-6.0.2.zip",
                 "reference": "b4ccd857127db5d41a5b676f24b51371d76d8544",
                 "shasum": ""
             },
@@ -10095,7 +10095,7 @@
             "version": "7.2.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/environment/7.2.1/sebastian-environment-7.2.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/environment/7.2.1/sebastian-environment-7.2.1.zip",
                 "reference": "a5c75038693ad2e8d4b6c15ba2403532647830c4",
                 "shasum": ""
             },
@@ -10165,7 +10165,7 @@
             "version": "6.3.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/exporter/6.3.2/sebastian-exporter-6.3.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/exporter/6.3.2/sebastian-exporter-6.3.2.zip",
                 "reference": "70a298763b40b213ec087c51c739efcaa90bcd74",
                 "shasum": ""
             },
@@ -10249,7 +10249,7 @@
             "version": "7.0.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/global-state/7.0.2/sebastian-global-state-7.0.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/global-state/7.0.2/sebastian-global-state-7.0.2.zip",
                 "reference": "3be331570a721f9a4b5917f4209773de17f747d7",
                 "shasum": ""
             },
@@ -10305,7 +10305,7 @@
             "version": "3.0.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/lines-of-code/3.0.1/sebastian-lines-of-code-3.0.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/lines-of-code/3.0.1/sebastian-lines-of-code-3.0.1.zip",
                 "reference": "d36ad0d782e5756913e42ad87cb2890f4ffe467a",
                 "shasum": ""
             },
@@ -10357,7 +10357,7 @@
             "version": "6.0.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/object-enumerator/6.0.1/sebastian-object-enumerator-6.0.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/object-enumerator/6.0.1/sebastian-object-enumerator-6.0.1.zip",
                 "reference": "f5b498e631a74204185071eb41f33f38d64608aa",
                 "shasum": ""
             },
@@ -10409,7 +10409,7 @@
             "version": "4.0.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/object-reflector/4.0.1/sebastian-object-reflector-4.0.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/object-reflector/4.0.1/sebastian-object-reflector-4.0.1.zip",
                 "reference": "6e1a43b411b2ad34146dee7524cb13a068bb35f9",
                 "shasum": ""
             },
@@ -10459,7 +10459,7 @@
             "version": "6.0.3",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/recursion-context/6.0.3/sebastian-recursion-context-6.0.3.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/recursion-context/6.0.3/sebastian-recursion-context-6.0.3.zip",
                 "reference": "f6458abbf32a6c8174f8f26261475dc133b3d9dc",
                 "shasum": ""
             },
@@ -10529,7 +10529,7 @@
             "version": "5.1.3",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/type/5.1.3/sebastian-type-5.1.3.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/type/5.1.3/sebastian-type-5.1.3.zip",
                 "reference": "f77d2d4e78738c98d9a68d2596fe5e8fa380f449",
                 "shasum": ""
             },
@@ -10592,7 +10592,7 @@
             "version": "5.0.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/sebastian/version/5.0.2/sebastian-version-5.0.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/sebastian/version/5.0.2/sebastian-version-5.0.2.zip",
                 "reference": "c687e3387b99f5b03b6caa64c74b63e2936ff874",
                 "shasum": ""
             },
@@ -10640,7 +10640,7 @@
             "version": "1.8.2",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/spatie/backtrace/1.8.2/spatie-backtrace-1.8.2.zip",
+                "url": "https://repo.packagist.org/repository/composer/spatie/backtrace/1.8.2/spatie-backtrace-1.8.2.zip",
                 "reference": "8ffe78be5ed355b5009e3dd989d183433e9a5adc",
                 "shasum": ""
             },
@@ -10698,7 +10698,7 @@
             "version": "1.0.5",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/staabm/side-effects-detector/1.0.5/staabm-side-effects-detector-1.0.5.zip",
+                "url": "https://repo.packagist.org/repository/composer/staabm/side-effects-detector/1.0.5/staabm-side-effects-detector-1.0.5.zip",
                 "reference": "d8334211a140ce329c13726d4a715adbddd0a163",
                 "shasum": ""
             },
@@ -10744,7 +10744,7 @@
             "version": "0.8.7",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/ta-tikoma/phpunit-architecture-test/0.8.7/ta-tikoma-phpunit-architecture-test-0.8.7.zip",
+                "url": "https://repo.packagist.org/repository/composer/ta-tikoma/phpunit-architecture-test/0.8.7/ta-tikoma-phpunit-architecture-test-0.8.7.zip",
                 "reference": "1248f3f506ca9641d4f68cebcd538fa489754db8",
                 "shasum": ""
             },
@@ -10797,7 +10797,7 @@
             "version": "1.3.1",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/theseer/tokenizer/1.3.1/theseer-tokenizer-1.3.1.zip",
+                "url": "https://repo.packagist.org/repository/composer/theseer/tokenizer/1.3.1/theseer-tokenizer-1.3.1.zip",
                 "reference": "b7489ce515e168639d17feec34b8847c326b0b3c",
                 "shasum": ""
             },
@@ -10841,7 +10841,7 @@
             "version": "2.3.0",
             "dist": {
                 "type": "zip",
-                "url": "https://package-mirror.liara.ir/repository/composer/webmozart/assert/2.3.0/webmozart-assert-2.3.0.zip",
+                "url": "https://repo.packagist.org/repository/composer/webmozart/assert/2.3.0/webmozart-assert-2.3.0.zip",
                 "reference": "eb0d790f735ba6cff25c683a85a1da0eadeff9e4",
                 "shasum": ""
             },
