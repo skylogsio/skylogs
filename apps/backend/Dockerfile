@@ -17,7 +17,6 @@ RUN chmod +x /root/install-php-extensions && /root/install-php-extensions curl \
                            mbstring \
                            bcmath \
                            mysqli \
-#                          opcache \
                            openssl \
                            pcntl \
                            pdo_mysql \
