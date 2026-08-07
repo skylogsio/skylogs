@@ -36,11 +36,19 @@ interface IAlertRuleFilters {
   scope?: AlertRuleScope;
 }
 
+export interface AlertRuleFilterProps extends TableFilterComponentProps {
+  /** When false, hides the "Show All Alerts" control (e.g. moved to the toolbar). Default: true. */
+  showScopeToggle?: boolean;
+}
+
 const DEFAULT_FILTERS: IAlertRuleFilters = {
   scope: "assigned"
 };
 
-export default function AlertRuleFilter({ onChange }: TableFilterComponentProps) {
+export default function AlertRuleFilter({
+  onChange,
+  showScopeToggle = true
+}: AlertRuleFilterProps) {
   const { palette } = useTheme();
   const searchParams = useSearchParams();
 
@@ -266,7 +274,7 @@ export default function AlertRuleFilter({ onChange }: TableFilterComponentProps)
           </MenuItem>
         </TextField>
       </Grid>
-      <Grid size={6}>
+      <Grid size={showScopeToggle ? 6 : 9}>
         <Autocomplete
           multiple
           id="alert-tags-filter"
@@ -296,67 +304,69 @@ export default function AlertRuleFilter({ onChange }: TableFilterComponentProps)
           )}
         />
       </Grid>
-      <Grid size={3}>
-        <Box
-          onClick={() => handleShowAllAlertsChange(!showAllAlerts)}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 1,
-            height: 1,
-            minHeight: 48,
-            px: 1.5,
-            borderRadius: 2,
-            cursor: "pointer",
-            bgcolor: showAllAlerts
-              ? alpha(palette.primary.main, 0.1)
-              : alpha(palette.secondary.main, 0.06),
-            border: 1,
-            borderColor: showAllAlerts ? alpha(palette.primary.main, 0.35) : palette.divider,
-            transition: "background-color 0.2s ease, border-color 0.2s ease"
-          }}
-        >
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 28,
-                height: 28,
-                borderRadius: 1.5,
-                flexShrink: 0,
-                bgcolor: showAllAlerts
-                  ? alpha(palette.primary.main, 0.16)
-                  : alpha(palette.secondary.main, 0.12),
-                color: showAllAlerts ? palette.primary.main : palette.text.secondary
-              }}
-            >
-              {showAllAlerts ? <HiOutlineGlobeAlt size="1rem" /> : <HiOutlineUser size="1rem" />}
-            </Box>
-            <Stack spacing={0} sx={{ minWidth: 0 }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
-                Show All Alerts
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{ color: "text.secondary", lineHeight: 1.2 }}
-                noWrap
+      {showScopeToggle && (
+        <Grid size={3}>
+          <Box
+            onClick={() => handleShowAllAlertsChange(!showAllAlerts)}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 1,
+              height: 1,
+              minHeight: 48,
+              px: 1.5,
+              borderRadius: 2,
+              cursor: "pointer",
+              bgcolor: showAllAlerts
+                ? alpha(palette.primary.main, 0.1)
+                : alpha(palette.secondary.main, 0.06),
+              border: 1,
+              borderColor: showAllAlerts ? alpha(palette.primary.main, 0.35) : palette.divider,
+              transition: "background-color 0.2s ease, border-color 0.2s ease"
+            }}
+          >
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 28,
+                  height: 28,
+                  borderRadius: 1.5,
+                  flexShrink: 0,
+                  bgcolor: showAllAlerts
+                    ? alpha(palette.primary.main, 0.16)
+                    : alpha(palette.secondary.main, 0.12),
+                  color: showAllAlerts ? palette.primary.main : palette.text.secondary
+                }}
               >
-                {showAllAlerts ? "Organization-wide" : "Assigned to you"}
-              </Typography>
+                {showAllAlerts ? <HiOutlineGlobeAlt size="1rem" /> : <HiOutlineUser size="1rem" />}
+              </Box>
+              <Stack spacing={0} sx={{ minWidth: 0 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+                  Show All Alerts
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "text.secondary", lineHeight: 1.2 }}
+                  noWrap
+                >
+                  {showAllAlerts ? "Organization-wide" : "Assigned to you"}
+                </Typography>
+              </Stack>
             </Stack>
-          </Stack>
-          <Switch
-            size="small"
-            checked={showAllAlerts}
-            onChange={(_, checked) => handleShowAllAlertsChange(checked)}
-            onClick={(event) => event.stopPropagation()}
-            slotProps={{ input: { "aria-label": "Show all alerts" } }}
-          />
-        </Box>
-      </Grid>
+            <Switch
+              size="small"
+              checked={showAllAlerts}
+              onChange={(_, checked) => handleShowAllAlertsChange(checked)}
+              onClick={(event) => event.stopPropagation()}
+              slotProps={{ input: { "aria-label": "Show all alerts" } }}
+            />
+          </Box>
+        </Grid>
+      )}
       <Grid size={3}>
         <Box
           onClick={() => handleFiredAlertsChange(!onlyFiredAlerts)}

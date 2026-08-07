@@ -9,19 +9,19 @@ import { BsFillPinFill } from "react-icons/bs";
 
 import type { IAlertRule } from "@/@types/alertRule";
 import type { CreateUpdateModal } from "@/@types/global";
-import AlertRuleActionColumn from "@/app/[locale]/alert-rule/AlertRuleActionColumn";
-import TagsCell from "@/app/[locale]/alert-rule/TagsCell";
 import AlertRuleAccessBadge from "@/components/AlertRule/AlertRuleAccessBadge";
 import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndicator";
 import AlertRuleType from "@/components/AlertRule/AlertRuleType";
 import GroupActionModal from "@/components/AlertRule/GroupActionModal";
 import AlertRuleNotifyModal from "@/components/AlertRule/Notify/AlertRuleNotifyModal";
-import Table from "@/components/Table/SmartTable";
-import type { TableComponentRef } from "@/components/Table/types";
+import Table, { type TableComponentRef } from "@/components/Table/SmartTable";
 
+import AlertRuleActionColumn from "./AlertRuleActionColumn";
 import AlertRuleFilter from "./AlertRuleFilter";
 import AlertRuleModal from "./AlertRuleModal";
 import DeleteAlertRuleModal from "./DeleteAlertRuleModal";
+import ShowAllAlertsToggle from "./ShowAllAlertsToggle";
+import TagsCell from "./TagsCell";
 
 export default function AlertRule() {
   const tableRef = useRef<TableComponentRef>(null);
@@ -52,10 +52,21 @@ export default function AlertRule() {
         ref={tableRef}
         title="Alert Rule"
         url="alert-rule"
-        onGroupActionClick={() => setOpenGroupActionModal(true)}
         searchKey="alertname"
-        filterComponent={AlertRuleFilter}
         defaultPageSize={10}
+        defaultFilters={{ scope: "assigned" }}
+        excludeFilterKeys={["scope"]}
+        onGroupActionClick={() => setOpenGroupActionModal(true)}
+        onCreate={() => setModalData("NEW")}
+        filterComponent={({ onChange }) => (
+          <AlertRuleFilter onChange={onChange} showScopeToggle={false} />
+        )}
+        toolbarActions={[
+          "search",
+          { id: "show-all-alerts", render: <ShowAllAlertsToggle /> },
+          "filter",
+          "create"
+        ]}
         columns={[
           { header: "Row", accessorFn: (_, index) => ++index },
           {
@@ -134,7 +145,6 @@ export default function AlertRule() {
               )
           }
         ]}
-        onCreate={() => setModalData("NEW")}
       />
       {modalData && (
         <AlertRuleModal
