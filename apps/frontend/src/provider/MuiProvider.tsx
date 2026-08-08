@@ -103,12 +103,34 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
           light: {
             palette: {
               mode: "light",
-              primary: { light: "#6F9BFF", main: "#4880FF", dark: "#3D6FDF" },
-              secondary: { light: "#DDDDDD", main: "#9A9A9A", dark: "#525252" },
+              primary: {
+                light: "#6F9BFF",
+                main: "#4880FF",
+                dark: "#3D6FDF",
+                contrastText: "#FFFFFF"
+              },
+              secondary: {
+                light: "#DFC199",
+                main: "#CFA46E",
+                dark: "#AA7F4E",
+                contrastText: "#FFFFFF"
+              },
               success: { light: "#7BEA85", main: "#13C82B", dark: "#0E8F1F" },
               warning: { light: "#FABF7A", main: "#F28D22", dark: "#B86419" },
               error: { light: "#FF7D76", main: "#E64940", dark: "#A8322C" },
-              background: { default: "#F5F6FA", paper: "#FFFFFF" },
+              info: { light: "#73B4FF", main: "#4880FF", dark: "#2E5FD2" },
+              background: { default: "#FAFAF8", paper: "#FFFFFF" },
+              divider: "#E4E6EB",
+              text: {
+                primary: "#23242A",
+                secondary: "#51545F",
+                disabled: "#9DA1AA"
+              },
+              action: {
+                hover: "rgba(72,128,255,.06)",
+                selected: "rgba(72,128,255,.10)",
+                disabledBackground: "#F2F3F6"
+              },
               endpoint: ENDPOINT_COLORS
             }
           },
