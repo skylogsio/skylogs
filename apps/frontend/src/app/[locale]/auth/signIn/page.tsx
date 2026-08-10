@@ -140,9 +140,9 @@ export default function AuthenticationPage() {
                 endAdornment: (
                   <IconButton disableRipple onClick={() => setShowPassword((prev) => !prev)}>
                     {showPassword ? (
-                      <HiEyeOff color={palette.secondary.main} size={20} />
+                      <HiEyeOff color={palette.grey[500]} size={20} />
                     ) : (
-                      <HiEye color={palette.secondary.main} size={20} />
+                      <HiEye color={palette.grey[500]} size={20} />
                     )}
                   </IconButton>
                 )
