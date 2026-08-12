@@ -18,8 +18,8 @@ export function useCurrentDirection() {
 }
 
 export function useRole() {
-  const { data } = useSession();
-  const { data: userInfo } = useQuery({
+  const { data, status } = useSession();
+  const { data: userInfo, isPending: isProfilePending } = useQuery({
     queryKey: ["profile"],
     queryFn: () => getMyInfo(),
     enabled: Boolean(data)
@@ -39,5 +39,7 @@ export function useRole() {
     [userInfo]
   );
 
-  return { hasRole, userInfo };
+  const isLoading = status === "loading" || (Boolean(data) && isProfilePending);
+
+  return { hasRole, userInfo, isLoading };
 }
