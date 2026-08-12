@@ -8,6 +8,9 @@ import { getMyInfo } from "@/api/profile";
 import { useCurrentLocale } from "@/locales/client";
 import type { RoleType } from "@/utils/userUtils";
 
+export { useCurrentTheme } from "./useCurrentTheme";
+export type { ThemePreference, ResolvedTheme } from "./useCurrentTheme";
+
 export function useCurrentDirection() {
   const locale = useCurrentLocale();
   const { direction } = new Locale(locale).textInfo;
