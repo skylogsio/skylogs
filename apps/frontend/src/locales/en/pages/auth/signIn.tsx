@@ -7,6 +7,7 @@ export default {
     Password: "Password",
     "Forget Password": "Forget Password?",
     "Sign In": "Sign In",
+    "Signing In": "Signing in...",
     RequiredUsername: "Username is Required.",
     RequiredPassword: "Password is Required."
   }
