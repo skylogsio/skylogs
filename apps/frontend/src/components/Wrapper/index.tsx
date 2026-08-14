@@ -3,21 +3,17 @@
 import { type PropsWithChildren } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-import { Box, IconButton, Tooltip } from "@mui/material";
+import { alpha, Box, IconButton, Tooltip, useTheme } from "@mui/material";
 import { signOut, useSession } from "next-auth/react";
-import {
-  HiOutlineChevronDoubleLeft,
-  HiOutlineChevronDoubleRight,
-  HiOutlineChevronLeft,
-  HiOutlineChevronRight
-} from "react-icons/hi";
+import { HiOutlineChevronLeft, HiOutlineChevronRight } from "react-icons/hi";
 
 import SideBar from "@/components/Wrapper/SideBar";
 import { useSideBar } from "@/context/SideBarContext";
-import { useRole } from "@/hooks";
+import { useCurrentTheme, useRole } from "@/hooks";
 
 import AdminSideBar from "./AdminSideBar";
 import TopBar from "./TopBar";
+import { getAppBackgroundSx } from "./topBarStyles";
 
 const SKYLOGS_VERSION = "0.15.0";
 const DEFAULT_REDIRECT_PATH = "/alert-rule";
@@ -27,6 +23,8 @@ const SIDEBAR_COLLAPSED_WIDTH = 64;
 export default function Wrapper({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const router = useRouter();
+  const theme = useTheme();
+  const { isDark } = useCurrentTheme();
   const { userInfo, hasRole } = useRole();
   const session = useSession();
   const { collapsed, toggleCollapsed } = useSideBar();
@@ -72,7 +70,7 @@ export default function Wrapper({ children }: PropsWithChildren) {
         padding: 0,
         margin: 0,
         border: "none",
-        backgroundColor: ({ palette }) => palette.background.default,
+        ...getAppBackgroundSx(theme, isDark),
         display: "flex",
         justifyContent: "space-between"
       }}
@@ -81,13 +79,17 @@ export default function Wrapper({ children }: PropsWithChildren) {
         component="aside"
         sx={{
           position: "relative",
+          zIndex: 120,
+          overflow: "visible",
           width: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
           minWidth: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
           maxWidth: collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
           flexShrink: 0,
-          backgroundColor: ({ palette }) => palette.background.paper,
+          backgroundColor: ({ palette }) => alpha(palette.background.paper, isDark ? 0.88 : 0.94),
+          backdropFilter: "blur(12px)",
           transition: "width 220ms ease, min-width 220ms ease, max-width 220ms ease",
-          borderRight: ({ palette }) => `1px solid ${palette.divider}`
+          borderRight: ({ palette }) =>
+            `1px solid ${alpha(palette.primary.main, isDark ? 0.16 : 0.2)}`
         }}
       >
         {isAdminArea ? (
@@ -105,15 +107,17 @@ export default function Wrapper({ children }: PropsWithChildren) {
               position: "absolute",
               top: 18,
               right: -14,
-              zIndex: 200,
+              zIndex: 210,
+              pointerEvents: "auto",
               width: 28,
               height: 28,
               paddingRight: 0,
-              backgroundColor: ({ palette }) => palette.background.paper,
-              border: ({ palette }) => `1px solid ${palette.divider}`,
+              backgroundColor: ({ palette }) => alpha(palette.background.paper, isDark ? 0.95 : 1),
+              border: ({ palette }) =>
+                `1px solid ${alpha(palette.primary.main, isDark ? 0.22 : 0.3)}`,
               color: "text.secondary",
               boxShadow: ({ palette }) =>
-                `0 2px 8px ${palette.mode === "dark" ? "rgba(0,0,0,.35)" : "rgba(0,0,0,.08)"}`,
+                `0 4px 16px ${alpha("#0E0D0C", palette.mode === "dark" ? 0.35 : 0.1)}`,
               "&:hover": {
                 backgroundColor: ({ palette }) => palette.background.paper,
                 color: "primary.main"
@@ -126,6 +130,8 @@ export default function Wrapper({ children }: PropsWithChildren) {
       </Box>
       <Box
         sx={{
+          position: "relative",
+          zIndex: 1,
           display: "flex",
           flexDirection: "column",
           flex: 1,
@@ -134,22 +140,8 @@ export default function Wrapper({ children }: PropsWithChildren) {
         }}
       >
         <TopBar />
-        <Box
-          component="main"
-          sx={{
-            height: "90%"
-          }}
-        >
-          <Box
-            sx={{
-              width: 1,
-              height: 1,
-              padding: 3,
-              overflow: "auto"
-            }}
-          >
-            {children}
-          </Box>
+        <Box component="main" sx={{ flex: 1, minHeight: 0 }}>
+          <Box sx={{ width: 1, height: 1, p: { xs: 2, sm: 3 }, overflow: "auto" }}>{children}</Box>
         </Box>
       </Box>
     </Box>
