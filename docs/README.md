@@ -21,6 +21,11 @@ Use this page as the main index to navigate all documentation sections.
 
 ---
 
+## 📡 Sentinel (zone monitoring)
+- 👉 [Sentinel run guide](sentinel.md)
+
+---
+
 ## 📡 Alert Management
 - 👉 [Alert Management Overview](alert-management/overview.md)  
 - 👉 [Alert Flow](alert-management/alert-flow.md)  
