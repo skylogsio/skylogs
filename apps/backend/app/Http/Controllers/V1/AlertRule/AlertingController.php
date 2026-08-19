@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V1\AlertRule;
 
 use App\Enums\AlertRuleType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AlertRule\AlertRuleIndexRequest;
 use App\Http\Requests\AlertRule\AlertStatusRequest;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertInstance;
@@ -31,7 +32,7 @@ class AlertingController extends Controller
         protected AlertRuleResponseFormatter $alertRuleResponseFormatter,
     ) {}
 
-    public function Index(Request $request)
+    public function Index(AlertRuleIndexRequest $request)
     {
 
         $perPage = $request->perPage ? intval($request->perPage) : 25;
@@ -58,7 +59,7 @@ class AlertingController extends Controller
             ],
         ];
 
-        $pipeline[] = ['$sort' => ['isPinned' => -1, '_id' => 1]];
+        $pipeline[] = ['$sort' => $request->mongoSort()];
 
         $page = $request->input('page', 1);
         $skip = ($page - 1) * $perPage;

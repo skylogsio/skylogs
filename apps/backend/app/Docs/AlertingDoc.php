@@ -17,12 +17,14 @@ class AlertingDoc
         path: '/api/v1/alert-rule',
         operationId: 'getAlertRules',
         summary: 'List alert rules',
-        description: 'Returns a paginated list of alert rules visible to the authenticated user. Pinned rules appear first. Each item includes `accessLevel` (`manage` or `readonly`). For `readonly` organization-visible alerts, sensitive fields (tokens, endpoints, query config, etc.) are omitted.',
+        description: 'Returns a paginated list of alert rules visible to the authenticated user. Without sort query params, pinned rules appear first, then `_id`. Each item includes `accessLevel` (`manage` or `readonly`). For `readonly` organization-visible alerts, sensitive fields (tokens, endpoints, query config, etc.) are omitted.',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [
             new OA\Parameter(name: 'page', description: 'Page number', in: 'query', schema: new OA\Schema(type: 'integer', default: 1)),
             new OA\Parameter(name: 'perPage', in: 'query', schema: new OA\Schema(type: 'integer', default: 25)),
+            new OA\Parameter(name: 'sortBy', description: 'Optional sort field. When omitted, the default order is pinned first, then `_id`.', in: 'query', schema: new OA\Schema(type: 'string', enum: ['name'])),
+            new OA\Parameter(name: 'sortDir', description: 'Sort direction used with `sortBy`. Defaults to `asc` when `sortBy` is present.', in: 'query', schema: new OA\Schema(type: 'string', enum: ['asc', 'desc'])),
             new OA\Parameter(
                 name: 'scope',
                 description: 'Access filter for non-admin users. `assigned` (default) returns rules the user owns or is shared on. `organization` also includes non-private rules from the rest of the organization (returned with `accessLevel: readonly`).',
