@@ -26,7 +26,7 @@ class AlertRuleIndexRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'sortBy' => ['sometimes', 'string', Rule::in(self::SORTABLE_FIELDS)],
+            'sortBy' => ['sometimes', 'string'],
             'sortDir' => ['sometimes', 'string', Rule::in(['asc', 'desc'])],
         ];
     }
@@ -40,7 +40,7 @@ class AlertRuleIndexRequest extends FormRequest
     {
         $sortBy = $this->validated('sortBy');
 
-        if (! filled($sortBy)) {
+        if (! filled($sortBy) || ! in_array($sortBy, self::SORTABLE_FIELDS, true)) {
             return ['isPinned' => -1, '_id' => 1];
         }
 

@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Requests\AlertRule\AlertRuleIndexRequest;
-use Illuminate\Validation\ValidationException;
 
 it('uses pinned then id sort when no sort query param is sent', function () {
     $request = AlertRuleIndexRequest::create('/api/v1/alert-rule', 'GET');
@@ -42,10 +41,12 @@ it('keeps the default sort when only sortDir is sent', function () {
     expect($request->mongoSort())->toBe(['isPinned' => -1, '_id' => 1]);
 });
 
-it('rejects an unsupported sortBy field', function () {
+it('uses the default sort when sortBy is not a sortable field', function () {
     $request = AlertRuleIndexRequest::create('/api/v1/alert-rule', 'GET', [
         'sortBy' => 'state',
     ]);
     $request->setContainer(app())->setRedirector(app('redirect'));
     $request->validateResolved();
-})->throws(ValidationException::class);
+
+    expect($request->mongoSort())->toBe(['isPinned' => -1, '_id' => 1]);
+});
