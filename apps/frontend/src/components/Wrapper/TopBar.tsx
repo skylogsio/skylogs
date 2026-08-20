@@ -12,6 +12,7 @@ import TopBarZone from "./TopBarZone";
 
 const PAGE_TITLES: Record<string, string> = {
   "alert-rule": "Alert Rules",
+  incidents: "Incidents",
   status: "Status",
   debugging: "Debugging",
   endpoints: "Endpoints",

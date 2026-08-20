@@ -11,7 +11,8 @@ import {
   AiOutlineSetting,
   AiOutlineFundProjectionScreen,
   AiOutlineTeam,
-  AiOutlineBug
+  AiOutlineBug,
+  AiOutlineWarning
 } from "react-icons/ai";
 
 import { useSideBar } from "@/context/SideBarContext";
@@ -26,6 +27,7 @@ import { URLType } from "./types";
 const URLS: Array<URLType> = [
   // { pathname: "/", label: "Home", icon: AiOutlineHome },
   { pathname: "/alert-rule", label: "Alert Rules", icon: AiOutlineAlert, iconScale: 1.08 },
+  { pathname: "/incidents", label: "Incidents", icon: AiOutlineWarning, iconScale: 1.08 },
   {
     pathname: "/status",
     label: "Status",
@@ -107,9 +109,7 @@ export default function SideBar({ version }: { version: string }) {
           {filteredURLS.map((url, index) => {
             const isActive =
               url.pathname === "/" ? pathname === url.pathname : pathname.includes(url.pathname);
-            return (
-              <SideBarItem key={url.pathname} url={url} isActive={isActive} index={index} />
-            );
+            return <SideBarItem key={url.pathname} url={url} isActive={isActive} index={index} />;
           })}
         </List>
         <Stack
