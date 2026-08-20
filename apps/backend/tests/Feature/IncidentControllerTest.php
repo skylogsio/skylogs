@@ -88,6 +88,55 @@ describe('IncidentController', function () {
         $this->incidents[] = Incident::find($response->json('data.id'));
     });
 
+    it('creates an open incident when swagger-style identical timestamps include resolvedAt', function () {
+        $now = now()->toISOString();
+
+        $response = $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/incident', [
+                'title' => 'Swagger timestamps',
+                'teamIds' => [$this->team->id],
+                'severity' => 'SEV1',
+                'startedAt' => $now,
+                'detectedAt' => $now,
+                'resolvedAt' => $now,
+            ])
+            ->assertStatus(201)
+            ->assertJsonPath('data.status', 'open')
+            ->assertJsonPath('data.resolvedAt', null)
+            ->assertJsonPath('data.canAcknowledge', true)
+            ->assertJsonPath('data.canResolve', true);
+
+        $this->incidents[] = Incident::find($response->json('data.id'));
+    });
+
+    it('acknowledges then resolves an incident created with identical timestamps', function () {
+        $now = now()->toISOString();
+
+        $create = $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/incident', [
+                'title' => 'Ack then resolve',
+                'teamIds' => [$this->team->id],
+                'severity' => 'SEV2',
+                'startedAt' => $now,
+                'detectedAt' => $now,
+                'resolvedAt' => $now,
+            ])
+            ->assertStatus(201);
+
+        $id = $create->json('data.id');
+        $this->incidents[] = Incident::find($id);
+
+        $this->actingAs($this->manager, 'api')
+            ->postJson("/api/v1/incident/{$id}/acknowledge")
+            ->assertSuccessful()
+            ->assertJsonPath('data.status', 'investigating');
+
+        $this->actingAs($this->manager, 'api')
+            ->postJson("/api/v1/incident/{$id}/resolve")
+            ->assertSuccessful()
+            ->assertJsonPath('data.status', 'resolved');
+    });
+
     it('rejects creation with missing required fields', function () {
         $this->actingAs($this->manager, 'api')
             ->postJson('/api/v1/incident', [])

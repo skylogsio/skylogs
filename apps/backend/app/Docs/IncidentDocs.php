@@ -257,7 +257,14 @@ class IncidentSchema {}
         new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'startedAt', type: 'string', format: 'date-time', nullable: true, description: 'Occurred / started at. Defaults to now.'),
         new OA\Property(property: 'detectedAt', type: 'string', format: 'date-time', nullable: true, description: 'Detected at. Defaults to now.'),
-        new OA\Property(property: 'resolvedAt', type: 'string', format: 'date-time', nullable: true, description: 'Optional. When set on create, the incident is created as resolved.'),
+        new OA\Property(
+            property: 'resolvedAt',
+            type: 'string',
+            format: 'date-time',
+            nullable: true,
+            example: null,
+            description: 'Omit or send null for an open incident. Sending a timestamp creates the incident as already resolved, which blocks acknowledge/resolve. Do not send the same value as startedAt/detectedAt unless you intend to close it.',
+        ),
         new OA\Property(property: 'alertRuleIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'severity', type: 'string', enum: ['SEV1', 'SEV2', 'SEV3', 'SEV4']),
     ]

@@ -14,6 +14,21 @@ class StoreIncidentRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $startedAt = $this->input('startedAt');
+        $detectedAt = $this->input('detectedAt');
+        $resolvedAt = $this->input('resolvedAt');
+
+        if (
+            is_string($startedAt) && $startedAt !== ''
+            && $startedAt === $detectedAt
+            && $detectedAt === $resolvedAt
+        ) {
+            $this->merge(['resolvedAt' => null]);
+        }
+    }
+
     /**
      * @return array<string, ValidationRule|array<mixed>|string>
      */
