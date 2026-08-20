@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\IncidentActionItemStatus;
+use App\Enums\IncidentDocumentAttachableType;
 use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentTimelineEntryType;
@@ -14,6 +15,8 @@ use App\Models\PostMortem;
 use App\Models\Team;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Validation\ValidationException;
 
 class IncidentService
 {
@@ -21,6 +24,7 @@ class IncidentService
         private readonly TeamService $teamService,
         private readonly IncidentTimelineService $timelineService,
         private readonly IncidentDocumentService $documentService,
+        private readonly PostMortemService $postMortemService,
     ) {}
 
     /**
@@ -132,8 +136,9 @@ class IncidentService
 
     /**
      * @param  array<string, mixed>  $validated
+     * @param  array<int, UploadedFile|null>  $documentFiles
      */
-    public function create(User $user, array $validated): Incident
+    public function create(User $user, array $validated, array $documentFiles = []): Incident
     {
         $now = now();
         $startedAt = $this->parseDate($validated['startedAt'] ?? null) ?? $now;
@@ -169,15 +174,14 @@ class IncidentService
             $this->recordResolution($incident, $user);
         }
 
-        $incident->load('createdByUser');
-
-        return $this->applyAccessFlags($user, $incident);
+        return $this->attachNestedDocumentation($user, $incident, $validated, $documentFiles);
     }
 
     /**
      * @param  array<string, mixed>  $validated
+     * @param  array<int, UploadedFile|null>  $documentFiles
      */
-    public function update(User $user, Incident $incident, array $validated): Incident
+    public function update(User $user, Incident $incident, array $validated, array $documentFiles = []): Incident
     {
         $resolvedAt = array_key_exists('resolvedAt', $validated)
             ? $this->parseDate($validated['resolvedAt'])
@@ -203,7 +207,58 @@ class IncidentService
             $this->recordResolution($incident, $user);
         }
 
-        $incident->load('createdByUser');
+        return $this->attachNestedDocumentation($user, $incident, $validated, $documentFiles);
+    }
+
+    /**
+     * Optional postmortem (upsert) then additive documents, so a create/update form can
+     * attach both in one request. Nested endpoints remain the dedicated write path.
+     *
+     * @param  array<string, mixed>  $validated
+     * @param  array<int, UploadedFile|null>  $documentFiles
+     */
+    private function attachNestedDocumentation(
+        User $user,
+        Incident $incident,
+        array $validated,
+        array $documentFiles,
+    ): Incident {
+        if (isset($validated['postMortem']) && is_array($validated['postMortem'])) {
+            $this->postMortemService->upsert($user, $incident, $validated['postMortem']);
+        }
+
+        foreach ($validated['documents'] ?? [] as $index => $document) {
+            if (! is_array($document)) {
+                continue;
+            }
+
+            $file = $documentFiles[$index] ?? null;
+            $attachableType = $document['attachableType'] ?? IncidentDocumentAttachableType::Incident->value;
+            $postMortemId = null;
+
+            if ($attachableType === IncidentDocumentAttachableType::PostMortem->value) {
+                $postMortem = $this->postMortemService->forIncident($incident);
+
+                if ($postMortem === null) {
+                    throw ValidationException::withMessages([
+                        'documents.'.$index.'.attachableType' => 'This incident has no postmortem yet, so a document cannot be attached to one.',
+                    ]);
+                }
+
+                $postMortemId = (string) $postMortem->id;
+            }
+
+            $this->documentService->create(
+                $user,
+                $incident,
+                $document,
+                $file instanceof UploadedFile ? $file : null,
+                $postMortemId,
+            );
+        }
+
+        $incident->load(['createdByUser', 'postMortem']);
+        $incident->setAttribute('counts', $this->documentationCounts($incident));
 
         return $this->applyAccessFlags($user, $incident);
     }

@@ -26,7 +26,9 @@ List  GET /incident
   │
   ├─ Create  POST /incident  ──► 201  { data: incident }
   │              │
-  │              └─ optional resolvedAt ──► created as resolved
+  │              ├─ optional resolvedAt ──► created as resolved
+  │              ├─ optional postMortem ──► upserts the postmortem
+  │              └─ optional documents  ──► additive file / URL attachments
   │
   ├─ Show    GET /incident/{id}     ──► { data: incident }
   ├─ Update  PUT /incident/{id}     ──► { data: incident }   (full replace)
@@ -68,15 +70,39 @@ Sorted by `startedAt` desc. Pagination `meta` is snake_case; incident fields are
 
 Required: `title`, `severity`, `teamIds` (at least one; caller must belong to **all** of them).
 
-Optional: `description`, `tags`, `startedAt` (default now), `detectedAt` (default now), `resolvedAt`, `alertRuleIds`.
+Optional: `description`, `tags`, `startedAt` (default now), `detectedAt` (default now), `resolvedAt`, `alertRuleIds`, `postMortem`, `documents`.
 
 Send `resolvedAt` to log a past, already-closed incident (`status: "resolved"`).
+
+`postMortem` uses the same body as `PUT /incident/{id}/postmortem` (`summary` required when the object is sent). `documents` is an array of the same items as `POST /incident/{id}/document` (exactly one of `file` or `externalUrl`). JSON is enough for links; file uploads need `multipart/form-data` (`documents[0][file]`). Documents with `attachableType: "postMortem"` are allowed in the same request because the postmortem is written first.
+
+Create/update responses include the `postMortem` summary and `counts`, same as show. Dedicated nested routes still work and remain the path for listing, download URLs, delete, and publish.
+
+```json
+{
+  "title": "Checkout latency spike",
+  "severity": "SEV2",
+  "teamIds": ["66a1c0de5f1a2b3c4d5e6f70"],
+  "postMortem": {
+    "summary": "Payment pool saturation caused checkout 5xx for 22 minutes."
+  },
+  "documents": [
+    {
+      "externalUrl": "https://grafana.example.com/d/checkout",
+      "name": "Checkout dashboard",
+      "type": "metric"
+    }
+  ]
+}
+```
 
 ### Show / update / delete / resolve
 
 `GET /api/v1/incident/{id}`
 
-`PUT /api/v1/incident/{id}` — **full replace**. Omit `description` / `tags` / `alertRuleIds` and they are cleared. Pre-fill the form from show and submit the whole object.
+`PUT /api/v1/incident/{id}` — **full replace** of the incident fields. Omit `description` / `tags` / `alertRuleIds` and they are cleared. Pre-fill the form from show and submit the whole object.
+
+Nested documentation is **not** a full replace: omit `postMortem` to leave the existing postmortem unchanged; `documents` only **adds** attachments (delete still uses `DELETE /incident/{id}/document/{docId}`). Nested `postMortem` / `documents` are allowed only when `source` is `manual`; a policy incident returns `422`. File uploads on update use the same multipart fields as create.
 
 ```json
 {

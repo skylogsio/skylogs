@@ -3,39 +3,15 @@
 namespace App\Http\Requests\IncidentDocument;
 
 use App\Enums\IncidentDocumentAttachableType;
-use App\Enums\IncidentDocumentType;
+use App\Http\Requests\Concerns\ValidatesIncidentDocumentPayload;
 use App\Models\PostMortem;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreIncidentDocumentRequest extends FormRequest
 {
-    /**
-     * Content types accepted as incident evidence: screenshots, exported logs and charts,
-     * and the report formats a review is usually written in.
-     *
-     * @var list<string>
-     */
-    private const ALLOWED_MIME_TYPES = [
-        'image/png',
-        'image/jpeg',
-        'image/gif',
-        'image/webp',
-        'image/svg+xml',
-        'application/pdf',
-        'text/plain',
-        'text/csv',
-        'text/markdown',
-        'text/yaml',
-        'application/x-yaml',
-        'application/json',
-        'application/zip',
-        'application/gzip',
-    ];
-
-    private const MAX_KILOBYTES = 20480;
+    use ValidatesIncidentDocumentPayload;
 
     public function authorize(): bool
     {
@@ -47,20 +23,7 @@ class StoreIncidentDocumentRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'file' => [
-                'required_without:externalUrl',
-                'prohibits:externalUrl',
-                'file',
-                'max:'.self::MAX_KILOBYTES,
-                'mimetypes:'.implode(',', self::ALLOWED_MIME_TYPES),
-            ],
-            'externalUrl' => ['required_without:file', 'nullable', 'url', 'max:2048'],
-            'name' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'type' => ['nullable', Rule::enum(IncidentDocumentType::class)],
-            'attachableType' => ['nullable', Rule::enum(IncidentDocumentAttachableType::class)],
-        ];
+        return $this->incidentDocumentFieldRules();
     }
 
     /**
@@ -68,11 +31,7 @@ class StoreIncidentDocumentRequest extends FormRequest
      */
     public function messages(): array
     {
-        return [
-            'file.required_without' => 'Upload a file or provide an externalUrl.',
-            'externalUrl.required_without' => 'Upload a file or provide an externalUrl.',
-            'file.mimetypes' => 'The file type is not accepted. Allowed types: '.implode(', ', self::ALLOWED_MIME_TYPES).'.',
-        ];
+        return $this->incidentDocumentFieldMessages();
     }
 
     /**

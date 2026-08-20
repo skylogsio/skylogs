@@ -65,7 +65,11 @@ class IncidentDocs
         tags: ['Incidents'],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(ref: '#/components/schemas/IncidentInput')
+            description: 'JSON for links and postmortem text. Use multipart/form-data when uploading document files (`documents[0][file]`). Nested `/postmortem` and `/document` routes still work.',
+            content: [
+                new OA\JsonContent(ref: '#/components/schemas/IncidentInput'),
+                new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(ref: '#/components/schemas/IncidentInput')),
+            ],
         ),
         responses: [
             new OA\Response(response: 201, description: 'Created', content: new OA\JsonContent(ref: '#/components/schemas/Incident')),
@@ -86,7 +90,11 @@ class IncidentDocs
         ],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(ref: '#/components/schemas/IncidentInput')
+            description: 'Manual incidents only for nested `postMortem` / `documents`. Omit `postMortem` to leave it unchanged. Documents are additive. Policy-sourced incidents reject those fields.',
+            content: [
+                new OA\JsonContent(ref: '#/components/schemas/IncidentInput'),
+                new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(ref: '#/components/schemas/IncidentInput')),
+            ],
         ),
         responses: [
             new OA\Response(response: 200, description: 'Updated', content: new OA\JsonContent(ref: '#/components/schemas/Incident')),
@@ -267,6 +275,31 @@ class IncidentSchema {}
         ),
         new OA\Property(property: 'alertRuleIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'severity', type: 'string', enum: ['SEV1', 'SEV2', 'SEV3', 'SEV4']),
+        new OA\Property(
+            property: 'postMortem',
+            ref: '#/components/schemas/PostMortemInput',
+            description: 'Optional. Creates or replaces the postmortem (same body as PUT /incident/{id}/postmortem). Omit to leave an existing postmortem unchanged.',
+        ),
+        new OA\Property(
+            property: 'documents',
+            type: 'array',
+            description: 'Optional additive attachments. Each item needs exactly one of file (multipart) or externalUrl. Nested POST /document still works.',
+            items: new OA\Items(ref: '#/components/schemas/IncidentNestedDocumentInput'),
+        ),
     ]
 )]
 class IncidentInputSchema {}
+
+#[OA\Schema(
+    schema: 'IncidentNestedDocumentInput',
+    description: 'A file or external link attached while creating or updating a manual incident.',
+    properties: [
+        new OA\Property(property: 'file', type: 'string', format: 'binary', description: 'Multipart only. Mutually exclusive with externalUrl. Max 20 MB.'),
+        new OA\Property(property: 'externalUrl', type: 'string', description: 'Mutually exclusive with file'),
+        new OA\Property(property: 'name', type: 'string'),
+        new OA\Property(property: 'description', type: 'string'),
+        new OA\Property(property: 'type', type: 'string', enum: ['screenshot', 'log', 'metric', 'diagram', 'report', 'other'], default: 'other'),
+        new OA\Property(property: 'attachableType', type: 'string', enum: ['incident', 'postMortem'], default: 'incident', description: 'postMortem requires a postmortem in this request or one that already exists'),
+    ]
+)]
+class IncidentNestedDocumentInputSchema {}

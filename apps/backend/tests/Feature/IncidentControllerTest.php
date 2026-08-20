@@ -1,12 +1,16 @@
 <?php
 
 use App\Enums\Constants;
+use App\Enums\IncidentSource;
 use App\Enums\IncidentStatus;
 use App\Models\Incident;
 use App\Models\IncidentActionItem;
+use App\Models\IncidentDocument;
 use App\Models\IncidentTimelineEntry;
 use App\Models\PostMortem;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Tests\Support\IncidentTestData;
 use Tests\Support\TeamTestData;
 
@@ -468,5 +472,226 @@ describe('Incident documentation surface', function () {
         expect(PostMortem::query()->where('incidentId', $this->incident->id)->count())->toBe(0)
             ->and(IncidentTimelineEntry::query()->where('incidentId', $this->incident->id)->count())->toBe(0)
             ->and(IncidentActionItem::query()->where('incidentId', $this->incident->id)->count())->toBe(0);
+    });
+});
+
+describe('Incident nested documentation on create and update', function () {
+    beforeEach(function () {
+        config(['cache.default' => 'array']);
+        Cache::flush();
+        Storage::fake(config('filesystems.default'));
+
+        $this->manager = TeamTestData::createUser(Constants::ROLE_MANAGER);
+        $this->team = TeamTestData::createTeam($this->manager, [$this->manager->id]);
+        $this->incidents = [];
+    });
+
+    afterEach(function () {
+        foreach ($this->incidents as $incident) {
+            IncidentTestData::deleteIncident($incident);
+        }
+        TeamTestData::deleteTeam($this->team);
+        TeamTestData::deleteUser($this->manager);
+    });
+
+    it('creates an incident with a postmortem', function () {
+        $response = $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/incident', [
+                'title' => 'With postmortem',
+                'teamIds' => [$this->team->id],
+                'severity' => 'SEV2',
+                'postMortem' => [
+                    'summary' => 'Pool saturation caused checkout 5xx.',
+                ],
+            ])
+            ->assertStatus(201)
+            ->assertJsonPath('data.postMortem.status', 'draft')
+            ->assertJsonPath('data.postMortem.authorId', $this->manager->id);
+
+        $incident = Incident::find($response->json('data.id'));
+        $this->incidents[] = $incident;
+
+        expect(PostMortem::query()->where('incidentId', $incident->id)->count())->toBe(1)
+            ->and($response->json('data.counts.documents'))->toBe(0);
+    });
+
+    it('creates an incident with an external document link', function () {
+        $response = $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/incident', [
+                'title' => 'With link',
+                'teamIds' => [$this->team->id],
+                'severity' => 'SEV3',
+                'documents' => [
+                    [
+                        'externalUrl' => 'https://grafana.example.com/d/checkout',
+                        'name' => 'Checkout dashboard',
+                        'type' => 'metric',
+                    ],
+                ],
+            ])
+            ->assertStatus(201)
+            ->assertJsonPath('data.counts.documents', 1);
+
+        $incident = Incident::find($response->json('data.id'));
+        $this->incidents[] = $incident;
+
+        $document = IncidentDocument::query()->where('incidentId', $incident->id)->first();
+        expect($document->externalUrl)->toBe('https://grafana.example.com/d/checkout')
+            ->and($document->name)->toBe('Checkout dashboard');
+    });
+
+    it('creates an incident with an uploaded document file', function () {
+        $response = $this->actingAs($this->manager, 'api')
+            ->post('/api/v1/incident', [
+                'title' => 'With file',
+                'teamIds' => [$this->team->id],
+                'severity' => 'SEV3',
+                'documents' => [
+                    [
+                        'file' => UploadedFile::fake()->image('checkout-errors.png'),
+                        'type' => 'screenshot',
+                    ],
+                ],
+            ], ['Accept' => 'application/json'])
+            ->assertStatus(201)
+            ->assertJsonPath('data.counts.documents', 1);
+
+        $incident = Incident::find($response->json('data.id'));
+        $this->incidents[] = $incident;
+
+        $document = IncidentDocument::query()->where('incidentId', $incident->id)->first();
+        expect($document->fileName)->toBe('checkout-errors.png')
+            ->and($document->path)->toStartWith("incidents/{$incident->id}/documents/");
+        Storage::disk(config('filesystems.default'))->assertExists($document->path);
+    });
+
+    it('creates a postmortem then attaches a document to it in the same request', function () {
+        $response = $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/incident', [
+                'title' => 'Review pack',
+                'teamIds' => [$this->team->id],
+                'severity' => 'SEV2',
+                'postMortem' => [
+                    'summary' => 'Written during create.',
+                ],
+                'documents' => [
+                    [
+                        'externalUrl' => 'https://wiki.example.com/review',
+                        'attachableType' => 'postMortem',
+                    ],
+                ],
+            ])
+            ->assertStatus(201)
+            ->assertJsonPath('data.counts.documents', 1);
+
+        $incident = Incident::find($response->json('data.id'));
+        $this->incidents[] = $incident;
+
+        $postMortem = PostMortem::query()->where('incidentId', $incident->id)->first();
+        $document = IncidentDocument::query()->where('incidentId', $incident->id)->first();
+
+        expect($document->attachableType->value)->toBe('postMortem')
+            ->and($document->attachableId)->toBe($postMortem->id);
+    });
+
+    it('adds documents on update without replacing existing ones', function () {
+        $incident = IncidentTestData::createIncident($this->manager->id, [$this->team->id]);
+        $this->incidents[] = $incident;
+        $postMortem = IncidentTestData::createPostMortem($incident, $this->manager->id, [
+            'summary' => 'Keep this summary',
+        ]);
+
+        $this->actingAs($this->manager, 'api')
+            ->postJson("/api/v1/incident/{$incident->id}/document", [
+                'externalUrl' => 'https://grafana.example.com/d/one',
+                'name' => 'First',
+            ])
+            ->assertStatus(201);
+
+        $this->actingAs($this->manager, 'api')
+            ->putJson("/api/v1/incident/{$incident->id}", [
+                'title' => $incident->title,
+                'teamIds' => [$this->team->id],
+                'severity' => $incident->severity->value,
+                'documents' => [
+                    [
+                        'externalUrl' => 'https://grafana.example.com/d/two',
+                        'name' => 'Second',
+                    ],
+                ],
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('data.postMortem.id', $postMortem->id)
+            ->assertJsonPath('data.counts.documents', 2);
+
+        expect(PostMortem::query()->where('incidentId', $incident->id)->first()->summary)->toBe('Keep this summary')
+            ->and(IncidentDocument::query()->where('incidentId', $incident->id)->count())->toBe(2);
+    });
+
+    it('rejects nested documentation on a policy incident', function () {
+        $incident = IncidentTestData::createIncident($this->manager->id, [$this->team->id], [
+            'source' => IncidentSource::Policy,
+        ]);
+        $this->incidents[] = $incident;
+
+        $this->actingAs($this->manager, 'api')
+            ->putJson("/api/v1/incident/{$incident->id}", [
+                'title' => $incident->title,
+                'teamIds' => [$this->team->id],
+                'severity' => $incident->severity->value,
+                'postMortem' => [
+                    'summary' => 'Not allowed on policy incidents.',
+                ],
+                'documents' => [
+                    ['externalUrl' => 'https://example.com/evidence'],
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['postMortem', 'documents']);
+    });
+
+    it('rejects a nested document that has neither a file nor an external url', function () {
+        $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/incident', [
+                'title' => 'Invalid docs',
+                'teamIds' => [$this->team->id],
+                'severity' => 'SEV3',
+                'documents' => [
+                    ['name' => 'Missing both'],
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['documents.0.file', 'documents.0.externalUrl']);
+    });
+
+    it('rejects a nested postmortem without a summary', function () {
+        $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/incident', [
+                'title' => 'Invalid postmortem',
+                'teamIds' => [$this->team->id],
+                'severity' => 'SEV3',
+                'postMortem' => [
+                    'impact' => 'Checkout down',
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['postMortem.summary']);
+    });
+
+    it('rejects attaching to a postmortem when none exists and none is sent', function () {
+        $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/incident', [
+                'title' => 'No postmortem',
+                'teamIds' => [$this->team->id],
+                'severity' => 'SEV3',
+                'documents' => [
+                    [
+                        'externalUrl' => 'https://wiki.example.com/review',
+                        'attachableType' => 'postMortem',
+                    ],
+                ],
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['documents.0.attachableType']);
     });
 });

@@ -81,7 +81,7 @@ class IncidentController extends Controller
             abort(403);
         }
 
-        $incident = $this->incidentService->create($user, $validated);
+        $incident = $this->incidentService->create($user, $validated, $request->documentFiles());
 
         return (new IncidentResource($incident))
             ->response()
@@ -121,7 +121,7 @@ class IncidentController extends Controller
             abort(403);
         }
 
-        $incident = $this->incidentService->update($user, $incident, $validated);
+        $incident = $this->incidentService->update($user, $incident, $validated, $request->documentFiles());
 
         return new IncidentResource($incident);
     }

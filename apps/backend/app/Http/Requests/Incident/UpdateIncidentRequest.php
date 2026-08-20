@@ -3,12 +3,15 @@
 namespace App\Http\Requests\Incident;
 
 use App\Enums\IncidentSeverity;
+use App\Http\Requests\Concerns\ValidatesIncidentNestedDocumentation;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateIncidentRequest extends FormRequest
 {
+    use ValidatesIncidentNestedDocumentation;
+
     public function authorize(): bool
     {
         return true;
@@ -36,6 +39,23 @@ class UpdateIncidentRequest extends FormRequest
             'alertRuleIds' => ['nullable', 'array'],
             'alertRuleIds.*' => ['string'],
             'severity' => ['required', Rule::enum(IncidentSeverity::class)],
+            ...$this->nestedDocumentationRules(),
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return $this->nestedDocumentationMessages();
+    }
+
+    /**
+     * @return list<callable>
+     */
+    public function after(): array
+    {
+        return $this->nestedDocumentationAfter();
     }
 }
