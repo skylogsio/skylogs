@@ -1,6 +1,5 @@
 import { alpha, type Theme } from "@mui/material";
 
-/** Filled pill control — matches sign-in input surfaces, no glass blur/shadow. */
 export function getDashboardPillSx(theme: Theme, isDark: boolean, options?: { minWidth?: number }) {
   const { palette } = theme;
   const backgroundColor = isDark ? "rgba(255, 255, 255, 0.09)" : "#F1EBE1";
@@ -48,7 +47,6 @@ export function getDashboardMenuPaperSx(theme: Theme, isDark: boolean) {
   };
 }
 
-/** Profile menu — warm filled surface in light mode to match dashboard pills. */
 export function getProfileMenuPaperSx(theme: Theme, isDark: boolean) {
   const { palette } = theme;
 
@@ -92,5 +90,51 @@ export function getAppBackgroundSx(theme: Theme, isDark: boolean) {
          radial-gradient(ellipse 70% 50% at 90% 80%, ${alpha("#3A2E22", 0.45)}, transparent 50%)`
       : `radial-gradient(ellipse 80% 55% at 15% 0%, ${alpha(palette.secondary.light, 0.95)}, transparent 50%),
          radial-gradient(ellipse 70% 50% at 100% 100%, ${alpha(palette.primary.main, 0.22)}, transparent 55%)`
+  };
+}
+
+export function getGlassCardSx(theme: Theme, isDark: boolean) {
+  const { palette } = theme;
+
+  return {
+    backgroundColor: alpha(palette.background.paper, isDark ? 0.94 : 0.98),
+    border: `1px solid ${alpha(palette.primary.main, isDark ? 0.2 : 0.4)}`,
+    boxShadow: `0 28px 64px ${alpha("#0E0D0C", isDark ? 0.5 : 0.1)}`,
+    borderRadius: 4,
+    overflow: "hidden"
+  };
+}
+
+export function getGradientCtaSx(theme: Theme, options?: { compact?: boolean }) {
+  const { palette } = theme;
+  const gradient = `linear-gradient(135deg, ${palette.secondary.main} 0%, ${palette.primary.main} 100%)`;
+  const compact = options?.compact;
+
+  return {
+    position: "relative" as const,
+    py: compact ? 1 : 1.5,
+    px: compact ? 2 : undefined,
+    minHeight: compact ? 40 : 52,
+    fontWeight: 600,
+    letterSpacing: "0.04em",
+    fontSize: compact ? "0.8125rem" : undefined,
+    textTransform: "none" as const,
+    color: palette.primary.contrastText,
+    background: gradient,
+    transition: "filter 220ms ease, opacity 220ms ease",
+    overflow: "hidden",
+    "&.Mui-disabled": {
+      color: palette.primary.contrastText,
+      background: gradient,
+      opacity: 0.92
+    },
+    "&:hover": {
+      filter: "brightness(1.04)",
+      background: gradient
+    },
+    "& .MuiButton-startIcon": {
+      color: palette.primary.contrastText,
+      marginInlineEnd: 0.5
+    }
   };
 }
