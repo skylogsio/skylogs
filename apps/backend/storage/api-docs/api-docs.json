@@ -18,7 +18,7 @@
                     "AlertRule"
                 ],
                 "summary": "List alert rules",
-                "description": "Returns a paginated list of alert rules visible to the authenticated user. Pinned rules appear first. Each item includes `accessLevel` (`manage` or `readonly`). For `readonly` organization-visible alerts, sensitive fields (tokens, endpoints, query config, etc.) are omitted.",
+                "description": "Returns a paginated list of alert rules visible to the authenticated user. Without sort query params, pinned rules appear first, then `_id`. Each item includes `accessLevel` (`manage` or `readonly`). For `readonly` organization-visible alerts, sensitive fields (tokens, endpoints, query config, etc.) are omitted.",
                 "operationId": "getAlertRules",
                 "parameters": [
                     {
@@ -36,6 +36,29 @@
                         "schema": {
                             "type": "integer",
                             "default": 25
+                        }
+                    },
+                    {
+                        "name": "sortBy",
+                        "in": "query",
+                        "description": "Optional sort field. When omitted, the default order is pinned first, then `_id`.",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "name"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sortDir",
+                        "in": "query",
+                        "description": "Sort direction used with `sortBy`. Defaults to `asc` when `sortBy` is present.",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
                         }
                     },
                     {
@@ -4772,6 +4795,1946 @@
                 ]
             }
         },
+        "/api/v1/incident": {
+            "get": {
+                "tags": [
+                    "Incidents"
+                ],
+                "summary": "List incidents (paginated)",
+                "operationId": "getIncidents",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "open",
+                                "investigating",
+                                "resolved"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "severity",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "SEV1",
+                                "SEV2",
+                                "SEV3",
+                                "SEV4"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "teamId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tag",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated incidents",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Incident"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Incidents"
+                ],
+                "summary": "Create a new incident (manual)",
+                "operationId": "createIncident",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IncidentInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Incident"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident/{id}": {
+            "get": {
+                "tags": [
+                    "Incidents"
+                ],
+                "summary": "Get incident by ID",
+                "operationId": "getIncident",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Incident details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Incident"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Incidents"
+                ],
+                "summary": "Update incident details",
+                "operationId": "updateIncident",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IncidentInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Incident"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Incidents"
+                ],
+                "summary": "Delete an incident",
+                "operationId": "deleteIncident",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident/{id}/acknowledge": {
+            "post": {
+                "tags": [
+                    "Incidents"
+                ],
+                "summary": "Acknowledge an incident for one or more teams (OPEN -> INVESTIGATING)",
+                "operationId": "acknowledgeIncident",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "teamId": {
+                                        "description": "Team to acknowledge for. When omitted, acknowledges all of the caller's assigned teams that have not yet acknowledged.",
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Acknowledged",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Incident"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident/{id}/resolve": {
+            "post": {
+                "tags": [
+                    "Incidents"
+                ],
+                "summary": "Resolve an incident (-> RESOLVED)",
+                "operationId": "resolveIncident",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "resolvedAt": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Resolved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Incident"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident/{incidentId}/postmortem": {
+            "get": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "Get the postmortem of an incident",
+                "description": "Returns `data: null` while no postmortem has been written.",
+                "operationId": "getIncidentPostMortem",
+                "parameters": [
+                    {
+                        "name": "incidentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The postmortem, or null",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "oneOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/PostMortem"
+                                                }
+                                            ],
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "Create or replace the postmortem of an incident",
+                "description": "An incident holds at most one postmortem, so this endpoint creates it on the first call and replaces it afterwards. Omitted fields are cleared. Requires edit rights on the incident.",
+                "operationId": "upsertIncidentPostMortem",
+                "parameters": [
+                    {
+                        "name": "incidentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PostMortemInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Saved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostMortem"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident/{incidentId}/postmortem/publish": {
+            "post": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "Publish the postmortem of an incident",
+                "description": "Moves the postmortem to `published`, stamps `publishedAt` on the first publish, and records a timeline entry. Requires edit rights on the incident.",
+                "operationId": "publishIncidentPostMortem",
+                "parameters": [
+                    {
+                        "name": "incidentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Published",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PostMortem"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "No postmortem to publish"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident/{incidentId}/timeline": {
+            "get": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "List timeline entries of an incident (paginated)",
+                "description": "Ordered by `occurredAt` ascending, so the list reads as the story of the incident.",
+                "operationId": "getIncidentTimeline",
+                "parameters": [
+                    {
+                        "name": "incidentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 100
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "schema": {
+                            "$ref": "#/components/schemas/IncidentTimelineEntryType"
+                        }
+                    },
+                    {
+                        "name": "source",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "system",
+                                "user",
+                                "alert",
+                                "webhook"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "isPublic",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated timeline entries",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/IncidentTimelineEntry"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "Add a timeline entry to an incident",
+                "description": "Only the responder written types are accepted here; `created`, `acknowledged`, `statusChanged`, `resolved`, `updated` and `postMortemPublished` are written by the application itself. Requires edit rights on the incident.",
+                "operationId": "createIncidentTimelineEntry",
+                "parameters": [
+                    {
+                        "name": "incidentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IncidentTimelineEntryInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IncidentTimelineEntry"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident/{incidentId}/document": {
+            "get": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "List documents attached to an incident (paginated)",
+                "operationId": "getIncidentDocuments",
+                "parameters": [
+                    {
+                        "name": "incidentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "screenshot",
+                                "log",
+                                "metric",
+                                "diagram",
+                                "report",
+                                "other"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "attachableType",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "incident",
+                                "postMortem"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated documents",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/IncidentDocument"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "Attach a file or an external link to an incident",
+                "description": "Send exactly one of `file` (multipart, up to 20 MB) or `externalUrl`. Requires edit rights on the incident. Attaching to `postMortem` is only possible once the postmortem exists.",
+                "operationId": "createIncidentDocument",
+                "parameters": [
+                    {
+                        "name": "incidentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "file": {
+                                        "description": "Images, PDF, plain text, CSV, Markdown, YAML, JSON, zip or gzip, up to 20 MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "name": {
+                                        "description": "Defaults to the uploaded file name",
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "default": "other",
+                                        "enum": [
+                                            "screenshot",
+                                            "log",
+                                            "metric",
+                                            "diagram",
+                                            "report",
+                                            "other"
+                                        ]
+                                    },
+                                    "attachableType": {
+                                        "type": "string",
+                                        "default": "incident",
+                                        "enum": [
+                                            "incident",
+                                            "postMortem"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "externalUrl"
+                                ],
+                                "properties": {
+                                    "externalUrl": {
+                                        "description": "A link to evidence held elsewhere, such as a dashboard",
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "description": "Defaults to the URL",
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "default": "other",
+                                        "enum": [
+                                            "screenshot",
+                                            "log",
+                                            "metric",
+                                            "diagram",
+                                            "report",
+                                            "other"
+                                        ]
+                                    },
+                                    "attachableType": {
+                                        "type": "string",
+                                        "default": "incident",
+                                        "enum": [
+                                            "incident",
+                                            "postMortem"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Attached",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IncidentDocument"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident/{incidentId}/document/{documentId}/download-url": {
+            "get": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "Get a download URL for a document",
+                "description": "Uploads are served through a signed URL that expires after 10 minutes, so the browser can fetch the file without carrying the bearer token. External links are returned unchanged with a null expiry.",
+                "operationId": "getIncidentDocumentDownloadUrl",
+                "parameters": [
+                    {
+                        "name": "incidentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "documentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Download target",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "url": {
+                                            "type": "string"
+                                        },
+                                        "expiresAt": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident-document/{documentId}/download": {
+            "get": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "Download an uploaded document",
+                "description": "Authorised by the signature in the query string rather than a bearer token. Call `/download-url` to obtain a valid link.",
+                "operationId": "downloadIncidentDocument",
+                "parameters": [
+                    {
+                        "name": "documentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "expires",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "signature",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The file",
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Missing or expired signature"
+                    },
+                    "404": {
+                        "description": "Not Found, or the document is an external link"
+                    }
+                }
+            }
+        },
+        "/api/v1/incident/{incidentId}/document/{documentId}": {
+            "delete": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "Delete a document and its stored file",
+                "operationId": "deleteIncidentDocument",
+                "parameters": [
+                    {
+                        "name": "incidentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "documentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident/{incidentId}/action-item": {
+            "get": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "List action items of an incident (paginated)",
+                "operationId": "getIncidentActionItems",
+                "parameters": [
+                    {
+                        "name": "incidentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 50
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "open",
+                                "inProgress",
+                                "blocked",
+                                "done",
+                                "cancelled"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "priority",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high",
+                                "critical"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "prevention",
+                                "detection",
+                                "mitigation",
+                                "process",
+                                "documentation",
+                                "other"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ownerId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "teamId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated action items",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/IncidentActionItem"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "Add an action item to an incident",
+                "description": "Requires edit rights on the incident. `postMortemId`, when given, must be the postmortem of this incident.",
+                "operationId": "createIncidentActionItem",
+                "parameters": [
+                    {
+                        "name": "incidentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IncidentActionItemInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IncidentActionItem"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident/{incidentId}/action-item/{actionItemId}": {
+            "put": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "Update an action item",
+                "description": "`completedAt` is stamped when the item first reaches `done` and cleared when it is reopened.",
+                "operationId": "updateIncidentActionItem",
+                "parameters": [
+                    {
+                        "name": "incidentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "actionItemId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IncidentActionItemInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IncidentActionItem"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "Delete an action item",
+                "operationId": "deleteIncidentActionItem",
+                "parameters": [
+                    {
+                        "name": "incidentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "actionItemId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident-action-item": {
+            "get": {
+                "tags": [
+                    "Incident Documentation"
+                ],
+                "summary": "List action items across incidents (paginated)",
+                "description": "The follow-up backlog: items the caller owns or created, plus items assigned to one of their teams. Each entry carries a short summary of its incident.",
+                "operationId": "getActionItems",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "open",
+                                "inProgress",
+                                "blocked",
+                                "done",
+                                "cancelled"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "priority",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "medium",
+                                "high",
+                                "critical"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "prevention",
+                                "detection",
+                                "mitigation",
+                                "process",
+                                "documentation",
+                                "other"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "ownerId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "teamId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "incidentId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "open",
+                        "in": "query",
+                        "description": "Only items that are not done or cancelled",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "overdue",
+                        "in": "query",
+                        "description": "Only unfinished items past their due date",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Matches the action item title",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated action items",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/IncidentActionItem"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident-policy": {
+            "get": {
+                "tags": [
+                    "Incident Policies"
+                ],
+                "summary": "List incident policies (paginated)",
+                "operationId": "getIncidentPolicies",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "enabled",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "teamId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Matches the policy name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated incident policies",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/IncidentPolicy"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Incident Policies"
+                ],
+                "summary": "Create an incident policy from JSON",
+                "description": "The JSON alternative to the YAML import, for a form driven editor. The body mirrors the stored shape and the policy is recorded with `source: api`. Requires the owner or manager role.",
+                "operationId": "createIncidentPolicy",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IncidentPolicyInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IncidentPolicy"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident-policy/{id}": {
+            "get": {
+                "tags": [
+                    "Incident Policies"
+                ],
+                "summary": "Get an incident policy by ID",
+                "operationId": "getIncidentPolicy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Policy details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IncidentPolicy"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Incident Policies"
+                ],
+                "summary": "Update an incident policy from JSON",
+                "description": "Replaces the definition and bumps the version. Requires the owner or manager role.",
+                "operationId": "updateIncidentPolicy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IncidentPolicyInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IncidentPolicy"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Incident Policies"
+                ],
+                "summary": "Delete an incident policy",
+                "operationId": "deleteIncidentPolicy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident-policy/import": {
+            "post": {
+                "tags": [
+                    "Incident Policies"
+                ],
+                "summary": "Apply one or more policies from a YAML definition",
+                "description": "Send a multipart file upload or a raw definition in the `yaml` field. Idempotent by policy name: unchanged definitions are reported as unchanged, changed ones bump the version. Nothing is written unless every document in the input is valid. Requires the owner or manager role.",
+                "operationId": "importIncidentPolicy",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "file": {
+                                        "description": "A .yaml or .yml file, up to 512 KB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "dryRun": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "yaml"
+                                ],
+                                "properties": {
+                                    "yaml": {
+                                        "description": "The YAML definition, may contain several documents separated by ---",
+                                        "type": "string"
+                                    },
+                                    "dryRun": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Applied",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IncidentPolicyImportResult"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Invalid definition",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IncidentPolicyImportResult"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident-policy/validate": {
+            "post": {
+                "tags": [
+                    "Incident Policies"
+                ],
+                "summary": "Validate a YAML definition without writing anything",
+                "description": "Runs the same structural, semantic and reference checks as import. Suitable for gating a CI pipeline.",
+                "operationId": "validateIncidentPolicy",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "yaml"
+                                ],
+                                "properties": {
+                                    "yaml": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Valid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IncidentPolicyImportResult"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Invalid definition",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IncidentPolicyImportResult"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/incident-policy/{id}/export": {
+            "get": {
+                "tags": [
+                    "Incident Policies"
+                ],
+                "summary": "Export a policy back to the YAML DSL",
+                "description": "Ids are rendered as names so the output can be committed and reviewed.",
+                "operationId": "exportIncidentPolicy",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "YAML definition",
+                        "content": {
+                            "application/x-yaml": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/profile/asset": {
             "get": {
                 "tags": [
@@ -5102,6 +7065,272 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/runbook": {
+            "get": {
+                "tags": [
+                    "Runbooks"
+                ],
+                "summary": "List runbooks (paginated)",
+                "description": "Scoped to the caller's teams, plus runbooks that are not assigned to any team.",
+                "operationId": "getRunbooks",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "published",
+                                "archived"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "teamId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tag",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Matches the runbook name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated runbooks",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Runbook"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Runbooks"
+                ],
+                "summary": "Create a runbook",
+                "description": "Requires the owner or manager role. The slug is derived from the name when omitted.",
+                "operationId": "createRunbook",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RunbookInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Runbook"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/runbook/{id}": {
+            "get": {
+                "tags": [
+                    "Runbooks"
+                ],
+                "summary": "Get a runbook by ID",
+                "operationId": "getRunbook",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Runbook details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Runbook"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Runbooks"
+                ],
+                "summary": "Update a runbook",
+                "description": "Requires the owner or manager role. Every write bumps the version.",
+                "operationId": "updateRunbook",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RunbookInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Runbook"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Runbooks"
+                ],
+                "summary": "Delete a runbook",
+                "operationId": "deleteRunbook",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
                     }
                 },
                 "security": [
@@ -6663,7 +8892,7 @@
             },
             "AlertRuleBehaviorRuleSilent": {
                 "title": "Silent behavior rule",
-                "description": "Suppresses notifications when **all configured** conditions match. Configure one or more of:\n\n- **Dependency:** `dependsOnAlertRuleIds` + `triggerState` — all listed rules must have that status\n- **Content:** `filters` — incoming alert labels/instance must match (same filter syntax as notification rules)\n- **Time:** `startsAt` and/or `endsAt` — Unix timestamps; omit a bound for no start/end limit\n\nIf multiple silent rules exist on one alert rule, **any** matching rule suppresses notifications (OR). Does not affect the manual `isSilent` toggle.",
+                "description": "Suppresses notifications when **all configured** conditions match. Configure one or more of:\n\n- **Dependency:** `dependsOnAlertRuleIds` + `triggerState` — all listed rules must have that status\n- **Content:** `filters` — incoming alert labels/instance must match (same filter syntax as notification rules)\n- **Time:** `startsAt` and/or `endsAt` — Unix timestamps in milliseconds (13-digit); seconds (10-digit) are accepted on write and normalized to milliseconds; omit a bound for no start/end limit\n\nIf multiple silent rules exist on one alert rule, **any** matching rule suppresses notifications (OR). Does not affect the manual `isSilent` toggle.",
                 "required": [
                     "id",
                     "name",
@@ -6733,15 +8962,15 @@
                         }
                     },
                     "startsAt": {
-                        "description": "Unix timestamp when silence becomes active. Omit for no start bound.",
+                        "description": "Unix timestamp in milliseconds when silence becomes active. Omit for no start bound. Seconds are accepted on write and stored/returned as milliseconds.",
                         "type": "integer",
-                        "example": 1720000000,
+                        "example": 1720000000000,
                         "nullable": true
                     },
                     "endsAt": {
-                        "description": "Unix timestamp when silence expires. Omit for permanent silence until the rule is deleted.",
+                        "description": "Unix timestamp in milliseconds when silence expires. Omit for permanent silence until the rule is deleted. Seconds are accepted on write and stored/returned as milliseconds.",
                         "type": "integer",
-                        "example": 1721289600,
+                        "example": 1721289600000,
                         "nullable": true
                     }
                 },
@@ -6891,12 +9120,12 @@
                         "minItems": 1
                     },
                     "startsAt": {
-                        "description": "Unix timestamp silence start",
+                        "description": "Unix timestamp in milliseconds silence start",
                         "type": "integer",
                         "nullable": true
                     },
                     "endsAt": {
-                        "description": "Unix timestamp silence end",
+                        "description": "Unix timestamp in milliseconds silence end",
                         "type": "integer",
                         "nullable": true
                     }
@@ -9058,6 +11287,1300 @@
                 },
                 "type": "object"
             },
+            "Incident": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "severity": {
+                        "type": "string",
+                        "enum": [
+                            "SEV1",
+                            "SEV2",
+                            "SEV3",
+                            "SEV4"
+                        ]
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "open",
+                            "investigating",
+                            "resolved"
+                        ]
+                    },
+                    "source": {
+                        "type": "string",
+                        "enum": [
+                            "manual",
+                            "policy"
+                        ]
+                    },
+                    "startedAt": {
+                        "description": "When the incident occurred / started",
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "detectedAt": {
+                        "description": "When the incident was detected",
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "resolvedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "teamIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "alertRuleIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "createdBy": {
+                        "type": "string"
+                    },
+                    "resolvedBy": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "acknowledgements": {
+                        "description": "Per-team acknowledgements",
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "teamId": {
+                                    "type": "string"
+                                },
+                                "acknowledgedBy": {
+                                    "type": "string"
+                                },
+                                "acknowledgedAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "teams": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "onCallPlan": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "nullable": true
+                                },
+                                "acknowledgement": {
+                                    "properties": {
+                                        "acknowledgedBy": {
+                                            "type": "string"
+                                        },
+                                        "acknowledgedAt": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object",
+                                    "nullable": true
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "alertRules": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "postMortem": {
+                        "description": "A summary of the postmortem, enough for a badge and a link. The document itself is served by GET /api/v1/incident/{id}/postmortem.",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "draft",
+                                    "inReview",
+                                    "approved",
+                                    "published"
+                                ]
+                            },
+                            "authorId": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "dueAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                            },
+                            "publishedAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "counts": {
+                        "description": "How much documentation the incident carries. Only present on show, null on the list.",
+                        "properties": {
+                            "timelineEntries": {
+                                "type": "integer"
+                            },
+                            "documents": {
+                                "type": "integer"
+                            },
+                            "actionItems": {
+                                "type": "integer"
+                            },
+                            "openActionItems": {
+                                "type": "integer"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "canEdit": {
+                        "type": "boolean"
+                    },
+                    "canDelete": {
+                        "type": "boolean"
+                    },
+                    "canAcknowledge": {
+                        "type": "boolean"
+                    },
+                    "canResolve": {
+                        "type": "boolean"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "IncidentInput": {
+                "required": [
+                    "title",
+                    "teamIds",
+                    "severity"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "teamIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "startedAt": {
+                        "description": "Occurred / started at. Defaults to now.",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "detectedAt": {
+                        "description": "Detected at. Defaults to now.",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "resolvedAt": {
+                        "description": "Optional. When set on create, the incident is created as resolved.",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "alertRuleIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "severity": {
+                        "type": "string",
+                        "enum": [
+                            "SEV1",
+                            "SEV2",
+                            "SEV3",
+                            "SEV4"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "PostMortem": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "incidentId": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "inReview",
+                            "approved",
+                            "published"
+                        ]
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "impact": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "detection": {
+                        "description": "How the incident was noticed",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "resolution": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "rootCause": {
+                        "$ref": "#/components/schemas/PostMortemRootCause"
+                    },
+                    "whatWentWell": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "whatWentWrong": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "lessonsLearned": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "authorId": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "authorUser": {
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "reviewerIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "dueAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "publishedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "canEdit": {
+                        "type": "boolean"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "PostMortemInput": {
+                "required": [
+                    "summary"
+                ],
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "default": "draft",
+                        "enum": [
+                            "draft",
+                            "inReview",
+                            "approved",
+                            "published"
+                        ]
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "impact": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "detection": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "resolution": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "rootCause": {
+                        "$ref": "#/components/schemas/PostMortemRootCause"
+                    },
+                    "whatWentWell": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "whatWentWrong": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "lessonsLearned": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "authorId": {
+                        "description": "Defaults to the caller on the first write",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "reviewerIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "dueAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "PostMortemRootCause": {
+                "description": "The root cause analysis, embedded in the postmortem.",
+                "properties": {
+                    "method": {
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                            "fiveWhys",
+                            "fishbone",
+                            "timeline",
+                            "other"
+                        ]
+                    },
+                    "whys": {
+                        "description": "Up to 10 successive answers",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "contributingFactors": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "statement": {
+                        "description": "The conclusion, in one paragraph",
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "IncidentTimelineEntryType": {
+                "description": "System written: created, updated, acknowledged, statusChanged, resolved, postMortemPublished. Responder written: note, action, detection, mitigation, escalation, communication.",
+                "type": "string",
+                "enum": [
+                    "created",
+                    "updated",
+                    "acknowledged",
+                    "statusChanged",
+                    "resolved",
+                    "postMortemPublished",
+                    "note",
+                    "action",
+                    "detection",
+                    "mitigation",
+                    "escalation",
+                    "communication"
+                ]
+            },
+            "IncidentTimelineEntry": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "incidentId": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "$ref": "#/components/schemas/IncidentTimelineEntryType"
+                    },
+                    "source": {
+                        "type": "string",
+                        "enum": [
+                            "system",
+                            "user",
+                            "alert",
+                            "webhook"
+                        ]
+                    },
+                    "occurredAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "meta": {
+                        "description": "Structured detail, such as the from and to of a status change",
+                        "type": "object"
+                    },
+                    "isPublic": {
+                        "description": "Whether the entry may be shown outside the response team",
+                        "type": "boolean"
+                    },
+                    "userId": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "user": {
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "IncidentTimelineEntryInput": {
+                "required": [
+                    "type",
+                    "message"
+                ],
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "note",
+                            "action",
+                            "detection",
+                            "mitigation",
+                            "escalation",
+                            "communication"
+                        ]
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "occurredAt": {
+                        "description": "Defaults to now. May be backdated.",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "meta": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "isPublic": {
+                        "type": "boolean",
+                        "default": false
+                    }
+                },
+                "type": "object"
+            },
+            "IncidentDocument": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "incidentId": {
+                        "type": "string"
+                    },
+                    "attachableType": {
+                        "type": "string",
+                        "enum": [
+                            "incident",
+                            "postMortem"
+                        ]
+                    },
+                    "attachableId": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "screenshot",
+                            "log",
+                            "metric",
+                            "diagram",
+                            "report",
+                            "other"
+                        ]
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "fileName": {
+                        "description": "Null for an external link",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "mimeType": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "size": {
+                        "description": "Bytes",
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "externalUrl": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "isExternalLink": {
+                        "type": "boolean"
+                    },
+                    "uploadedBy": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "uploadedByUser": {
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "canDelete": {
+                        "type": "boolean"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "IncidentActionItem": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "incidentId": {
+                        "type": "string"
+                    },
+                    "incident": {
+                        "description": "Present on the cross-incident listing",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            },
+                            "severity": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "postMortemId": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "ownerId": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "ownerUser": {
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "teamId": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high",
+                            "critical"
+                        ]
+                    },
+                    "category": {
+                        "type": "string",
+                        "enum": [
+                            "prevention",
+                            "detection",
+                            "mitigation",
+                            "process",
+                            "documentation",
+                            "other"
+                        ]
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "open",
+                            "inProgress",
+                            "blocked",
+                            "done",
+                            "cancelled"
+                        ]
+                    },
+                    "dueAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "completedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "createdBy": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "canEdit": {
+                        "type": "boolean"
+                    },
+                    "canDelete": {
+                        "type": "boolean"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "IncidentActionItemInput": {
+                "required": [
+                    "title"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "ownerId": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "teamId": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "postMortemId": {
+                        "description": "Must be the postmortem of the same incident",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "priority": {
+                        "type": "string",
+                        "default": "medium",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high",
+                            "critical"
+                        ]
+                    },
+                    "category": {
+                        "type": "string",
+                        "default": "other",
+                        "enum": [
+                            "prevention",
+                            "detection",
+                            "mitigation",
+                            "process",
+                            "documentation",
+                            "other"
+                        ]
+                    },
+                    "status": {
+                        "type": "string",
+                        "default": "open",
+                        "enum": [
+                            "open",
+                            "inProgress",
+                            "blocked",
+                            "done",
+                            "cancelled"
+                        ]
+                    },
+                    "dueAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "IncidentPolicy": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "description": "Slug shaped, unique, and the key used for idempotent imports",
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "version": {
+                        "description": "Incremented on every import that changes the definition",
+                        "type": "integer"
+                    },
+                    "source": {
+                        "type": "string",
+                        "enum": [
+                            "yaml",
+                            "api"
+                        ]
+                    },
+                    "ownerId": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "teamIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "teams": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "match": {
+                        "description": "Which alerts fall under this policy",
+                        "properties": {
+                            "alertRuleIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "tags": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "serviceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dataSourceTypes": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "grouping": {
+                        "description": "How an alert storm collapses into one incident",
+                        "properties": {
+                            "key": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "serviceId",
+                                        "alertRuleId",
+                                        "tag",
+                                        "dataSourceType"
+                                    ]
+                                }
+                            },
+                            "windowMinutes": {
+                                "type": "integer"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "incident": {
+                        "properties": {
+                            "autoCreate": {
+                                "type": "boolean"
+                            },
+                            "autoResolveOnAlertClear": {
+                                "type": "boolean"
+                            },
+                            "titleTemplate": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "defaultSeverity": {
+                                "type": "string",
+                                "enum": [
+                                    "SEV1",
+                                    "SEV2",
+                                    "SEV3",
+                                    "SEV4"
+                                ]
+                            },
+                            "severityMap": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "rules": {
+                        "description": "Per severity response rules, keyed by SEV1 to SEV4",
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/IncidentPolicyRule"
+                        }
+                    },
+                    "createdBy": {
+                        "type": "string"
+                    },
+                    "updatedBy": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "canEdit": {
+                        "type": "boolean"
+                    },
+                    "canDelete": {
+                        "type": "boolean"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "IncidentPolicyRule": {
+                "properties": {
+                    "ackWithinMinutes": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "resolveWithinMinutes": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "requireCommander": {
+                        "type": "boolean"
+                    },
+                    "notifyEndpointIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "escalation": {
+                        "properties": {
+                            "onCallPlanId": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "useLayers": {
+                                "type": "boolean"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "communication": {
+                        "properties": {
+                            "stakeholderUpdateEveryMinutes": {
+                                "type": "integer",
+                                "nullable": true
+                            },
+                            "statusPageUpdateRequired": {
+                                "type": "boolean"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "postmortem": {
+                        "properties": {
+                            "required": {
+                                "type": "boolean"
+                            },
+                            "dueDays": {
+                                "type": "integer",
+                                "nullable": true
+                            },
+                            "reviewRequired": {
+                                "type": "boolean"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "runbookNames": {
+                        "description": "Runbook names as written in the definition, kept even when no runbook carries that name yet.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "runbookIds": {
+                        "description": "Read only. The ids of the runbooks that the names above resolved to.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "IncidentPolicyInput": {
+                "description": "The JSON body of a policy create or update. Mirrors the stored document: references are ids and rules are keyed by severity.",
+                "required": [
+                    "name",
+                    "teamIds",
+                    "match",
+                    "rules"
+                ],
+                "properties": {
+                    "name": {
+                        "description": "Lowercase, dash separated, and unique",
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "enabled": {
+                        "type": "boolean",
+                        "default": true
+                    },
+                    "ownerId": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "teamIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "match": {
+                        "description": "At least one matcher is required, otherwise the policy would cover every alert.",
+                        "properties": {
+                            "alertRuleIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "tags": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "serviceIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dataSourceTypes": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "grouping": {
+                        "properties": {
+                            "key": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "serviceId",
+                                        "alertRuleId",
+                                        "tag",
+                                        "dataSourceType"
+                                    ]
+                                }
+                            },
+                            "windowMinutes": {
+                                "description": "1 to 1440",
+                                "type": "integer"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "incident": {
+                        "properties": {
+                            "autoCreate": {
+                                "type": "boolean"
+                            },
+                            "autoResolveOnAlertClear": {
+                                "type": "boolean"
+                            },
+                            "titleTemplate": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "defaultSeverity": {
+                                "type": "string",
+                                "enum": [
+                                    "SEV1",
+                                    "SEV2",
+                                    "SEV3",
+                                    "SEV4"
+                                ]
+                            },
+                            "severityMap": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "rules": {
+                        "description": "Keyed by SEV1 to SEV4, at least one entry. `runbookIds` is ignored on input.",
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/IncidentPolicyRule"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "IncidentPolicyImportResult": {
+                "properties": {
+                    "valid": {
+                        "type": "boolean"
+                    },
+                    "dryRun": {
+                        "type": "boolean"
+                    },
+                    "created": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/IncidentPolicyImportEntry"
+                        }
+                    },
+                    "updated": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/IncidentPolicyImportEntry"
+                        }
+                    },
+                    "unchanged": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/IncidentPolicyImportEntry"
+                        }
+                    },
+                    "errors": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "path": {
+                                    "type": "string",
+                                    "example": "spec.rules[0].notify.channels[1]"
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "example": "Endpoint 'oncall-sms' not found."
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "IncidentPolicyImportEntry": {
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "description": "Null on a dry run for policies that do not exist yet",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "version": {
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
             "ProfileAsset": {
                 "properties": {
                     "_id": {
@@ -9114,6 +12637,249 @@
                     },
                     "total": {
                         "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
+            "Runbook": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "description": "Unique, lowercase, dash separated",
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "published",
+                            "archived"
+                        ]
+                    },
+                    "version": {
+                        "description": "Incremented on every update",
+                        "type": "integer"
+                    },
+                    "sourceType": {
+                        "type": "string",
+                        "enum": [
+                            "steps",
+                            "markdown",
+                            "externalUrl"
+                        ]
+                    },
+                    "content": {
+                        "description": "Markdown body, set when sourceType is markdown",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "externalUrl": {
+                        "description": "Set when sourceType is externalUrl",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "steps": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RunbookStep"
+                        }
+                    },
+                    "teamIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "teams": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "appliesTo": {
+                        "$ref": "#/components/schemas/RunbookAppliesTo"
+                    },
+                    "reviewIntervalDays": {
+                        "description": "How often the runbook should be reviewed",
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "createdBy": {
+                        "type": "string"
+                    },
+                    "updatedBy": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "canEdit": {
+                        "type": "boolean"
+                    },
+                    "canDelete": {
+                        "type": "boolean"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "RunbookInput": {
+                "required": [
+                    "name",
+                    "teamIds",
+                    "sourceType"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "description": "Derived from the name when omitted",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "teamIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "status": {
+                        "type": "string",
+                        "default": "draft",
+                        "enum": [
+                            "draft",
+                            "published",
+                            "archived"
+                        ]
+                    },
+                    "sourceType": {
+                        "type": "string",
+                        "enum": [
+                            "steps",
+                            "markdown",
+                            "externalUrl"
+                        ]
+                    },
+                    "content": {
+                        "description": "Required when sourceType is markdown",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "externalUrl": {
+                        "description": "Required when sourceType is externalUrl",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "steps": {
+                        "description": "Required when sourceType is steps",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RunbookStep"
+                        }
+                    },
+                    "appliesTo": {
+                        "$ref": "#/components/schemas/RunbookAppliesTo"
+                    },
+                    "reviewIntervalDays": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "RunbookStep": {
+                "required": [
+                    "title"
+                ],
+                "properties": {
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "command": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "expectedResult": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "RunbookAppliesTo": {
+                "description": "Where the runbook is relevant. Advisory only, nothing is matched automatically yet.",
+                "properties": {
+                    "serviceIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "alertRuleIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "severities": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "SEV1",
+                                "SEV2",
+                                "SEV3",
+                                "SEV4"
+                            ]
+                        }
                     }
                 },
                 "type": "object"
@@ -9448,12 +13214,28 @@
             "description": "Manage notification endpoints (SMS, Email, Telegram, Bale, Teams, etc.)"
         },
         {
+            "name": "Incidents",
+            "description": "Incident management: CRUD, acknowledge, and resolve. The postmortem, timeline, documents and action items of an incident live under the Incident Documentation tag."
+        },
+        {
+            "name": "Incident Documentation",
+            "description": "Everything written about an incident: the postmortem and its root cause analysis, the timeline, attached evidence, and the follow-up action items. Read access follows the incident, and writing requires edit rights on it."
+        },
+        {
+            "name": "Incident Policies",
+            "description": "Incident response policies. Definitions can be applied from the YAML DSL (apiVersion skylogs.io/v1) or written as JSON. Policies are configuration only; nothing acts on them yet."
+        },
+        {
             "name": "ProfileAsset",
             "description": "Profile assets: bundled alert-rule templates applied for a user. Owner role only."
         },
         {
             "name": "Prometheus",
             "description": "Prometheus helper endpoints for alert-rule UI (rules, labels, fired alerts). Prefer `/alert-rule/create-data/*` when building create forms."
+        },
+        {
+            "name": "Runbooks",
+            "description": "Operational procedures teams follow during an incident. Referenced by incident policies through runbookNames."
         },
         {
             "name": "SkylogsInstance",

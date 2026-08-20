@@ -34,7 +34,7 @@ describe('HaConfigCatalog membership', function () {
 
     it('carries the collections a follower needs to serve traffic after a failover', function (string $alias) {
         expect(HaConfigCatalog::definition($alias))->not->toBeNull();
-    })->with(['users', 'roles', 'permissions', 'teams', 'endpoints', 'dataSources', 'alertRules', 'skylogsInstances']);
+    })->with(['users', 'roles', 'permissions', 'teams', 'endpoints', 'dataSources', 'alertRules', 'skylogsInstances', 'incidents', 'onCallPlans']);
 
     it('names the model behind an instance', function () {
         expect(HaConfigCatalog::aliasFor(new AlertRule))->toBe('alertRules')

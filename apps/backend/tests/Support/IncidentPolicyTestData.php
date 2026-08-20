@@ -1,0 +1,119 @@
+<?php
+
+namespace Tests\Support;
+
+use App\Enums\AlertRuleType;
+use App\Models\AlertRule;
+use App\Models\Endpoint;
+use App\Models\IncidentPolicy;
+use App\Models\OnCallPlan;
+use App\Models\Team;
+use App\Models\User;
+
+class IncidentPolicyTestData
+{
+    public static function createAlertRule(User $user, ?string $name = null): AlertRule
+    {
+        return AlertRule::create([
+            'name' => $name ?? 'test-rule-'.uniqid(),
+            'type' => AlertRuleType::API,
+            'userId' => $user->id,
+        ]);
+    }
+
+    public static function createEndpoint(User $user, ?string $name = null): Endpoint
+    {
+        return Endpoint::create([
+            'name' => $name ?? 'test-endpoint-'.uniqid(),
+            'type' => Endpoint::TELEGRAM,
+            'userId' => $user->id,
+            'value' => '123456',
+        ]);
+    }
+
+    public static function createOnCallPlan(Team $team, ?string $name = null): OnCallPlan
+    {
+        return OnCallPlan::create([
+            'name' => $name ?? 'test-plan-'.uniqid(),
+            'teamId' => $team->id,
+            'layers' => [],
+        ]);
+    }
+
+    /**
+     * A single-document definition wired to the given fixtures.
+     *
+     * @param  array<string, string>  $overrides
+     */
+    public static function policyYaml(string $name, string $teamName, array $overrides = []): string
+    {
+        $alertRule = $overrides['alertRule'] ?? 'placeholder-rule';
+        $channel = $overrides['channel'] ?? null;
+        $onCallPlan = $overrides['onCallPlan'] ?? null;
+        $ackWithinMinutes = $overrides['ackWithinMinutes'] ?? '5';
+
+        $notify = $channel === null ? '' : <<<YAML
+
+              notify:
+                channels: [endpoint:{$channel}]
+        YAML;
+
+        $escalation = $onCallPlan === null ? '' : <<<YAML
+
+              escalation:
+                onCallPlan: onCallPlan:{$onCallPlan}
+        YAML;
+
+        return <<<YAML
+        apiVersion: skylogs.io/v1
+        kind: IncidentPolicy
+        metadata:
+          name: {$name}
+          description: Imported by the test suite
+          teams: [{$teamName}]
+        spec:
+          match:
+            alertRules: [{$alertRule}]
+            tags: [payments]
+          grouping:
+            key: [serviceId, alertRuleId]
+            windowMinutes: 15
+          incident:
+            autoCreate: true
+            defaultSeverity: SEV3
+            severityMap:
+              critical: SEV1
+          rules:
+            - severity: SEV1
+              ack: { withinMinutes: {$ackWithinMinutes} }
+              resolve: { withinMinutes: 60 }
+              requireCommander: true{$notify}{$escalation}
+              postmortem:
+                required: true
+                dueDays: 5
+              runbooks: [payments-api-5xx-triage]
+            - severity: SEV3
+              ack: { withinMinutes: 30 }
+        YAML;
+    }
+
+    public static function deletePolicyByName(string $name): void
+    {
+        IncidentPolicy::query()->where('name', $name)->delete();
+    }
+
+    public static function deleteAlertRule(AlertRule $alertRule): void
+    {
+        AlertRule::query()->where('_id', $alertRule->id)->delete();
+    }
+
+    public static function deleteEndpoint(Endpoint $endpoint): void
+    {
+        Endpoint::query()->where('_id', $endpoint->id)->delete();
+    }
+
+    public static function deleteOnCallPlan(OnCallPlan $onCallPlan): void
+    {
+        OnCallPlan::query()->where('_id', $onCallPlan->id)->delete();
+    }
+}

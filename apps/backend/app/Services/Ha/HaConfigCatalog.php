@@ -12,6 +12,8 @@ use App\Models\Config\ConfigSms;
 use App\Models\Config\ConfigTelegram;
 use App\Models\DataSource\DataSource;
 use App\Models\Endpoint;
+use App\Models\Incident;
+use App\Models\OnCallPlan;
 use App\Models\Profile\ProfileAsset;
 use App\Models\Profile\ProfileEnvironment;
 use App\Models\Profile\ProfileService;
@@ -89,6 +91,8 @@ final class HaConfigCatalog
             'configSms' => ['model' => ConfigSms::class, 'excluded' => []],
             'configCalls' => ['model' => ConfigCall::class, 'excluded' => []],
             'configEmails' => ['model' => ConfigEmail::class, 'excluded' => []],
+            'incidents' => ['model' => Incident::class, 'excluded' => []],
+            'onCallPlans' => ['model' => OnCallPlan::class, 'excluded' => []],
         ];
     }
 

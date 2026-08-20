@@ -12,6 +12,8 @@ chown -R www-data:www-data \
     /var/www/html/storage \
     /var/www/html/bootstrap/cache
 
+cd /var/www/html
+
 echo "Clearing caches..."
 php artisan optimize:clear
 
