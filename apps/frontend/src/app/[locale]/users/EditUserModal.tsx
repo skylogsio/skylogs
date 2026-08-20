@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Grid, TextField, ToggleButton, Typography } from "@mui/material";
+import { Grid, TextField, Typography, useTheme } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
@@ -11,9 +11,13 @@ import type { BasicCreateOrUpdateModalProps } from "@/@types/global";
 import type { IUser } from "@/@types/user";
 import { updateUser } from "@/api/user";
 import ModalContainer from "@/components/Modal";
-import ToggleButtonGroup from "@/components/ToggleButtonGroup";
-import { useRole } from "@/hooks";
+import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
+import { useCurrentTheme, useRole } from "@/hooks";
 import { ROLE_TYPES } from "@/utils/userUtils";
+
+import GradientSubmitButton from "@/components/GradientSubmitButton";
+import UserModalBody from "./UserModalBody";
+import UserRoleToggle from "./UserRoleToggle";
 
 const updateUserSchema = z.object({
   name: z.string().trim().min(1, "This field is Required."),
@@ -59,9 +63,11 @@ export default function EditUserModal({
     defaultValues: getFormValues(userData),
     mode: "onSubmit"
   });
+  const theme = useTheme();
+  const { isDark } = useCurrentTheme();
   const { hasRole } = useRole();
 
-  const { mutate: updateUserMutation, isPending: isCreating } = useMutation({
+  const { mutate: updateUserMutation, isPending: isUpdating } = useMutation({
     mutationFn: (body: UserFormType) => updateUser(userData.id, body),
     onSuccess: () => {
       toast.success("User Updated Successfully.");
@@ -79,77 +85,72 @@ export default function EditUserModal({
   }, [reset, open, userData]);
 
   return (
-    <ModalContainer title="Edit User" open={open} onClose={onClose} disableEscapeKeyDown>
-      <Grid
-        component="form"
-        onSubmit={handleSubmit(handleSubmitForm)}
-        container
-        spacing={2}
-        sx={{
-          width: 1,
-          display: "flex",
-          marginTop: 4
-        }}
-      >
-        {watch("role") !== "owner" && hasRole("owner") && (
-          <Grid
-            size={12}
-            sx={{
-              display: "flex",
-              justifyContent: "flex-start",
-              alignItems: "center"
-            }}
-          >
-            <Typography
-              variant="body1"
-              component="div"
+    <ModalContainer
+      title="Edit User"
+      open={open}
+      onClose={onClose}
+      disableEscapeKeyDown
+      paperSx={getGlassCardSx(theme, isDark)}
+    >
+      <UserModalBody>
+        <Grid
+          component="form"
+          onSubmit={handleSubmit(handleSubmitForm)}
+          container
+          spacing={2}
+          sx={{
+            width: 1,
+            display: "flex"
+          }}
+        >
+          {watch("role") !== "owner" && hasRole("owner") && (
+            <Grid
+              size={12}
               sx={{
-                marginRight: 1
+                display: "flex",
+                justifyContent: "flex-start",
+                alignItems: "center",
+                gap: 1.5
               }}
             >
-              Role:
-            </Typography>
-            <ToggleButtonGroup
-              exclusive
-              value={watch("role")}
-              onChange={(_, value) => setValue("role", value)}
-            >
-              {ROLE_TYPES.filter((role) => role !== "owner").map((role) => (
-                <ToggleButton
-                  key={role}
-                  value={role}
-                  sx={{ textTransform: "capitalize !important" }}
-                >
-                  {role}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
+              <Typography
+                variant="body1"
+                component="div"
+                sx={{
+                  color: "text.secondary",
+                  fontWeight: 600
+                }}
+              >
+                Role
+              </Typography>
+              <UserRoleToggle value={watch("role")} onChange={(role) => setValue("role", role)} />
+            </Grid>
+          )}
+          <Grid size={6}>
+            <TextField
+              label="Username"
+              variant="filled"
+              {...register("username")}
+              error={!!errors.username}
+              helperText={errors.username?.message}
+            />
           </Grid>
-        )}
-        <Grid size={6}>
-          <TextField
-            label="Username"
-            variant="filled"
-            {...register("username")}
-            error={!!errors.username}
-            helperText={errors.username?.message}
-          />
+          <Grid size={6}>
+            <TextField
+              label="Full Name"
+              variant="filled"
+              {...register("name")}
+              error={!!errors.name}
+              helperText={errors.name?.message}
+            />
+          </Grid>
+          <Grid size={12}>
+            <GradientSubmitButton type="submit" fullWidth loading={isUpdating}>
+              Save
+            </GradientSubmitButton>
+          </Grid>
         </Grid>
-        <Grid size={6}>
-          <TextField
-            label="Full Name"
-            variant="filled"
-            {...register("name")}
-            error={!!errors.name}
-            helperText={errors.name?.message}
-          />
-        </Grid>
-        <Grid size={12}>
-          <Button type="submit" variant="contained" size="large" fullWidth disabled={isCreating}>
-            Edit
-          </Button>
-        </Grid>
-      </Grid>
+      </UserModalBody>
     </ModalContainer>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Grid, IconButton, TextField, useTheme } from "@mui/material";
+import { Grid, IconButton, TextField, useTheme } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { HiEye, HiEyeOff } from "react-icons/hi";
@@ -11,6 +11,11 @@ import { z } from "zod";
 import { changePassword } from "@/api/user";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
+import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
+import { useCurrentTheme } from "@/hooks";
+
+import GradientSubmitButton from "@/components/GradientSubmitButton";
+import UserModalBody from "./UserModalBody";
 
 const changePasswordSchema = z
   .object({
@@ -45,10 +50,12 @@ export default function ChangePasswordModal({
     defaultValues,
     mode: "onSubmit"
   });
-  const { palette } = useTheme();
+  const theme = useTheme();
+  const { palette } = theme;
+  const { isDark } = useCurrentTheme();
   const [showPassword, setShowPassword] = useState(false);
 
-  const { mutate: changePasswordMutation, isPending: isCreating } = useMutation({
+  const { mutate: changePasswordMutation, isPending: isUpdating } = useMutation({
     mutationFn: (body: ChangePasswordFormType) => changePassword(userId, body),
     onSuccess: () => {
       toast.success("Password Changed Successfully.");
@@ -65,71 +72,86 @@ export default function ChangePasswordModal({
   }, [reset, open]);
 
   return (
-    <ModalContainer title="Change User Password" open={open} onClose={onClose} disableEscapeKeyDown>
-      <Grid
-        component="form"
-        onSubmit={handleSubmit(handleSubmitForm)}
-        container
-        spacing={2}
-        sx={{
-          width: 1,
-          display: "flex",
-          marginTop: 4
-        }}
-      >
-        <Grid size={6}>
-          <TextField
-            label="Password"
-            type={showPassword ? "text" : "password"}
-            variant="filled"
-            {...register("password")}
-            error={!!errors.password}
-            helperText={errors.password?.message}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <IconButton disableRipple onClick={() => setShowPassword((prev) => !prev)}>
-                    {showPassword ? (
-                      <HiEyeOff color={palette.secondary.main} size="1.2rem" />
-                    ) : (
-                      <HiEye color={palette.secondary.main} size="1.2rem" />
-                    )}
-                  </IconButton>
-                )
-              }
-            }}
-          />
-        </Grid>
-        <Grid size={6}>
-          <TextField
-            label="Confirm New Password"
-            type={showPassword ? "text" : "password"}
-            variant="filled"
-            {...register("confirmPassword")}
-            error={!!errors.confirmPassword}
-            helperText={errors.confirmPassword?.message}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <IconButton disableRipple onClick={() => setShowPassword((prev) => !prev)}>
-                    {showPassword ? (
-                      <HiEyeOff color={palette.secondary.main} size="1.2rem" />
-                    ) : (
-                      <HiEye color={palette.secondary.main} size="1.2rem" />
-                    )}
-                  </IconButton>
-                )
-              }
-            }}
-          />
-        </Grid>
+    <ModalContainer
+      title="Change User Password"
+      open={open}
+      onClose={onClose}
+      disableEscapeKeyDown
+      paperSx={getGlassCardSx(theme, isDark)}
+    >
+      <UserModalBody>
+        <Grid
+          component="form"
+          onSubmit={handleSubmit(handleSubmitForm)}
+          container
+          spacing={2}
+          sx={{
+            width: 1,
+            display: "flex"
+          }}
+        >
+          <Grid size={6}>
+            <TextField
+              label="Password"
+              type={showPassword ? "text" : "password"}
+              variant="filled"
+              {...register("password")}
+              error={!!errors.password}
+              helperText={errors.password?.message}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <IconButton
+                      disableRipple
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      onClick={() => setShowPassword((prev) => !prev)}
+                    >
+                      {showPassword ? (
+                        <HiEyeOff color={palette.grey[400]} size={20} />
+                      ) : (
+                        <HiEye color={palette.grey[400]} size={20} />
+                      )}
+                    </IconButton>
+                  )
+                }
+              }}
+            />
+          </Grid>
+          <Grid size={6}>
+            <TextField
+              label="Confirm New Password"
+              type={showPassword ? "text" : "password"}
+              variant="filled"
+              {...register("confirmPassword")}
+              error={!!errors.confirmPassword}
+              helperText={errors.confirmPassword?.message}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <IconButton
+                      disableRipple
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      onClick={() => setShowPassword((prev) => !prev)}
+                    >
+                      {showPassword ? (
+                        <HiEyeOff color={palette.grey[400]} size={20} />
+                      ) : (
+                        <HiEye color={palette.grey[400]} size={20} />
+                      )}
+                    </IconButton>
+                  )
+                }
+              }}
+            />
+          </Grid>
 
-        <Grid size={12}>
-          <Button type="submit" variant="contained" size="large" fullWidth disabled={isCreating}>
-            Change Password
-          </Button>
+          <Grid size={12}>
+            <GradientSubmitButton type="submit" fullWidth loading={isUpdating}>
+              Change Password
+            </GradientSubmitButton>
+          </Grid>
         </Grid>
-      </Grid>
+      </UserModalBody>
     </ModalContainer>
   );
 }
