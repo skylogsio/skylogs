@@ -78,7 +78,8 @@ function SmartTableInner<T>(
     renderToolbar,
     forceShowFilter = false,
     hideSearch = false,
-    excludeFilterKeys = []
+    excludeFilterKeys = [],
+    tablePaperSx
   }: SmartTableProps<T>,
   ref: React.Ref<TableComponentRef>
 ) {
@@ -354,7 +355,8 @@ function SmartTableInner<T>(
           borderRadius: 3,
           border: `1px solid ${alpha(palette.text.primary, 0.08)}`,
           overflow: "hidden",
-          boxShadow: `0 1px 2px ${alpha(palette.common.black, palette.mode === "dark" ? 0.2 : 0.04)}`
+          boxShadow: `0 1px 2px ${alpha(palette.common.black, palette.mode === "dark" ? 0.2 : 0.04)}`,
+          ...tablePaperSx
         }}
       >
         <TableContainer sx={{ width: 1, maxHeight: 1, overflow: "auto" }}>
