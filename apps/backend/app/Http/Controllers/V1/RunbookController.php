@@ -6,17 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Runbook\IndexRunbookRequest;
 use App\Http\Requests\Runbook\StoreRunbookRequest;
 use App\Http\Requests\Runbook\UpdateRunbookRequest;
+use App\Http\Resources\PaginatedJson;
 use App\Http\Resources\Runbook\RunbookResource;
 use App\Models\Runbook;
 use App\Services\RunbookService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class RunbookController extends Controller
 {
     public function __construct(private readonly RunbookService $runbookService) {}
 
-    public function index(IndexRunbookRequest $request): AnonymousResourceCollection
+    public function index(IndexRunbookRequest $request): JsonResponse
     {
         $perPage = (int) ($request->validated('perPage') ?? 25);
         $user = auth()->user();
@@ -47,7 +47,7 @@ class RunbookController extends Controller
             $this->runbookService->applyAccessFlags($user, $runbook);
         }
 
-        return RunbookResource::collection($paginator);
+        return PaginatedJson::make($paginator, RunbookResource::class);
     }
 
     public function show(string $id): RunbookResource

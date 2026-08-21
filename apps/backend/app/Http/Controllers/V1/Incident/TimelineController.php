@@ -5,10 +5,10 @@ namespace App\Http\Controllers\V1\Incident;
 use App\Http\Requests\IncidentTimeline\IndexIncidentTimelineRequest;
 use App\Http\Requests\IncidentTimeline\StoreIncidentTimelineEntryRequest;
 use App\Http\Resources\IncidentTimeline\IncidentTimelineEntryResource;
+use App\Http\Resources\PaginatedJson;
 use App\Services\IncidentService;
 use App\Services\IncidentTimelineService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class TimelineController extends IncidentSubResourceController
 {
@@ -19,7 +19,7 @@ class TimelineController extends IncidentSubResourceController
         parent::__construct($incidentService);
     }
 
-    public function index(IndexIncidentTimelineRequest $request, string $incidentId): AnonymousResourceCollection
+    public function index(IndexIncidentTimelineRequest $request, string $incidentId): JsonResponse
     {
         $incident = $this->viewableIncident($incidentId);
         $perPage = (int) ($request->validated('perPage') ?? 50);
@@ -38,8 +38,9 @@ class TimelineController extends IncidentSubResourceController
             $query->where('isPublic', $request->boolean('isPublic'));
         }
 
-        return IncidentTimelineEntryResource::collection(
+        return PaginatedJson::make(
             $query->orderBy('occurredAt')->paginate($perPage),
+            IncidentTimelineEntryResource::class,
         );
     }
 

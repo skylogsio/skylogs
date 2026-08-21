@@ -132,6 +132,7 @@ describe('Incident documents', function () {
         $all = $this->actingAs($this->member, 'api')
             ->getJson("/api/v1/incident/{$this->incident->id}/document")
             ->assertSuccessful()
+            ->assertJsonStructure(laravelPaginatorStructure())
             ->json('data');
 
         expect($all)->toHaveCount(2);

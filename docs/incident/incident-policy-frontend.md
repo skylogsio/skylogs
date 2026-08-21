@@ -49,7 +49,7 @@ List  GET /incident
 | `tag` | Exact tag |
 | `search` | Partial match on **title** only |
 
-Sorted by `startedAt` desc. Pagination `meta` is snake_case; incident fields are camelCase.
+Sorted by `startedAt` desc. Pagination is the same shape as endpoints, users, and teams: `current_page`, `data`, `last_page`, `per_page`, `total` at the top level (snake_case). Incident fields are camelCase.
 
 ### Create
 

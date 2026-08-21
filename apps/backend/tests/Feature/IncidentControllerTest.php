@@ -178,7 +178,8 @@ describe('IncidentController', function () {
 
         $response = $this->actingAs($this->member, 'api')
             ->getJson('/api/v1/incident?search='.urlencode($title))
-            ->assertSuccessful();
+            ->assertSuccessful()
+            ->assertJsonStructure(laravelPaginatorStructure());
 
         $ids = collect($response->json('data'))->pluck('id')->all();
         expect($ids)->toContain($incident->id);
@@ -457,6 +458,9 @@ describe('Incident documentation surface', function () {
         $this->actingAs($this->manager, 'api')
             ->getJson('/api/v1/incident?perPage=5')
             ->assertSuccessful()
+            ->assertJsonStructure(laravelPaginatorStructure())
+            ->assertJsonPath('current_page', 1)
+            ->assertJsonPath('per_page', 5)
             ->assertJsonPath('data.0.counts', null);
     });
 

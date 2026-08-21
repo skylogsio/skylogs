@@ -6,11 +6,11 @@ use App\Http\Requests\IncidentActionItem\IndexIncidentActionItemRequest;
 use App\Http\Requests\IncidentActionItem\StoreIncidentActionItemRequest;
 use App\Http\Requests\IncidentActionItem\UpdateIncidentActionItemRequest;
 use App\Http\Resources\IncidentActionItem\IncidentActionItemResource;
+use App\Http\Resources\PaginatedJson;
 use App\Models\IncidentActionItem;
 use App\Services\IncidentActionItemService;
 use App\Services\IncidentService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ActionItemController extends IncidentSubResourceController
 {
@@ -21,7 +21,7 @@ class ActionItemController extends IncidentSubResourceController
         parent::__construct($incidentService);
     }
 
-    public function index(IndexIncidentActionItemRequest $request, string $incidentId): AnonymousResourceCollection
+    public function index(IndexIncidentActionItemRequest $request, string $incidentId): JsonResponse
     {
         $incident = $this->viewableIncident($incidentId);
         $perPage = (int) ($request->validated('perPage') ?? 50);
@@ -42,7 +42,7 @@ class ActionItemController extends IncidentSubResourceController
             $actionItem->setAttribute('canDelete', $canEdit);
         }
 
-        return IncidentActionItemResource::collection($paginator);
+        return PaginatedJson::make($paginator, IncidentActionItemResource::class);
     }
 
     public function store(StoreIncidentActionItemRequest $request, string $incidentId): JsonResponse

@@ -32,7 +32,11 @@ class IncidentDocs
                 description: 'Paginated incidents',
                 content: new OA\JsonContent(
                     properties: [
+                        new OA\Property(property: 'current_page', type: 'integer'),
                         new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/Incident')),
+                        new OA\Property(property: 'last_page', type: 'integer'),
+                        new OA\Property(property: 'per_page', type: 'integer'),
+                        new OA\Property(property: 'total', type: 'integer'),
                     ]
                 )
             ),

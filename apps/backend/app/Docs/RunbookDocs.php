@@ -31,7 +31,11 @@ class RunbookDocs
                 description: 'Paginated runbooks',
                 content: new OA\JsonContent(
                     properties: [
+                        new OA\Property(property: 'current_page', type: 'integer'),
                         new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/Runbook')),
+                        new OA\Property(property: 'last_page', type: 'integer'),
+                        new OA\Property(property: 'per_page', type: 'integer'),
+                        new OA\Property(property: 'total', type: 'integer'),
                     ]
                 )
             ),

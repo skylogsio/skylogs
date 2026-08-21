@@ -201,7 +201,8 @@ describe('IncidentPolicyController', function () {
 
         $listed = $this->actingAs($this->manager, 'api')
             ->getJson('/api/v1/incident-policy?search='.urlencode($this->policyName))
-            ->assertSuccessful();
+            ->assertSuccessful()
+            ->assertJsonStructure(laravelPaginatorStructure());
 
         expect(collect($listed->json('data'))->pluck('id'))->toContain($id);
 

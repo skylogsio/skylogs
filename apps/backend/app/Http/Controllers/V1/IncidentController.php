@@ -9,17 +9,17 @@ use App\Http\Requests\Incident\ResolveIncidentRequest;
 use App\Http\Requests\Incident\StoreIncidentRequest;
 use App\Http\Requests\Incident\UpdateIncidentRequest;
 use App\Http\Resources\Incident\IncidentResource;
+use App\Http\Resources\PaginatedJson;
 use App\Models\Incident;
 use App\Services\IncidentService;
 use App\Services\TeamService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class IncidentController extends Controller
 {
     public function __construct(private readonly IncidentService $incidentService) {}
 
-    public function index(IndexIncidentRequest $request): AnonymousResourceCollection
+    public function index(IndexIncidentRequest $request): JsonResponse
     {
         $perPage = (int) ($request->validated('perPage') ?? 25);
         $user = auth()->user();
@@ -69,7 +69,7 @@ class IncidentController extends Controller
             $this->incidentService->applyAccessFlags($user, $incident);
         }
 
-        return IncidentResource::collection($paginator);
+        return PaginatedJson::make($paginator, IncidentResource::class);
     }
 
     public function store(StoreIncidentRequest $request): JsonResponse

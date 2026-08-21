@@ -30,7 +30,11 @@ class IncidentPolicyDocs
                 description: 'Paginated incident policies',
                 content: new OA\JsonContent(
                     properties: [
+                        new OA\Property(property: 'current_page', type: 'integer'),
                         new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/IncidentPolicy')),
+                        new OA\Property(property: 'last_page', type: 'integer'),
+                        new OA\Property(property: 'per_page', type: 'integer'),
+                        new OA\Property(property: 'total', type: 'integer'),
                     ]
                 )
             ),

@@ -5,11 +5,11 @@ namespace App\Http\Controllers\V1\Incident;
 use App\Http\Requests\IncidentDocument\IndexIncidentDocumentRequest;
 use App\Http\Requests\IncidentDocument\StoreIncidentDocumentRequest;
 use App\Http\Resources\IncidentDocument\IncidentDocumentResource;
+use App\Http\Resources\PaginatedJson;
 use App\Models\IncidentDocument;
 use App\Services\IncidentDocumentService;
 use App\Services\IncidentService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -22,7 +22,7 @@ class DocumentController extends IncidentSubResourceController
         parent::__construct($incidentService);
     }
 
-    public function index(IndexIncidentDocumentRequest $request, string $incidentId): AnonymousResourceCollection
+    public function index(IndexIncidentDocumentRequest $request, string $incidentId): JsonResponse
     {
         $incident = $this->viewableIncident($incidentId);
         $perPage = (int) ($request->validated('perPage') ?? 25);
@@ -44,7 +44,7 @@ class DocumentController extends IncidentSubResourceController
             $document->setAttribute('canDelete', $canEdit);
         }
 
-        return IncidentDocumentResource::collection($paginator);
+        return PaginatedJson::make($paginator, IncidentDocumentResource::class);
     }
 
     public function store(StoreIncidentDocumentRequest $request, string $incidentId): JsonResponse

@@ -142,7 +142,8 @@ describe('RunbookController', function () {
 
         $visible = $this->actingAs($this->member, 'api')
             ->getJson('/api/v1/runbook?search='.urlencode($runbook->name))
-            ->assertSuccessful();
+            ->assertSuccessful()
+            ->assertJsonStructure(laravelPaginatorStructure());
 
         expect(collect($visible->json('data'))->pluck('id')->all())->toContain($runbook->id);
 

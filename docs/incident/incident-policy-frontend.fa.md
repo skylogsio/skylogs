@@ -103,13 +103,15 @@ Authorization: Bearer <token>
 
 ```json
 {
+  "current_page": 1,
   "data": [ { "id": "...", "title": "Checkout latency spike", "...": "شیء رخداد در ادامه" } ],
-  "links": { "first": "...", "last": "...", "prev": null, "next": null },
-  "meta": { "current_page": 1, "last_page": 4, "per_page": 25, "total": 87 }
+  "last_page": 4,
+  "per_page": 25,
+  "total": 87
 }
 ```
 
-کلیدهای `meta` با snake_case هستند و همه‌ی فیلدهای خود رخداد camelCase.
+کلیدهای صفحه‌بندی (`current_page`, `last_page`, `per_page`, `total`) مثل بقیه‌ی فهرست‌ها در ریشه هستند و snake_case‌اند. فیلدهای خود رخداد camelCase هستند.
 
 ## 🔸 مشاهده
 
@@ -598,7 +600,7 @@ spec:
 
 **سیاست‌ها**
 
-- نام‌گذاری فیلدها همه‌جا camelCase است؛ فقط `meta` صفحه‌بندی snake_case است.
+- نام‌گذاری فیلدها همه‌جا camelCase است؛ فقط کلیدهای صفحه‌بندی (`current_page`, `last_page`, `per_page`, `total`) snake_case هستند و در ریشه قرار دارند، نه داخل `meta`.
 - مقدار `unchanged` موفقیت است، نه شکست بی‌اثر.
 - در dry run مقدار `created[].id` برابر `null` است، پس از نتیجه‌ی dry run به صفحه‌ی جزئیات لینک ندهید.
 - export متن برمی‌گرداند نه JSON — کلاینتی که پاسخ را JSON پارس می‌کند خطا می‌دهد.

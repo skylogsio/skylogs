@@ -8,12 +8,12 @@ use App\Http\Requests\IncidentPolicy\IndexIncidentPolicyRequest;
 use App\Http\Requests\IncidentPolicy\StoreIncidentPolicyRequest;
 use App\Http\Requests\IncidentPolicy\UpdateIncidentPolicyRequest;
 use App\Http\Resources\IncidentPolicy\IncidentPolicyResource;
+use App\Http\Resources\PaginatedJson;
 use App\Models\IncidentPolicy;
 use App\Services\IncidentPolicy\IncidentPolicyExporter;
 use App\Services\IncidentPolicy\IncidentPolicyImporter;
 use App\Services\IncidentPolicyService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
 class IncidentPolicyController extends Controller
@@ -24,7 +24,7 @@ class IncidentPolicyController extends Controller
         private readonly IncidentPolicyExporter $exporter,
     ) {}
 
-    public function index(IndexIncidentPolicyRequest $request): AnonymousResourceCollection
+    public function index(IndexIncidentPolicyRequest $request): JsonResponse
     {
         $perPage = (int) ($request->validated('perPage') ?? 25);
         $user = auth()->user();
@@ -51,7 +51,7 @@ class IncidentPolicyController extends Controller
             $this->incidentPolicyService->applyAccessFlags($user, $policy);
         }
 
-        return IncidentPolicyResource::collection($paginator);
+        return PaginatedJson::make($paginator, IncidentPolicyResource::class);
     }
 
     public function show(string $id): IncidentPolicyResource

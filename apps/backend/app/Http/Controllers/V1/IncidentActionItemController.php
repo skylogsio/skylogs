@@ -6,8 +6,9 @@ use App\Enums\IncidentActionItemStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\IncidentActionItem\IndexIncidentActionItemRequest;
 use App\Http\Resources\IncidentActionItem\IncidentActionItemResource;
+use App\Http\Resources\PaginatedJson;
 use App\Services\IncidentActionItemService;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\JsonResponse;
 
 /**
  * Cross-incident view of follow-up work, for an "assigned to me" or overdue backlog.
@@ -17,7 +18,7 @@ class IncidentActionItemController extends Controller
 {
     public function __construct(private readonly IncidentActionItemService $actionItemService) {}
 
-    public function index(IndexIncidentActionItemRequest $request): AnonymousResourceCollection
+    public function index(IndexIncidentActionItemRequest $request): JsonResponse
     {
         $perPage = (int) ($request->validated('perPage') ?? 25);
         $query = $this->actionItemService->query();
@@ -50,8 +51,9 @@ class IncidentActionItemController extends Controller
 
         $this->actionItemService->applyVisibility($query, auth()->user());
 
-        return IncidentActionItemResource::collection(
+        return PaginatedJson::make(
             $query->orderBy('dueAt')->paginate($perPage),
+            IncidentActionItemResource::class,
         );
     }
 }

@@ -194,6 +194,7 @@ describe('Incident action items', function () {
         $all = $this->actingAs($this->member, 'api')
             ->getJson("/api/v1/incident/{$this->incident->id}/action-item")
             ->assertSuccessful()
+            ->assertJsonStructure(laravelPaginatorStructure())
             ->json('data');
 
         expect($all)->toHaveCount(2)
@@ -262,6 +263,7 @@ describe('Cross-incident action items', function () {
         $titles = $this->actingAs($this->member, 'api')
             ->getJson('/api/v1/incident-action-item')
             ->assertSuccessful()
+            ->assertJsonStructure(laravelPaginatorStructure())
             ->json('data.*.title');
 
         expect($titles)->toContain('Owned by the member')

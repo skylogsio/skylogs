@@ -46,6 +46,7 @@ describe('Incident timeline', function () {
         $entries = $this->actingAs($this->manager, 'api')
             ->getJson("/api/v1/incident/{$incident->id}/timeline")
             ->assertSuccessful()
+            ->assertJsonStructure(laravelPaginatorStructure())
             ->json('data');
 
         expect($entries)->toHaveCount(1)

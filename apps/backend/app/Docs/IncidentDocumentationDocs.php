@@ -95,7 +95,11 @@ class IncidentDocumentationDocs
                 response: 200,
                 description: 'Paginated timeline entries',
                 content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'current_page', type: 'integer'),
                     new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/IncidentTimelineEntry')),
+                    new OA\Property(property: 'last_page', type: 'integer'),
+                    new OA\Property(property: 'per_page', type: 'integer'),
+                    new OA\Property(property: 'total', type: 'integer'),
                 ])
             ),
             new OA\Response(response: 403, description: 'Forbidden'),
@@ -142,7 +146,11 @@ class IncidentDocumentationDocs
                 response: 200,
                 description: 'Paginated documents',
                 content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'current_page', type: 'integer'),
                     new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/IncidentDocument')),
+                    new OA\Property(property: 'last_page', type: 'integer'),
+                    new OA\Property(property: 'per_page', type: 'integer'),
+                    new OA\Property(property: 'total', type: 'integer'),
                 ])
             ),
             new OA\Response(response: 403, description: 'Forbidden'),
@@ -294,7 +302,11 @@ class IncidentDocumentationDocs
                 response: 200,
                 description: 'Paginated action items',
                 content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'current_page', type: 'integer'),
                     new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/IncidentActionItem')),
+                    new OA\Property(property: 'last_page', type: 'integer'),
+                    new OA\Property(property: 'per_page', type: 'integer'),
+                    new OA\Property(property: 'total', type: 'integer'),
                 ])
             ),
             new OA\Response(response: 403, description: 'Forbidden'),
@@ -386,7 +398,11 @@ class IncidentDocumentationDocs
                 response: 200,
                 description: 'Paginated action items',
                 content: new OA\JsonContent(properties: [
+                    new OA\Property(property: 'current_page', type: 'integer'),
                     new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/IncidentActionItem')),
+                    new OA\Property(property: 'last_page', type: 'integer'),
+                    new OA\Property(property: 'per_page', type: 'integer'),
+                    new OA\Property(property: 'total', type: 'integer'),
                 ])
             ),
         ]
