@@ -1,13 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Autocomplete,
+  Button,
+  Checkbox,
   Chip,
   CircularProgress,
+  FormControlLabel,
   Grid,
+  IconButton,
   MenuItem,
   Stack,
   TextField,
@@ -16,6 +23,7 @@ import {
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
+import { HiChevronDown, HiPlus, HiTrash } from "react-icons/hi";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
@@ -31,25 +39,44 @@ import { useCurrentTheme } from "@/hooks";
 
 import { createIncident, getIncidentById, updateIncident } from "../incident.api";
 import {
+  DOCUMENT_TYPES,
   INCIDENT_SEVERITIES,
   type IIncident,
-  type IIncidentCreateRequest,
-  type IIncidentUpdateRequest
+  type IncidentDocumentType
 } from "../incident.type";
+import {
+  buildIncidentCreatePayload,
+  buildIncidentUpdatePayload,
+  type NestedDocumentDraft
+} from "../incident.utils";
 
 import IncidentModalBody from "./IncidentModalBody";
 
-const incidentSchema = z.object({
-  title: z.string().trim().min(1, "This field is Required."),
-  description: z.string(),
-  severity: z.enum(INCIDENT_SEVERITIES, "This field is Required."),
-  teamIds: z.array(z.string()).min(1, "At least one team is required."),
-  tags: z.array(z.string()),
-  startedAt: z.string().nullable(),
-  detectedAt: z.string().nullable(),
-  resolvedAt: z.string().nullable(),
-  alertRuleIds: z.array(z.string())
-});
+const incidentSchema = z
+  .object({
+    title: z.string().trim().min(1, "This field is Required."),
+    description: z.string(),
+    severity: z.enum(INCIDENT_SEVERITIES, "This field is Required."),
+    teamIds: z.array(z.string()).min(1, "At least one team is required."),
+    tags: z.array(z.string()),
+    startedAt: z.string().nullable(),
+    detectedAt: z.string().nullable(),
+    resolvedAt: z.string().nullable(),
+    alertRuleIds: z.array(z.string()),
+    includePostMortem: z.boolean(),
+    postMortemSummary: z.string(),
+    postMortemImpact: z.string(),
+    postMortemDueAt: z.string().nullable()
+  })
+  .superRefine((values, ctx) => {
+    if (values.includePostMortem && !values.postMortemSummary.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["postMortemSummary"],
+        message: "Summary is required when including a postmortem."
+      });
+    }
+  });
 
 type IncidentFormType = z.infer<typeof incidentSchema>;
 
@@ -67,8 +94,33 @@ const emptyFormValues: IncidentFormType = {
   startedAt: null,
   detectedAt: null,
   resolvedAt: null,
-  alertRuleIds: []
+  alertRuleIds: [],
+  includePostMortem: false,
+  postMortemSummary: "",
+  postMortemImpact: "",
+  postMortemDueAt: null
 };
+
+function emptyLinkDoc(): NestedDocumentDraft {
+  return {
+    mode: "link",
+    externalUrl: "",
+    name: "",
+    type: "other",
+    description: "",
+    attachableType: "incident"
+  };
+}
+
+function emptyFileDoc(): NestedDocumentDraft {
+  return {
+    mode: "file",
+    file: null,
+    type: "other",
+    description: "",
+    attachableType: "incident"
+  };
+}
 
 function getFormValues(incident?: IIncident): IncidentFormType {
   if (!incident) {
@@ -84,37 +136,11 @@ function getFormValues(incident?: IIncident): IncidentFormType {
     startedAt: incident.startedAt ?? null,
     detectedAt: incident.detectedAt ?? null,
     resolvedAt: incident.resolvedAt ?? null,
-    alertRuleIds: incident.alertRuleIds ?? []
-  };
-}
-
-function toCreatePayload(values: IncidentFormType): IIncidentCreateRequest {
-  const body: IIncidentCreateRequest = {
-    title: values.title,
-    severity: values.severity,
-    teamIds: values.teamIds
-  };
-
-  if (values.description.trim()) body.description = values.description.trim();
-  if (values.tags.length > 0) body.tags = values.tags;
-  if (values.startedAt) body.startedAt = values.startedAt;
-  if (values.detectedAt) body.detectedAt = values.detectedAt;
-  if (values.resolvedAt) body.resolvedAt = values.resolvedAt;
-  if (values.alertRuleIds.length > 0) body.alertRuleIds = values.alertRuleIds;
-
-  return body;
-}
-
-function toUpdatePayload(values: IncidentFormType): IIncidentUpdateRequest {
-  return {
-    title: values.title,
-    description: values.description,
-    severity: values.severity,
-    teamIds: values.teamIds,
-    tags: values.tags,
-    startedAt: values.startedAt ?? new Date().toISOString(),
-    detectedAt: values.detectedAt ?? new Date().toISOString(),
-    alertRuleIds: values.alertRuleIds
+    alertRuleIds: incident.alertRuleIds ?? [],
+    includePostMortem: false,
+    postMortemSummary: "",
+    postMortemImpact: "",
+    postMortemDueAt: null
   };
 }
 
@@ -124,18 +150,22 @@ export default function IncidentModal({ open, onClose, data, onSubmit }: Inciden
   const queryClient = useQueryClient();
   const isCreate = data === "NEW";
   const incidentId = data && data !== "NEW" ? data.id : null;
+  const [documents, setDocuments] = useState<NestedDocumentDraft[]>([]);
 
   const {
     register,
     handleSubmit,
     reset,
     control,
+    watch,
     formState: { errors }
   } = useForm<IncidentFormType>({
     resolver: zodResolver(incidentSchema),
     defaultValues: emptyFormValues,
     mode: "onSubmit"
   });
+
+  const includePostMortem = watch("includePostMortem");
 
   const { data: teams } = useQuery({
     queryKey: ["all-teams"],
@@ -157,8 +187,10 @@ export default function IncidentModal({ open, onClose, data, onSubmit }: Inciden
     enabled: open && Boolean(incidentId)
   });
 
+  const allowNested = isCreate || incident?.source === "manual";
+
   const { mutate: createIncidentMutation, isPending: isCreating } = useMutation({
-    mutationFn: (body: IIncidentCreateRequest) => createIncident(body),
+    mutationFn: (body: ReturnType<typeof buildIncidentCreatePayload>) => createIncident(body),
     onSuccess: (response) => {
       if (response.status) {
         toast.success("Incident Created Successfully.");
@@ -172,7 +204,8 @@ export default function IncidentModal({ open, onClose, data, onSubmit }: Inciden
   });
 
   const { mutate: updateIncidentMutation, isPending: isUpdating } = useMutation({
-    mutationFn: (body: IIncidentUpdateRequest) => updateIncident(incidentId!, body),
+    mutationFn: (body: ReturnType<typeof buildIncidentUpdatePayload>) =>
+      updateIncident(incidentId!, body),
     onSuccess: (response) => {
       if (response.status) {
         toast.success("Incident Updated Successfully.");
@@ -187,6 +220,7 @@ export default function IncidentModal({ open, onClose, data, onSubmit }: Inciden
 
   useEffect(() => {
     if (!open) return;
+    setDocuments([]);
     if (isCreate) {
       reset(emptyFormValues);
       return;
@@ -197,14 +231,63 @@ export default function IncidentModal({ open, onClose, data, onSubmit }: Inciden
   }, [open, isCreate, incident, reset]);
 
   function handleSubmitForm(values: IncidentFormType) {
+    const nestedDocs = allowNested ? documents : [];
+    const nestedPm =
+      allowNested && values.includePostMortem
+        ? {
+            summary: values.postMortemSummary,
+            impact: values.postMortemImpact,
+            dueAt: values.postMortemDueAt ?? undefined,
+            status: "draft" as const
+          }
+        : null;
+
     if (isCreate) {
-      createIncidentMutation(toCreatePayload(values));
+      createIncidentMutation(
+        buildIncidentCreatePayload({
+          title: values.title,
+          severity: values.severity,
+          teamIds: values.teamIds,
+          description: values.description,
+          tags: values.tags,
+          startedAt: values.startedAt,
+          detectedAt: values.detectedAt,
+          resolvedAt: values.resolvedAt,
+          alertRuleIds: values.alertRuleIds,
+          includePostMortem: values.includePostMortem,
+          postMortem: nestedPm,
+          documents: nestedDocs
+        })
+      );
       return;
     }
-    updateIncidentMutation(toUpdatePayload(values));
+
+    updateIncidentMutation(
+      buildIncidentUpdatePayload({
+        title: values.title,
+        description: values.description,
+        severity: values.severity,
+        teamIds: values.teamIds,
+        tags: values.tags,
+        startedAt: values.startedAt ?? new Date().toISOString(),
+        detectedAt: values.detectedAt ?? new Date().toISOString(),
+        alertRuleIds: values.alertRuleIds,
+        includePostMortem: values.includePostMortem,
+        postMortem: nestedPm,
+        documents: nestedDocs
+      })
+    );
   }
 
   const isPending = isCreating || isUpdating;
+
+  function updateDocument(index: number, patch: Partial<NestedDocumentDraft>) {
+    setDocuments((prev) =>
+      prev.map((doc, docIndex) =>
+        docIndex === index ? ({ ...doc, ...patch } as NestedDocumentDraft) : doc
+      )
+    );
+  }
 
   return (
     <ModalContainer
@@ -230,7 +313,7 @@ export default function IncidentModal({ open, onClose, data, onSubmit }: Inciden
             onSubmit={handleSubmit(handleSubmitForm)}
             container
             spacing={2}
-            sx={{ width: 1 }}
+            sx={{ width: 1, maxHeight: "min(78vh, 760px)", overflowY: "auto", pr: 0.5 }}
           >
             <Grid size={8}>
               <TextField
@@ -440,6 +523,233 @@ export default function IncidentModal({ open, onClose, data, onSubmit }: Inciden
                 </Typography>
               </Grid>
             )}
+
+            {allowNested && (
+              <Grid size={12}>
+                <Accordion disableGutters>
+                  <AccordionSummary expandIcon={<HiChevronDown />}>
+                    <Typography sx={{ fontWeight: 700 }}>
+                      {isCreate ? "Optional postmortem & documents" : "Add postmortem / documents"}
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Stack spacing={2}>
+                      {!isCreate && (
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                          Nested documents only add attachments. Omit postmortem to leave the
+                          existing one unchanged. Delete documents from Incident Details.
+                        </Typography>
+                      )}
+                      <Controller
+                        control={control}
+                        name="includePostMortem"
+                        render={({ field }) => (
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                checked={field.value}
+                                onChange={(_, checked) => field.onChange(checked)}
+                              />
+                            }
+                            label="Include postmortem"
+                          />
+                        )}
+                      />
+                      {includePostMortem && (
+                        <Grid container spacing={2}>
+                          <Grid size={12}>
+                            <TextField
+                              label="Postmortem summary"
+                              variant="filled"
+                              fullWidth
+                              multiline
+                              minRows={2}
+                              error={!!errors.postMortemSummary}
+                              helperText={errors.postMortemSummary?.message}
+                              {...register("postMortemSummary")}
+                            />
+                          </Grid>
+                          <Grid size={12}>
+                            <TextField
+                              label="Impact (optional)"
+                              variant="filled"
+                              fullWidth
+                              {...register("postMortemImpact")}
+                            />
+                          </Grid>
+                          <Grid size={12}>
+                            <Controller
+                              control={control}
+                              name="postMortemDueAt"
+                              render={({ field }) => (
+                                <DateTimeInput
+                                  calendar="gregorian"
+                                  type="date-time"
+                                  label="Due At (optional)"
+                                  value={field.value}
+                                  onChange={(payload) => field.onChange(payload.iso)}
+                                />
+                              )}
+                            />
+                          </Grid>
+                        </Grid>
+                      )}
+
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{ justifyContent: "space-between", alignItems: "center" }}
+                      >
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                          Documents to add
+                        </Typography>
+                        <Stack direction="row" spacing={1}>
+                          <Button
+                            size="small"
+                            startIcon={<HiPlus />}
+                            onClick={() => setDocuments((prev) => [...prev, emptyLinkDoc()])}
+                            sx={{ textTransform: "none" }}
+                          >
+                            Link
+                          </Button>
+                          <Button
+                            size="small"
+                            startIcon={<HiPlus />}
+                            onClick={() => setDocuments((prev) => [...prev, emptyFileDoc()])}
+                            sx={{ textTransform: "none" }}
+                          >
+                            File
+                          </Button>
+                        </Stack>
+                      </Stack>
+
+                      {documents.map((doc, index) => (
+                        <Stack
+                          key={index}
+                          spacing={1}
+                          sx={{
+                            p: 1.5,
+                            borderRadius: 2,
+                            border: ({ palette }) => `1px solid ${palette.divider}`
+                          }}
+                        >
+                          <Stack direction="row" sx={{ justifyContent: "space-between" }}>
+                            <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                              {doc.mode === "link" ? "External link" : "File upload"}
+                            </Typography>
+                            <IconButton
+                              size="small"
+                              aria-label="Remove document"
+                              onClick={() =>
+                                setDocuments((prev) => prev.filter((_, i) => i !== index))
+                              }
+                            >
+                              <HiTrash />
+                            </IconButton>
+                          </Stack>
+                          {doc.mode === "link" ? (
+                            <>
+                              <TextField
+                                label="URL"
+                                variant="filled"
+                                fullWidth
+                                value={doc.externalUrl}
+                                onChange={(event) =>
+                                  updateDocument(index, { externalUrl: event.target.value })
+                                }
+                              />
+                              <TextField
+                                label="Name"
+                                variant="filled"
+                                fullWidth
+                                value={doc.name}
+                                onChange={(event) =>
+                                  updateDocument(index, { name: event.target.value })
+                                }
+                              />
+                            </>
+                          ) : (
+                            <Button
+                              variant="outlined"
+                              component="label"
+                              sx={{ textTransform: "none" }}
+                            >
+                              {doc.file ? doc.file.name : "Choose file"}
+                              <input
+                                hidden
+                                type="file"
+                                onChange={(event) =>
+                                  updateDocument(index, {
+                                    file: event.target.files?.[0] ?? null
+                                  })
+                                }
+                              />
+                            </Button>
+                          )}
+                          <TextField
+                            select
+                            label="Type"
+                            variant="filled"
+                            fullWidth
+                            value={doc.type}
+                            onChange={(event) =>
+                              updateDocument(index, {
+                                type: event.target.value as IncidentDocumentType
+                              })
+                            }
+                          >
+                            {DOCUMENT_TYPES.map((docType) => (
+                              <MenuItem key={docType} value={docType}>
+                                {docType}
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                          <TextField
+                            select
+                            label="Attach to"
+                            variant="filled"
+                            fullWidth
+                            value={doc.attachableType}
+                            onChange={(event) =>
+                              updateDocument(index, {
+                                attachableType: event.target.value as "incident" | "postMortem"
+                              })
+                            }
+                            helperText={
+                              doc.attachableType === "postMortem" && !includePostMortem
+                                ? "Enable Include postmortem when attaching to postmortem on create."
+                                : undefined
+                            }
+                          >
+                            <MenuItem value="incident">Incident</MenuItem>
+                            <MenuItem value="postMortem">Postmortem</MenuItem>
+                          </TextField>
+                          <TextField
+                            label="Description"
+                            variant="filled"
+                            fullWidth
+                            value={doc.description}
+                            onChange={(event) =>
+                              updateDocument(index, { description: event.target.value })
+                            }
+                          />
+                        </Stack>
+                      ))}
+                    </Stack>
+                  </AccordionDetails>
+                </Accordion>
+              </Grid>
+            )}
+
+            {!isCreate && incident && incident.source !== "manual" && (
+              <Grid size={12}>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  Nested postmortem and documents are only available for manual incidents. Use
+                  Incident Details tabs instead.
+                </Typography>
+              </Grid>
+            )}
+
             <Grid size={12}>
               <GradientSubmitButton type="submit" fullWidth loading={isPending}>
                 {isCreate ? "Create" : "Save"}

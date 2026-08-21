@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useState } from "react";
 
 import {
   Box,
@@ -9,6 +10,8 @@ import {
   Divider,
   Grid,
   Stack,
+  Tab,
+  Tabs,
   Typography,
   alpha,
   useTheme
@@ -24,7 +27,9 @@ import { getIncidentById } from "../incident.api";
 import type { IIncident } from "../incident.type";
 import { formatIncidentDateTime } from "../incident.utils";
 
+import IncidentDocumentsPanel from "./IncidentDocumentsPanel";
 import IncidentModalBody from "./IncidentModalBody";
+import IncidentPostmortemPanel from "./IncidentPostmortemPanel";
 import IncidentSeverityChip from "./IncidentSeverityChip";
 import IncidentStatusChip from "./IncidentStatusChip";
 
@@ -177,6 +182,7 @@ export default function IncidentDetailsModal({
   const theme = useTheme();
   const { palette } = theme;
   const { isDark } = useCurrentTheme();
+  const [tab, setTab] = useState(0);
 
   const {
     data: incident,
@@ -196,7 +202,7 @@ export default function IncidentDetailsModal({
       title={incident?.title ?? "Incident Details"}
       open={open}
       onClose={onClose}
-      maxWidth={720}
+      maxWidth={760}
       paperSx={{
         ...getGlassCardSx(theme, isDark),
         maxHeight: "90vh",
@@ -214,148 +220,204 @@ export default function IncidentDetailsModal({
             <CircularProgress size={32} />
           </Stack>
         ) : (
-          <Box sx={{ maxHeight: "min(70vh, 640px)", overflowY: "auto", minWidth: 0, pr: 0.5 }}>
-            <Stack
-              spacing={2}
-              divider={
-                <Divider sx={{ borderColor: alpha(palette.primary.main, isDark ? 0.12 : 0.16) }} />
-              }
-              sx={{ minWidth: 0 }}
+          <Box sx={{ minWidth: 0 }}>
+            <Tabs
+              value={tab}
+              onChange={(_, value: number) => setTab(value)}
+              sx={{ mb: 2, borderBottom: 1, borderColor: "divider" }}
             >
-              <Stack spacing={1.5}>
-                <GroupHeading>Details</GroupHeading>
-                <Grid container spacing={2}>
-                  <Grid size={6}>
-                    <Stack spacing={0.35} sx={{ minWidth: 0, alignItems: "flex-start" }}>
-                      <FieldLabel>Severity</FieldLabel>
-                      <IncidentSeverityChip severity={incident.severity} />
-                    </Stack>
-                  </Grid>
-                  <Grid size={6}>
-                    <Stack spacing={0.35} sx={{ minWidth: 0, alignItems: "flex-start" }}>
-                      <FieldLabel>Status</FieldLabel>
-                      <IncidentStatusChip status={incident.status} />
-                    </Stack>
-                  </Grid>
-                  <Grid size={6}>
-                    <MetaItem
-                      label="Started At"
-                      value={formatIncidentDateTime(incident.startedAt)}
-                    />
-                  </Grid>
-                  <Grid size={6}>
-                    <MetaItem
-                      label="Detected At"
-                      value={formatIncidentDateTime(incident.detectedAt)}
-                    />
-                  </Grid>
-                  <Grid size={6}>
-                    <MetaItem
-                      label="Resolved At"
-                      value={formatIncidentDateTime(incident.resolvedAt)}
-                    />
-                  </Grid>
-                  <Grid size={6}>
-                    <MetaItem label="Created By" value={incident.createdByUser?.name ?? "—"} />
-                  </Grid>
-                  <Grid size={6}>
-                    <MetaItem
-                      label="Created At"
-                      value={formatIncidentDateTime(incident.createdAt)}
-                    />
-                  </Grid>
-                  <Grid size={6}>
-                    <MetaItem label="Source" value={incident.source || "—"} />
-                  </Grid>
-                </Grid>
-                <Stack spacing={0.35} sx={{ minWidth: 0 }}>
-                  <FieldLabel>Description</FieldLabel>
-                  <Box
-                    sx={{
-                      px: 1.75,
-                      py: 1.5,
-                      borderRadius: 2,
-                      minWidth: 0,
-                      maxWidth: "100%",
-                      overflow: "hidden",
-                      bgcolor: isDark
-                        ? alpha(palette.primary.main, 0.08)
-                        : alpha(palette.secondary.light, 0.55),
-                      border: `1px solid ${alpha(palette.primary.main, isDark ? 0.14 : 0.18)}`
-                    }}
-                  >
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        fontWeight: 400,
-                        fontSize: "0.9375rem",
-                        lineHeight: 1.5,
-                        whiteSpace: "pre-wrap",
-                        overflowWrap: "anywhere",
-                        wordBreak: "break-word",
-                        color: description ? "text.primary" : "text.disabled"
-                      }}
-                    >
-                      {description || "—"}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Stack>
+              <Tab label="Overview" sx={{ textTransform: "none", fontWeight: 600 }} />
+              <Tab
+                label={`Documents${incident.counts ? ` (${incident.counts.documents})` : ""}`}
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              />
+              <Tab
+                label={`Postmortem${incident.postMortem ? ` · ${incident.postMortem.status}` : ""}`}
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              />
+            </Tabs>
 
-              <Stack spacing={1.5}>
-                <GroupHeading>Related</GroupHeading>
-                <ChipGroup label="Teams" items={incident.teams?.map((team) => team.name) ?? []} />
-                <ChipGroup
-                  label="Alert Rules"
-                  items={incident.alertRules?.map((rule) => rule.name) ?? []}
-                />
-                <ChipGroup label="Tags" items={incident.tags ?? []} />
-              </Stack>
-
-              {incident.counts && (
-                <Stack spacing={0.75}>
-                  <GroupHeading>Activity</GroupHeading>
-                  <Grid container spacing={1}>
-                    <Grid size={3}>
-                      <CountTile label="Timeline" value={incident.counts.timelineEntries} />
+            <Box sx={{ maxHeight: "min(65vh, 600px)", overflowY: "auto", minWidth: 0, pr: 0.5 }}>
+              {tab === 0 && (
+                <Stack
+                  spacing={2}
+                  divider={
+                    <Divider
+                      sx={{ borderColor: alpha(palette.primary.main, isDark ? 0.12 : 0.16) }}
+                    />
+                  }
+                  sx={{ minWidth: 0 }}
+                >
+                  <Stack spacing={1.5}>
+                    <GroupHeading>Details</GroupHeading>
+                    <Grid container spacing={2}>
+                      <Grid size={6}>
+                        <Stack spacing={0.35} sx={{ minWidth: 0, alignItems: "flex-start" }}>
+                          <FieldLabel>Severity</FieldLabel>
+                          <IncidentSeverityChip severity={incident.severity} />
+                        </Stack>
+                      </Grid>
+                      <Grid size={6}>
+                        <Stack spacing={0.35} sx={{ minWidth: 0, alignItems: "flex-start" }}>
+                          <FieldLabel>Status</FieldLabel>
+                          <IncidentStatusChip status={incident.status} />
+                        </Stack>
+                      </Grid>
+                      <Grid size={6}>
+                        <MetaItem
+                          label="Started At"
+                          value={formatIncidentDateTime(incident.startedAt)}
+                        />
+                      </Grid>
+                      <Grid size={6}>
+                        <MetaItem
+                          label="Detected At"
+                          value={formatIncidentDateTime(incident.detectedAt)}
+                        />
+                      </Grid>
+                      <Grid size={6}>
+                        <MetaItem
+                          label="Resolved At"
+                          value={formatIncidentDateTime(incident.resolvedAt)}
+                        />
+                      </Grid>
+                      <Grid size={6}>
+                        <MetaItem
+                          label="Created By"
+                          value={incident.createdByUser?.name ?? "—"}
+                        />
+                      </Grid>
+                      <Grid size={6}>
+                        <MetaItem
+                          label="Created At"
+                          value={formatIncidentDateTime(incident.createdAt)}
+                        />
+                      </Grid>
+                      <Grid size={6}>
+                        <MetaItem label="Source" value={incident.source || "—"} />
+                      </Grid>
                     </Grid>
-                    <Grid size={3}>
-                      <CountTile label="Documents" value={incident.counts.documents} />
-                    </Grid>
-                    <Grid size={3}>
-                      <CountTile label="Actions" value={incident.counts.actionItems} />
-                    </Grid>
-                    <Grid size={3}>
-                      <CountTile label="Open" value={incident.counts.openActionItems} />
-                    </Grid>
-                  </Grid>
-                </Stack>
-              )}
-
-              {incident.acknowledgements?.length > 0 && (
-                <Stack spacing={0.75} sx={{ alignItems: "flex-start" }}>
-                  <GroupHeading>Acknowledgements</GroupHeading>
-                  <Stack spacing={0.5}>
-                    {incident.acknowledgements.map((acknowledgement, index) => (
-                      <Typography
-                        key={acknowledgement.id ?? index}
-                        variant="body1"
-                        sx={{ fontSize: "0.9375rem" }}
+                    <Stack spacing={0.35} sx={{ minWidth: 0 }}>
+                      <FieldLabel>Description</FieldLabel>
+                      <Box
+                        sx={{
+                          px: 1.75,
+                          py: 1.5,
+                          borderRadius: 2,
+                          minWidth: 0,
+                          maxWidth: "100%",
+                          overflow: "hidden",
+                          bgcolor: isDark
+                            ? alpha(palette.primary.main, 0.08)
+                            : alpha(palette.secondary.light, 0.55),
+                          border: `1px solid ${alpha(palette.primary.main, isDark ? 0.14 : 0.18)}`
+                        }}
                       >
-                        <Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
-                          {acknowledgement.user?.name ?? acknowledgement.userId ?? "Unknown"}
-                        </Box>
-                        {acknowledgement.acknowledgedAt ? (
-                          <Box component="span" sx={{ color: "text.disabled", fontWeight: 400 }}>
-                            {` · ${formatIncidentDateTime(acknowledgement.acknowledgedAt)}`}
-                          </Box>
-                        ) : null}
-                      </Typography>
-                    ))}
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            fontWeight: 400,
+                            fontSize: "0.9375rem",
+                            lineHeight: 1.5,
+                            whiteSpace: "pre-wrap",
+                            overflowWrap: "anywhere",
+                            wordBreak: "break-word",
+                            color: description ? "text.primary" : "text.disabled"
+                          }}
+                        >
+                          {description || "—"}
+                        </Typography>
+                      </Box>
+                    </Stack>
                   </Stack>
+
+                  <Stack spacing={1.5}>
+                    <GroupHeading>Related</GroupHeading>
+                    <ChipGroup
+                      label="Teams"
+                      items={incident.teams?.map((team) => team.name) ?? []}
+                    />
+                    <ChipGroup
+                      label="Alert Rules"
+                      items={incident.alertRules?.map((rule) => rule.name) ?? []}
+                    />
+                    <ChipGroup label="Tags" items={incident.tags ?? []} />
+                  </Stack>
+
+                  {incident.postMortem && (
+                    <Stack spacing={0.75} sx={{ alignItems: "flex-start" }}>
+                      <GroupHeading>Postmortem</GroupHeading>
+                      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+                        <DetailChip label={String(incident.postMortem.status)} />
+                        {incident.postMortem.dueAt && (
+                          <DetailChip
+                            label={`Due ${formatIncidentDateTime(incident.postMortem.dueAt)}`}
+                          />
+                        )}
+                        {incident.postMortem.publishedAt && (
+                          <DetailChip
+                            label={`Published ${formatIncidentDateTime(incident.postMortem.publishedAt)}`}
+                          />
+                        )}
+                      </Stack>
+                    </Stack>
+                  )}
+
+                  {incident.counts && (
+                    <Stack spacing={0.75}>
+                      <GroupHeading>Activity</GroupHeading>
+                      <Grid container spacing={1}>
+                        <Grid size={3}>
+                          <CountTile label="Timeline" value={incident.counts.timelineEntries} />
+                        </Grid>
+                        <Grid size={3}>
+                          <CountTile label="Documents" value={incident.counts.documents} />
+                        </Grid>
+                        <Grid size={3}>
+                          <CountTile label="Actions" value={incident.counts.actionItems} />
+                        </Grid>
+                        <Grid size={3}>
+                          <CountTile label="Open" value={incident.counts.openActionItems} />
+                        </Grid>
+                      </Grid>
+                    </Stack>
+                  )}
+
+                  {incident.acknowledgements?.length > 0 && (
+                    <Stack spacing={0.75} sx={{ alignItems: "flex-start" }}>
+                      <GroupHeading>Acknowledgements</GroupHeading>
+                      <Stack spacing={0.5}>
+                        {incident.acknowledgements.map((acknowledgement, index) => (
+                          <Typography
+                            key={acknowledgement.id ?? index}
+                            variant="body1"
+                            sx={{ fontSize: "0.9375rem" }}
+                          >
+                            <Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
+                              {acknowledgement.user?.name ??
+                                acknowledgement.userId ??
+                                acknowledgement.acknowledgedBy ??
+                                "Unknown"}
+                            </Box>
+                            {acknowledgement.acknowledgedAt ? (
+                              <Box
+                                component="span"
+                                sx={{ color: "text.disabled", fontWeight: 400 }}
+                              >
+                                {` · ${formatIncidentDateTime(acknowledgement.acknowledgedAt)}`}
+                              </Box>
+                            ) : null}
+                          </Typography>
+                        ))}
+                      </Stack>
+                    </Stack>
+                  )}
                 </Stack>
               )}
-            </Stack>
+
+              {tab === 1 && <IncidentDocumentsPanel incident={incident} />}
+              {tab === 2 && <IncidentPostmortemPanel incident={incident} />}
+            </Box>
           </Box>
         )}
       </IncidentModalBody>
