@@ -1,6 +1,6 @@
 import { AxiosError } from "axios";
 
-import type { ServerResponse } from "@/@types/global";
+import type { ErrorResponse, ServerResponse } from "@/@types/global";
 
 /** Unwrap `{ data }` / `ServerResponse` payloads, or throw on failure. */
 export function unwrapData<T>(
@@ -17,8 +17,8 @@ export function unwrapData<T>(
 }
 
 /** Map an Axios failure into a consistent `{ status: false, message }` response. */
-export function toErrorResponse<T>(error: unknown, fallbackMessage: string): ServerResponse<T> {
-  const tempError = error as AxiosError<ServerResponse<T> | { message?: string }>;
+export function toErrorResponse(error: unknown, fallbackMessage: string): ErrorResponse {
+  const tempError = error as AxiosError<ErrorResponse | { message?: string }>;
   const payload = tempError.response?.data;
 
   if (payload && typeof payload === "object" && "status" in payload && payload.status === false) {
