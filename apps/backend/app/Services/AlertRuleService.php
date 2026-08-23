@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\AlertRuleAccessLevel;
 use App\Enums\AlertRuleType;
 use App\Enums\HealthAlertType;
+use App\Exports\ApiAlertHistoryExport;
 use App\Helpers\Constants;
 use App\Helpers\Utilities;
 use App\Jobs\SendNotifyJob;
@@ -37,7 +38,11 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
+use Maatwebsite\Excel\Excel as ExcelFormat;
+use Maatwebsite\Excel\Facades\Excel;
 use MongoDB\BSON\UTCDateTime;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AlertRuleService
 {
@@ -715,6 +720,29 @@ class AlertRuleService
         $data['data'] = $arrayData;
 
         return $data;
+    }
+
+    public function exportApiHistory(
+        AlertRule $alert,
+        int $from,
+        int $to,
+        string $format = 'xlsx',
+    ): BinaryFileResponse {
+        if ($alert->type !== AlertRuleType::API) {
+            abort(422, 'History export is only available for API alert rules.');
+        }
+
+        $fromCarbon = Carbon::createFromTimestamp($from);
+        $toCarbon = Carbon::createFromTimestamp($to);
+        $extension = $format === 'csv' ? 'csv' : 'xlsx';
+        $writerType = $format === 'csv' ? ExcelFormat::CSV : ExcelFormat::XLSX;
+        $slug = Str::slug((string) $alert->name) ?: (string) $alert->id;
+
+        return Excel::download(
+            new ApiAlertHistoryExport($alert, $fromCarbon, $toCarbon),
+            "alert-history-{$slug}.{$extension}",
+            $writerType,
+        );
     }
 
     public function createHealthDataSource(DataSource $dataSource) {}

@@ -289,6 +289,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/types', 'GetTypes');
                 Route::get('/status', 'AlertStatus');
                 Route::get('/history/{id}', 'History');
+                Route::get('/history/{id}/export', 'ExportHistory')->where('id', '[0-9a-fA-F]{24}');
                 Route::get('/triggered/{id}', 'FiredAlerts');
                 Route::get('/filter-endpoints', 'FilterEndpoints');
 

@@ -488,6 +488,38 @@ class AlertingDoc
     public function history() {}
 
     // ----------------------------
+    // GET /api/v1/alert-rule/history/{id}/export
+    // ----------------------------
+    #[OA\Get(
+        path: '/api/v1/alert-rule/history/{id}/export',
+        operationId: 'exportAlertHistory',
+        summary: 'Export API alert history as Excel or CSV',
+        description: 'Downloads fire/resolve history for an API alert rule over `[from, to]`. Currently supported only for `type=api`. Unix timestamps may be sent as seconds or milliseconds (13-digit values are divided by 1000). Requires read access (manage or readonly for organization-visible public alerts).',
+        security: [['bearerAuth' => []]],
+        tags: ['AlertRule'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+            new OA\Parameter(name: 'from', description: 'Window start (unix timestamp in seconds or milliseconds; ms values are normalized to seconds)', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'to', description: 'Window end (unix timestamp in seconds or milliseconds; must be after from). Ms values are normalized to seconds.', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'format', description: 'Download format', in: 'query', schema: new OA\Schema(type: 'string', enum: ['xlsx', 'csv'], default: 'xlsx')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Spreadsheet download',
+                content: [
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => new OA\MediaType(schema: new OA\Schema(type: 'string', format: 'binary')),
+                    'text/csv' => new OA\MediaType(schema: new OA\Schema(type: 'string', format: 'binary')),
+                ]
+            ),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Not Found'),
+            new OA\Response(response: 422, description: 'Validation error or unsupported alert type'),
+        ]
+    )]
+    public function exportHistory() {}
+
+    // ----------------------------
     // GET /api/v1/alert-rule/triggered/{id}
     // ----------------------------
     #[OA\Get(

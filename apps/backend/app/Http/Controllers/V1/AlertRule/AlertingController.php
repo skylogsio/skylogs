@@ -6,6 +6,7 @@ use App\Enums\AlertRuleType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AlertRule\AlertRuleIndexRequest;
 use App\Http\Requests\AlertRule\AlertStatusRequest;
+use App\Http\Requests\AlertRule\ExportAlertHistoryRequest;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
@@ -609,6 +610,22 @@ class AlertingController extends Controller
         );
 
         return response()->json($data);
+    }
+
+    public function ExportHistory(ExportAlertHistoryRequest $request, string $id)
+    {
+        $alert = AlertRule::where('_id', $id)->firstOrFail();
+
+        if (! $this->alertRuleService->hasReadAccessAlert(Auth::user(), $alert)) {
+            abort(403);
+        }
+
+        return $this->alertRuleService->exportApiHistory(
+            $alert,
+            (int) $request->validated('from'),
+            (int) $request->validated('to'),
+            $request->exportFormat(),
+        );
     }
 
     public function FiredAlerts($id)
