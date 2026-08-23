@@ -493,8 +493,8 @@ class AlertingDoc
     #[OA\Get(
         path: '/api/v1/alert-rule/history/{id}/export',
         operationId: 'exportAlertHistory',
-        summary: 'Export API alert history as Excel or CSV',
-        description: 'Downloads fire/resolve history for an API alert rule over `[from, to]`. Currently supported only for `type=api`. Unix timestamps may be sent as seconds or milliseconds (13-digit values are divided by 1000). Requires read access (manage or readonly for organization-visible public alerts).',
+        summary: 'Export alert history as Excel or CSV',
+        description: 'Downloads fire/resolve history for an alert rule over `[from, to]`. Spreadsheet columns depend on the alert type (API, notification, Prometheus, Grafana, PMM, Sentry, Zabbix, Elastic, Victoria Logs, Health, Metabase). Splunk is not available. Unix timestamps may be sent as seconds or milliseconds (13-digit values are divided by 1000). Requires read access (manage or readonly for organization-visible public alerts).',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [

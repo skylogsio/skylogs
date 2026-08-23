@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Enums\AlertRuleAccessLevel;
 use App\Enums\AlertRuleType;
 use App\Enums\HealthAlertType;
-use App\Exports\ApiAlertHistoryExport;
+use App\Exports\AlertHistoryExport;
 use App\Helpers\Constants;
 use App\Helpers\Utilities;
 use App\Jobs\SendNotifyJob;
@@ -35,6 +35,7 @@ use App\Services\AlertStatus\AlertStatusEventSourceFactory;
 use App\Services\AlertStatus\AlertStatusTimelineBuilder;
 use Cache;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -678,29 +679,30 @@ class AlertRuleService
 
     }
 
-    public function getHistory($alert,
-        int $perPage = 50,
-        ?Carbon $from = null,
-        ?Carbon $to = null)
+    public function historyQuery(AlertRule $alert): Builder
     {
-
         $query = match ($alert->type) {
-            AlertRuleType::PMM => GrafanaWebhookAlert::query(),
-            AlertRuleType::GRAFANA => GrafanaWebhookAlert::query(),
+            AlertRuleType::PMM, AlertRuleType::GRAFANA => GrafanaWebhookAlert::query(),
             AlertRuleType::PROMETHEUS => PrometheusHistory::query(),
             AlertRuleType::SENTRY => SentryWebhookAlert::query(),
-            AlertRuleType::SPLUNK => SplunkWebhookAlert::query(),
             AlertRuleType::METABASE => MetabaseWebhookAlert::query(),
             AlertRuleType::ZABBIX => ZabbixWebhookAlert::query(),
-            AlertRuleType::API => ApiAlertHistory::query(),
-            AlertRuleType::NOTIFICATION => ApiAlertHistory::query(),
+            AlertRuleType::API, AlertRuleType::NOTIFICATION => ApiAlertHistory::query(),
             AlertRuleType::HEALTH => HealthHistory::query(),
             AlertRuleType::ELASTIC => ElasticHistory::query(),
             AlertRuleType::VICTORIA_LOGS => VictoriaLogsHistory::query(),
             default => throw new ModelNotFoundException,
         };
 
-        $query->where('alertRuleId', $alert->id)->latest();
+        return $query->where('alertRuleId', $alert->id)->latest();
+    }
+
+    public function getHistory($alert,
+        int $perPage = 50,
+        ?Carbon $from = null,
+        ?Carbon $to = null)
+    {
+        $query = $this->historyQuery($alert);
 
         if ($from) {
             $query->where('createdAt', '>=', $from);
@@ -722,14 +724,14 @@ class AlertRuleService
         return $data;
     }
 
-    public function exportApiHistory(
+    public function exportHistory(
         AlertRule $alert,
         int $from,
         int $to,
         string $format = 'xlsx',
     ): BinaryFileResponse {
-        if ($alert->type !== AlertRuleType::API) {
-            abort(422, 'History export is only available for API alert rules.');
+        if ($alert->type === AlertRuleType::SPLUNK) {
+            abort(422, 'History export is not available for Splunk alert rules.');
         }
 
         $fromCarbon = Carbon::createFromTimestamp($from);
@@ -738,8 +740,13 @@ class AlertRuleService
         $writerType = $format === 'csv' ? ExcelFormat::CSV : ExcelFormat::XLSX;
         $slug = Str::slug((string) $alert->name) ?: (string) $alert->id;
 
+        $rows = $this->historyQuery($alert)
+            ->where('createdAt', '>=', $fromCarbon)
+            ->where('createdAt', '<=', $toCarbon)
+            ->get();
+
         return Excel::download(
-            new ApiAlertHistoryExport($alert, $fromCarbon, $toCarbon),
+            new AlertHistoryExport($alert, $rows),
             "alert-history-{$slug}.{$extension}",
             $writerType,
         );

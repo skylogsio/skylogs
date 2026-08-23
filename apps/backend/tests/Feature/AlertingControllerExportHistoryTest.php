@@ -2,9 +2,11 @@
 
 use App\Enums\AlertRuleType;
 use App\Enums\Constants;
-use App\Exports\ApiAlertHistoryExport;
+use App\Exports\AlertHistoryExport;
 use App\Models\AlertRule;
 use App\Models\ApiAlertHistory;
+use App\Models\PrometheusHistory;
+use App\Models\ZabbixWebhookAlert;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use Tests\Support\TeamTestData;
@@ -28,9 +30,11 @@ describe('AlertingController ExportHistory', function () {
     });
 
     afterEach(function () {
-        foreach (['apiAlert', 'prometheusAlert', 'privateAlert'] as $property) {
+        foreach (['apiAlert', 'prometheusAlert', 'zabbixAlert', 'splunkAlert', 'privateAlert'] as $property) {
             if (isset($this->{$property})) {
                 ApiAlertHistory::query()->where('alertRuleId', $this->{$property}->_id)->delete();
+                PrometheusHistory::query()->where('alertRuleId', $this->{$property}->_id)->delete();
+                ZabbixWebhookAlert::query()->where('alertRuleId', $this->{$property}->_id)->delete();
                 AlertRule::query()->where('_id', $this->{$property}->_id)->delete();
             }
         }
@@ -70,15 +74,15 @@ describe('AlertingController ExportHistory', function () {
             ->assertJsonValidationErrors(['format']);
     });
 
-    it('rejects export for non-api alert rules', function () {
-        $this->prometheusAlert = AlertRule::create([
-            'name' => 'Prometheus Export Alert',
-            'type' => AlertRuleType::PROMETHEUS,
+    it('rejects export for splunk alert rules', function () {
+        $this->splunkAlert = AlertRule::create([
+            'name' => 'Splunk Export Alert',
+            'type' => AlertRuleType::SPLUNK,
             'userId' => $this->owner->id,
         ]);
 
         $this->actingAs($this->owner, 'api')
-            ->getJson('/api/v1/alert-rule/history/'.$this->prometheusAlert->id.'/export?'.http_build_query([
+            ->getJson('/api/v1/alert-rule/history/'.$this->splunkAlert->id.'/export?'.http_build_query([
                 'from' => $this->from,
                 'to' => $this->to,
             ]))
@@ -132,7 +136,7 @@ describe('AlertingController ExportHistory', function () {
             ]))
             ->assertSuccessful();
 
-        Excel::assertDownloaded('alert-history-api-export-alert.csv', function (ApiAlertHistoryExport $export) {
+        Excel::assertDownloaded('alert-history-api-export-alert.csv', function (AlertHistoryExport $export) {
             $rows = $export->collection();
 
             expect($rows)->toHaveCount(1)
@@ -140,9 +144,112 @@ describe('AlertingController ExportHistory', function () {
 
             $mapped = $export->map($rows->first());
 
-            expect($mapped)->toContain('web-1')
+            expect($export->headings())->toBe([
+                'Alert Rule',
+                'Instance',
+                'Status',
+                'Description',
+                'Summary',
+                'Created At (UTC)',
+                'Created At (Jalali)',
+            ])
+                ->and($mapped)->toContain('web-1')
                 ->and($mapped)->toContain('critical')
-                ->and($mapped)->toContain('High CPU');
+                ->and($mapped)->toContain('High CPU')
+                ->and($mapped)->not->toContain('api');
+
+            return true;
+        });
+    });
+
+    it('downloads prometheus history', function () {
+        Excel::fake();
+
+        $this->prometheusAlert = AlertRule::create([
+            'name' => 'Prometheus Export Alert',
+            'type' => AlertRuleType::PROMETHEUS,
+            'userId' => $this->owner->id,
+        ]);
+
+        PrometheusHistory::create([
+            'alertRuleId' => $this->prometheusAlert->_id,
+            'alertRuleName' => $this->prometheusAlert->name,
+            'state' => PrometheusHistory::FIRE,
+            'countFire' => 1,
+            'countResolve' => 0,
+            'alerts' => [[
+                'labels' => [
+                    'severity' => 'critical',
+                    'alertname' => $this->prometheusAlert->name,
+                    'instance' => 'db-1',
+                ],
+                'annotations' => [
+                    'summary' => 'Database is down',
+                ],
+            ]],
+            'createdAt' => Carbon::createFromTimestamp($this->from + 50),
+        ]);
+
+        $this->actingAs($this->owner, 'api')
+            ->get('/api/v1/alert-rule/history/'.$this->prometheusAlert->id.'/export?'.http_build_query([
+                'from' => $this->from,
+                'to' => $this->to,
+                'format' => 'csv',
+            ]))
+            ->assertSuccessful();
+
+        Excel::assertDownloaded('alert-history-prometheus-export-alert.csv', function (AlertHistoryExport $export) {
+            expect($export->collection())->toHaveCount(1);
+
+            $mapped = $export->map($export->collection()->first());
+
+            expect($export->headings())->toContain('Fire Count')
+                ->and($export->headings())->toContain('Alert Name')
+                ->and($mapped)->toContain('db-1')
+                ->and($mapped)->toContain('critical')
+                ->and($mapped)->toContain('Database is down')
+                ->and($mapped)->toContain('1');
+
+            return true;
+        });
+    });
+
+    it('downloads zabbix history', function () {
+        Excel::fake();
+
+        $this->zabbixAlert = AlertRule::create([
+            'name' => 'Zabbix Export Alert',
+            'type' => AlertRuleType::ZABBIX,
+            'userId' => $this->owner->id,
+        ]);
+
+        ZabbixWebhookAlert::create([
+            'alertRuleId' => $this->zabbixAlert->_id,
+            'alertRuleName' => $this->zabbixAlert->name,
+            'host_name' => 'zbx-host-1',
+            'event_status' => ZabbixWebhookAlert::PROBLEM,
+            'event_severity' => 'High',
+            'alert_subject' => 'CPU usage high',
+            'alert_message' => 'CPU exceeded threshold',
+            'createdAt' => Carbon::createFromTimestamp($this->from + 40),
+        ]);
+
+        $this->actingAs($this->owner, 'api')
+            ->get('/api/v1/alert-rule/history/'.$this->zabbixAlert->id.'/export?'.http_build_query([
+                'from' => $this->from,
+                'to' => $this->to,
+            ]))
+            ->assertSuccessful();
+
+        Excel::assertDownloaded('alert-history-zabbix-export-alert.xlsx', function (AlertHistoryExport $export) {
+            $mapped = $export->map($export->collection()->first());
+
+            expect($export->headings())->toContain('Host')
+                ->and($export->headings())->toContain('Event Status')
+                ->and($mapped)->toContain('zbx-host-1')
+                ->and($mapped)->toContain('PROBLEM')
+                ->and($mapped)->toContain('High')
+                ->and($mapped)->toContain('CPU exceeded threshold');
 
             return true;
         });
@@ -168,7 +275,7 @@ describe('AlertingController ExportHistory', function () {
             ]))
             ->assertSuccessful();
 
-        Excel::assertDownloaded('alert-history-api-export-alert.xlsx', function (ApiAlertHistoryExport $export) {
+        Excel::assertDownloaded('alert-history-api-export-alert.xlsx', function (AlertHistoryExport $export) {
             expect($export->collection())->toHaveCount(1)
                 ->and($export->collection()->first()->instance)->toBe('db-1');
 

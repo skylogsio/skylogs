@@ -37,6 +37,12 @@ Accept: text/csv
 Authorization: Bearer {{authToken}}
 
 ###
+// Export works for other alert types (Prometheus, Grafana, Elastic, etc.) with the same from/to params.
+GET {{domain}}/alert-rule/history/68178152e4876e3b9b004e16/export?from=1690104055&to=1787476855&format=xlsx
+Accept: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+Authorization: Bearer {{authToken}}
+
+###
 GET {{domain}}/alert-rule/triggered/68178152e4876e3b9b004e16
 Content-Type: application/json
 Accept: application/json

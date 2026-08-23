@@ -620,7 +620,7 @@ class AlertingController extends Controller
             abort(403);
         }
 
-        return $this->alertRuleService->exportApiHistory(
+        return $this->alertRuleService->exportHistory(
             $alert,
             (int) $request->validated('from'),
             (int) $request->validated('to'),
