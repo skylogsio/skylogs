@@ -508,8 +508,14 @@ class AlertingDoc
                 response: 200,
                 description: 'Spreadsheet download',
                 content: [
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => new OA\MediaType(schema: new OA\Schema(type: 'string', format: 'binary')),
-                    'text/csv' => new OA\MediaType(schema: new OA\Schema(type: 'string', format: 'binary')),
+                    new OA\MediaType(
+                        mediaType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        schema: new OA\Schema(type: 'string', format: 'binary')
+                    ),
+                    new OA\MediaType(
+                        mediaType: 'text/csv',
+                        schema: new OA\Schema(type: 'string', format: 'binary')
+                    ),
                 ]
             ),
             new OA\Response(response: 403, description: 'Forbidden'),

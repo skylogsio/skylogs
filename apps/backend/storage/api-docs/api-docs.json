@@ -937,6 +937,91 @@
                 ]
             }
         },
+        "/api/v1/alert-rule/history/{id}/export": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Export alert history as Excel or CSV",
+                "description": "Downloads fire/resolve history for an alert rule over `[from, to]`. Spreadsheet columns depend on the alert type (API, notification, Prometheus, Grafana, PMM, Sentry, Zabbix, Elastic, Victoria Logs, Health, Metabase). Splunk is not available. Unix timestamps may be sent as seconds or milliseconds (13-digit values are divided by 1000). Requires read access (manage or readonly for organization-visible public alerts).",
+                "operationId": "exportAlertHistory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "Window start (unix timestamp in seconds or milliseconds; ms values are normalized to seconds)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "Window end (unix timestamp in seconds or milliseconds; must be after from). Ms values are normalized to seconds.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "description": "Download format",
+                        "schema": {
+                            "type": "string",
+                            "default": "xlsx",
+                            "enum": [
+                                "xlsx",
+                                "csv"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Spreadsheet download",
+                        "content": {
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            },
+                            "text/csv": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "description": "Validation error or unsupported alert type"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/alert-rule/triggered/{id}": {
             "get": {
                 "tags": [
@@ -4873,11 +4958,23 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
                                         "data": {
                                             "type": "array",
                                             "items": {
                                                 "$ref": "#/components/schemas/Incident"
                                             }
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
+                                            "type": "integer"
                                         }
                                     },
                                     "type": "object"
@@ -4899,8 +4996,14 @@
                 "summary": "Create a new incident (manual)",
                 "operationId": "createIncident",
                 "requestBody": {
+                    "description": "JSON for links and postmortem text. Use multipart/form-data when uploading document files (`documents[0][file]`). Nested `/postmortem` and `/document` routes still work.",
                     "required": true,
                     "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IncidentInput"
+                            }
+                        },
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/IncidentInput"
@@ -4993,8 +5096,14 @@
                     }
                 ],
                 "requestBody": {
+                    "description": "Manual incidents only for nested `postMortem` / `documents`. Omit `postMortem` to leave it unchanged. Documents are additive. Policy-sourced incidents reject those fields.",
                     "required": true,
                     "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/IncidentInput"
+                            }
+                        },
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/IncidentInput"
@@ -5403,11 +5512,23 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
                                         "data": {
                                             "type": "array",
                                             "items": {
                                                 "$ref": "#/components/schemas/IncidentTimelineEntry"
                                             }
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
+                                            "type": "integer"
                                         }
                                     },
                                     "type": "object"
@@ -5545,11 +5666,23 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
                                         "data": {
                                             "type": "array",
                                             "items": {
                                                 "$ref": "#/components/schemas/IncidentDocument"
                                             }
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
+                                            "type": "integer"
                                         }
                                     },
                                     "type": "object"
@@ -5968,11 +6101,23 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
                                         "data": {
                                             "type": "array",
                                             "items": {
                                                 "$ref": "#/components/schemas/IncidentActionItem"
                                             }
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
+                                            "type": "integer"
                                         }
                                     },
                                     "type": "object"
@@ -6281,11 +6426,23 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
                                         "data": {
                                             "type": "array",
                                             "items": {
                                                 "$ref": "#/components/schemas/IncidentActionItem"
                                             }
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
+                                            "type": "integer"
                                         }
                                     },
                                     "type": "object"
@@ -6355,11 +6512,23 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
                                         "data": {
                                             "type": "array",
                                             "items": {
                                                 "$ref": "#/components/schemas/IncidentPolicy"
                                             }
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
+                                            "type": "integer"
                                         }
                                     },
                                     "type": "object"
@@ -7141,11 +7310,23 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
                                         "data": {
                                             "type": "array",
                                             "items": {
                                                 "$ref": "#/components/schemas/Runbook"
                                             }
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
+                                            "type": "integer"
                                         }
                                     },
                                     "type": "object"
@@ -11547,9 +11728,10 @@
                         "nullable": true
                     },
                     "resolvedAt": {
-                        "description": "Optional. When set on create, the incident is created as resolved.",
+                        "description": "Omit or send null for an open incident. Sending a timestamp creates the incident as already resolved, which blocks acknowledge/resolve. Do not send the same value as startedAt/detectedAt unless you intend to close it.",
                         "type": "string",
                         "format": "date-time",
+                        "example": null,
                         "nullable": true
                     },
                     "alertRuleIds": {
@@ -11565,6 +11747,58 @@
                             "SEV2",
                             "SEV3",
                             "SEV4"
+                        ]
+                    },
+                    "postMortem": {
+                        "$ref": "#/components/schemas/PostMortemInput"
+                    },
+                    "documents": {
+                        "description": "Optional additive attachments. Each item needs exactly one of file (multipart) or externalUrl. Nested POST /document still works.",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/IncidentNestedDocumentInput"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "IncidentNestedDocumentInput": {
+                "description": "A file or external link attached while creating or updating a manual incident.",
+                "properties": {
+                    "file": {
+                        "description": "Multipart only. Mutually exclusive with externalUrl. Max 20 MB.",
+                        "type": "string",
+                        "format": "binary"
+                    },
+                    "externalUrl": {
+                        "description": "Mutually exclusive with file",
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string",
+                        "default": "other",
+                        "enum": [
+                            "screenshot",
+                            "log",
+                            "metric",
+                            "diagram",
+                            "report",
+                            "other"
+                        ]
+                    },
+                    "attachableType": {
+                        "description": "postMortem requires a postmortem in this request or one that already exists",
+                        "type": "string",
+                        "default": "incident",
+                        "enum": [
+                            "incident",
+                            "postMortem"
                         ]
                     }
                 },
