@@ -13,7 +13,6 @@ import TopBarZone from "./TopBarZone";
 const PAGE_TITLES: Record<string, string> = {
   "alert-rule": "Alert Rules",
   incidents: "Incidents",
-  "incident-policy": "Incident Policies",
   runbooks: "Runbooks",
   status: "Status",
   debugging: "Debugging",

@@ -1,7 +1,5 @@
-"use client";
-
 import IncidentPolicyList from "@/features/IncidentPolicies/components/IncidentPolicyList";
 
-export default function IncidentPolicyPage() {
+export default function IncidentPoliciesPage() {
   return <IncidentPolicyList />;
 }

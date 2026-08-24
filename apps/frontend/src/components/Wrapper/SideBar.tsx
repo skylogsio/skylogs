@@ -13,7 +13,6 @@ import {
   AiOutlineTeam,
   AiOutlineBug,
   AiOutlineWarning,
-  AiOutlineFileProtect,
   AiOutlineBook
 } from "react-icons/ai";
 
@@ -30,12 +29,6 @@ const URLS: Array<URLType> = [
   // { pathname: "/", label: "Home", icon: AiOutlineHome },
   { pathname: "/alert-rule", label: "Alert Rules", icon: AiOutlineAlert, iconScale: 1.08 },
   { pathname: "/incidents", label: "Incidents", icon: AiOutlineWarning, iconScale: 1.08 },
-  {
-    pathname: "/incident-policy",
-    label: "Incident Policies",
-    icon: AiOutlineFileProtect,
-    iconScale: 1.05
-  },
   {
     pathname: "/runbooks",
     label: "Runbooks",

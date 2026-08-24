@@ -10,6 +10,7 @@ import TagsCell from "@/app/[locale]/alert-rule/TagsCell";
 import Table from "@/components/Table/SmartTable";
 import type { TableComponentRef } from "@/components/Table/types";
 import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
+import IncidentWorkspaceToolbar from "@/features/Incidents/components/IncidentWorkspaceToolbar";
 import { useCurrentTheme, useRole } from "@/hooks";
 
 import { exportIncidentPolicyYaml } from "../incident-policy.api";
@@ -80,6 +81,7 @@ export default function IncidentPolicyList() {
         onCreate={canWrite ? () => setModalData("NEW") : undefined}
         onRowClick={(row) => setDetailsPolicyId(row.id)}
         filterComponent={({ onChange }) => <IncidentPolicyFilter onChange={onChange} />}
+        renderToolbar={(slots) => <IncidentWorkspaceToolbar slots={slots} />}
         toolbarActions={
           canWrite
             ? [

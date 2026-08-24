@@ -21,6 +21,7 @@ import IncidentFilter from "./IncidentFilter";
 import IncidentModal from "./IncidentModal";
 import IncidentSeverityChip from "./IncidentSeverityChip";
 import IncidentStatusChip from "./IncidentStatusChip";
+import IncidentWorkspaceToolbar from "./IncidentWorkspaceToolbar";
 import ResolveIncidentModal from "./ResolveIncidentModal";
 
 export default function IncidentList() {
@@ -53,6 +54,7 @@ export default function IncidentList() {
         onCreate={() => setModalData("NEW")}
         onRowClick={(row) => setDetailsIncidentId(row.id)}
         filterComponent={({ onChange }) => <IncidentFilter onChange={onChange} />}
+        renderToolbar={(slots) => <IncidentWorkspaceToolbar slots={slots} />}
         columns={[
           { header: "Row", accessorFn: (_, index) => ++index },
           {
