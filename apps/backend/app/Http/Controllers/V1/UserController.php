@@ -42,9 +42,8 @@ class UserController extends Controller
 
     public function Show(Request $request, $id)
     {
-        $model = User::where('_id', $id);
-        $model = $model->firstOrFail();
-
+        $model = User::where('_id', $id)->firstOrFail();
+        $model->roles = $model->roles()->pluck('name')->toArray();
         return response()->json($model);
     }
 
