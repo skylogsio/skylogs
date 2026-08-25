@@ -53,7 +53,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('api-alert', function (Request $request) {
-            return Limit::perMinute(60)->by($request->bearerToken());
+            return Limit::perMinute(100)->by($request->bearerToken());
         });
 
         $this->registerHaObservers();
