@@ -131,6 +131,7 @@ Route::prefix('v1')->group(function () {
             ->group(function () {
                 Route::get('/', 'Index');
                 Route::get('/indexFlow', 'IndexFlow');
+                Route::get('/selectableEndpoints', 'SelectableEndpoints');
                 Route::get('/createFlowEndpoints', 'EndpointsToCreateFlow');
                 Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                 Route::post('/', 'Create');
@@ -291,7 +292,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/history/{id}', 'History');
                 Route::get('/history/{id}/export', 'ExportHistory')->where('id', '[0-9a-fA-F]{24}');
                 Route::get('/triggered/{id}', 'FiredAlerts');
-                Route::get('/filter-endpoints', 'FilterEndpoints');
+                Route::get('/filter-endpoints', [EndpointController::class, 'SelectableEndpoints']);
 
                 Route::prefix('/create-data')
                     ->controller(CreateDataController::class)

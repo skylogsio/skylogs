@@ -101,6 +101,27 @@ class EndpointDocs
     public function createFlowEndpoints() {}
 
     #[OA\Get(
+        path: '/api/v1/endpoint/selectableEndpoints',
+        operationId: 'getSelectableEndpoints',
+        summary: 'Get endpoints the current user can select',
+        description: 'Returns endpoints the authenticated user owns, is granted via accessUserIds, or can use through team membership. Admins receive every endpoint. GET /api/v1/alert-rule/filter-endpoints is an alias of this action.',
+        security: [['bearerAuth' => []]],
+        tags: ['Endpoints'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Selectable endpoints',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: '#/components/schemas/Endpoint')
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+        ]
+    )]
+    public function selectableEndpoints() {}
+
+    #[OA\Get(
         path: '/api/v1/endpoint/{id}',
         operationId: 'getEndpoint',
         summary: 'Get endpoint by ID',

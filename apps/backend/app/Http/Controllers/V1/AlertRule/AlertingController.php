@@ -157,16 +157,6 @@ class AlertingController extends Controller
         return response()->json(['status' => true]);
     }
 
-    public function FilterEndpoints()
-    {
-
-        $currentUser = \Auth::user();
-
-        $selectableEndpoints = $this->endpointService->selectableUserEndpoint($currentUser);
-
-        return response()->json($selectableEndpoints);
-    }
-
     public function GetTypes()
     {
         return response()->json(AlertRuleType::GetTypes());

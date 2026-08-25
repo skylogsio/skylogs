@@ -726,10 +726,24 @@
                     "AlertRule"
                 ],
                 "summary": "Get selectable endpoints for alert rules",
+                "description": "Alias of GET /api/v1/endpoint/selectableEndpoints. Kept for existing clients.",
                 "operationId": "filterEndpoints",
                 "responses": {
                     "200": {
-                        "description": "Selectable endpoints"
+                        "description": "Selectable endpoints",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Endpoint"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
                     }
                 },
                 "security": [
@@ -4493,6 +4507,39 @@
                 "responses": {
                     "200": {
                         "description": "List of available endpoints",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Endpoint"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/endpoint/selectableEndpoints": {
+            "get": {
+                "tags": [
+                    "Endpoints"
+                ],
+                "summary": "Get endpoints the current user can select",
+                "description": "Returns endpoints the authenticated user owns, is granted via accessUserIds, or can use through team membership. Admins receive every endpoint. GET /api/v1/alert-rule/filter-endpoints is an alias of this action.",
+                "operationId": "getSelectableEndpoints",
+                "responses": {
+                    "200": {
+                        "description": "Selectable endpoints",
                         "content": {
                             "application/json": {
                                 "schema": {

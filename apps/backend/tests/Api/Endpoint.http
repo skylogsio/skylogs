@@ -19,6 +19,13 @@ Authorization: Bearer {{authToken}}
 
 
 ###
+GET {{domain}}/endpoint/selectableEndpoints
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+
+###
 GET {{domain}}/endpoint/680d668e20f7ecb5bc026722
 Content-Type: application/json
 Accept: application/json

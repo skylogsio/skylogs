@@ -382,10 +382,19 @@ class AlertingDoc
         path: '/api/v1/alert-rule/filter-endpoints',
         operationId: 'filterEndpoints',
         summary: 'Get selectable endpoints for alert rules',
+        description: 'Alias of GET /api/v1/endpoint/selectableEndpoints. Kept for existing clients.',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         responses: [
-            new OA\Response(response: 200, description: 'Selectable endpoints'),
+            new OA\Response(
+                response: 200,
+                description: 'Selectable endpoints',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: '#/components/schemas/Endpoint')
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
         ]
     )]
     public function filterEndpoints() {}
