@@ -7,6 +7,7 @@ use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\IncidentPolicy;
 use App\Models\OnCallPlan;
+use App\Models\Profile\ProfileService;
 use App\Models\Team;
 use App\Models\User;
 
@@ -40,6 +41,14 @@ class IncidentPolicyTestData
         ]);
     }
 
+    public static function createProfileService(User $owner, ?string $name = null): ProfileService
+    {
+        return ProfileService::create([
+            'name' => $name ?? 'test-service-'.uniqid(),
+            'ownerId' => $owner->id,
+        ]);
+    }
+
     /**
      * A single-document definition wired to the given fixtures.
      *
@@ -51,6 +60,11 @@ class IncidentPolicyTestData
         $channel = $overrides['channel'] ?? null;
         $onCallPlan = $overrides['onCallPlan'] ?? null;
         $ackWithinMinutes = $overrides['ackWithinMinutes'] ?? '5';
+        $services = $overrides['services'] ?? null;
+        $matchServices = $services === null ? '' : <<<YAML
+
+            services: [{$services}]
+        YAML;
 
         $notify = $channel === null ? '' : <<<YAML
 
@@ -74,7 +88,7 @@ class IncidentPolicyTestData
         spec:
           match:
             alertRules: [{$alertRule}]
-            tags: [payments]
+            tags: [payments]{$matchServices}
           grouping:
             key: [serviceId, alertRuleId]
             windowMinutes: 15
@@ -115,5 +129,10 @@ class IncidentPolicyTestData
     public static function deleteOnCallPlan(OnCallPlan $onCallPlan): void
     {
         OnCallPlan::query()->where('_id', $onCallPlan->id)->delete();
+    }
+
+    public static function deleteProfileService(ProfileService $profileService): void
+    {
+        ProfileService::query()->where('_id', $profileService->id)->delete();
     }
 }

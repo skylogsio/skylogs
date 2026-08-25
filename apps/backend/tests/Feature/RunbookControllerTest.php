@@ -3,6 +3,7 @@
 use App\Enums\Constants;
 use App\Models\Runbook;
 use Illuminate\Support\Facades\Cache;
+use Tests\Support\IncidentPolicyTestData;
 use Tests\Support\RunbookTestData;
 use Tests\Support\TeamTestData;
 
@@ -16,6 +17,7 @@ describe('RunbookController', function () {
         $this->outsider = TeamTestData::createUser(Constants::ROLE_MEMBER);
         $this->team = TeamTestData::createTeam($this->manager, [$this->manager->id, $this->member->id]);
         $this->runbooks = [];
+        $this->profileServices = [];
 
         $this->payload = function (array $overrides = []) {
             return array_replace([
@@ -38,6 +40,9 @@ describe('RunbookController', function () {
     afterEach(function () {
         foreach ($this->runbooks as $runbook) {
             RunbookTestData::deleteRunbook($runbook);
+        }
+        foreach ($this->profileServices as $profileService) {
+            IncidentPolicyTestData::deleteProfileService($profileService);
         }
         TeamTestData::deleteTeam($this->team);
         TeamTestData::deleteUser($this->manager);
@@ -134,6 +139,29 @@ describe('RunbookController', function () {
             ]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['teamIds.0']);
+    });
+
+    it('accepts profile service ids on appliesTo', function () {
+        $profileService = IncidentPolicyTestData::createProfileService($this->manager, 'payments-api');
+        $this->profileServices[] = $profileService;
+
+        $response = $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/runbook', ($this->payload)([
+                'appliesTo' => ['serviceIds' => [$profileService->id]],
+            ]))
+            ->assertStatus(201)
+            ->assertJsonPath('data.appliesTo.serviceIds.0', $profileService->id);
+
+        $this->runbooks[] = Runbook::find($response->json('data.id'));
+    });
+
+    it('rejects a service id that does not exist', function () {
+        $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/runbook', ($this->payload)([
+                'appliesTo' => ['serviceIds' => ['0123456789abcdef01234567']],
+            ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['appliesTo.serviceIds.0']);
     });
 
     it('lists runbooks for team members and hides them from outsiders', function () {

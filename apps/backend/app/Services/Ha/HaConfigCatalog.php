@@ -17,7 +17,6 @@ use App\Models\OnCallPlan;
 use App\Models\Profile\ProfileAsset;
 use App\Models\Profile\ProfileEnvironment;
 use App\Models\Profile\ProfileService;
-use App\Models\Service;
 use App\Models\SilentRule;
 use App\Models\SkylogsInstance;
 use App\Models\Status;
@@ -81,7 +80,6 @@ final class HaConfigCatalog
             'alertRules' => ['model' => AlertRule::class, 'excluded' => self::RAFT_OWNED_ALERT_RULE_FIELDS],
             'silentRules' => ['model' => SilentRule::class, 'excluded' => []],
             'statuses' => ['model' => Status::class, 'excluded' => []],
-            'services' => ['model' => Service::class, 'excluded' => []],
             'skylogsInstances' => ['model' => SkylogsInstance::class, 'excluded' => []],
             'profileAssets' => ['model' => ProfileAsset::class, 'excluded' => []],
             'profileEnvironments' => ['model' => ProfileEnvironment::class, 'excluded' => []],

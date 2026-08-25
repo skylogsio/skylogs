@@ -2,12 +2,13 @@
 
 namespace App\Http\Requests\IncidentPolicy;
 
+use App\Enums\DataSourceType;
 use App\Enums\IncidentSeverity;
 use App\Http\Requests\Concerns\ValidatesMongoReferences;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\OnCallPlan;
-use App\Models\Service;
+use App\Models\Profile\ProfileService;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\IncidentPolicy\IncidentPolicyDslParser;
@@ -54,7 +55,7 @@ abstract class IncidentPolicyDefinitionRequest extends FormRequest
             'match.serviceIds' => ['nullable', 'array'],
             'match.serviceIds.*' => ['required', 'string', 'size:24'],
             'match.dataSourceTypes' => ['nullable', 'array'],
-            'match.dataSourceTypes.*' => ['required', 'string', Rule::in(array_keys(Service::$types))],
+            'match.dataSourceTypes.*' => ['required', 'string', Rule::enum(DataSourceType::class)],
 
             'grouping' => ['nullable', 'array'],
             'grouping.key' => ['nullable', 'array'],
@@ -168,7 +169,7 @@ abstract class IncidentPolicyDefinitionRequest extends FormRequest
         $this->assertReferencesExist($validator, 'teamIds', Team::class, 'Team', $this->input('teamIds'));
         $this->assertReferencesExist($validator, 'ownerId', User::class, 'User', $this->input('ownerId'));
         $this->assertReferencesExist($validator, 'match.alertRuleIds', AlertRule::class, 'Alert rule', $this->input('match.alertRuleIds'));
-        $this->assertReferencesExist($validator, 'match.serviceIds', Service::class, 'Service', $this->input('match.serviceIds'));
+        $this->assertReferencesExist($validator, 'match.serviceIds', ProfileService::class, 'Service', $this->input('match.serviceIds'));
 
         foreach ($this->ruleMap() as $severity => $rule) {
             $this->assertReferencesExist(

@@ -5,7 +5,7 @@ namespace App\Services\IncidentPolicy;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\OnCallPlan;
-use App\Models\Service;
+use App\Models\Profile\ProfileService;
 use App\Models\Team;
 use App\Models\User;
 use MongoDB\Laravel\Eloquent\Model;
@@ -28,7 +28,7 @@ class IncidentPolicyReferenceResolver
         'team' => [Team::class, 'name', 'Team'],
         'user' => [User::class, 'username', 'User'],
         'alertRule' => [AlertRule::class, 'name', 'Alert rule'],
-        'service' => [Service::class, 'name', 'Service'],
+        'service' => [ProfileService::class, 'name', 'Service'],
         'endpoint' => [Endpoint::class, 'name', 'Endpoint'],
         'onCallPlan' => [OnCallPlan::class, 'name', 'On-call plan'],
     ];

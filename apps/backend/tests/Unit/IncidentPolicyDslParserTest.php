@@ -305,6 +305,24 @@ describe('IncidentPolicyDslParser', function () {
             ->and(dslErrorPaths($result))->toContain('documents[1].metadata.name');
     });
 
+    it('accepts data source types from DataSourceType', function () {
+        $result = parseDsl(<<<'YAML'
+        apiVersion: skylogs.io/v1
+        kind: IncidentPolicy
+        metadata:
+          name: logs-policy
+          teams: [payments]
+        spec:
+          match:
+            dataSourceTypes: [victoria_logs, splunk]
+          rules:
+            - severity: SEV2
+        YAML);
+
+        expect($result->isValid())->toBeTrue()
+            ->and($result->policies[0]->match['dataSourceTypes'])->toBe(['victoria_logs', 'splunk']);
+    });
+
     it('rejects empty input', function () {
         expect(parseDsl("# just a comment\n")->isValid())->toBeFalse()
             ->and(parseDsl('')->errors[0]->message)->toBe('The YAML input is empty.');

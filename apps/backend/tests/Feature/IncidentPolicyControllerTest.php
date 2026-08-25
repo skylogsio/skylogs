@@ -18,6 +18,7 @@ describe('IncidentPolicyController', function () {
         $this->alertRule = IncidentPolicyTestData::createAlertRule($this->manager);
         $this->endpoint = IncidentPolicyTestData::createEndpoint($this->manager);
         $this->onCallPlan = IncidentPolicyTestData::createOnCallPlan($this->team);
+        $this->profileServices = [];
 
         $this->policyName = 'test-policy-'.substr(uniqid(), -8);
         $this->yaml = fn (array $overrides = []) => IncidentPolicyTestData::policyYaml(
@@ -37,6 +38,9 @@ describe('IncidentPolicyController', function () {
         IncidentPolicyTestData::deleteAlertRule($this->alertRule);
         IncidentPolicyTestData::deleteEndpoint($this->endpoint);
         IncidentPolicyTestData::deleteOnCallPlan($this->onCallPlan);
+        foreach ($this->profileServices as $profileService) {
+            IncidentPolicyTestData::deleteProfileService($profileService);
+        }
         TeamTestData::deleteTeam($this->team);
         TeamTestData::deleteUser($this->manager);
         TeamTestData::deleteUser($this->member);
@@ -70,6 +74,22 @@ describe('IncidentPolicyController', function () {
                 'reviewRequired' => false,
             ])
             ->and($policy->rules['SEV1']['runbookNames'])->toBe(['payments-api-5xx-triage']);
+    });
+
+    it('resolves profile service names onto match.serviceIds', function () {
+        $profileService = IncidentPolicyTestData::createProfileService($this->manager, 'payments-api-'.uniqid());
+        $this->profileServices[] = $profileService;
+
+        $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/incident-policy/import', [
+                'yaml' => ($this->yaml)(['services' => $profileService->name]),
+            ])
+            ->assertSuccessful();
+
+        $policy = IncidentPolicy::query()->where('name', $this->policyName)->first();
+
+        expect($policy)->not->toBeNull()
+            ->and($policy->match['serviceIds'])->toBe([$profileService->id]);
     });
 
     it('imports a policy from an uploaded yaml file', function () {

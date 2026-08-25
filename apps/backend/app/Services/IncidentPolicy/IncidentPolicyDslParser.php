@@ -2,8 +2,8 @@
 
 namespace App\Services\IncidentPolicy;
 
+use App\Enums\DataSourceType;
 use App\Enums\IncidentSeverity;
-use App\Models\Service;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -264,7 +264,7 @@ class IncidentPolicyDslParser
             'spec.match.services' => ['nullable', 'array'],
             'spec.match.services.*' => ['required', 'string', 'max:255'],
             'spec.match.dataSourceTypes' => ['nullable', 'array'],
-            'spec.match.dataSourceTypes.*' => ['required', 'string', Rule::in(array_keys(Service::$types))],
+            'spec.match.dataSourceTypes.*' => ['required', 'string', Rule::enum(DataSourceType::class)],
 
             'spec.grouping' => ['nullable', 'array'],
             'spec.grouping.key' => ['nullable', 'array'],

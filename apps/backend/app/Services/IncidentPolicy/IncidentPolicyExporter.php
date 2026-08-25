@@ -7,7 +7,7 @@ use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\IncidentPolicy;
 use App\Models\OnCallPlan;
-use App\Models\Service;
+use App\Models\Profile\ProfileService;
 use App\Models\Team;
 use App\Models\User;
 use Symfony\Component\Yaml\Yaml;
@@ -69,7 +69,7 @@ class IncidentPolicyExporter
             'match' => $this->omitEmpty([
                 'alertRules' => $this->namesFor(AlertRule::class, 'name', $match['alertRuleIds'] ?? []),
                 'tags' => $match['tags'] ?? [],
-                'services' => $this->namesFor(Service::class, 'name', $match['serviceIds'] ?? []),
+                'services' => $this->namesFor(ProfileService::class, 'name', $match['serviceIds'] ?? []),
                 'dataSourceTypes' => $match['dataSourceTypes'] ?? [],
             ]),
             'grouping' => empty($grouping['key']) ? null : [

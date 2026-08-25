@@ -20,6 +20,7 @@ describe('IncidentPolicy JSON write API', function () {
         $this->onCallPlan = IncidentPolicyTestData::createOnCallPlan($this->team);
         $this->policyNames = [];
         $this->runbooks = [];
+        $this->profileServices = [];
 
         $this->payload = function (array $overrides = []) {
             return array_replace([
@@ -58,6 +59,9 @@ describe('IncidentPolicy JSON write API', function () {
         }
         foreach ($this->runbooks as $runbook) {
             RunbookTestData::deleteRunbook($runbook);
+        }
+        foreach ($this->profileServices as $profileService) {
+            IncidentPolicyTestData::deleteProfileService($profileService);
         }
         IncidentPolicyTestData::deleteAlertRule($this->alertRule);
         IncidentPolicyTestData::deleteEndpoint($this->endpoint);
@@ -208,6 +212,43 @@ describe('IncidentPolicy JSON write API', function () {
             ]))
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['match.alertRuleIds.0']);
+    });
+
+    it('accepts profile service ids as match.serviceIds', function () {
+        $profileService = IncidentPolicyTestData::createProfileService($this->manager, 'payments-api');
+        $this->profileServices[] = $profileService;
+
+        $payload = ($this->payload)([
+            'match' => ['serviceIds' => [$profileService->id]],
+        ]);
+        $this->policyNames[] = $payload['name'];
+
+        $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/incident-policy', $payload)
+            ->assertStatus(201)
+            ->assertJsonPath('data.match.serviceIds.0', $profileService->id);
+    });
+
+    it('rejects a service id that does not exist', function () {
+        $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/incident-policy', ($this->payload)([
+                'match' => ['serviceIds' => ['0123456789abcdef01234567']],
+            ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['match.serviceIds.0']);
+    });
+
+    it('accepts data source types from DataSourceType', function () {
+        $payload = ($this->payload)([
+            'match' => ['dataSourceTypes' => ['victoria_logs', 'splunk']],
+        ]);
+        $this->policyNames[] = $payload['name'];
+
+        $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/incident-policy', $payload)
+            ->assertStatus(201)
+            ->assertJsonPath('data.match.dataSourceTypes.0', 'victoria_logs')
+            ->assertJsonPath('data.match.dataSourceTypes.1', 'splunk');
     });
 
     it('rejects a name that is not slug shaped', function () {

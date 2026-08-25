@@ -36,6 +36,10 @@ describe('HaConfigCatalog membership', function () {
         expect(HaConfigCatalog::definition($alias))->not->toBeNull();
     })->with(['users', 'roles', 'permissions', 'teams', 'endpoints', 'dataSources', 'alertRules', 'skylogsInstances', 'incidents', 'onCallPlans']);
 
+    it('does not snapshot the retired services collection', function () {
+        expect(HaConfigCatalog::definition('services'))->toBeNull();
+    });
+
     it('names the model behind an instance', function () {
         expect(HaConfigCatalog::aliasFor(new AlertRule))->toBe('alertRules')
             ->and(HaConfigCatalog::aliasFor(new User))->toBe('users')

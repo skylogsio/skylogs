@@ -7,7 +7,7 @@ use App\Enums\RunbookSourceType;
 use App\Enums\RunbookStatus;
 use App\Http\Requests\Concerns\ValidatesMongoReferences;
 use App\Models\AlertRule;
-use App\Models\Service;
+use App\Models\Profile\ProfileService;
 use App\Models\Team;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
@@ -88,7 +88,7 @@ abstract class RunbookRequest extends FormRequest
         return [
             function (Validator $validator) {
                 $this->assertReferencesExist($validator, 'teamIds', Team::class, 'Team', $this->input('teamIds'));
-                $this->assertReferencesExist($validator, 'appliesTo.serviceIds', Service::class, 'Service', $this->input('appliesTo.serviceIds'));
+                $this->assertReferencesExist($validator, 'appliesTo.serviceIds', ProfileService::class, 'Service', $this->input('appliesTo.serviceIds'));
                 $this->assertReferencesExist($validator, 'appliesTo.alertRuleIds', AlertRule::class, 'Alert rule', $this->input('appliesTo.alertRuleIds'));
             },
         ];

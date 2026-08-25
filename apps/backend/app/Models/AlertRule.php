@@ -239,11 +239,6 @@ class AlertRule extends BaseModel implements Messageable
         return $this->embedsMany(User::class, 'accessUsers');
     }
 
-    public function service(): BelongsTo
-    {
-        return $this->belongsTo(Service::class, 'service_id', '_id');
-    }
-
     public function endpoints()
     {
         return $this->hasMany(Endpoint::class);
