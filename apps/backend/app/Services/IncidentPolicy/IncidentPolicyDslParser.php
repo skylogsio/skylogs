@@ -52,7 +52,7 @@ class IncidentPolicyDslParser
         'rule.ack' => ['withinMinutes'],
         'rule.resolve' => ['withinMinutes'],
         'rule.notify' => ['channels'],
-        'rule.escalation' => ['onCallPlan', 'useLayers'],
+        'rule.escalation' => ['useLayers'],
         'rule.communication' => ['stakeholderUpdateEveryMinutes', 'statusPageUpdateRequired'],
         'rule.postmortem' => ['required', 'dueDays', 'reviewRequired'],
     ];
@@ -291,7 +291,6 @@ class IncidentPolicyDslParser
             'spec.rules.*.notify.channels' => ['nullable', 'array'],
             'spec.rules.*.notify.channels.*' => ['required', 'string', 'max:255'],
             'spec.rules.*.escalation' => ['nullable', 'array'],
-            'spec.rules.*.escalation.onCallPlan' => ['nullable', 'string', 'max:255'],
             'spec.rules.*.escalation.useLayers' => ['nullable', 'boolean'],
             'spec.rules.*.communication' => ['nullable', 'array'],
             'spec.rules.*.communication.stakeholderUpdateEveryMinutes' => ['nullable', 'integer', 'min:1', 'max:1440'],
@@ -475,7 +474,6 @@ class IncidentPolicyDslParser
             'requireCommander' => (bool) ($rule['requireCommander'] ?? false),
             'notifyChannels' => $this->stringList($rule['notify']['channels'] ?? []),
             'escalation' => [
-                'onCallPlan' => $rule['escalation']['onCallPlan'] ?? null,
                 'useLayers' => (bool) ($rule['escalation']['useLayers'] ?? true),
             ],
             'communication' => [

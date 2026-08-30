@@ -4386,6 +4386,10 @@
                                         "description": "Custom bot token for Telegram and Bale types",
                                         "type": "string"
                                     },
+                                    "onCall": {
+                                        "description": "When true, this is the endpoint used if the owner is on an on-call plan. Only one endpoint per user can be on-call.",
+                                        "type": "boolean"
+                                    },
                                     "steps": {
                                         "description": "For flow type - array of steps with wait and endpoint types",
                                         "type": "array",
@@ -4675,6 +4679,10 @@
                                     "botToken": {
                                         "description": "Custom bot token for Telegram and Bale types",
                                         "type": "string"
+                                    },
+                                    "onCall": {
+                                        "description": "When true, this is the endpoint used if the owner is on an on-call plan. Only one endpoint per user can be on-call.",
+                                        "type": "boolean"
                                     },
                                     "steps": {
                                         "description": "For flow type - array of steps with wait and endpoint types",
@@ -6942,6 +6950,289 @@
                     },
                     "404": {
                         "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/team/{teamId}/on-call-plan": {
+            "get": {
+                "tags": [
+                    "On-Call Plans"
+                ],
+                "summary": "Get the team on-call plan",
+                "operationId": "getTeamOnCallPlan",
+                "parameters": [
+                    {
+                        "name": "teamId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "On-call plan",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OnCallPlan"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Team or plan not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "On-Call Plans"
+                ],
+                "summary": "Replace the team on-call plan",
+                "description": "Same multipart body as create: name, timezone, optional layerDelays, and the Excel roster.",
+                "operationId": "updateTeamOnCallPlan",
+                "parameters": [
+                    {
+                        "name": "teamId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OnCallPlanInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OnCallPlan"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "On-Call Plans"
+                ],
+                "summary": "Create the team on-call plan",
+                "description": "Multipart: name, timezone, optional layerDelays, and an xlsx file (one sheet per layer, Time + User). Fails with 422 if the team already has a plan. Admin or the team owner.",
+                "operationId": "createTeamOnCallPlan",
+                "parameters": [
+                    {
+                        "name": "teamId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OnCallPlanInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OnCallPlan"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation or Excel parse error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "On-Call Plans"
+                ],
+                "summary": "Delete the team on-call plan",
+                "operationId": "deleteTeamOnCallPlan",
+                "parameters": [
+                    {
+                        "name": "teamId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/team/{teamId}/on-call-plan/at": {
+            "get": {
+                "tags": [
+                    "On-Call Plans"
+                ],
+                "summary": "Who is on call for this team at a time",
+                "operationId": "getTeamOnCallAt",
+                "parameters": [
+                    {
+                        "name": "teamId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "at",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Per-layer on-call",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OnCallAt"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No plan"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/on-call-plan/current": {
+            "get": {
+                "tags": [
+                    "On-Call Plans"
+                ],
+                "summary": "Who is on call across teams",
+                "operationId": "getCurrentOnCall",
+                "parameters": [
+                    {
+                        "name": "at",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "teamIds[]",
+                        "in": "query",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "One block per team. `plan` is null when the team has no plan.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/OnCallCurrent"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -11397,6 +11688,10 @@
                             "type": "object"
                         }
                     },
+                    "onCall": {
+                        "description": "When true, this endpoint is used whenever the owner is on an on-call plan",
+                        "type": "boolean"
+                    },
                     "userId": {
                         "description": "User ID who owns this endpoint",
                         "type": "string"
@@ -12625,10 +12920,6 @@
                     },
                     "escalation": {
                         "properties": {
-                            "onCallPlanId": {
-                                "type": "string",
-                                "nullable": true
-                            },
                             "useLayers": {
                                 "type": "boolean"
                             }
@@ -12858,6 +13149,154 @@
                     },
                     "version": {
                         "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
+            "OnCallPlan": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "teamId": {
+                        "type": "string"
+                    },
+                    "team": {
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "timezone": {
+                        "type": "string"
+                    },
+                    "layers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "roster": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "isComplete": {
+                        "type": "boolean"
+                    },
+                    "canEdit": {
+                        "type": "boolean"
+                    },
+                    "canDelete": {
+                        "type": "boolean"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "OnCallPlanInput": {
+                "required": [
+                    "name",
+                    "timezone",
+                    "file"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "example": "Asia/Tehran"
+                    },
+                    "file": {
+                        "description": "xlsx, one sheet per layer, Time and User columns",
+                        "type": "string",
+                        "format": "binary"
+                    },
+                    "layerDelays": {
+                        "description": "Minutes to wait after each layer, in sheet order",
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "OnCallAt": {
+                "properties": {
+                    "at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "timezone": {
+                        "type": "string"
+                    },
+                    "teamId": {
+                        "type": "string"
+                    },
+                    "plan": {
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "layers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "OnCallCurrent": {
+                "properties": {
+                    "teamId": {
+                        "type": "string"
+                    },
+                    "teamName": {
+                        "type": "string"
+                    },
+                    "plan": {
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "layers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
                     }
                 },
                 "type": "object"
@@ -13505,6 +13944,10 @@
         {
             "name": "Incident Policies",
             "description": "Incident response policies. Definitions can be applied from the YAML DSL (apiVersion skylogs.io/v1) or written as JSON. Policies are configuration only; nothing acts on them yet."
+        },
+        {
+            "name": "On-Call Plans",
+            "description": "One optional weekly on-call plan per team. Create and update send name, timezone, layer delays, and the Excel roster in one request. Each person sets their on-call endpoint on the endpoint itself."
         },
         {
             "name": "ProfileAsset",

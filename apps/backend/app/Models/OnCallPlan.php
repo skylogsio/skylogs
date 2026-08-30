@@ -5,14 +5,17 @@ namespace App\Models;
 use MongoDB\Laravel\Relations\BelongsTo;
 
 /**
- * Scaffold for later on-call CRUD. Layers map time windows to users and endpoints.
+ * Team-owned weekly roster. One document per team. The Excel file is the roster;
+ * each user's on-call endpoint lives on the Endpoint document (`onCall`).
  *
+ * @property string $teamId
+ * @property string $name
+ * @property string $timezone
  * @property list<array{
  *     level: int,
  *     escalateAfterMinutes: int,
  *     entries: list<array{
  *         userId: string,
- *         endpointIds: list<string>,
  *         windows: list<array{daysOfWeek: list<int>, startTime: string, endTime: string}>
  *     }>
  * }> $layers

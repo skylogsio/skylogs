@@ -273,7 +273,6 @@ class IncidentPolicySchema {}
         new OA\Property(property: 'requireCommander', type: 'boolean'),
         new OA\Property(property: 'notifyEndpointIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'escalation', properties: [
-            new OA\Property(property: 'onCallPlanId', type: 'string', nullable: true),
             new OA\Property(property: 'useLayers', type: 'boolean'),
         ], type: 'object'),
         new OA\Property(property: 'communication', properties: [

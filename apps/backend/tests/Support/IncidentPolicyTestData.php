@@ -37,6 +37,7 @@ class IncidentPolicyTestData
         return OnCallPlan::create([
             'name' => $name ?? 'test-plan-'.uniqid(),
             'teamId' => $team->id,
+            'timezone' => 'UTC',
             'layers' => [],
         ]);
     }
@@ -58,8 +59,8 @@ class IncidentPolicyTestData
     {
         $alertRule = $overrides['alertRule'] ?? 'placeholder-rule';
         $channel = $overrides['channel'] ?? null;
-        $onCallPlan = $overrides['onCallPlan'] ?? null;
         $ackWithinMinutes = $overrides['ackWithinMinutes'] ?? '5';
+        $useLayers = $overrides['useLayers'] ?? null;
         $services = $overrides['services'] ?? null;
         $matchServices = $services === null ? '' : <<<YAML
 
@@ -72,10 +73,10 @@ class IncidentPolicyTestData
                 channels: [endpoint:{$channel}]
         YAML;
 
-        $escalation = $onCallPlan === null ? '' : <<<YAML
+        $escalation = $useLayers === null ? '' : <<<YAML
 
               escalation:
-                onCallPlan: onCallPlan:{$onCallPlan}
+                useLayers: {$useLayers}
         YAML;
 
         return <<<YAML

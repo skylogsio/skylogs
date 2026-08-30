@@ -17,7 +17,6 @@ describe('IncidentPolicyController', function () {
         $this->team = TeamTestData::createTeam($this->manager, [$this->manager->id, $this->member->id]);
         $this->alertRule = IncidentPolicyTestData::createAlertRule($this->manager);
         $this->endpoint = IncidentPolicyTestData::createEndpoint($this->manager);
-        $this->onCallPlan = IncidentPolicyTestData::createOnCallPlan($this->team);
         $this->profileServices = [];
 
         $this->policyName = 'test-policy-'.substr(uniqid(), -8);
@@ -27,7 +26,6 @@ describe('IncidentPolicyController', function () {
             [
                 'alertRule' => $this->alertRule->name,
                 'channel' => $this->endpoint->name,
-                'onCallPlan' => $this->onCallPlan->name,
                 ...$overrides,
             ],
         );
@@ -37,7 +35,6 @@ describe('IncidentPolicyController', function () {
         IncidentPolicyTestData::deletePolicyByName($this->policyName);
         IncidentPolicyTestData::deleteAlertRule($this->alertRule);
         IncidentPolicyTestData::deleteEndpoint($this->endpoint);
-        IncidentPolicyTestData::deleteOnCallPlan($this->onCallPlan);
         foreach ($this->profileServices as $profileService) {
             IncidentPolicyTestData::deleteProfileService($profileService);
         }
@@ -67,7 +64,7 @@ describe('IncidentPolicyController', function () {
             ->and($policy->match['alertRuleIds'])->toBe([$this->alertRule->id])
             ->and($policy->match['tags'])->toBe(['payments'])
             ->and($policy->rules['SEV1']['notifyEndpointIds'])->toBe([$this->endpoint->id])
-            ->and($policy->rules['SEV1']['escalation']['onCallPlanId'])->toBe($this->onCallPlan->id)
+            ->and($policy->rules['SEV1']['escalation']['useLayers'])->toBeTrue()
             ->and($policy->rules['SEV1']['postmortem'])->toBe([
                 'required' => true,
                 'dueDays' => 5,
@@ -252,7 +249,7 @@ describe('IncidentPolicyController', function () {
             ->and($exported)->toContain('name: '.$this->policyName)
             ->and($exported)->toContain($this->team->name)
             ->and($exported)->toContain('endpoint:'.$this->endpoint->name)
-            ->and($exported)->toContain('onCallPlan:'.$this->onCallPlan->name)
+            ->and($exported)->not->toContain('onCallPlan')
             ->and($exported)->not->toContain($this->alertRule->id);
     });
 

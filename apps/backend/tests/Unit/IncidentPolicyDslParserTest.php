@@ -46,7 +46,7 @@ function validPolicyYaml(): string
           notify:
             channels: [endpoint:oncall-sms]
           escalation:
-            onCallPlan: payments-primary
+            useLayers: false
           postmortem:
             required: true
             reviewRequired: true
@@ -74,7 +74,7 @@ describe('IncidentPolicyDslParser', function () {
             ->and($policy->incident['severityMap'])->toBe(['critical' => 'SEV1', 'warning' => 'SEV3'])
             ->and(array_keys($policy->rules))->toBe(['SEV1', 'SEV3'])
             ->and($policy->rules['SEV1']['notifyChannels'])->toBe(['endpoint:oncall-sms'])
-            ->and($policy->rules['SEV1']['escalation']['onCallPlan'])->toBe('payments-primary')
+            ->and($policy->rules['SEV1']['escalation']['useLayers'])->toBeFalse()
             ->and($policy->rules['SEV1']['runbookNames'])->toBe(['payments-api-5xx-triage']);
     });
 
@@ -83,7 +83,7 @@ describe('IncidentPolicyDslParser', function () {
 
         expect($policy->rules['SEV1']['postmortem']['dueDays'])
             ->toBe(IncidentPolicyDslParser::DEFAULT_POSTMORTEM_DUE_DAYS)
-            ->and($policy->rules['SEV1']['escalation']['useLayers'])->toBeTrue()
+            ->and($policy->rules['SEV3']['escalation']['useLayers'])->toBeTrue()
             ->and($policy->rules['SEV3']['requireCommander'])->toBeFalse()
             ->and($policy->rules['SEV3']['postmortem']['required'])->toBeFalse()
             ->and($policy->rules['SEV3']['postmortem']['dueDays'])->toBeNull()
@@ -127,6 +127,27 @@ describe('IncidentPolicyDslParser', function () {
 
         expect($result->isValid())->toBeFalse()
             ->and(dslErrorPaths($result))->toContain('apiVersion', 'kind');
+    });
+
+    it('rejects an on-call plan reference on the policy', function () {
+        $result = parseDsl(<<<'YAML'
+        apiVersion: skylogs.io/v1
+        kind: IncidentPolicy
+        metadata:
+          name: linked-plan
+          teams: [payments]
+        spec:
+          match:
+            tags: [payments]
+          rules:
+            - severity: SEV1
+              escalation:
+                onCallPlan: payments-primary
+        YAML);
+
+        expect($result->isValid())->toBeFalse()
+            ->and(dslErrorPaths($result))->toContain('spec.rules[0].escalation.onCallPlan')
+            ->and($result->errors[0]->message)->toContain("Unknown field 'onCallPlan'");
     });
 
     it('reports unknown fields by path', function () {

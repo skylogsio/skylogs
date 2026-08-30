@@ -219,6 +219,11 @@ class EndpointDocs
                     new OA\Property(property: 'threadId', description: 'Optional message thread ID for Telegram type only', type: 'string'),
                     new OA\Property(property: 'botToken', description: 'Custom bot token for Telegram and Bale types', type: 'string'),
                     new OA\Property(
+                        property: 'onCall',
+                        description: 'When true, this is the endpoint used if the owner is on an on-call plan. Only one endpoint per user can be on-call.',
+                        type: 'boolean'
+                    ),
+                    new OA\Property(
                         property: 'steps',
                         description: 'For flow type - array of steps with wait and endpoint types',
                         type: 'array',
@@ -306,6 +311,11 @@ class EndpointDocs
                     ),
                     new OA\Property(property: 'threadId', description: 'Optional message thread ID for Telegram type only', type: 'string'),
                     new OA\Property(property: 'botToken', description: 'Custom bot token for Telegram and Bale types', type: 'string'),
+                    new OA\Property(
+                        property: 'onCall',
+                        description: 'When true, this is the endpoint used if the owner is on an on-call plan. Only one endpoint per user can be on-call.',
+                        type: 'boolean'
+                    ),
                     new OA\Property(
                         property: 'steps',
                         description: 'For flow type - array of steps with wait and endpoint types',
@@ -483,6 +493,11 @@ class EndpointDocs
                     ),
                 ]
             )
+        ),
+        new OA\Property(
+            property: 'onCall',
+            description: 'When true, this endpoint is used whenever the owner is on an on-call plan',
+            type: 'boolean'
         ),
         new OA\Property(property: 'userId', description: 'User ID who owns this endpoint', type: 'string'),
         new OA\Property(property: 'createdAt', description: 'Creation timestamp', type: 'string', format: 'date-time'),
