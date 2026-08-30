@@ -1,3 +1,26 @@
+# ---------------------------------------------------------------------------
+# Skylogs — development / build-from-source stack
+#
+#   Backend only (single node, no clustering):
+#       docker compose up -d --build
+#
+#   Add the frontend:
+#       COMPOSE_PROFILES=full docker compose up -d --build
+#
+#   Add Raft HA:
+#       COMPOSE_PROFILES=ha docker compose up -d --build
+#
+#   Add Sentinel cross-zone federation:
+#       COMPOSE_PROFILES=multizone docker compose up -d --build
+#
+#   Everything:
+#       COMPOSE_PROFILES=full,ha,multizone docker compose up -d --build
+#
+# Put COMPOSE_PROFILES in .env so bare `docker compose up -d` does the right
+# thing. HA_ENABLED must be flipped alongside the `ha` profile — the profile
+# starts the raft container, HA_ENABLED tells the backend to use it.
+# ---------------------------------------------------------------------------
+
 x-back-env: &back-env
   environment:
     - APP_ENV=local
@@ -10,11 +33,12 @@ x-back-env: &back-env
     # Override hosts from a developer .env that may be baked into the image.
     - DB_HOST=mongo
     - REDIS_HOST=redis
-    #  High availability. Off for single-node; ha/*.yml flips this on for a cluster.
-    - HA_ENABLED=false
-    - HA_NODE_ID=node-1
-    - HA_NODE_SECRET=changeme-ha-secret
-    - RAFT_URL=http://raft:8000
+    #  High availability. Off for single-node; set HA_ENABLED=true in .env
+    #  together with COMPOSE_PROFILES=ha to run a cluster.
+    - HA_ENABLED=${HA_ENABLED:-false}
+    - HA_NODE_ID=${HA_NODE_ID:-node-1}
+    - HA_NODE_SECRET=${HA_SECRET:-changeme-ha-secret}
+    - RAFT_URL=${RAFT_URL:-http://raft:8000}
     #  Change the secret
     - JWT_SECRET=mysecretmysecretmysecretmysecret
 
@@ -124,21 +148,23 @@ services:
       - nginx
     <<: *front-env
 
+  # --- Sentinel: cross-zone federation --------------------------------------
+  # Starts under `multizone`, or under `full` for a one-command everything run.
   sentinel:
-    profiles: ["full"]
+    profiles: ["multizone", "full"]
     build: apps/sentinel
     #    container_name: sentinel
     restart: always
     depends_on:
       - back
     environment:
-      - SENTINEL_ID=dc2-sentinel
-      - SENTINEL_ROLE=secondary
-      - MAIN_SKYLOGS_HEARTBEAT_URL=http://nginx/heartbeat
-      - HEARTBEAT_INTERVAL=5s
-      - HEARTBEAT_TIMEOUT=3s
-      - FAIL_THRESHOLD=3
-      - ALERT_WEBHOOK_URL=http://skylogs-core:8080/internal/alerts/sentinel
+      - SENTINEL_ID=${SENTINEL_ID:-dc2-sentinel}
+      - SENTINEL_ROLE=${SENTINEL_ROLE:-secondary}
+      - MAIN_SKYLOGS_HEARTBEAT_URL=${MAIN_SKYLOGS_HEARTBEAT_URL:-http://nginx/heartbeat}
+      - HEARTBEAT_INTERVAL=${HEARTBEAT_INTERVAL:-5s}
+      - HEARTBEAT_TIMEOUT=${HEARTBEAT_TIMEOUT:-3s}
+      - FAIL_THRESHOLD=${FAIL_THRESHOLD:-3}
+      - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL:-http://nginx:80/internal/alerts/sentinel}
     volumes:
       - ./apps/sentinel/config.yaml:/app/config.yaml:ro
     ports:
@@ -147,19 +173,22 @@ services:
       - skylogs_net
 
 
-
+  # --- Raft: HA consensus inside the zone -----------------------------------
+  # Starts under `ha`, or under `full`. Set HA_ENABLED=true in .env too,
+  # otherwise the backend ignores this container entirely.
   raft:
+    profiles: ["ha", "full"]
     build: apps/raft
     #    container_name: raft
     restart: unless-stopped
     environment:
-      - RAFT_NODE_ID=node1
-      - RAFT_ADV_ADDR=raft
-      - RAFT_START_MODE=--bootstrap
+      - RAFT_NODE_ID=${RAFT_NODE_ID:-node1}
+      - RAFT_ADV_ADDR=${RAFT_ADV_ADDR:-raft}
+      - RAFT_START_MODE=${RAFT_START_MODE:---bootstrap}
       # This raft's own backend on the same compose network (nginx fronts php-fpm).
       # Multi-node: each raft-N must use http://nginx-N:80/api/ha/apply — never a shared VIP.
-      - RAFT_NOTIFY_URL=http://nginx:80/api/ha/apply
-      - RAFT_NOTIFY_SECRET=changeme-ha-secret
+      - RAFT_NOTIFY_URL=${RAFT_NOTIFY_URL:-http://nginx:80/api/ha/apply}
+      - RAFT_NOTIFY_SECRET=${HA_SECRET:-changeme-ha-secret}
       - RAFT_NOTIFY_HEADER=X-Skylogs-HA-Secret
     # The entrypoint builds the flags from RAFT_* above: raft TCP 7000, HTTP 8000, data in /data.
     ports:

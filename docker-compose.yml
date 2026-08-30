@@ -163,7 +163,7 @@ services:
 ##########  RAFT  (profile: ha)  #################
 # Only starts when the `ha` profile is enabled. Pair with RAFT_ENABLED=true.
   skylogs-raft:
-    image: "${IMAGE_TAG_RAFT:-skylogsio/skylogs-raft:latest}"
+    image: skylogsio/skylogs-raft
     container_name: skylogs-raft
     profiles: ["ha"]
     env_file:
@@ -182,7 +182,7 @@ services:
 # Only starts when the `multizone` profile is enabled.
 # Pair with SENTINEL_ENABLED=true.
   skylogs-sentinel:
-    image: "${IMAGE_TAG_SENTINEL:-skylogsio/skylogs-sentinel:latest}"
+    image: skylogsio/skylogs-sentinel
     container_name: skylogs-sentinel
     profiles: ["multizone"]
     restart: always
