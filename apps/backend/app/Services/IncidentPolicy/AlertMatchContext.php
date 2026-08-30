@@ -19,6 +19,8 @@ class AlertMatchContext
         public readonly array $tags = [],
         public readonly array $serviceIds = [],
         public readonly ?string $dataSourceType = null,
+        public readonly ?string $alertName = null,
+        public readonly ?string $alertState = null,
     ) {}
 
     /**
@@ -33,6 +35,8 @@ class AlertMatchContext
             tags: self::stringList($alertRule->tags ?? []),
             serviceIds: self::stringList($serviceIds),
             dataSourceType: $type === null ? null : DataSourceType::tryFrom($type)?->value,
+            alertName: $alertRule->name,
+            alertState: $alertRule->state === null ? null : strtolower((string) $alertRule->state),
         );
     }
 

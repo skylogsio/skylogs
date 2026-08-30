@@ -7,7 +7,7 @@ use OpenApi\Attributes as OA;
 #[OA\Tag(
     name: 'Incident Policies',
     description: 'Incident response policies. Definitions can be applied from the YAML DSL (apiVersion '.
-        'skylogs.io/v1) or written as JSON. Policies are configuration only; nothing acts on them yet.'
+        'skylogs.io/v1) or written as JSON. Matching auto-create policies can open incidents; grouping and the alert fire pipeline are not wired yet.'
 )]
 class IncidentPolicyDocs
 {

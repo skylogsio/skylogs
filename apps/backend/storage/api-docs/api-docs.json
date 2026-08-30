@@ -11845,6 +11845,11 @@
                             "policy"
                         ]
                     },
+                    "policyId": {
+                        "description": "Set when the incident was opened from an incident policy",
+                        "type": "string",
+                        "nullable": true
+                    },
                     "startedAt": {
                         "description": "When the incident occurred / started",
                         "type": "string",
@@ -11879,7 +11884,8 @@
                         }
                     },
                     "createdBy": {
-                        "type": "string"
+                        "type": "string",
+                        "nullable": true
                     },
                     "resolvedBy": {
                         "type": "string",
@@ -13943,7 +13949,7 @@
         },
         {
             "name": "Incident Policies",
-            "description": "Incident response policies. Definitions can be applied from the YAML DSL (apiVersion skylogs.io/v1) or written as JSON. Policies are configuration only; nothing acts on them yet."
+            "description": "Incident response policies. Definitions can be applied from the YAML DSL (apiVersion skylogs.io/v1) or written as JSON. Matching auto-create policies can open incidents; grouping and the alert fire pipeline are not wired yet."
         },
         {
             "name": "On-Call Plans",
