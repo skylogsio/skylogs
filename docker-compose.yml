@@ -1,38 +1,56 @@
+# ---------------------------------------------------------------------------
+# Skylogs stack
+#
+#   Single zone, no clustering (default):
+#       docker compose up -d
+#
+#   With Raft HA inside the zone:
+#       COMPOSE_PROFILES=ha docker compose up -d
+#
+#   With Sentinel cross-zone federation:
+#       COMPOSE_PROFILES=multizone docker compose up -d
+#
+#   Full HA + multi-zone:
+#       COMPOSE_PROFILES=ha,multizone docker compose up -d
+#
+# Set COMPOSE_PROFILES in .env so plain `docker compose up -d` does the
+# right thing without any flags. See .env.example.
+# ---------------------------------------------------------------------------
+
 x-back-env: &back-env
   environment:
-  - APP_DEBUG=true
-  - APP_URL=http://localhost:8000
-  - FRONTEND_URL=http://localhost:8080
-  - DB_CONNECTION="mongodb"
-  - DB_HOST="mongodb"
-  - DB_PORT=27017
-  - DB_DATABASE="skylog"
-  - DB_USERNAME="admin"
-  - DB_PASSWORD="TuY8dgQP52fqasdf6nHEMSe4rhk"
-  - REDIS_DB="0"
-  - REDIS_HOST=redis
-  - REDIS_PASSWORD=ASdfgfdjda097sdfg
-  - REDIS_PORT="6379"
-  - REDIS_QUEUE_DB=1
-  - REDIS_CACHE_DB=2
-#  Change the secret
-  - JWT_SECRET=mysecret
-  - DEPLOY_TYPE=web
-#  High availability. Leave HA_ENABLED=false for a single node install.
-  - HA_ENABLED=true
-  - HA_NODE_ID=node-1
-#  Change the secret, and use the same value for the raft sidecar's RAFT_NOTIFY_SECRET
-  - HA_NODE_SECRET=changeme-ha-secret
-#  HTTP API of the raft sidecar in this stack
-  - RAFT_URL=http://raft:8000
-#  Backend base URL per node, keyed by that node's RAFT_ADV_ADDR. Raft names the
-#  leader only by its raft address, so a follower needs this map to know which
-#  backend to pull configuration from. Fill it in on every node of a cluster.
-  - HA_PEER_URLS=172.28.7.11=http://nginx_back:80
+    - APP_DEBUG=true
+    - APP_URL=http://localhost:8000
+    - FRONTEND_URL=http://localhost:8080
+    - DB_CONNECTION="mongodb"
+    - DB_HOST="mongodb"
+    - DB_PORT=27017
+    - DB_DATABASE="skylog"
+    - DB_USERNAME="admin"
+    - DB_PASSWORD="TuY8dgQP52p6nHEMSe4rhk"
+    - REDIS_DB="0"
+    - REDIS_HOST=redis
+    - REDIS_PASSWORD=ASdfasdfa097sdfg
+    - REDIS_PORT="6379"
+    - REDIS_QUEUE_DB=1
+    - REDIS_CACHE_DB=2
+    #  Change the secret
+    - JWT_SECRET=mysecret
+    - DEPLOY_TYPE=${DEPLOY_TYPE:-web}
+    # --- clustering / federation switches -------------------------------
+    # These must match the profiles you enable. Starting the raft container
+    # without RAFT_ENABLED=true does nothing useful, and setting
+    # RAFT_ENABLED=true without the `ha` profile makes the backend dial a
+    # host that isn't there.
+    - RAFT_ENABLED=${RAFT_ENABLED:-false}
+    - RAFT_HTTP_URL=${RAFT_HTTP_URL:-http://skylogs-raft:8000}
+    - RAFT_BIND_ADDR=${RAFT_BIND_ADDR:-skylogs-raft:7000}
+    - SENTINEL_ENABLED=${SENTINEL_ENABLED:-false}
+    - SENTINEL_URL=${SENTINEL_URL:-http://skylogs-sentinel:9191}
 
 x-front-env: &front-env
   environment:
-#   Change the secret (at least 32 characters)
+    #   Change the secret (at least 32 characters)
     - NEXTAUTH_SECRET=GK/IKHJ55WUBSIDAFLT3vcQmud1t5PIZHsclw40JtVs=
     - NEXTAUTH_URL=https://app2.skylogs.io
     - BASE_URL=http://nginx_back:80/api/v1/
@@ -41,10 +59,10 @@ x-front-env: &front-env
 services:
   skylogs-back:
     container_name: skylogs-back
-    image: skylogs/skylogs:api-v0.15.0
+    image: skylogsio/skylogs-api
     restart: unless-stopped
     ports:
-     - 9001:9000
+      - 9001:9000
     volumes:
       - skylogs_back:/var/www/html:rw
     networks:
@@ -64,12 +82,13 @@ services:
       - mongodb
       - redis
     <<: *back-env
+
   skylogs-front:
     container_name: skylogs-front
-    image: skylogs/skylogs:front-v0.15.0
+    image: skylogsio/skylogs-frontend
     restart: unless-stopped
     ports:
-     - 8080:3000
+      - 8080:3000
     networks:
       - skylogs
     depends_on:
@@ -78,7 +97,7 @@ services:
 
   horizon:
     container_name: skylogs_horizon
-    image: skylogs/skylogs:api-v0.15.0
+    image: skylogsio/skylogs-api
     restart: unless-stopped
     entrypoint: >
       sh -c "php artisan horizon"
@@ -91,7 +110,7 @@ services:
 
   crontab:
     container_name: skylogs_crontab
-    image: skylogs/skylogs:api-v0.15.0
+    image: skylogsio/skylogs-api
     entrypoint: >
       sh -c "crond -f -l 8 &&
             tail -f /var/log/cron.log"
@@ -104,48 +123,14 @@ services:
     <<: *back-env
 
 
-########### RAFT ############
-# One sidecar per HA node. It elects the leader, replicates the alert state log
-# between nodes, and POSTs every replicated change to this node's /api/ha/apply.
-# RAFT_NOTIFY_URL must be THIS node's backend (nginx), never a VIP/load balancer
-# and never another node's backend — each raft talks only to its local app.
-  raft:
-    container_name: skylogs_raft
-    image: skylogs/skylogs:raft-v0.1.0
-    restart: unless-stopped
-    environment:
-      - RAFT_NODE_ID=node1
-#     Address the OTHER nodes use to reach this one, no port. Must match the key
-#     used for this node in HA_PEER_URLS.
-      - RAFT_ADV_ADDR=172.28.7.11
-#     --bootstrap on the first node only; the others use
-#     RAFT_START_MODE=--join http://<first-node>:8000, and an empty value once a
-#     node already has /data and is only being restarted.
-      - RAFT_START_MODE=--bootstrap
-#     Same Docker network as skylogs-back / nginx_back
-      - RAFT_NOTIFY_URL=http://nginx_back:80/api/ha/apply
-#     Must match HA_NODE_SECRET in x-back-env
-      - RAFT_NOTIFY_SECRET=changeme-ha-secret
-      - RAFT_NOTIFY_HEADER=X-Skylogs-HA-Secret
-    ports:
-#     7000 raft TCP between nodes, 8000 HTTP API
-      - "7000:7000"
-      - "8000:8000"
-    volumes:
-      - raft_data:/data
-    networks:
-      - skylogs
-    depends_on:
-      - nginx_back
-
 ########### MONGODB ############
   mongodb:
-    image: mongo:4.4 
+    image: mongo:4.4
     ports:
-     - 27017:27017
+      - 27017:27017
     environment:
-     - MONGO_INITDB_ROOT_USERNAME=admin
-     - MONGO_INITDB_ROOT_PASSWORD=TuY8dgQP52fqasdf6nHEMSe4rhk
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=TuY8dgQP52p6nHEMSe4rhk
     volumes:
       - mongo_data:/data/db
     networks:
@@ -157,13 +142,13 @@ services:
     restart: always
     ports:
       - '6379:6379'
-    command: redis-server --save 60 1 --loglevel warning --requirepass ASdfgfdjda097sdfg
+    command: redis-server --save 60 1 --loglevel warning --requirepass ASdfasdfa097sdfg
     networks:
       - skylogs
 
 ########## NGINX ############
   nginx_back:
-    image: skylogs/skylogs:nginx
+    image: nginx
     container_name: nginx_back
     restart: unless-stopped
     ports:
@@ -174,6 +159,50 @@ services:
       - skylogs
     depends_on:
       - skylogs-back
+
+##########  RAFT  (profile: ha)  #################
+# Only starts when the `ha` profile is enabled. Pair with RAFT_ENABLED=true.
+  skylogs-raft:
+    image: "${IMAGE_TAG_RAFT:-skylogsio/skylogs-raft:latest}"
+    container_name: skylogs-raft
+    profiles: ["ha"]
+    env_file:
+      - path: raft.env
+        required: false
+    ports:
+      - "7000:7000"
+      - "8000:8000"
+    volumes:
+      - raft-data:/data
+    restart: unless-stopped
+    networks:
+      - skylogs
+
+######### SENTINEL  (profile: multizone)  ######################
+# Only starts when the `multizone` profile is enabled.
+# Pair with SENTINEL_ENABLED=true.
+  skylogs-sentinel:
+    image: "${IMAGE_TAG_SENTINEL:-skylogsio/skylogs-sentinel:latest}"
+    container_name: skylogs-sentinel
+    profiles: ["multizone"]
+    restart: always
+    depends_on:
+      - skylogs-back
+    environment:
+      - SENTINEL_ID=${SENTINEL_ID:-dc2-sentinel}
+      - SENTINEL_ROLE=${SENTINEL_ROLE:-secondary}
+      - MAIN_SKYLOGS_HEARTBEAT_URL=${MAIN_SKYLOGS_HEARTBEAT_URL:-http://nginx_back:80/heartbeat}
+      - HEARTBEAT_INTERVAL=${HEARTBEAT_INTERVAL:-5s}
+      - HEARTBEAT_TIMEOUT=${HEARTBEAT_TIMEOUT:-3s}
+      - FAIL_THRESHOLD=${FAIL_THRESHOLD:-3}
+      - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL:-http://nginx_back:80/internal/alerts/sentinel}
+    volumes:
+      - ./apps/sentinel/config.yaml:/app/config.yaml:ro
+    ports:
+      - "9191:9191"
+    networks:
+      - skylogs
+
 networks:
   skylogs:
     driver: bridge
@@ -181,12 +210,12 @@ networks:
       driver: default
       config:
         - subnet: "192.168.17.0/24"  # Define the subnet range
-          gateway: "192.168.17.1"     # Define the gateway
+          gateway: "192.168.17.1"    # Define the gateway
 
 volumes:
   skylogs_back:
     driver: local
   mongo_data:
     driver: local
-  raft_data:
+  raft-data:
     driver: local
