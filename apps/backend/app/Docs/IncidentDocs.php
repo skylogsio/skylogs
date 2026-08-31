@@ -219,6 +219,18 @@ class IncidentDocs
             ]
         ),
         new OA\Property(
+            property: 'remaining',
+            type: 'object',
+            nullable: true,
+            description: 'Outstanding follow-through for related staff. Null once the incident is resolved. An acknowledged team is not escalated further.',
+            properties: [
+                new OA\Property(property: 'unacknowledgedTeamIds', type: 'array', items: new OA\Items(type: 'string')),
+                new OA\Property(property: 'commanderRequired', type: 'boolean'),
+                new OA\Property(property: 'statusPageUpdateRequired', type: 'boolean'),
+                new OA\Property(property: 'postmortemRequired', type: 'boolean'),
+            ]
+        ),
+        new OA\Property(
             property: 'acknowledgements',
             type: 'array',
             description: 'Per-team acknowledgements',

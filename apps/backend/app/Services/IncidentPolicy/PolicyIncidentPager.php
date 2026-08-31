@@ -11,6 +11,7 @@ use App\Models\Incident;
 use App\Models\IncidentPolicy;
 use App\Models\Notify;
 use App\Models\OnCallPlan;
+use App\Models\Team;
 use App\Services\IncidentTimelineService;
 use App\Services\NotifyMessageComposer;
 use App\Services\OnCallResolver;
@@ -104,6 +105,10 @@ class PolicyIncidentPager
         $onCallEndpointIds = [];
 
         foreach ($this->stringList($policy->teamIds ?? []) as $teamId) {
+            if ($incident->hasTeamAcknowledged($teamId)) {
+                continue;
+            }
+
             $resolved = $this->resolvePlan($teamId);
             $endpointId = $resolved['layers'][0]['onCall']['endpoint']['id'] ?? null;
 
@@ -148,6 +153,8 @@ class PolicyIncidentPager
         }
 
         if ($incident->hasTeamAcknowledged($teamId)) {
+            $this->recordSkippedLayer($incident, $policy, $teamId, $layerLevel);
+
             return;
         }
 
@@ -227,6 +234,69 @@ class PolicyIncidentPager
 
             $elapsedMinutes += $wait;
         }
+    }
+
+    private function recordSkippedLayer(Incident $incident, IncidentPolicy $policy, string $teamId, int $layerLevel): void
+    {
+        $teamName = Team::query()->where('_id', $teamId)->value('name') ?: $teamId;
+        $unackedNames = $this->teamNames($incident->unacknowledgedTeamIds());
+        $message = 'On-call layer '.$layerLevel.' skipped for '.$teamName.'; team already acknowledged.';
+
+        if ($unackedNames !== []) {
+            $message .= ' Remaining: '.$this->joinNames($unackedNames).' '.($this->have($unackedNames)).' not acknowledged.';
+        }
+
+        $this->timelineService->recordSystemEntry(
+            $incident,
+            IncidentTimelineEntryType::Escalation,
+            $message,
+            null,
+            [
+                'layer' => $layerLevel,
+                'teamId' => $teamId,
+                'skipped' => true,
+                'unacknowledgedTeamIds' => $incident->unacknowledgedTeamIds(),
+                'policyId' => (string) $policy->id,
+            ],
+        );
+    }
+
+    /**
+     * @param  list<string>  $teamIds
+     * @return list<string>
+     */
+    private function teamNames(array $teamIds): array
+    {
+        if ($teamIds === []) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(
+            'strval',
+            Team::query()->whereIn('_id', $teamIds)->pluck('name')->all(),
+        )));
+    }
+
+    /**
+     * @param  list<string>  $names
+     */
+    private function joinNames(array $names): string
+    {
+        if (count($names) <= 1) {
+            return $names[0] ?? '';
+        }
+
+        $last = array_pop($names);
+
+        return implode(', ', $names).' and '.$last;
+    }
+
+    /**
+     * @param  list<string>  $names
+     */
+    private function have(array $names): string
+    {
+        return count($names) === 1 ? 'has' : 'have';
     }
 
     /**

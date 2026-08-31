@@ -68,6 +68,7 @@ class IncidentResource extends JsonResource
             ]),
             'postMortem' => $this->postMortemSummary(),
             'policySla' => $this->policySla,
+            'remaining' => $this->remaining(),
             'counts' => $this->counts ?? null,
             'canEdit' => $this->canEdit ?? false,
             'canDelete' => $this->canDelete ?? false,

@@ -321,6 +321,16 @@ describe('PolicyIncidentPager', function () {
                 ->where('incidentId', $incident->id)
                 ->get(),
         )->toHaveCount(1);
+
+        $skipped = IncidentTimelineEntry::query()
+            ->where('incidentId', $incident->id)
+            ->where('type', IncidentTimelineEntryType::Escalation)
+            ->get()
+            ->first(fn (IncidentTimelineEntry $entry): bool => str_contains((string) $entry->message, 'skipped'));
+
+        expect($skipped)->not->toBeNull()
+            ->and($skipped->meta['skipped'])->toBeTrue()
+            ->and($skipped->message)->not->toContain('Remaining:');
     });
 
     it('pages the current on-call of a later layer while the incident is still open', function () {
@@ -356,5 +366,147 @@ describe('PolicyIncidentPager', function () {
 
         expect($pages)->toHaveCount(2)
             ->and($pages->last()->endpointIds)->toBe([$this->backupEndpoint->id]);
+    });
+
+    it('does not re-page an acknowledged team when nudging remaining staff', function () {
+        $other = TeamTestData::createUser(Constants::ROLE_MEMBER);
+        $otherTeam = TeamTestData::createTeam($other, [$other->id], 'pager-remaining-team');
+        $otherEndpoint = IncidentPolicyTestData::createEndpoint($other, 'pager-remaining-oncall');
+        $otherEndpoint->update(['onCall' => true]);
+        $otherPlan = IncidentPolicyTestData::createOnCallPlan($otherTeam, 'pager-remaining-plan');
+        $otherPlan->update([
+            'timezone' => 'UTC',
+            'layers' => [[
+                'level' => 1,
+                'escalateAfterMinutes' => 5,
+                'entries' => [[
+                    'userId' => $other->id,
+                    'windows' => [[
+                        'daysOfWeek' => [1, 2, 3, 4, 5, 6, 7],
+                        'startTime' => '00:00',
+                        'endTime' => '24:00',
+                    ]],
+                ]],
+            ]],
+        ]);
+
+        $this->policies[] = IncidentPolicyTestData::createPolicy([
+            'teamIds' => [$this->team->id, $otherTeam->id],
+            'match' => ['tags' => [$this->tag]],
+            'rules' => [
+                'SEV3' => [
+                    'notifyEndpointIds' => [$this->notifyEndpoint->id],
+                    'escalation' => ['useLayers' => false],
+                ],
+            ],
+        ]);
+
+        $incidents = app(PolicyIncidentOpener::class)->open(
+            AlertMatchContext::fromAlertRule($this->alertRule->fresh()),
+        );
+        $incident = $incidents->first();
+        $this->incidents[] = $incident;
+        $incident->update([
+            'acknowledgements' => [[
+                'teamId' => $this->team->id,
+                'acknowledgedBy' => $this->user->id,
+                'acknowledgedAt' => now(),
+            ]],
+        ]);
+
+        app(PolicyIncidentPager::class)->nudge($incident->fresh());
+
+        $nudge = Notify::query()
+            ->where('type', SendNotifyJob::INCIDENT_POLICY_PAGE)
+            ->where('incidentId', $incident->id)
+            ->orderBy('createdAt')
+            ->get()
+            ->last();
+
+        expect($nudge->endpointIds)->toContain($this->notifyEndpoint->id)
+            ->and($nudge->endpointIds)->toContain($otherEndpoint->id)
+            ->and($nudge->endpointIds)->not->toContain($this->primaryEndpoint->id);
+
+        OnCallPlanTestData::deletePlan($otherPlan);
+        IncidentPolicyTestData::deleteEndpoint($otherEndpoint);
+        TeamTestData::deleteTeam($otherTeam);
+        TeamTestData::deleteUser($other);
+    });
+
+    it('records remaining unacked teams when a delayed layer is skipped after ack', function () {
+        $other = TeamTestData::createUser(Constants::ROLE_MEMBER);
+        $otherTeam = TeamTestData::createTeam($other, [$other->id], 'pager-unacked-team');
+        $otherEndpoint = IncidentPolicyTestData::createEndpoint($other, 'pager-unacked-oncall');
+        $otherEndpoint->update(['onCall' => true]);
+        $otherPlan = IncidentPolicyTestData::createOnCallPlan($otherTeam, 'pager-unacked-plan');
+        $otherPlan->update([
+            'timezone' => 'UTC',
+            'layers' => [[
+                'level' => 1,
+                'escalateAfterMinutes' => 5,
+                'entries' => [[
+                    'userId' => $other->id,
+                    'windows' => [[
+                        'daysOfWeek' => [1, 2, 3, 4, 5, 6, 7],
+                        'startTime' => '00:00',
+                        'endTime' => '24:00',
+                    ]],
+                ]],
+            ]],
+        ]);
+
+        $this->policies[] = IncidentPolicyTestData::createPolicy([
+            'teamIds' => [$this->team->id, $otherTeam->id],
+            'match' => ['tags' => [$this->tag]],
+            'rules' => [
+                'SEV3' => [
+                    'notifyEndpointIds' => [$this->notifyEndpoint->id],
+                    'escalation' => ['useLayers' => true],
+                ],
+            ],
+        ]);
+
+        $incidents = app(PolicyIncidentOpener::class)->open(
+            AlertMatchContext::fromAlertRule($this->alertRule->fresh()),
+        );
+        $incident = $incidents->first();
+        $this->incidents[] = $incident;
+        $incident->update([
+            'status' => IncidentStatus::Investigating,
+            'acknowledgements' => [[
+                'teamId' => $this->team->id,
+                'acknowledgedBy' => $this->user->id,
+                'acknowledgedAt' => now(),
+            ]],
+        ]);
+
+        $pagesBefore = Notify::query()
+            ->where('type', SendNotifyJob::INCIDENT_POLICY_PAGE)
+            ->where('incidentId', $incident->id)
+            ->count();
+
+        (new PageIncidentLayerJob(
+            (string) $incident->id,
+            (string) $this->policies[0]->id,
+            (string) $this->team->id,
+            2,
+        ))->handle(app(PolicyIncidentPager::class));
+
+        $skipped = IncidentTimelineEntry::query()
+            ->where('incidentId', $incident->id)
+            ->where('type', IncidentTimelineEntryType::Escalation)
+            ->get()
+            ->first(fn (IncidentTimelineEntry $entry): bool => str_contains((string) $entry->message, 'skipped'));
+
+        expect(Notify::query()->where('type', SendNotifyJob::INCIDENT_POLICY_PAGE)->where('incidentId', $incident->id)->count())
+            ->toBe($pagesBefore)
+            ->and($skipped)->not->toBeNull()
+            ->and($skipped->message)->toContain($otherTeam->name)
+            ->and($skipped->meta['unacknowledgedTeamIds'])->toContain($otherTeam->id);
+
+        OnCallPlanTestData::deletePlan($otherPlan);
+        IncidentPolicyTestData::deleteEndpoint($otherEndpoint);
+        TeamTestData::deleteTeam($otherTeam);
+        TeamTestData::deleteUser($other);
     });
 });

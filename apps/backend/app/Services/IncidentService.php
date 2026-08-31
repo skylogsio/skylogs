@@ -365,14 +365,22 @@ class IncidentService
         }
 
         $teamNames = Team::query()->whereIn('_id', $teamIds)->pluck('name')->all();
+        $ackFor = 'Acknowledged for '.(implode(', ', $teamNames) ?: implode(', ', $teamIds)).'.';
+        $remainder = $this->followThrough->remainderMessage($incident);
+        $message = $remainder === null ? $ackFor : $ackFor.' '.$remainder;
 
         $this->timelineService->recordSystemEntry(
             $incident,
             IncidentTimelineEntryType::Acknowledged,
-            'Acknowledged for '.(implode(', ', $teamNames) ?: implode(', ', $teamIds)).'.',
+            $message,
             $user,
-            ['teamIds' => $teamIds],
+            [
+                'teamIds' => $teamIds,
+                'unacknowledgedTeamIds' => $incident->unacknowledgedTeamIds(),
+            ],
         );
+
+        $this->followThrough->notifyRemainingAfterAck($incident);
 
         $this->recordStatusChange($incident, $previousStatus, $user);
 

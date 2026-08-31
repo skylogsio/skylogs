@@ -13,6 +13,7 @@ use App\Models\Incident;
 use App\Models\IncidentPolicy;
 use App\Models\IncidentTimelineEntry;
 use App\Models\OnCallPlan;
+use App\Models\Team;
 use App\Models\User;
 use App\Services\IncidentTimelineService;
 use App\Services\OnCallResolver;
@@ -108,6 +109,62 @@ class PolicyIncidentFollowThrough
         if ($stakeholderEvery !== null) {
             RemindIncidentStakeholderUpdateJob::dispatch($id)->delay(now()->addMinutes($stakeholderEvery));
         }
+    }
+
+    /**
+     * What is still outstanding after a team acknowledges, for related staff.
+     */
+    public function remainderMessage(Incident $incident): ?string
+    {
+        $parts = [];
+        $unacknowledgedTeamIds = $incident->unacknowledgedTeamIds();
+
+        if ($unacknowledgedTeamIds !== []) {
+            $names = array_values(array_filter(array_map(
+                'strval',
+                Team::query()->whereIn('_id', $unacknowledgedTeamIds)->pluck('name')->all(),
+            )));
+            $label = implode(', ', $names) ?: implode(', ', $unacknowledgedTeamIds);
+            $verb = count($unacknowledgedTeamIds) === 1 ? 'has' : 'have';
+            $parts[] = $label.' '.$verb.' not acknowledged';
+        }
+
+        $sla = $incident->policySla ?? [];
+
+        if (($sla['requireCommander'] ?? false) && empty($incident->commanderId)) {
+            $parts[] = 'commander not assigned';
+        }
+
+        if (($sla['statusPageUpdateRequired'] ?? false) && ! $this->hasPublicUpdate($incident)) {
+            $parts[] = 'status-page update still required';
+        }
+
+        if ($this->nullableInt($sla['resolveWithinMinutes'] ?? null) !== null
+            && in_array($incident->status, self::OPEN_STATUSES, true)) {
+            $parts[] = 'resolve SLA still open';
+        }
+
+        if ($sla['postmortemRequired'] ?? false) {
+            $parts[] = 'postmortem still required after resolve';
+        }
+
+        if ($parts === []) {
+            return null;
+        }
+
+        return 'Remaining: '.implode('; ', $parts).'.';
+    }
+
+    /**
+     * Page remaining unacked on-call and policy notify endpoints. Does not escalate an acked team.
+     */
+    public function notifyRemainingAfterAck(Incident $incident): void
+    {
+        if ($incident->unacknowledgedTeamIds() === []) {
+            return;
+        }
+
+        $this->pager->nudge($incident);
     }
 
     public function recordCommander(Incident $incident, string $commanderId, string $message): void

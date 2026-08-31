@@ -281,4 +281,78 @@ describe('PolicyIncidentFollowThrough', function () {
 
         expect($updated->commanderId)->toBe($this->user->id);
     });
+
+    it('does not escalate an acknowledged team and tells remaining staff what is left', function () {
+        $other = TeamTestData::createUser(Constants::ROLE_MEMBER);
+        $otherTeam = TeamTestData::createTeam($other, [$other->id], 'follow-remaining-team');
+        $otherEndpoint = IncidentPolicyTestData::createEndpoint($other, 'follow-remaining-oncall');
+        $otherEndpoint->update(['onCall' => true]);
+        $otherPlan = IncidentPolicyTestData::createOnCallPlan($otherTeam, 'follow-remaining-plan');
+        $otherPlan->update([
+            'timezone' => 'UTC',
+            'layers' => [[
+                'level' => 1,
+                'escalateAfterMinutes' => 15,
+                'entries' => [[
+                    'userId' => $other->id,
+                    'windows' => [[
+                        'daysOfWeek' => [1, 2, 3, 4, 5, 6, 7],
+                        'startTime' => '00:00',
+                        'endTime' => '24:00',
+                    ]],
+                ]],
+            ]],
+        ]);
+
+        $this->policies[] = IncidentPolicyTestData::createPolicy([
+            'teamIds' => [$this->team->id, $otherTeam->id],
+            'match' => ['tags' => [$this->tag]],
+            'rules' => ['SEV3' => [
+                'notifyEndpointIds' => [$this->notifyEndpoint->id],
+                'resolveWithinMinutes' => 60,
+                'postmortem' => ['required' => true],
+                'escalation' => ['useLayers' => false],
+            ]],
+        ]);
+
+        $incidents = app(PolicyIncidentOpener::class)->open(
+            AlertMatchContext::fromAlertRule($this->alertRule->fresh()),
+        );
+        $incident = $incidents->first();
+        $this->incidents = $incidents->all();
+
+        Queue::fake();
+
+        $updated = app(IncidentService::class)->acknowledge($this->user, $incident->fresh(), $this->team->id);
+
+        $entry = IncidentTimelineEntry::query()
+            ->where('incidentId', $incident->id)
+            ->where('type', IncidentTimelineEntryType::Acknowledged)
+            ->first();
+
+        expect($updated->remaining()['unacknowledgedTeamIds'])->toBe([(string) $otherTeam->id])
+            ->and($entry)->not->toBeNull()
+            ->and($entry->message)->toContain('Remaining:')
+            ->and($entry->message)->toContain($otherTeam->name)
+            ->and($entry->message)->toContain('not acknowledged')
+            ->and($entry->message)->toContain('resolve SLA still open')
+            ->and($entry->message)->toContain('postmortem still required')
+            ->and($entry->meta['unacknowledgedTeamIds'])->toBe([(string) $otherTeam->id]);
+
+        $nudge = Notify::query()
+            ->where('type', SendNotifyJob::INCIDENT_POLICY_PAGE)
+            ->where('incidentId', $incident->id)
+            ->orderBy('createdAt')
+            ->get()
+            ->last();
+
+        expect($nudge->endpointIds)->toContain($otherEndpoint->id)
+            ->and($nudge->endpointIds)->toContain($this->notifyEndpoint->id)
+            ->and($nudge->endpointIds)->not->toContain($this->onCallEndpoint->id);
+
+        OnCallPlanTestData::deletePlan($otherPlan);
+        IncidentPolicyTestData::deleteEndpoint($otherEndpoint);
+        TeamTestData::deleteTeam($otherTeam);
+        TeamTestData::deleteUser($other);
+    });
 });
