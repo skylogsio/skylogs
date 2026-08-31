@@ -11896,6 +11896,57 @@
                         "type": "string",
                         "nullable": true
                     },
+                    "commanderId": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "commander": {
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "policySla": {
+                        "description": "Frozen copy of the matching SEV rule used to enforce follow-through",
+                        "properties": {
+                            "ackWithinMinutes": {
+                                "type": "integer",
+                                "nullable": true
+                            },
+                            "resolveWithinMinutes": {
+                                "type": "integer",
+                                "nullable": true
+                            },
+                            "requireCommander": {
+                                "type": "boolean"
+                            },
+                            "stakeholderUpdateEveryMinutes": {
+                                "type": "integer",
+                                "nullable": true
+                            },
+                            "statusPageUpdateRequired": {
+                                "type": "boolean"
+                            },
+                            "postmortemRequired": {
+                                "type": "boolean"
+                            },
+                            "postmortemDueDays": {
+                                "type": "integer",
+                                "nullable": true
+                            },
+                            "postmortemReviewRequired": {
+                                "type": "boolean"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
                     "acknowledgements": {
                         "description": "Per-team acknowledgements",
                         "type": "array",
@@ -12101,6 +12152,11 @@
                             "SEV3",
                             "SEV4"
                         ]
+                    },
+                    "commanderId": {
+                        "description": "Optional. Assigns the incident commander on update.",
+                        "type": "string",
+                        "nullable": true
                     },
                     "postMortem": {
                         "$ref": "#/components/schemas/PostMortemInput"
@@ -13954,7 +14010,7 @@
         },
         {
             "name": "Incident Policies",
-            "description": "Incident response policies. Definitions can be applied from the YAML DSL (apiVersion skylogs.io/v1) or written as JSON. Matching auto-create policies open or join incidents when a critical, warning, or triggered alert fires. They auto-resolve when autoResolveOnAlertClear is set and every grouped alert has cleared. Opening a new incident pages the matching SEV rule notify endpoints and the current on-call; useLayers walks later on-call layers after each layer delay."
+            "description": "Incident response policies. Definitions can be applied from the YAML DSL (apiVersion skylogs.io/v1) or written as JSON. Matching auto-create policies open or join incidents when a critical, warning, or triggered alert fires. They auto-resolve when autoResolveOnAlertClear is set and every grouped alert has cleared. Opening a new incident pages the matching SEV rule notify endpoints and the current on-call; useLayers walks later on-call layers after each layer delay. Ack/resolve windows, commander, stakeholder reminders, status-page updates, and required postmortems are enforced from the matching SEV rule."
         },
         {
             "name": "On-Call Plans",

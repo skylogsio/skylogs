@@ -192,6 +192,32 @@ class IncidentDocs
         new OA\Property(property: 'alertRuleIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'createdBy', type: 'string', nullable: true),
         new OA\Property(property: 'resolvedBy', type: 'string', nullable: true),
+        new OA\Property(property: 'commanderId', type: 'string', nullable: true),
+        new OA\Property(
+            property: 'commander',
+            type: 'object',
+            nullable: true,
+            properties: [
+                new OA\Property(property: 'id', type: 'string'),
+                new OA\Property(property: 'name', type: 'string'),
+            ]
+        ),
+        new OA\Property(
+            property: 'policySla',
+            type: 'object',
+            nullable: true,
+            description: 'Frozen copy of the matching SEV rule used to enforce follow-through',
+            properties: [
+                new OA\Property(property: 'ackWithinMinutes', type: 'integer', nullable: true),
+                new OA\Property(property: 'resolveWithinMinutes', type: 'integer', nullable: true),
+                new OA\Property(property: 'requireCommander', type: 'boolean'),
+                new OA\Property(property: 'stakeholderUpdateEveryMinutes', type: 'integer', nullable: true),
+                new OA\Property(property: 'statusPageUpdateRequired', type: 'boolean'),
+                new OA\Property(property: 'postmortemRequired', type: 'boolean'),
+                new OA\Property(property: 'postmortemDueDays', type: 'integer', nullable: true),
+                new OA\Property(property: 'postmortemReviewRequired', type: 'boolean'),
+            ]
+        ),
         new OA\Property(
             property: 'acknowledgements',
             type: 'array',
@@ -281,6 +307,7 @@ class IncidentSchema {}
         ),
         new OA\Property(property: 'alertRuleIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'severity', type: 'string', enum: ['SEV1', 'SEV2', 'SEV3', 'SEV4']),
+        new OA\Property(property: 'commanderId', type: 'string', nullable: true, description: 'Optional. Assigns the incident commander on update.'),
         new OA\Property(
             property: 'postMortem',
             ref: '#/components/schemas/PostMortemInput',

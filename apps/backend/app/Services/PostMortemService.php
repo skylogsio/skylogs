@@ -8,6 +8,7 @@ use App\Models\Incident;
 use App\Models\PostMortem;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
 
 /**
  * The postmortem of an incident, of which there is at most one.
@@ -82,6 +83,12 @@ class PostMortemService
      */
     public function publish(User $user, Incident $incident, PostMortem $postMortem): PostMortem
     {
+        if (($incident->policySla['postmortemReviewRequired'] ?? false) && empty($postMortem->reviewerIds)) {
+            throw ValidationException::withMessages([
+                'reviewerIds' => 'This policy requires reviewers before the postmortem can be published.',
+            ]);
+        }
+
         if ($postMortem->publishedAt === null) {
             $postMortem->update([
                 'status' => PostMortemStatus::Published,
@@ -100,6 +107,53 @@ class PostMortemService
         }
 
         $postMortem->load('authorUser');
+
+        return $postMortem;
+    }
+
+    /**
+     * Opens an empty draft when a policy requires a postmortem and none exists yet.
+     */
+    public function ensureRequiredDraft(Incident $incident, ?Carbon $dueAt, ?string $authorId): PostMortem
+    {
+        $existing = PostMortem::query()->where('incidentId', (string) $incident->id)->first();
+
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        $postMortem = PostMortem::create([
+            'incidentId' => (string) $incident->id,
+            'status' => PostMortemStatus::Draft,
+            'summary' => '',
+            'impact' => null,
+            'detection' => null,
+            'resolution' => null,
+            'rootCause' => [
+                'method' => null,
+                'whys' => [],
+                'contributingFactors' => [],
+                'statement' => null,
+            ],
+            'whatWentWell' => [],
+            'whatWentWrong' => [],
+            'lessonsLearned' => [],
+            'authorId' => $authorId,
+            'reviewerIds' => [],
+            'dueAt' => $dueAt,
+            'publishedAt' => null,
+        ]);
+
+        $this->timelineService->recordSystemEntry(
+            $incident,
+            IncidentTimelineEntryType::Updated,
+            'Postmortem draft opened'.($dueAt ? '; due '.$dueAt->toIso8601String().'.' : '.'),
+            null,
+            [
+                'postMortemId' => (string) $postMortem->id,
+                'dueAt' => $dueAt?->toIso8601String(),
+            ],
+        );
 
         return $postMortem;
     }

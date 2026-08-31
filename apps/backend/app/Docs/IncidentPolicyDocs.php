@@ -7,7 +7,7 @@ use OpenApi\Attributes as OA;
 #[OA\Tag(
     name: 'Incident Policies',
     description: 'Incident response policies. Definitions can be applied from the YAML DSL (apiVersion '.
-        'skylogs.io/v1) or written as JSON. Matching auto-create policies open or join incidents when a critical, warning, or triggered alert fires. They auto-resolve when autoResolveOnAlertClear is set and every grouped alert has cleared. Opening a new incident pages the matching SEV rule notify endpoints and the current on-call; useLayers walks later on-call layers after each layer delay.'
+        'skylogs.io/v1) or written as JSON. Matching auto-create policies open or join incidents when a critical, warning, or triggered alert fires. They auto-resolve when autoResolveOnAlertClear is set and every grouped alert has cleared. Opening a new incident pages the matching SEV rule notify endpoints and the current on-call; useLayers walks later on-call layers after each layer delay. Ack/resolve windows, commander, stakeholder reminders, status-page updates, and required postmortems are enforced from the matching SEV rule.'
 )]
 class IncidentPolicyDocs
 {

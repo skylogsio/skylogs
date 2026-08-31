@@ -27,6 +27,7 @@ class PolicyIncidentOpener
         private readonly IncidentGroupingKey $groupingKey,
         private readonly IncidentTimelineService $timelineService,
         private readonly PolicyIncidentPager $pager,
+        private readonly PolicyIncidentFollowThrough $followThrough,
     ) {}
 
     /**
@@ -72,6 +73,10 @@ class PolicyIncidentOpener
     {
         $severity = $this->severity($policy, $context);
         $now = now();
+        $sla = $this->followThrough->snapshot($policy, $severity);
+        $commanderId = ($sla['requireCommander'] ?? false)
+            ? $this->followThrough->commanderUserId($policy)
+            : null;
 
         $incident = Incident::create([
             'title' => $this->title($policy, $context, $severity),
@@ -89,7 +94,9 @@ class PolicyIncidentOpener
             'policyId' => (string) $policy->id,
             'groupingKey' => $fingerprint,
             'createdBy' => null,
+            'commanderId' => $commanderId,
             'acknowledgements' => [],
+            'policySla' => $sla,
         ]);
 
         $this->timelineService->recordSystemEntry(
@@ -107,6 +114,20 @@ class PolicyIncidentOpener
 
         try {
             $this->pager->page($incident, $policy, $context);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
+        try {
+            $this->followThrough->schedule($incident);
+
+            if ($commanderId !== null) {
+                $this->followThrough->recordCommander(
+                    $incident,
+                    $commanderId,
+                    'Commander set from on-call.',
+                );
+            }
         } catch (Throwable $exception) {
             report($exception);
         }

@@ -9,12 +9,15 @@ use App\Enums\IncidentTimelineEntryType;
 use App\Models\IncidentTimelineEntry;
 use App\Services\IncidentPolicy\AlertMatchContext;
 use App\Services\IncidentPolicy\PolicyIncidentOpener;
+use Illuminate\Support\Facades\Queue;
 use Tests\Support\IncidentPolicyTestData;
 use Tests\Support\IncidentTestData;
 use Tests\Support\TeamTestData;
 
 describe('PolicyIncidentOpener', function () {
     beforeEach(function () {
+        Queue::fake();
+
         $this->user = TeamTestData::createUser(Constants::ROLE_MEMBER);
         $this->team = TeamTestData::createTeam($this->user);
         $this->tag = 'tag-'.uniqid();

@@ -47,6 +47,11 @@ class Incident extends BaseModel
         return $this->belongsTo(User::class, 'resolvedBy', '_id');
     }
 
+    public function commanderUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'commanderId', '_id');
+    }
+
     public function postMortem(): HasOne
     {
         return $this->hasOne(PostMortem::class, 'incidentId', '_id');
@@ -113,5 +118,22 @@ class Incident extends BaseModel
     public function hasTeamAcknowledged(string $teamId): bool
     {
         return $this->acknowledgementForTeam($teamId) !== null;
+    }
+
+    public function hasAllTeamsAcknowledged(): bool
+    {
+        $teamIds = array_values(array_unique(array_map('strval', $this->teamIds ?? [])));
+
+        if ($teamIds === []) {
+            return true;
+        }
+
+        foreach ($teamIds as $teamId) {
+            if (! $this->hasTeamAcknowledged($teamId)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

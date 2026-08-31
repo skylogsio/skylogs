@@ -23,6 +23,7 @@ class PolicyIncidentCloser
 
     public function __construct(
         private readonly IncidentTimelineService $timelineService,
+        private readonly PolicyIncidentFollowThrough $followThrough,
     ) {}
 
     /**
@@ -86,7 +87,13 @@ class PolicyIncidentCloser
             ],
         );
 
-        return $incident->fresh();
+        $resolved = $incident->fresh();
+
+        if ($resolved !== null) {
+            $this->followThrough->onResolved($resolved);
+        }
+
+        return $resolved;
     }
 
     private function hasFiringAlert(Incident $incident, string $clearedAlertRuleId): bool

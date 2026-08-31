@@ -85,6 +85,55 @@ class PolicyIncidentPager
         );
     }
 
+    /**
+     * Re-page notify endpoints and the current on-call without walking later layers.
+     */
+    public function nudge(Incident $incident): void
+    {
+        if (! in_array($incident->status, self::PAGEABLE_STATUSES, true) || empty($incident->policyId)) {
+            return;
+        }
+
+        $policy = IncidentPolicy::query()->where('_id', $incident->policyId)->first();
+        $rule = $policy?->ruleFor($incident->severity);
+
+        if ($policy === null || $rule === null) {
+            return;
+        }
+
+        $onCallEndpointIds = [];
+
+        foreach ($this->stringList($policy->teamIds ?? []) as $teamId) {
+            $resolved = $this->resolvePlan($teamId);
+            $endpointId = $resolved['layers'][0]['onCall']['endpoint']['id'] ?? null;
+
+            if (is_string($endpointId) && $endpointId !== '') {
+                $onCallEndpointIds[] = $endpointId;
+            }
+        }
+
+        $endpointIds = $this->stringList([
+            ...($rule['notifyEndpointIds'] ?? []),
+            ...$onCallEndpointIds,
+        ]);
+
+        if ($endpointIds === []) {
+            return;
+        }
+
+        $this->dispatchPage(
+            $incident,
+            $policy,
+            $this->stringList($incident->alertRuleIds ?? [])[0] ?? null,
+            $endpointIds,
+            null,
+            [
+                'endpointIds' => $endpointIds,
+                'nudge' => true,
+            ],
+        );
+    }
+
     public function pageLayer(string $incidentId, string $policyId, string $teamId, int $layerLevel): void
     {
         $incident = Incident::query()->where('_id', $incidentId)->first();
@@ -189,7 +238,7 @@ class PolicyIncidentPager
         IncidentPolicy $policy,
         ?string $alertRuleId,
         array $endpointIds,
-        string $timelineMessage,
+        ?string $timelineMessage,
         array $meta,
     ): void {
         $alertRule = $alertRuleId
@@ -213,6 +262,10 @@ class PolicyIncidentPager
 
         $notify->save();
         SendNotifyJob::dispatch($notify);
+
+        if ($timelineMessage === null) {
+            return;
+        }
 
         $this->timelineService->recordSystemEntry(
             $incident,
