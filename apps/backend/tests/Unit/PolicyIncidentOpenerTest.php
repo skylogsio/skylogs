@@ -73,6 +73,7 @@ describe('PolicyIncidentOpener', function () {
             ->and($incident->status)->toBe(IncidentStatus::Open)
             ->and($incident->severity)->toBe(IncidentSeverity::Sev1)
             ->and($incident->policyId)->toBe($policy->id)
+            ->and($incident->groupingKey)->not->toBeNull()
             ->and($incident->createdBy)->toBeNull()
             ->and($incident->teamIds)->toBe([$this->team->id])
             ->and($incident->alertRuleIds)->toBe([$alertRule->id])
@@ -138,5 +139,143 @@ describe('PolicyIncidentOpener', function () {
         $incidents = $this->opener->open(new AlertMatchContext(tags: [$this->tag]));
 
         expect($incidents)->toHaveCount(0);
+    });
+
+    it('joins a second fire into the same incident inside the grouping window', function () {
+        $policy = IncidentPolicyTestData::createPolicy([
+            'teamIds' => [$this->team->id],
+            'match' => ['tags' => [$this->tag]],
+            'grouping' => ['key' => ['tag'], 'windowMinutes' => 15],
+        ]);
+        $this->policies[] = $policy;
+
+        $first = $this->opener->open(new AlertMatchContext(
+            alertRuleId: bin2hex(random_bytes(12)),
+            tags: [$this->tag],
+            alertName: 'first-fire',
+        ));
+        $second = $this->opener->open(new AlertMatchContext(
+            alertRuleId: bin2hex(random_bytes(12)),
+            tags: [$this->tag],
+            alertName: 'second-fire',
+        ));
+        $this->incidents = $first->concat($second)->unique('id')->values()->all();
+
+        expect($first)->toHaveCount(1)
+            ->and($second)->toHaveCount(1)
+            ->and($second->first()->id)->toBe($first->first()->id)
+            ->and($second->first()->alertRuleIds)->toHaveCount(2);
+
+        $detections = IncidentTimelineEntry::query()
+            ->where('incidentId', $first->first()->id)
+            ->where('type', IncidentTimelineEntryType::Detection)
+            ->get();
+
+        expect($detections)->toHaveCount(1)
+            ->and($detections->first()->message)->toContain('second-fire');
+    });
+
+    it('opens a new incident when grouping key values differ', function () {
+        $this->policies[] = IncidentPolicyTestData::createPolicy([
+            'teamIds' => [$this->team->id],
+            'match' => ['tags' => [$this->tag, 'other-'.$this->tag]],
+            'grouping' => ['key' => ['alertRuleId'], 'windowMinutes' => 15],
+        ]);
+
+        $ruleA = bin2hex(random_bytes(12));
+        $ruleB = bin2hex(random_bytes(12));
+
+        $first = $this->opener->open(new AlertMatchContext(
+            alertRuleId: $ruleA,
+            tags: [$this->tag],
+            alertName: 'rule-a',
+        ));
+        $second = $this->opener->open(new AlertMatchContext(
+            alertRuleId: $ruleB,
+            tags: [$this->tag],
+            alertName: 'rule-b',
+        ));
+        $this->incidents = $first->concat($second)->all();
+
+        expect($this->incidents)->toHaveCount(2)
+            ->and($first->first()->id)->not->toBe($second->first()->id);
+    });
+
+    it('opens a new incident after the grouping window has passed', function () {
+        $this->policies[] = IncidentPolicyTestData::createPolicy([
+            'teamIds' => [$this->team->id],
+            'match' => ['tags' => [$this->tag]],
+            'grouping' => ['key' => ['tag'], 'windowMinutes' => 15],
+        ]);
+
+        $first = $this->opener->open(new AlertMatchContext(
+            tags: [$this->tag],
+            alertName: 'inside-window',
+        ));
+
+        $this->travel(16)->minutes();
+
+        $second = $this->opener->open(new AlertMatchContext(
+            tags: [$this->tag],
+            alertName: 'after-window',
+        ));
+        $this->incidents = $first->concat($second)->all();
+        $this->travelBack();
+
+        expect($this->incidents)->toHaveCount(2)
+            ->and($first->first()->id)->not->toBe($second->first()->id);
+    });
+
+    it('does not join a resolved incident', function () {
+        $this->policies[] = IncidentPolicyTestData::createPolicy([
+            'teamIds' => [$this->team->id],
+            'match' => ['tags' => [$this->tag]],
+            'grouping' => ['key' => ['tag'], 'windowMinutes' => 15],
+        ]);
+
+        $first = $this->opener->open(new AlertMatchContext(
+            tags: [$this->tag],
+            alertName: 'original',
+        ));
+        $first->first()->update(['status' => IncidentStatus::Resolved]);
+
+        $second = $this->opener->open(new AlertMatchContext(
+            tags: [$this->tag],
+            alertName: 'after-resolve',
+        ));
+        $this->incidents = $first->concat($second)->all();
+
+        expect($this->incidents)->toHaveCount(2)
+            ->and($second->first()->status)->toBe(IncidentStatus::Open);
+    });
+
+    it('raises severity when a grouped fire maps higher', function () {
+        $this->policies[] = IncidentPolicyTestData::createPolicy([
+            'teamIds' => [$this->team->id],
+            'match' => ['tags' => [$this->tag]],
+            'grouping' => ['key' => ['tag'], 'windowMinutes' => 15],
+            'incident' => [
+                'defaultSeverity' => IncidentSeverity::Sev3->value,
+                'severityMap' => [
+                    'warning' => IncidentSeverity::Sev3->value,
+                    'critical' => IncidentSeverity::Sev1->value,
+                ],
+            ],
+        ]);
+
+        $first = $this->opener->open(new AlertMatchContext(
+            tags: [$this->tag],
+            alertName: 'warn',
+            alertState: 'warning',
+        ));
+        $second = $this->opener->open(new AlertMatchContext(
+            tags: [$this->tag],
+            alertName: 'crit',
+            alertState: 'critical',
+        ));
+        $this->incidents = $first->concat($second)->unique('id')->values()->all();
+
+        expect($second->first()->id)->toBe($first->first()->id)
+            ->and($second->first()->severity)->toBe(IncidentSeverity::Sev1);
     });
 });

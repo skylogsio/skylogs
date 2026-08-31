@@ -27,6 +27,7 @@ class IncidentResource extends JsonResource
             'status' => $this->status,
             'source' => $this->source,
             'policyId' => $this->policyId,
+            'groupingKey' => $this->groupingKey,
             'startedAt' => $this->startedAt,
             'detectedAt' => $this->detectedAt,
             'resolvedAt' => $this->resolvedAt,

@@ -132,7 +132,12 @@ class IncidentPolicyTestData
             'severityMap' => [],
         ], $attributes['incident'] ?? []);
 
-        unset($attributes['match'], $attributes['incident']);
+        $grouping = array_replace([
+            'key' => [],
+            'windowMinutes' => 15,
+        ], $attributes['grouping'] ?? []);
+
+        unset($attributes['match'], $attributes['incident'], $attributes['grouping']);
 
         return IncidentPolicy::create(array_replace([
             'name' => 'policy-'.uniqid(),
@@ -140,7 +145,7 @@ class IncidentPolicyTestData
             'enabled' => true,
             'teamIds' => [],
             'match' => $match,
-            'grouping' => ['key' => [], 'windowMinutes' => 15],
+            'grouping' => $grouping,
             'incident' => $incident,
             'rules' => [
                 'SEV3' => ['ackWithinMinutes' => 30],

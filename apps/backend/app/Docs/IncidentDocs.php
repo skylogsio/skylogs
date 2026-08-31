@@ -183,6 +183,7 @@ class IncidentDocs
         new OA\Property(property: 'status', type: 'string', enum: ['open', 'investigating', 'resolved']),
         new OA\Property(property: 'source', type: 'string', enum: ['manual', 'policy']),
         new OA\Property(property: 'policyId', type: 'string', nullable: true, description: 'Set when the incident was opened from an incident policy'),
+        new OA\Property(property: 'groupingKey', type: 'string', nullable: true, description: 'Fingerprint used to collapse alert storms into one incident'),
         new OA\Property(property: 'startedAt', type: 'string', format: 'date-time', description: 'When the incident occurred / started'),
         new OA\Property(property: 'detectedAt', type: 'string', format: 'date-time', description: 'When the incident was detected'),
         new OA\Property(property: 'resolvedAt', type: 'string', format: 'date-time', nullable: true),

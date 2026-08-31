@@ -13,13 +13,22 @@ use Illuminate\Support\Collection;
 
 class PolicyIncidentOpener
 {
+    /**
+     * @var list<IncidentStatus>
+     */
+    private const GROUPABLE_STATUSES = [
+        IncidentStatus::Open,
+        IncidentStatus::Investigating,
+    ];
+
     public function __construct(
         private readonly IncidentPolicyMatcher $matcher,
+        private readonly IncidentGroupingKey $groupingKey,
         private readonly IncidentTimelineService $timelineService,
     ) {}
 
     /**
-     * Open one incident per matching auto-create policy. Grouping is not applied yet.
+     * Open or join one incident per matching auto-create policy.
      *
      * @return Collection<int, Incident>
      */
@@ -32,6 +41,32 @@ class PolicyIncidentOpener
     }
 
     public function openForPolicy(IncidentPolicy $policy, AlertMatchContext $context): Incident
+    {
+        $fingerprint = $this->groupingKey->fingerprint($policy, $context);
+        $existing = $this->existingInWindow($policy, $fingerprint);
+
+        if ($existing !== null) {
+            return $this->join($existing, $policy, $context);
+        }
+
+        return $this->create($policy, $context, $fingerprint);
+    }
+
+    private function existingInWindow(IncidentPolicy $policy, string $fingerprint): ?Incident
+    {
+        $windowStart = now()->subMinutes($this->groupingKey->windowMinutes($policy));
+
+        return Incident::query()
+            ->where('policyId', (string) $policy->id)
+            ->where('groupingKey', $fingerprint)
+            ->where('source', IncidentSource::Policy->value)
+            ->whereIn('status', array_map(fn (IncidentStatus $status): string => $status->value, self::GROUPABLE_STATUSES))
+            ->where('detectedAt', '>=', $windowStart)
+            ->orderByDesc('detectedAt')
+            ->first();
+    }
+
+    private function create(IncidentPolicy $policy, AlertMatchContext $context, string $fingerprint): Incident
     {
         $severity = $this->severity($policy, $context);
         $now = now();
@@ -50,6 +85,7 @@ class PolicyIncidentOpener
             'status' => IncidentStatus::Open,
             'source' => IncidentSource::Policy,
             'policyId' => (string) $policy->id,
+            'groupingKey' => $fingerprint,
             'createdBy' => null,
             'acknowledgements' => [],
         ]);
@@ -63,10 +99,64 @@ class PolicyIncidentOpener
                 'severity' => $severity->value,
                 'status' => IncidentStatus::Open->value,
                 'policyId' => (string) $policy->id,
+                'groupingKey' => $fingerprint,
             ],
         );
 
         return $incident;
+    }
+
+    private function join(Incident $incident, IncidentPolicy $policy, AlertMatchContext $context): Incident
+    {
+        $severity = $this->severity($policy, $context);
+        $alertRuleIds = array_values(array_unique([
+            ...array_map('strval', $incident->alertRuleIds ?? []),
+            ...$this->alertRuleIds($context),
+        ]));
+        $tags = AlertMatchContext::stringList([
+            ...($incident->tags ?? []),
+            ...$context->tags,
+        ]);
+
+        $updates = [
+            'detectedAt' => now(),
+            'alertRuleIds' => $alertRuleIds,
+            'tags' => $tags,
+        ];
+
+        if ($this->isMoreSevere($severity, $incident->severity)) {
+            $updates['severity'] = $severity;
+        }
+
+        $incident->update($updates);
+
+        $this->timelineService->recordSystemEntry(
+            $incident,
+            IncidentTimelineEntryType::Detection,
+            'Alert '.($context->alertName ?: 'Alert').' grouped into this incident.',
+            null,
+            [
+                'alertRuleId' => $context->alertRuleId,
+                'severity' => $severity->value,
+            ],
+        );
+
+        return $incident->fresh();
+    }
+
+    private function isMoreSevere(IncidentSeverity $candidate, IncidentSeverity $current): bool
+    {
+        return $this->severityRank($candidate) < $this->severityRank($current);
+    }
+
+    private function severityRank(IncidentSeverity $severity): int
+    {
+        return match ($severity) {
+            IncidentSeverity::Sev1 => 1,
+            IncidentSeverity::Sev2 => 2,
+            IncidentSeverity::Sev3 => 3,
+            IncidentSeverity::Sev4 => 4,
+        };
     }
 
     private function severity(IncidentPolicy $policy, AlertMatchContext $context): IncidentSeverity
