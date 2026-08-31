@@ -10,6 +10,7 @@ use App\Models\Incident;
 use App\Models\IncidentPolicy;
 use App\Services\IncidentTimelineService;
 use Illuminate\Support\Collection;
+use Throwable;
 
 class PolicyIncidentOpener
 {
@@ -25,6 +26,7 @@ class PolicyIncidentOpener
         private readonly IncidentPolicyMatcher $matcher,
         private readonly IncidentGroupingKey $groupingKey,
         private readonly IncidentTimelineService $timelineService,
+        private readonly PolicyIncidentPager $pager,
     ) {}
 
     /**
@@ -102,6 +104,12 @@ class PolicyIncidentOpener
                 'groupingKey' => $fingerprint,
             ],
         );
+
+        try {
+            $this->pager->page($incident, $policy, $context);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
 
         return $incident;
     }
