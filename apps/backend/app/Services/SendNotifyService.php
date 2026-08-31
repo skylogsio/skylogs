@@ -19,11 +19,20 @@ use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\Notify;
 use App\Services\Ha\HaReplicationContext;
+use App\Services\IncidentPolicy\AlertMatchContext;
+use App\Services\IncidentPolicy\PolicyIncidentCloser;
+use App\Services\IncidentPolicy\PolicyIncidentOpener;
 use App\Support\NotifyMessagePayload;
 use Illuminate\Support\Collection;
+use Throwable;
 
 class SendNotifyService
 {
+    public function __construct(
+        private readonly PolicyIncidentOpener $policyIncidentOpener,
+        private readonly PolicyIncidentCloser $policyIncidentCloser,
+    ) {}
+
     /**
      * A follower applying the leader's state must never notify: the leader has
      * already paged whoever needed paging, and a second message for the same
@@ -66,9 +75,48 @@ class SendNotifyService
         $notify->status = Notify::STATUS_CREATED;
 
         $notify->save();
+        $this->syncPolicyIncidents($type, $alertRuleId);
         SendNotifyJob::dispatch($notify);
 
         return $notify;
+    }
+
+    private function syncPolicyIncidents(mixed $type, mixed $alertRuleId): void
+    {
+        if (! is_string($type) || empty($alertRuleId)) {
+            return;
+        }
+
+        $opens = SendNotifyJob::opensIncident($type);
+        $clears = SendNotifyJob::clearsIncident($type);
+
+        if (! $opens && ! $clears) {
+            return;
+        }
+
+        try {
+            $alertRule = AlertRule::query()->where('_id', $alertRuleId)->first()
+                ?? AlertRule::query()->where('id', $alertRuleId)->first();
+
+            if ($alertRule === null) {
+                return;
+            }
+
+            $firing = AlertRule::isFiringState($alertRule->state);
+            $dualPurpose = SendNotifyJob::isDualPurposeIncidentType($type);
+
+            if ($opens && ($firing || ! $dualPurpose)) {
+                $this->policyIncidentOpener->open(AlertMatchContext::fromAlertRule($alertRule));
+
+                return;
+            }
+
+            if ($clears || ($dualPurpose && ! $firing)) {
+                $this->policyIncidentCloser->clear($alertRule);
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 
     public function SendMessage(Notify $notify, $isTest = false, $isAcknowledged = false)
@@ -317,7 +365,7 @@ class SendNotifyService
     {
         try {
             return $sender();
-        } catch (\Throwable $throwable) {
+        } catch (Throwable $throwable) {
             return $throwable->getMessage();
         }
     }

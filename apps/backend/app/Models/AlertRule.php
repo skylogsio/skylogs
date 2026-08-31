@@ -26,6 +26,20 @@ class AlertRule extends BaseModel implements Messageable
 
     public const RESOlVED = 'resolved';
 
+    /**
+     * @var list<string>
+     */
+    public const FIRING_STATES = [
+        self::CRITICAL,
+        self::WARNING,
+        self::TRIGGERED,
+    ];
+
+    public static function isFiringState(mixed $state): bool
+    {
+        return in_array(strtolower((string) $state), self::FIRING_STATES, true);
+    }
+
     protected $casts = [
         'type' => AlertRuleType::class,
         'checkType' => HealthAlertType::class,
