@@ -58,26 +58,45 @@ export default function TopBarZone() {
     <>
       <Stack
         direction="row"
-        justifyContent="space-between"
-        alignItems="center"
         onClick={handleClick}
         sx={{
+          justifyContent: "space-between",
+          alignItems: "center",
           minWidth: 100,
           cursor: "pointer",
-          padding: "0.4rem 0.8rem",
-          borderRadius: "0.5rem",
+          paddingY: 1,
+          paddingX: 1.3,
+          borderRadius: 2,
           transition: "all 0.2s ease",
           backgroundColor: "action.hover",
+
           "&:hover": {
             backgroundColor: "action.selected"
           }
         }}
       >
-        <Box display="flex" flexDirection="column">
-          <Typography variant="caption" color="text.secondary" fontSize="0.65rem">
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column"
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{
+              color: "text.secondary",
+              fontSize: 8
+            }}
+          >
             Zone
           </Typography>
-          <Typography variant="body2" fontWeight="600" fontSize="0.85rem">
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 600,
+              fontSize: 12
+            }}
+          >
             {isLoading ? <Skeleton variant="text" width={60} height={24} /> : currentZone?.name}
           </Typography>
         </Box>
@@ -85,10 +104,10 @@ export default function TopBarZone() {
           size="small"
           sx={{
             marginLeft: 0.5,
-            padding: "0.2rem"
+            padding: 0
           }}
         >
-          <FaChevronDown />
+          <FaChevronDown size={14} />
         </IconButton>
       </Stack>
       <Menu
@@ -108,24 +127,32 @@ export default function TopBarZone() {
             sx: {
               mt: 1,
               minWidth: 180,
-              borderRadius: "0.7rem",
+              borderRadius: 3,
               boxShadow: ({ palette }) => `0 1px 10px 0px ${alpha(palette.common.black, 0.1)}`
             }
           }
         }}
       >
-        <Box padding="0.5rem 1rem 0.7rem">
-          <Typography variant="caption" color="text.secondary" fontWeight="600">
-            SELECT ZONE
-          </Typography>
-        </Box>
+        <Typography
+          variant="caption"
+          sx={{
+            display: "block",
+            color: "text.secondary",
+            fontWeight: 600,
+            paddingX: 1.1,
+            pb: 0.7
+          }}
+        >
+          Select Zone
+        </Typography>
         {zoneList?.map((zone) => (
           <MenuItem
             key={zone.id}
             onClick={() => handleZoneSelect(zone.id)}
             selected={selectedZone === zone.id}
             sx={{
-              padding: "0.7rem 1rem",
+              paddingY: 1.4,
+              paddingX: 2,
               "&.Mui-selected": {
                 backgroundColor: ({ palette }) => alpha(palette.primary.main, 0.12)
               }
@@ -133,7 +160,7 @@ export default function TopBarZone() {
           >
             <ListItemText primary={zone.name} secondary={zone.type} />
             {selectedZone === zone.id && (
-              <ListItemIcon sx={{ minWidth: "0 !important", marginLeft: "0.8rem" }}>
+              <ListItemIcon sx={{ minWidth: "0 !important", marginLeft: 1.6 }}>
                 <FaCheck color="primary" />
               </ListItemIcon>
             )}

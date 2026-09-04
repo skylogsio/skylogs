@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Grid2 as Grid, TextField } from "@mui/material";
+import { Button, Grid, TextField } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
@@ -14,10 +14,10 @@ import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
 const smsConfigSchema = z.object({
-  name: z.string().trim().nonempty("This field is Required."),
+  name: z.string().trim().min(1, "This field is Required."),
   provider: z.literal("kaveNegar"),
-  apiToken: z.string().trim().nonempty("This field is Required."),
-  senderNumber: z.string().trim().nonempty("This field is Required.")
+  apiToken: z.string().trim().min(1, "This field is Required."),
+  senderNumber: z.string().trim().min(1, "This field is Required.")
 });
 
 type SmsConfigFormType = z.infer<typeof smsConfigSchema>;
@@ -27,12 +27,25 @@ type SmsConfigModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
   onSubmit: () => void;
 };
 
-const defaultValues: SmsConfigFormType = {
+const emptyFormValues: SmsConfigFormType = {
   name: "",
   provider: "kaveNegar",
   apiToken: "",
   senderNumber: ""
 };
+
+function getFormValues(data: CreateUpdateModal<ISmsConfig>): SmsConfigFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return {
+    name: data.name,
+    provider: "kaveNegar",
+    apiToken: data.apiToken,
+    senderNumber: data.senderNumber
+  };
+}
 
 export default function SmsConfigModal({ data, open, onClose, onSubmit }: SmsConfigModalProps) {
   const {
@@ -42,7 +55,8 @@ export default function SmsConfigModal({ data, open, onClose, onSubmit }: SmsCon
     formState: { errors }
   } = useForm<SmsConfigFormType>({
     resolver: zodResolver(smsConfigSchema),
-    defaultValues
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
 
   const { mutate: createSmsConfigMutation, isPending: isCreating } = useMutation({
@@ -73,11 +87,7 @@ export default function SmsConfigModal({ data, open, onClose, onSubmit }: SmsCon
   }
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else {
-      reset(data as unknown as SmsConfigFormType);
-    }
+    reset(getFormValues(data));
   }, [data, reset]);
 
   return (
@@ -92,9 +102,11 @@ export default function SmsConfigModal({ data, open, onClose, onSubmit }: SmsCon
         onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
-        width="100%"
-        display="flex"
-        marginTop="1rem"
+        sx={{
+          width: 1,
+          display: "flex",
+          marginTop: 2
+        }}
       >
         <Grid size={12}>
           <TextField
@@ -126,7 +138,12 @@ export default function SmsConfigModal({ data, open, onClose, onSubmit }: SmsCon
             {...register("senderNumber")}
           />
         </Grid>
-        <Grid size={12} marginTop="0.5rem">
+        <Grid
+          size={12}
+          sx={{
+            marginTop: 1
+          }}
+        >
           <Button
             disabled={isCreating || isUpdating}
             type="submit"

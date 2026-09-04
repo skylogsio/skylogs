@@ -25,6 +25,7 @@ const ALERT_RULE_TAGS_URL = "alert-rule-tag";
 const ALERT_RULE_CREATE_DATA_URL = `${ALERT_RULE_URL}/create-data`;
 const ZABBIX_CREATE_DATA_URL = `${ALERT_RULE_URL}/create-data/zabbix`;
 const ALERT_RULE_GROUP_ACTION = `${ALERT_RULE_URL}/group-action`;
+const BEHAVIOR_RULE_URL = "alert-rule-behavior-rule";
 
 export async function createAlertRule(body: unknown): Promise<ServerResponse<unknown>> {
   try {
@@ -348,6 +349,67 @@ export async function addUserAndNotifyToAlertRules(
       `${ALERT_RULE_GROUP_ACTION}/add-user-notify?${urlSearchParams}`,
       body
     );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function addBehaviorRuleToAlertRule(
+  alertRuleId: IAlertRule["id"],
+  body: unknown
+): Promise<ServerResponse<unknown>> {
+  try {
+    const response = await axios.post<ServerResponse<unknown>>(
+      `${BEHAVIOR_RULE_URL}/${alertRuleId}`,
+      body
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function editBehaviorRuleToAlertRule(
+  alertRuleId: IAlertRule["id"],
+  ruleId: string,
+  body: unknown
+): Promise<ServerResponse<unknown>> {
+  try {
+    const response = await axios.put<ServerResponse<unknown>>(
+      `${BEHAVIOR_RULE_URL}/${alertRuleId}/${ruleId}`,
+      body
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getBehaviorRuleOfAlertRule(alertRuleId: IAlertRule["id"]) {
+  try {
+    const response = await axios.get(`${BEHAVIOR_RULE_URL}/${alertRuleId}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getSelectableAlertRulesForBehaviorRule(alertRuleId: IAlertRule["id"]) {
+  try {
+    const response = await axios.get(`${BEHAVIOR_RULE_URL}/selectable-alert-rules/${alertRuleId}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function deleteBehaviorRule(
+  alertRuleId: IAlertRule["id"],
+  ruleId: string
+): Promise<ServerResponse<unknown>> {
+  try {
+    const response = await axios.delete(`${BEHAVIOR_RULE_URL}/${alertRuleId}/${ruleId}`);
     return response.data;
   } catch (error) {
     throw error;

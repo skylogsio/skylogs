@@ -26,30 +26,63 @@ export default function DeleteTeamModal({
     <DeleteModalContainer {...props} onAfterDelete={deleteTeamMutation} isLoading={isPending}>
       <Stack spacing={1}>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Name:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary"
+            }}
+          >
             {name}
           </Typography>
         </Stack>
 
         {owner && (
           <Stack direction="row" spacing={1}>
-            <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+            <Typography
+              variant="subtitle2"
+              sx={{
+                color: "text.secondary",
+                fontWeight: "bold"
+              }}
+            >
               Owner:
             </Typography>
-            <Typography variant="subtitle2" color="text.secondary">
+            <Typography
+              variant="subtitle2"
+              sx={{
+                color: "text.secondary"
+              }}
+            >
               {owner.name}
             </Typography>
           </Stack>
         )}
 
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Members Count:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary"
+            }}
+          >
             {userIds?.length || 0}
           </Typography>
         </Stack>

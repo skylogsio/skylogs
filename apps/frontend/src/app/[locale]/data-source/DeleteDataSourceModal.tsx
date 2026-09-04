@@ -28,15 +28,27 @@ export default function DeleteDataSourceModal({
     <DeleteModalContainer {...props} onAfterDelete={deleteDataSourceMutation} isLoading={isPending}>
       <Stack spacing={1}>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}>
             Name:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography variant="subtitle2" sx={{
+            color: "text.secondary"
+          }}>
             {name}
           </Typography>
         </Stack>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}>
             Type:
           </Typography>
           <DataSourceType
@@ -46,7 +58,12 @@ export default function DeleteDataSourceModal({
           />
         </Stack>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}>
             Status:
           </Typography>
           <ConnectionStatus dataSourceId={id} size="small" />

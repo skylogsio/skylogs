@@ -39,7 +39,11 @@ export default function SentryAlertHistory({ alertId }: { alertId: IAlertRule["i
 
   return (
     <>
-      <Stack alignItems="center">
+      <Stack
+        sx={{
+          alignItems: "center"
+        }}
+      >
         <DataTable<ISentryAlertHistory>
           data={allData}
           isLoading={isFetching && !isFetchingNextPage}
@@ -71,9 +75,9 @@ export default function SentryAlertHistory({ alertId }: { alertId: IAlertRule["i
                   <Tooltip title={text}>
                     <Typography
                       variant="body2"
-                      color="text.secondary"
                       noWrap
                       sx={{
+                        color: "text.secondary",
                         maxWidth: 350,
                         overflow: "hidden",
                         textOverflow: "ellipsis"
@@ -94,7 +98,14 @@ export default function SentryAlertHistory({ alertId }: { alertId: IAlertRule["i
 
                 return (
                   <Tooltip title={url}>
-                    <Stack direction="row" alignItems="center" spacing={0.5} color="primary.main">
+                    <Stack
+                      direction="row"
+                      spacing={0.5}
+                      sx={{
+                        alignItems: "center",
+                        color: "primary.main"
+                      }}
+                    >
                       <HiOutlineLink size={14} />
 
                       <Typography
@@ -125,7 +136,13 @@ export default function SentryAlertHistory({ alertId }: { alertId: IAlertRule["i
               header: "Date",
               accessorFn: (row) => row.createdAt,
               cell: ({ getValue }) => (
-                <Typography variant="body2" textAlign="center" sx={{ maxWidth: 100 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    textAlign: "center",
+                    maxWidth: 100
+                  }}
+                >
                   {getValue<string>()}
                 </Typography>
               )
@@ -134,11 +151,13 @@ export default function SentryAlertHistory({ alertId }: { alertId: IAlertRule["i
               header: "Actions",
               cell: ({ row }) => (
                 <Stack
-                  width="100%"
-                  minWidth="100%"
-                  justifyContent="center"
-                  alignItems="center"
-                  maxWidth={40}
+                  sx={{
+                    width: "100%",
+                    minWidth: "100%",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    maxWidth: 40
+                  }}
                 >
                   <IconButton onClick={() => setDetails(row.original)}>
                     <HiInformationCircle color={palette.primary.light} />
@@ -148,11 +167,22 @@ export default function SentryAlertHistory({ alertId }: { alertId: IAlertRule["i
             }
           ]}
         />
-        <Stack alignItems="center" position="relative" width="100%" paddingBottom={1}>
+        <Stack
+          sx={{
+            alignItems: "center",
+            position: "relative",
+            width: "100%",
+            paddingBottom: 1
+          }}
+        >
           <Typography
             variant="caption"
-            color="text.secondary"
-            sx={{ position: "absolute", right: 10, top: 6 }}
+            sx={{
+              color: "text.secondary",
+              position: "absolute",
+              right: 10,
+              top: 6
+            }}
           >
             Showing {allData.length} of {totalCount}
           </Typography>
@@ -171,7 +201,7 @@ export default function SentryAlertHistory({ alertId }: { alertId: IAlertRule["i
                 marginX: "auto",
                 marginTop: 2,
                 backgroundColor: palette.background.paper,
-                border: "1px solid",
+                border: 1,
                 paddingX: 2,
                 borderColor: palette.secondary.light,
                 color: palette.secondary.dark

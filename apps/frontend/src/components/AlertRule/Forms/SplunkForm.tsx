@@ -1,15 +1,7 @@
 import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Autocomplete,
-  Button,
-  Chip,
-  Grid2 as Grid,
-  Stack,
-  TextField,
-  Typography
-} from "@mui/material";
+import { Autocomplete, Button, Chip, Grid, Stack, TextField, Typography } from "@mui/material";
 import { useMutation, useQueries } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
@@ -27,24 +19,16 @@ import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGenera
 import type { ModalContainerProps } from "@/components/Modal/types";
 
 const splunkAlertRuleSchema = z.object({
-  name: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
+  name: z.string().trim().min(1, "This field is Required."),
   type: z.literal("splunk"),
-  endpointIds: z.array(z.string()).optional().default([]),
-  userIds: z.array(z.string()).optional().default([]),
-  teamIds: z.array(z.string()).optional().default([]),
-  tags: z.array(z.string()).optional().default([]),
+  endpointIds: z.array(z.string()),
+  userIds: z.array(z.string()),
+  teamIds: z.array(z.string()),
+  tags: z.array(z.string()),
   dataSourceIds: z.array(z.string()).min(1, "This field is Required."),
-  dataSourceAlertName: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
-  description: z.string().optional().default(""),
-  showAcknowledgeBtn: z.boolean().optional().default(false)
+  dataSourceAlertName: z.string().trim().min(1, "This field is Required."),
+  description: z.string(),
+  showAcknowledgeBtn: z.boolean()
 });
 
 type SplunkFromType = z.infer<typeof splunkAlertRuleSchema>;
@@ -53,7 +37,7 @@ type SplunkAlertRuleModalProps = Pick<ModalContainerProps, "onClose"> & {
   onSubmit: () => void;
 };
 
-const defaultValues: SplunkFromType = {
+const emptyFormValues: SplunkFromType = {
   name: "",
   type: "splunk",
   userIds: [],
@@ -65,6 +49,14 @@ const defaultValues: SplunkFromType = {
   description: "",
   showAcknowledgeBtn: false
 };
+
+function getFormValues(data: CreateUpdateModal<IAlertRule>): SplunkFromType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return data as unknown as SplunkFromType;
+}
 
 export default function SplunkAlertRuleForm({
   data,
@@ -84,7 +76,8 @@ export default function SplunkAlertRuleForm({
     formState: { errors }
   } = useForm<SplunkFromType>({
     resolver: zodResolver(splunkAlertRuleSchema),
-    defaultValues
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
 
   const [{ data: alertRuleNameList }, { data: dataSourceList }] = useQueries({
@@ -132,11 +125,7 @@ export default function SplunkAlertRuleForm({
   }
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else if (data) {
-      reset(data as unknown as SplunkFromType);
-    }
+    reset(getFormValues(data));
   }, [reset, data]);
 
   const selectedDataSources = (dataSourceList ?? []).filter((ds) =>
@@ -146,18 +135,29 @@ export default function SplunkAlertRuleForm({
   return (
     <Stack
       component="form"
-      height="100%"
       onSubmit={handleSubmit(handleSubmitForm)}
-      padding={2}
-      flex={1}
+      sx={{
+        height: "100%",
+        padding: 2,
+        flex: 1
+      }}
     >
-      <Grid container spacing={2} flex={1} alignContent="flex-start">
+      <Grid
+        container
+        spacing={2}
+        sx={{
+          flex: 1,
+          alignContent: "flex-start"
+        }}
+      >
         <Typography
           variant="h6"
           color="textPrimary"
-          textTransform="capitalize"
-          fontWeight="bold"
           component="div"
+          sx={{
+            textTransform: "capitalize",
+            fontWeight: "bold"
+          }}
         >
           {data === "NEW" ? "Create" : "Update"} Splunk Alert
         </Typography>
@@ -187,19 +187,20 @@ export default function SplunkAlertRuleForm({
                 );
               }}
               isOptionEqualToValue={(option, value) => option.id === value.id}
-              renderTags={(value, getTagProps) =>
+              renderValue={(value, getItemProps) =>
                 value.map((option, index) => {
-                  const { key, ...tagProps } = getTagProps({ index });
-                  return <Chip key={key} size="small" label={option.name} {...tagProps} />;
+                  const { key, ...itemProps } = getItemProps({ index });
+                  return <Chip key={key} size="small" label={option.name} {...itemProps} />;
                 })
               }
               renderInput={(params) => (
                 <TextField
                   {...params}
                   slotProps={{
-                    input: params.InputProps,
-                    inputLabel: params.InputLabelProps,
-                    htmlInput: params.inputProps
+                    ...params.slotProps,
+                    input: params.slotProps.input,
+                    inputLabel: params.slotProps.inputLabel,
+                    htmlInput: params.slotProps.htmlInput
                   }}
                   variant="filled"
                   label="Data Source"
@@ -224,9 +225,10 @@ export default function SplunkAlertRuleForm({
                 <TextField
                   {...params}
                   slotProps={{
-                    input: params.InputProps,
-                    inputLabel: params.InputLabelProps,
-                    htmlInput: params.inputProps
+                    ...params.slotProps,
+                    input: params.slotProps.input,
+                    inputLabel: params.slotProps.inputLabel,
+                    htmlInput: params.slotProps.htmlInput
                   }}
                   onChange={() => clearErrors("dataSourceAlertName")}
                   error={!!errors.dataSourceAlertName}
@@ -239,7 +241,14 @@ export default function SplunkAlertRuleForm({
           </Grid>
         </AlertRuleGeneralFields>
       </Grid>
-      <Stack direction="row" justifyContent="flex-end" spacing={2} paddingTop={2}>
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          justifyContent: "flex-end",
+          paddingTop: 2
+        }}
+      >
         <Button variant="outlined" disabled={isCreating || isUpdating} onClick={onClose}>
           Cancel
         </Button>

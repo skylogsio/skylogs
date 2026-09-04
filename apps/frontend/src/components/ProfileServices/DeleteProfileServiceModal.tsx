@@ -36,36 +36,82 @@ export default function DeleteProfileServiceModal({
     >
       <Stack spacing={1}>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Name:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary"
+            }}
+          >
             {name}
           </Typography>
         </Stack>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Username:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary"
+            }}
+          >
             {username}
           </Typography>
         </Stack>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             envs:
           </Typography>
-          <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap">
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              justifyContent: "center",
+              flexWrap: "wrap"
+            }}
+          >
             {envs.map((env) => (
               <Chip key={env} label={env} size="small" />
             ))}
           </Stack>
         </Stack>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Alert Rules Count:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary"
+            }}
+          >
             {createdAlertRuleIds?.length ?? 0}
           </Typography>
         </Stack>

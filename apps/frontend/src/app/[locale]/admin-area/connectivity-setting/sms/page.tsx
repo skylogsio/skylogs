@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { useTheme, Grid2 as Grid, Typography, alpha, Button, Stack } from "@mui/material";
+import { useTheme, Grid, Typography, alpha, Button, Stack } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { HiOutlinePlusSm } from "react-icons/hi";
 import { IoIosArrowBack } from "react-icons/io";
@@ -44,16 +44,24 @@ export default function SmsPage() {
         <>
           <Stack
             direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-            marginBottom={3}
+            sx={{
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 3
+            }}
           >
-            <Stack direction="row" alignItems="center" spacing={2}>
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{
+                alignItems: "center"
+              }}
+            >
               <Button
                 onClick={() => router.back()}
                 sx={{
                   minWidth: "auto",
-                  padding: "0.5rem",
+                  padding: 1,
                   backgroundColor: alpha(palette.primary.light, 0.08),
                   "&:hover": {
                     backgroundColor: alpha(palette.primary.light, 0.15)
@@ -62,7 +70,14 @@ export default function SmsPage() {
               >
                 <IoIosArrowBack size="1.5rem" />
               </Button>
-              <Typography variant="h5" fontSize="1.8rem" fontWeight="700" component="div">
+              <Typography
+                variant="h5"
+                component="div"
+                sx={{
+                  fontSize: 28,
+                  fontWeight: 700
+                }}
+              >
                 SMS Configurations
               </Typography>
             </Stack>
@@ -71,7 +86,7 @@ export default function SmsPage() {
               onClick={() => setModalData("NEW")}
               size="small"
               variant="contained"
-              sx={{ paddingRight: "1rem" }}
+              sx={{ paddingRight: 2 }}
             >
               Create
             </Button>

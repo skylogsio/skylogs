@@ -32,7 +32,14 @@ export default function TagsCell({ tags }: { tags: string[] }) {
   const showMorePopoverId = open ? "show-more-popover" : undefined;
 
   return (
-    <Stack direction="row" spacing={1} justifyContent="center" alignItems="flex-start">
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{
+        justifyContent: "center",
+        alignItems: "flex-start"
+      }}
+    >
       {visibleTags.map((tag, index) => (
         <Chip
           key={index}
@@ -67,7 +74,15 @@ export default function TagsCell({ tags }: { tags: string[] }) {
               horizontal: "center"
             }}
           >
-            <Stack padding={1} direction="row" gap={1} flexWrap="wrap" maxWidth={300}>
+            <Stack
+              direction="row"
+              sx={{
+                padding: 1,
+                gap: 1,
+                flexWrap: "wrap",
+                maxWidth: 300
+              }}
+            >
               {hiddenTags.map((tag, index) => (
                 <Chip key={index} variant="filled" label={tag} sx={ChipStyle} />
               ))}

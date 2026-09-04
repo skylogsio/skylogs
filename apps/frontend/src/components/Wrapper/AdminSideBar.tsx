@@ -1,4 +1,4 @@
-import Image from "next/image";
+/* eslint-disable @next/next/no-img-element */
 import { usePathname } from "next/navigation";
 
 import { Box, List, Stack, Typography, useTheme } from "@mui/material";
@@ -22,15 +22,36 @@ export default function AdminSideBar({ version }: { version: string }) {
   const pathname = usePathname();
   const { palette } = useTheme();
   return (
-    <Box height="100%" overflow="auto" sx={{ direction: "rtl" }}>
-      <Stack width="100%" height="100%" sx={{ direction: "ltr" }}>
-        <Box paddingX={7} marginY="-10%">
-          <Image
+    <Box
+      sx={{
+        height: 1,
+        overflow: "auto",
+        direction: "rtl"
+      }}
+    >
+      <Stack
+        sx={{
+          width: 1,
+          height: 1,
+          direction: "ltr"
+        }}
+      >
+        <Box
+          sx={{
+            paddingX: 3,
+            display: "flex",
+            justifyContent: "center",
+            marginY: "-5%"
+          }}
+        >
+          <img
             src="/static/images/logo.png"
             alt="Skylogs Logo"
-            width="400"
-            height="120"
-            style={{ filter: `drop-shadow(0px 0px 16px ${palette.primary.light})` }}
+            style={{
+              filter: `drop-shadow(0px 0px 16px ${palette.primary.light})`,
+              width: "100%",
+              maxWidth: 150
+            }}
           />
         </Box>
         <List>
@@ -42,8 +63,19 @@ export default function AdminSideBar({ version }: { version: string }) {
             return <SideBarItem key={url.pathname} url={url} isActive={isActive} />;
           })}
         </List>
-        <Stack alignItems="center" marginTop="auto">
-          <Typography variant="caption" color="text.secondary" fontSize={10}>
+        <Stack
+          sx={{
+            alignItems: "center",
+            marginTop: "auto"
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{
+              color: "text.secondary",
+              fontSize: 10
+            }}
+          >
             version {version}
           </Typography>
         </Stack>

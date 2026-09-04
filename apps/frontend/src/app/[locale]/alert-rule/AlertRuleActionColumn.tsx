@@ -94,7 +94,13 @@ export default function AlertRuleActionColumn({
 
   return (
     <>
-      <Stack direction="row" justifyContent="center" spacing={1}>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          justifyContent: "center"
+        }}
+      >
         <IconButton
           onClick={handleTest}
           sx={({ palette }) => ({
@@ -140,7 +146,15 @@ export default function AlertRuleActionColumn({
           horizontal: "center"
         }}
       >
-        <Stack padding={1} direction="row" gap={1} flexWrap="wrap" maxWidth={300}>
+        <Stack
+          direction="row"
+          sx={{
+            padding: 1,
+            gap: 1,
+            flexWrap: "wrap",
+            maxWidth: 300
+          }}
+        >
           {hasActionAccess && <ActionColumn onEdit={onEdit} onDelete={onDelete} />}
           <AlertRuleAccessModal alertId={rowId} />
           <IconButton
@@ -166,7 +180,12 @@ export default function AlertRuleActionColumn({
           horizontal: "center"
         }}
       >
-        <Stack spacing={3} padding={2}>
+        <Stack
+          spacing={3}
+          sx={{
+            padding: 2
+          }}
+        >
           <Typography variant="subtitle1">
             Are you sure about <strong>Testing</strong> this Alert?
           </Typography>

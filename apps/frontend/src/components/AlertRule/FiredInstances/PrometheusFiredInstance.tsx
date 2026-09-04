@@ -2,7 +2,7 @@ import React, { useState } from "react";
 
 import { IconButton, Stack, Typography, useColorScheme, useTheme } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import JsonView from "@uiw/react-json-view";
+import { JsonView } from "@uiw/react-json-view";
 import { githubDarkTheme } from "@uiw/react-json-view/githubDark";
 import { githubLightTheme } from "@uiw/react-json-view/githubLight";
 import { HiInformationCircle } from "react-icons/hi";
@@ -63,9 +63,19 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
           open={Boolean(details)}
           onClose={() => setDetails(null)}
         >
-          <Stack spacing={1} marginTop={3}>
+          <Stack
+            spacing={1}
+            sx={{
+              marginTop: 3
+            }}
+          >
             <Stack direction="row" spacing={2}>
-              <Typography variant="body1" fontWeight="bold">
+              <Typography
+                variant="body1"
+                sx={{
+                  fontWeight: "bold"
+                }}
+              >
                 {details.alertRuleName}
               </Typography>
               <AlertRuleStatusIndicator
@@ -73,15 +83,23 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
                 status={details.skylogsStatus === 2 ? "critical" : "resolved"}
               />
             </Stack>
-            <Stack direction="row" width="100%" spacing={2}>
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{
+                width: 1
+              }}
+            >
               <Stack
                 direction="row"
-                padding={1}
-                bgcolor={palette.background.default}
-                borderRadius={2}
                 spacing={1}
-                flexWrap="wrap"
-                width="50%"
+                sx={{
+                  padding: 1,
+                  bgcolor: palette.background.default,
+                  borderRadius: 2,
+                  flexWrap: "wrap",
+                  width: "50%"
+                }}
               >
                 <Typography variant="body2" sx={{ opacity: 0.6 }}>
                   Data Source:
@@ -90,12 +108,14 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
               </Stack>
               <Stack
                 direction="row"
-                padding={1}
-                bgcolor={palette.background.default}
-                borderRadius={2}
                 spacing={1}
-                flexWrap="wrap"
-                width="50%"
+                sx={{
+                  padding: 1,
+                  bgcolor: palette.background.default,
+                  borderRadius: 2,
+                  flexWrap: "wrap",
+                  width: "50%"
+                }}
               >
                 <Typography variant="body2" sx={{ opacity: 0.6 }}>
                   Data Source Alert Name:
@@ -105,18 +125,22 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
             </Stack>
             <Stack
               direction="row-reverse"
-              width="100%"
               spacing={2}
-              sx={{ "& .w-json-view-container": { backgroundColor: "transparent !important" } }}
+              sx={{
+                width: "100%",
+                "& .w-json-view-container": { backgroundColor: "transparent !important" }
+              }}
             >
               <Stack
                 direction="row"
-                width="50%"
-                padding={1}
-                bgcolor={palette.background.default}
-                borderRadius={2}
                 spacing={1}
-                flexWrap="wrap"
+                sx={{
+                  width: "50%",
+                  padding: 1,
+                  bgcolor: palette.background.default,
+                  borderRadius: 2,
+                  flexWrap: "wrap"
+                }}
               >
                 <Typography variant="body2" sx={{ opacity: 0.6 }}>
                   Annotations:
@@ -130,12 +154,14 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
               </Stack>
               <Stack
                 direction="row"
-                width="50%"
-                padding={1}
-                bgcolor={palette.background.default}
-                borderRadius={2}
                 spacing={1}
-                flexWrap="wrap"
+                sx={{
+                  width: "50%",
+                  padding: 1,
+                  bgcolor: palette.background.default,
+                  borderRadius: 2,
+                  flexWrap: "wrap"
+                }}
               >
                 <Typography variant="body2" sx={{ opacity: 0.6 }}>
                   Labels:

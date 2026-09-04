@@ -31,13 +31,19 @@ export function SideBarItem({ url, isActive }: SideBarItemProps) {
         paddingLeft: isActive ? 0 : 2
       }}
     >
-      <Stack direction="row" spacing={2} width="100%">
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          width: 1
+        }}
+      >
         {isActive && (
           <Box
             sx={{
               content: "''",
               display: "inline-block",
-              height: "100%",
+              height: 1,
               width: 5,
               backgroundColor: `${palette.primary.main}!important`,
               position: "absolute",
@@ -52,7 +58,7 @@ export function SideBarItem({ url, isActive }: SideBarItemProps) {
           href={url.pathname}
           sx={{
             paddingY: 2,
-            borderRadius: "0.6rem",
+            borderRadius: 3,
             backgroundColor: isActive
               ? `${alpha(palette.primary.main, 0.15)}!important`
               : "transparent",

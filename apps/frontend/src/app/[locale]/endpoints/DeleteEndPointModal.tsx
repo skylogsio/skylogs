@@ -27,26 +27,60 @@ export default function DeleteEndPointModal({
     <DeleteModalContainer {...props} onAfterDelete={deleteEndpointMutation} isLoading={isPending}>
       <Stack spacing={1}>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Name:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary"
+            }}
+          >
             {name}
           </Typography>
         </Stack>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Type:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary"
+            }}
+          >
             <EndPointTypeChip type={type} size="small" />
           </Typography>
         </Stack>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Value:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary" sx={{ wordBreak: "break-word" }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              wordBreak: "break-word"
+            }}
+          >
             {type === "telegram" ? chatId : value}
           </Typography>
         </Stack>

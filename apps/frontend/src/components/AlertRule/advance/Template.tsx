@@ -1,0 +1,213 @@
+import { useParams } from "next/navigation";
+import React, { useEffect } from "react";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Autocomplete, Box, Button, Chip, Grid, inputBaseClasses, TextField } from "@mui/material";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useForm, Controller } from "react-hook-form";
+import { toast } from "react-toastify";
+import * as z from "zod";
+
+import { CreateUpdateModal } from "@/@types/global";
+import {
+  addBehaviorRuleToAlertRule,
+  editBehaviorRuleToAlertRule,
+  getAlertRuleCreateData
+} from "@/api/alertRule";
+import ModalContainer from "@/components/Modal";
+
+import type { TemplateItem } from "./BehaviorRuleType";
+
+const templateSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  endpointIds: z.array(z.string()).min(1, "At least one Endpoint is required"),
+  template: z.string().min(1, "Template is required")
+});
+
+type TemplateFormType = z.infer<typeof templateSchema>;
+
+interface TemplateModalProps {
+  open: boolean;
+  onClose: () => void;
+  data: "NEW" | TemplateItem;
+}
+
+const emptyFormValues: TemplateFormType = {
+  name: "",
+  endpointIds: [],
+  template: ""
+};
+
+function getFormValues(
+  data: CreateUpdateModal<TemplateFormType & { id: string }>
+): TemplateFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return {
+    name: data.name,
+    endpointIds: data.endpointIds,
+    template: data.template
+  };
+}
+
+const TemplateModal: React.FC<TemplateModalProps> = ({ open, onClose, data }) => {
+  const queryClient = useQueryClient();
+  const { alertId } = useParams<{ alertId: string }>();
+  const ruleId = data !== "NEW" ? (data as TemplateFormType & { id: string }).id : "";
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset
+  } = useForm<TemplateFormType>({
+    resolver: zodResolver(templateSchema),
+    defaultValues: getFormValues(data)
+  });
+
+  const { data: endpointsData } = useQuery({
+    queryKey: ["alert-rule-create-data"],
+    queryFn: () => getAlertRuleCreateData()
+  });
+
+  const handleClose = () => {
+    onClose();
+    queryClient.invalidateQueries({ queryKey: ["get-behavior-rule"] });
+  };
+
+  const { mutate: addTemplateRule } = useMutation({
+    mutationFn: (body: TemplateFormType) => addBehaviorRuleToAlertRule(alertId, body),
+    onSuccess: () => {
+      toast.success("Template Rule Created Successfully.");
+      handleClose();
+    }
+  });
+
+  const { mutate: editTemplateRule } = useMutation({
+    mutationFn: (body: TemplateFormType) => editBehaviorRuleToAlertRule(alertId, ruleId, body),
+    onSuccess: () => {
+      toast.success("Template Rule Updated Successfully.");
+      handleClose();
+    }
+  });
+
+  const endpoints = endpointsData?.endpoints ?? [];
+
+  const handleFormSubmit = (formData: TemplateFormType) => {
+    const body = { ...formData, type: "template" };
+    if (data === "NEW") {
+      addTemplateRule(body);
+    } else {
+      editTemplateRule(body);
+    }
+  };
+
+  useEffect(() => {
+    reset(getFormValues(data));
+  }, [data, open, reset]);
+
+  return (
+    <ModalContainer open={open} onClose={handleClose} title="Template" width="90%" maxWidth="600px">
+      <form onSubmit={handleSubmit(handleFormSubmit)}>
+        <Box sx={{ mt: 2 }}>
+          <Grid container spacing={2}>
+            <Grid size={12}>
+              <TextField
+                label="Name"
+                variant="filled"
+                error={!!errors.name}
+                helperText={errors.name?.message}
+                {...register("name")}
+              />
+            </Grid>
+            <Grid size={12}>
+              <Controller
+                control={control}
+                name="endpointIds"
+                render={({ field }) => {
+                  const selectedEndpoints = endpoints.filter((ep) => field.value?.includes(ep.id));
+
+                  return (
+                    <Autocomplete
+                      multiple
+                      options={endpoints}
+                      getOptionLabel={(option) => option.name}
+                      value={selectedEndpoints}
+                      onChange={(_, newValue) => {
+                        field.onChange(newValue.map((ep) => ep.id));
+                      }}
+                      sx={{
+                        minHeight: 56,
+                        gap: 1,
+                        [`& .${inputBaseClasses.root}`]: {
+                          display: "flex",
+                          alignItems: "flex-start",
+                          paddingTop: 2.7
+                        }
+                      }}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      renderValue={(value, getItemProps) =>
+                        value.map((option, index) => {
+                          const { key, ...itemProps } = getItemProps({ index });
+                          return (
+                            <Chip
+                              key={key}
+                              label={option.name}
+                              size="small"
+                              sx={{ height: 22 }}
+                              {...itemProps}
+                            />
+                          );
+                        })
+                      }
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          slotProps={{
+                            ...params.slotProps,
+                            input: params.slotProps.input,
+                            inputLabel: params.slotProps.inputLabel,
+                            htmlInput: params.slotProps.htmlInput
+                          }}
+                          variant="filled"
+                          label="Endpoints"
+                          error={!!errors.endpointIds}
+                          helperText={errors.endpointIds?.message as string}
+                        />
+                      )}
+                    />
+                  );
+                }}
+              />
+            </Grid>
+            <Grid size={12}>
+              <TextField
+                label="Template"
+                variant="filled"
+                multiline
+                rows={4}
+                error={!!errors.template}
+                helperText={errors.template?.message}
+                {...register("template")}
+              />
+            </Grid>
+          </Grid>
+
+          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
+            <Button onClick={handleClose} variant="outlined" color="primary">
+              Cancel
+            </Button>
+            <Button type="submit" variant="contained" color="primary">
+              {data === "NEW" ? "Create" : "Update"}
+            </Button>
+          </Box>
+        </Box>
+      </form>
+    </ModalContainer>
+  );
+};
+
+export default TemplateModal;

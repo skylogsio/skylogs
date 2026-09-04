@@ -11,24 +11,31 @@ import TopBarZone from "./TopBarZone";
 export default function TopBar() {
   return (
     <Box
-      width="100%"
-      display="flex"
-      flexDirection="row-reverse"
-      justifyContent="flex-start"
-      alignItems="center"
       sx={{
+        width: 1,
+        display: "flex",
+        flexDirection: "row-reverse",
+        justifyContent: "flex-start",
+        alignItems: "center",
         position: "sticky",
         top: 0,
         zIndex: 100,
         backgroundColor: ({ palette }) => palette.background.paper,
         boxSizing: "border-box",
-        padding: "0.7rem 0.5rem"
+        paddingY: 1,
+        paddingX: 1
       }}
     >
       {/*<TopBarSearch />*/}
       {/*<TopBarLanguage />*/}
       {/* <Stack direction="row"> */}
-      <Stack direction="row" alignItems="center" spacing={2}>
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          alignItems: "center"
+        }}
+      >
         <TopBarZone />
         <ThemeSwitch />
         <TopBarProfile />

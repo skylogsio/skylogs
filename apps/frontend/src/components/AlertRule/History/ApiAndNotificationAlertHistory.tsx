@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 
 import { Button, CircularProgress, Stack, Typography, useTheme } from "@mui/material";
 import { purple } from "@mui/material/colors";
@@ -49,7 +49,11 @@ export default function ApiAndNotificationAlertHistory({ alertId }: { alertId: I
   }
 
   return (
-    <Stack alignItems="center">
+    <Stack
+      sx={{
+        alignItems: "center"
+      }}
+    >
       <DataTable<IApiAndNotificationAlertRuleHistory>
         data={allData}
         columns={[
@@ -63,11 +67,22 @@ export default function ApiAndNotificationAlertHistory({ alertId }: { alertId: I
           { header: "Date", accessorKey: "createdAt" }
         ]}
       />
-      <Stack alignItems="center" position="relative" width="100%" paddingBottom={1}>
+      <Stack
+        sx={{
+          alignItems: "center",
+          position: "relative",
+          width: "100%",
+          paddingBottom: 1
+        }}
+      >
         <Typography
           variant="caption"
-          color="text.secondary"
-          sx={{ position: "absolute", right: 10, top: 6 }}
+          sx={{
+            color: "text.secondary",
+            position: "absolute",
+            right: 10,
+            top: 6
+          }}
         >
           Showing {allData.length} of {totalCount}
         </Typography>
@@ -82,7 +97,7 @@ export default function ApiAndNotificationAlertHistory({ alertId }: { alertId: I
               marginX: "auto",
               marginTop: 2,
               backgroundColor: palette.background.paper,
-              border: "1px solid",
+              border: 1,
               paddingX: 2,
               borderColor: palette.secondary.light,
               color: palette.secondary.dark

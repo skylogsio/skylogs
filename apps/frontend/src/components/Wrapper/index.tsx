@@ -53,11 +53,11 @@ export default function Wrapper({ children }: PropsWithChildren) {
 
   return (
     <Box
-      width="100%"
-      height="100vh"
-      maxWidth="100%"
-      maxHeight="100vh"
       sx={{
+        width: 1,
+        height: "100vh",
+        maxWidth: 1,
+        maxHeight: "100vh",
         boxSizing: "border-box",
         padding: 0,
         margin: 0,
@@ -69,9 +69,12 @@ export default function Wrapper({ children }: PropsWithChildren) {
     >
       <Box
         component="aside"
-        width="20%"
-        maxWidth="300px"
-        sx={{ backgroundColor: ({ palette }) => palette.background.paper }}
+        sx={{
+          width: 1 / 5,
+          maxWidth: 300,
+          minWidth: 220,
+          backgroundColor: ({ palette }) => palette.background.paper
+        }}
       >
         {isAdminArea ? (
           <AdminSideBar version={SKYLOGS_VERSION} />
@@ -79,10 +82,29 @@ export default function Wrapper({ children }: PropsWithChildren) {
           <SideBar version={SKYLOGS_VERSION} />
         )}
       </Box>
-      <Box display="flex" flexDirection="column" flex={1} height="100%">
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          height: 1
+        }}
+      >
         <TopBar />
-        <Box component="main" height="90%">
-          <Box width="100%" height="100%" padding="1.7rem" overflow="auto">
+        <Box
+          component="main"
+          sx={{
+            height: "90%"
+          }}
+        >
+          <Box
+            sx={{
+              width: 1,
+              height: 1,
+              padding: 3,
+              overflow: "auto"
+            }}
+          >
             {children}
           </Box>
         </Box>

@@ -52,8 +52,19 @@ export default function AlertRuleNotifyManager({ alertId }: { alertId: IAlertRul
   }
 
   return (
-    <Stack spacing={2} marginTop={1}>
-      <Stack direction="row" spacing={1} alignItems="center">
+    <Stack
+      spacing={2}
+      sx={{
+        marginTop: 1
+      }}
+    >
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          alignItems: "center"
+        }}
+      >
         <Autocomplete
           multiple
           id="endpoints"
@@ -67,9 +78,10 @@ export default function AlertRuleNotifyManager({ alertId }: { alertId: IAlertRul
             <TextField
               {...params}
               slotProps={{
-                input: params.InputProps,
-                inputLabel: params.InputLabelProps,
-                htmlInput: params.inputProps
+                ...params.slotProps,
+                input: params.slotProps.input,
+                inputLabel: params.slotProps.inputLabel,
+                htmlInput: params.slotProps.htmlInput
               }}
               variant="filled"
               label="Endpoints"

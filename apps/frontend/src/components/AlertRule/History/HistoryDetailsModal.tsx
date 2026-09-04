@@ -1,7 +1,7 @@
 "use client";
 
 import { Stack, Typography, useColorScheme, useTheme } from "@mui/material";
-import JsonView from "@uiw/react-json-view";
+import { JsonView } from "@uiw/react-json-view";
 import { githubDarkTheme } from "@uiw/react-json-view/githubDark";
 import { githubLightTheme } from "@uiw/react-json-view/githubLight";
 
@@ -28,13 +28,21 @@ export default function HistoryDetailsModal({ alerts, status, onClose }: History
       open={Boolean(alerts)}
       onClose={onClose}
     >
-      <Stack height="70vh" overflow="auto" paddingRight={1} spacing={2} marginTop={2}>
+      <Stack
+        spacing={2}
+        sx={{
+          height: "70vh",
+          overflow: "auto",
+          paddingRight: 1,
+          marginTop: 2
+        }}
+      >
         {alerts.map((alert, index) => (
           <Stack
             key={index}
             sx={{
               borderRadius: 2,
-              border: "1px solid",
+              border: 1,
               borderColor: palette.grey[100],
               padding: 2,
               paddingTop: 1
@@ -42,7 +50,12 @@ export default function HistoryDetailsModal({ alerts, status, onClose }: History
             spacing={1}
           >
             <Stack direction="row" spacing={2}>
-              <Typography variant="body1" fontWeight="bold">
+              <Typography
+                variant="body1"
+                sx={{
+                  fontWeight: "bold"
+                }}
+              >
                 {alert.alertRuleName}
               </Typography>
               <AlertRuleStatusIndicator
@@ -50,15 +63,23 @@ export default function HistoryDetailsModal({ alerts, status, onClose }: History
                 status={status ?? (alert.skylogsStatus === 2 ? "critical" : "resolved")}
               />
             </Stack>
-            <Stack direction="row" width="100%" spacing={2}>
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{
+                width: "100%"
+              }}
+            >
               <Stack
                 direction="row"
-                padding={1}
-                bgcolor={palette.background.default}
-                borderRadius={2}
                 spacing={1}
-                flexWrap="wrap"
-                width="50%"
+                sx={{
+                  padding: 1,
+                  bgcolor: palette.background.default,
+                  borderRadius: 2,
+                  flexWrap: "wrap",
+                  width: "50%"
+                }}
               >
                 <Typography variant="body2" sx={{ opacity: 0.6 }}>
                   Data Source:
@@ -67,12 +88,14 @@ export default function HistoryDetailsModal({ alerts, status, onClose }: History
               </Stack>
               <Stack
                 direction="row"
-                padding={1}
-                bgcolor={palette.background.default}
-                borderRadius={2}
                 spacing={1}
-                flexWrap="wrap"
-                width="50%"
+                sx={{
+                  padding: 1,
+                  bgcolor: palette.background.default,
+                  borderRadius: 2,
+                  flexWrap: "wrap",
+                  width: "50%"
+                }}
               >
                 <Typography variant="body2" sx={{ opacity: 0.6 }}>
                   Data Source Alert Name:
@@ -82,18 +105,22 @@ export default function HistoryDetailsModal({ alerts, status, onClose }: History
             </Stack>
             <Stack
               direction="row-reverse"
-              width="100%"
               spacing={2}
-              sx={{ "& .w-json-view-container": { backgroundColor: "transparent !important" } }}
+              sx={{
+                width: "100%",
+                "& .w-json-view-container": { backgroundColor: "transparent !important" }
+              }}
             >
               <Stack
                 direction="row"
-                width="50%"
-                padding={1}
-                bgcolor={palette.background.default}
-                borderRadius={2}
                 spacing={1}
-                flexWrap="wrap"
+                sx={{
+                  width: "50%",
+                  padding: 1,
+                  bgcolor: palette.background.default,
+                  borderRadius: 2,
+                  flexWrap: "wrap"
+                }}
               >
                 <Typography variant="body2" sx={{ opacity: 0.6 }}>
                   Annotations:
@@ -107,12 +134,14 @@ export default function HistoryDetailsModal({ alerts, status, onClose }: History
               </Stack>
               <Stack
                 direction="row"
-                width="50%"
-                padding={1}
-                bgcolor={palette.background.default}
-                borderRadius={2}
                 spacing={1}
-                flexWrap="wrap"
+                sx={{
+                  width: "50%",
+                  padding: 1,
+                  bgcolor: palette.background.default,
+                  borderRadius: 2,
+                  flexWrap: "wrap"
+                }}
               >
                 <Typography variant="body2" sx={{ opacity: 0.6 }}>
                   Labels:

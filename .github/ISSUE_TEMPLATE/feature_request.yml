@@ -1,0 +1,40 @@
+name: Feature Request
+description: Suggest an idea or improvement for Skylogs
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the pain point or use case, not just the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How would you like it to work?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you use today, or other tools that do this.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Alerting / routing
+        - Incident management
+        - On-call & escalations
+        - Notifications / channels
+        - Integrations
+        - UI / UX
+        - Deployment (Docker / Helm)
+        - API
+        - Other

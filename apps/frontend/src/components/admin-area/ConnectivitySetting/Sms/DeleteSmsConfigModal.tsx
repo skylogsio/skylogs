@@ -26,30 +26,61 @@ export default function DeleteSmsConfigModal({
     <DeleteModalContainer {...props} onAfterDelete={deleteSmsConfigMutation} isLoading={isPending}>
       <Stack spacing={1}>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Name:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary"
+            }}
+          >
             {name}
           </Typography>
         </Stack>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             API Token:
           </Typography>
           <Typography
             variant="subtitle2"
-            color="text.secondary"
-            sx={{ wordBreak: "break-word", flex: 1 }}
+            sx={{
+              color: "text.secondary",
+              wordBreak: "break-word",
+              flex: 1
+            }}
           >
             {apiToken}
           </Typography>
         </Stack>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Sender Number:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary"
+            }}
+          >
             {senderNumber}
           </Typography>
         </Stack>

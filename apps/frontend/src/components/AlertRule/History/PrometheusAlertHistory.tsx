@@ -43,7 +43,13 @@ export default function PrometheusAlertsHistory({ alertId }: { alertId: IAlertRu
     const numberOfFired = countFire > 100 ? "+99" : countFire;
     const numberOfResolved = countResolve > 100 ? "+99" : countResolve;
     return (
-      <Stack direction="row" spacing={1} justifyContent="center">
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          justifyContent: "center"
+        }}
+      >
         {countFire > 0 && (
           <Chip
             avatar={
@@ -86,7 +92,11 @@ export default function PrometheusAlertsHistory({ alertId }: { alertId: IAlertRu
 
   return (
     <>
-      <Stack alignItems="center">
+      <Stack
+        sx={{
+          alignItems: "center"
+        }}
+      >
         <DataTable<IPrometheusAlertHistory>
           data={allData}
           isLoading={isFetching && !isFetchingNextPage}
@@ -109,11 +119,22 @@ export default function PrometheusAlertsHistory({ alertId }: { alertId: IAlertRu
             }
           ]}
         />
-        <Stack alignItems="center" position="relative" width="100%" paddingBottom={1}>
+        <Stack
+          sx={{
+            alignItems: "center",
+            position: "relative",
+            width: "100%",
+            paddingBottom: 1
+          }}
+        >
           <Typography
             variant="caption"
-            color="text.secondary"
-            sx={{ position: "absolute", right: 10, top: 6 }}
+            sx={{
+              color: "text.secondary",
+              position: "absolute",
+              right: 10,
+              top: 6
+            }}
           >
             Showing {allData.length} of {totalCount}
           </Typography>
@@ -132,7 +153,7 @@ export default function PrometheusAlertsHistory({ alertId }: { alertId: IAlertRu
                 marginX: "auto",
                 marginTop: 2,
                 backgroundColor: palette.background.paper,
-                border: "1px solid",
+                border: 1,
                 paddingX: 2,
                 borderColor: palette.secondary.light,
                 color: palette.secondary.dark

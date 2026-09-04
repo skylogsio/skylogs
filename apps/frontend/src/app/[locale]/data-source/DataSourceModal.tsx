@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
-  Grid2 as Grid,
+  Grid,
   IconButton,
   MenuItem,
   Stack,
@@ -24,34 +24,22 @@ import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 import { DATA_SOURCE_VARIANTS } from "@/utils/dataSourceUtils";
 
-const schema = z.object({
-  name: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
-  type: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
-  url: z
-    .string({ required_error: "This field is Required." })
-    .refine((data) => data.trim() !== "", {
-      message: "This field is Required."
-    }),
+const dataSourceSchema = z.object({
+  name: z.string().trim().min(1, "This field is Required."),
+  type: z.string().trim().min(1, "This field is Required."),
+  url: z.string().trim().min(1, "This field is Required."),
   api_token: z.string().optional(),
   username: z.string().optional(),
   password: z.string().optional()
 });
 
-type DataSourceFormType = z.infer<typeof schema> & { chatId?: string };
+type DataSourceFormType = z.infer<typeof dataSourceSchema> & { chatId?: string };
 type DataSourceModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
   data: CreateUpdateModal<IDataSource>;
   onSubmit: () => void;
 };
 
-const defaultValues = {
+const emptyFormValues: DataSourceFormType = {
   name: "",
   type: "",
   url: "",
@@ -59,6 +47,21 @@ const defaultValues = {
   username: "",
   password: ""
 };
+
+function getFormValues(data: CreateUpdateModal<IDataSource>): DataSourceFormType {
+  if (!data || data === "NEW") {
+    return emptyFormValues;
+  }
+
+  return {
+    name: data.name,
+    type: data.type,
+    url: data.url,
+    api_token: "",
+    username: data.username ?? "",
+    password: data.password ?? ""
+  };
+}
 
 export default function DataSourceModal({ open, onClose, data, onSubmit }: DataSourceModalProps) {
   const {
@@ -68,8 +71,9 @@ export default function DataSourceModal({ open, onClose, data, onSubmit }: DataS
     reset,
     formState: { errors }
   } = useForm<DataSourceFormType>({
-    resolver: zodResolver(schema),
-    defaultValues
+    resolver: zodResolver(dataSourceSchema),
+    defaultValues: getFormValues(data),
+    mode: "onSubmit"
   });
   const { palette } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
@@ -95,7 +99,13 @@ export default function DataSourceModal({ open, onClose, data, onSubmit }: DataS
   function renderDataSourceList() {
     return Object.entries(DATA_SOURCE_VARIANTS).map(([key, value]) => (
       <MenuItem key={key} value={key}>
-        <Stack direction="row" alignItems="center" spacing={1}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            alignItems: "center"
+          }}
+        >
           <value.Icon size={value.defaultSize} color={value.defaultColor} />
           <Typography component="span">{value.label}</Typography>
         </Stack>
@@ -112,11 +122,7 @@ export default function DataSourceModal({ open, onClose, data, onSubmit }: DataS
   }
 
   useEffect(() => {
-    if (data === "NEW") {
-      reset(defaultValues);
-    } else {
-      reset(data as DataSourceFormType);
-    }
+    reset(getFormValues(data));
   }, [data, reset]);
 
   return (
@@ -128,12 +134,14 @@ export default function DataSourceModal({ open, onClose, data, onSubmit }: DataS
     >
       <Grid
         component="form"
-        onSubmit={handleSubmit(handleSubmitForm, (error) => console.log(error))}
+        onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
-        width="100%"
-        display="flex"
-        marginTop="2rem"
+        sx={{
+          width: "100%",
+          display: "flex",
+          marginTop: 4
+        }}
       >
         <Grid size={12}>
           <TextField
@@ -210,7 +218,12 @@ export default function DataSourceModal({ open, onClose, data, onSubmit }: DataS
             maxRows={8}
           />
         </Grid>
-        <Grid size={12} marginTop="1rem">
+        <Grid
+          size={12}
+          sx={{
+            marginTop: "1rem"
+          }}
+        >
           <Button
             disabled={isCreating || isUpdating}
             type="submit"

@@ -35,7 +35,13 @@ export default function ActionColumn({
   }
   return (
     <>
-      <Stack direction="row" spacing={1} justifyContent="center">
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          justifyContent: "center"
+        }}
+      >
         {children}
         {onEdit && (
           <IconButton

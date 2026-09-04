@@ -1,4 +1,4 @@
-import { alpha, Button, Grid2 as Grid, Stack, Typography, useTheme } from "@mui/material";
+import { alpha, Button, Grid, Stack, Typography, useTheme } from "@mui/material";
 import { BsExclamationCircle } from "react-icons/bs";
 import { HiX } from "react-icons/hi";
 
@@ -15,30 +15,50 @@ export default function DeleteModalContainer({
   const { palette } = useTheme();
   return (
     <ModalContainer open={open} onClose={onClose} width="90%" maxWidth="400px">
-      <Stack spacing={3} alignItems="center">
+      <Stack
+        spacing={3}
+        sx={{
+          alignItems: "center"
+        }}
+      >
         <BsExclamationCircle color={palette.error.main} size="4rem" />
-        <Typography variant="h5" fontWeight="bold" component="div" align="center">
+        <Typography
+          variant="h5"
+          component="div"
+          sx={{
+            fontWeight: "bold",
+            textAlign: "center"
+          }}
+        >
           Are you sure?
         </Typography>
-        <Typography variant="body2" component="p" align="center">
+        <Typography variant="body2" component="p" sx={{ textAlign: "center" }}>
           Do you really want to delete this record?
           <br />
           This process can not be undone.
         </Typography>
         <Grid
-          minWidth="100%"
-          boxSizing="border-box"
           container
-          padding={2}
           spacing={1}
-          sx={{ minWidth: "100% !important", boxSizing: "border-box" }}
-          alignItems="center"
-          bgcolor={alpha(palette.secondary.light, 0.3)}
-          borderRadius={3}
+          sx={{
+            minWidth: "100% !important",
+            boxSizing: "border-box",
+            padding: 2,
+            alignItems: "center",
+            bgcolor: alpha(palette.secondary.light, 0.3),
+            borderRadius: 3
+          }}
         >
           {children}
         </Grid>
-        <Stack width="100%" direction="row-reverse" justifyContent="flex-start" spacing={2}>
+        <Stack
+          direction="row-reverse"
+          spacing={2}
+          sx={{
+            width: "100%",
+            justifyContent: "flex-start"
+          }}
+        >
           <Button
             fullWidth
             disabled={isLoading}

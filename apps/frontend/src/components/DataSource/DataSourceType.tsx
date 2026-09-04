@@ -19,12 +19,29 @@ export default function DataSourceType({
   if (!dataSourceType) return;
 
   return (
-    <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{
+        alignItems: "center",
+        justifyContent: "center"
+      }}>
       <dataSourceType.Icon
         size={iconSize ?? dataSourceType.defaultSize}
         color={iconColor ?? dataSourceType.defaultColor}
       />
-      <Typography component="div" textTransform="capitalize" {...typographyProps}>
+      <Typography
+        component="div"
+        {...typographyProps}
+        sx={[
+          { textTransform: "capitalize" },
+          ...(typographyProps?.sx
+            ? Array.isArray(typographyProps.sx)
+              ? typographyProps.sx
+              : [typographyProps.sx]
+            : [])
+        ]}
+      >
         {dataSourceType?.label}
       </Typography>
     </Stack>

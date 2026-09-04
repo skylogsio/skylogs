@@ -54,11 +54,13 @@ export default function ApiFiredInstances({ alertId }: { alertId: IAlertRule["id
               {details.updatedAt}
             </Typography>
             <Stack
-              padding={2}
-              marginTop={2}
-              borderRadius={2}
-              maxHeight="60vh"
-              bgcolor={alpha(palette.secondary.light, 0.3)}
+              sx={{
+                padding: 2,
+                marginTop: 2,
+                borderRadius: 2,
+                maxHeight: "60vh",
+                bgcolor: alpha(palette.secondary.light, 0.3)
+              }}
             >
               <Typography sx={{ wordBreak: "break-word" }}>{details.description}</Typography>
             </Stack>

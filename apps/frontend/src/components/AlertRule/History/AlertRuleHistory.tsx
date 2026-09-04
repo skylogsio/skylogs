@@ -2,9 +2,11 @@ import type { IAlertRule } from "@/@types/alertRule";
 import type { AlertRuleType } from "@/utils/alertRuleUtils";
 
 import ApiAndNotificationAlertHistory from "./ApiAndNotificationAlertHistory";
+import ElasticAlertHistory from "./ElasticAlertHistory";
 import GrafanaAndPmmAlertHistory from "./GrafanaAndPmmAlertHistory";
 import PrometheusAlertsHistory from "./PrometheusAlertHistory";
 import SentryAlertHistory from "./SentryAlertHistory";
+import VictoriaLogsAlertHistory from "./VictoriaLogsAlertHistory";
 import ZabbixAlertHistory from "./ZabbixAlertHistory";
 
 export default function AlertRuleHistory({
@@ -18,6 +20,10 @@ export default function AlertRuleHistory({
     case "api":
     case "notification":
       return <ApiAndNotificationAlertHistory alertId={alertId} />;
+    case "elastic":
+      return <ElasticAlertHistory alertId={alertId} />;
+    case "victoria_logs":
+      return <VictoriaLogsAlertHistory alertId={alertId} />;
     case "prometheus":
       return <PrometheusAlertsHistory alertId={alertId} />;
     case "grafana":

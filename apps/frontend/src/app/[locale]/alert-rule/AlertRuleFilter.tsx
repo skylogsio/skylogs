@@ -8,7 +8,7 @@ import {
   Checkbox,
   Chip,
   FormControlLabel,
-  Grid2 as Grid,
+  Grid,
   MenuItem,
   Stack,
   TextField,
@@ -53,7 +53,6 @@ export default function AlertRuleFilter({ onChange }: TableFilterComponentProps)
     ]
   });
 
-  // Initialize filters from URL parameters
   useEffect(() => {
     const filterParam = searchParams.get("filters");
     if (filterParam) {
@@ -61,7 +60,6 @@ export default function AlertRuleFilter({ onChange }: TableFilterComponentProps)
         const parsedFilters = JSON.parse(decodeURIComponent(filterParam)) as IAlertRuleFilters;
         setFilter(parsedFilters);
 
-        // Set silent status if it exists in the filters
         if (parsedFilters.silentStatus) {
           setSilentStatus(parsedFilters.silentStatus);
         }
@@ -97,7 +95,13 @@ export default function AlertRuleFilter({ onChange }: TableFilterComponentProps)
   function renderAlertRuleList() {
     return Object.entries(ALERT_RULE_VARIANTS).map(([key, value]) => (
       <MenuItem key={key} value={key}>
-        <Stack direction="row" alignItems="center" spacing={1}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            alignItems: "center"
+          }}
+        >
           <value.Icon size={value.defaultSize} color={value.defaultColor} />
           <Typography component="span">{value.label}</Typography>
         </Stack>
@@ -121,7 +125,6 @@ export default function AlertRuleFilter({ onChange }: TableFilterComponentProps)
     return <></>;
   }
 
-  // Helper function to get selected endpoints for display
   function getSelectedEndpoints() {
     if (!filter.endpointId || !endpointList) return [];
     const endpointIds = Array.isArray(filter.endpointId) ? filter.endpointId : [filter.endpointId];
@@ -152,7 +155,6 @@ export default function AlertRuleFilter({ onChange }: TableFilterComponentProps)
           {renderAlertRuleList()}
         </TextField>
       </Grid>
-
       <Grid size={3}>
         <Autocomplete
           multiple
@@ -171,9 +173,10 @@ export default function AlertRuleFilter({ onChange }: TableFilterComponentProps)
             <TextField
               {...params}
               slotProps={{
-                input: params.InputProps,
-                inputLabel: params.InputLabelProps,
-                htmlInput: params.inputProps
+                ...params.slotProps,
+                input: params.slotProps.input,
+                inputLabel: params.slotProps.inputLabel,
+                htmlInput: params.slotProps.htmlInput
               }}
               variant="filled"
               label="Endpoints"
@@ -191,18 +194,36 @@ export default function AlertRuleFilter({ onChange }: TableFilterComponentProps)
           onChange={handleSilentFilter}
         >
           <MenuItem value="">
-            <Stack direction="row" alignItems="center" spacing={1}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                alignItems: "center"
+              }}
+            >
               <Typography component="span">All</Typography>
             </Stack>
           </MenuItem>
           <MenuItem value="silent">
-            <Stack direction="row" alignItems="center" spacing={1}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                alignItems: "center"
+              }}
+            >
               <IoNotificationsOff color={palette.warning.main} size="1.4rem" />
               <Typography component="span">Silent</Typography>
             </Stack>
           </MenuItem>
           <MenuItem value="unsilent">
-            <Stack direction="row" alignItems="center" spacing={1}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                alignItems: "center"
+              }}
+            >
               <IoNotifications color={palette.warning.main} size="1.4rem" />
               <Typography component="span">Not Silent</Typography>
             </Stack>
@@ -218,19 +239,20 @@ export default function AlertRuleFilter({ onChange }: TableFilterComponentProps)
           value={Array.isArray(filter.tags) ? filter.tags : filter.tags ? [filter.tags] : []}
           freeSolo
           onChange={(_, value) => handleChange("tags", value)}
-          renderTags={(value: readonly string[], getItemProps) =>
+          renderValue={(value: readonly string[], getItemProps) =>
             value.map((option: string, index: number) => {
               const { key, ...itemProps } = getItemProps({ index });
-              return <Chip variant="filled" label={option} key={key} {...itemProps} />;
+              return <Chip key={key} variant="filled" label={option} {...itemProps} />;
             })
           }
           renderInput={(params) => (
             <TextField
               {...params}
               slotProps={{
-                input: params.InputProps,
-                inputLabel: params.InputLabelProps,
-                htmlInput: params.inputProps
+                ...params.slotProps,
+                input: params.slotProps.input,
+                inputLabel: params.slotProps.inputLabel,
+                htmlInput: params.slotProps.htmlInput
               }}
               variant="filled"
               label="Tags"

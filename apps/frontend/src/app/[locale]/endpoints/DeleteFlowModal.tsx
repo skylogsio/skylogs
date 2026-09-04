@@ -19,7 +19,7 @@ export default function DeleteFlowModal({
     mutationFn: () => deleteFlow(id),
     onSuccess() {
       onAfterDelete?.();
-      toast.success("Flow Deleted Successfully.");
+      toast.success("Endpoint Flow Deleted Successfully.");
     }
   });
 
@@ -32,18 +32,35 @@ export default function DeleteFlowModal({
 
   return (
     <DeleteModalContainer {...props} onAfterDelete={deleteFlowMutation} isLoading={isPending}>
-      <Stack spacing={2}>
+      <Stack spacing={1}>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Name:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary"
+            }}
+          >
             {name}
           </Typography>
         </Stack>
 
         <Stack spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Steps:
           </Typography>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>

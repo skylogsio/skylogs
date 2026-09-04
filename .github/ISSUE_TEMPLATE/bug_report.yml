@@ -1,0 +1,73 @@
+name: Bug Report
+description: Report a problem with Skylogs
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill in as much as you can.
+
+  - type: input
+    id: version
+    attributes:
+      label: Skylogs version
+      placeholder: "v0.71.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment method
+      options:
+        - Docker Compose
+        - Kubernetes (Helm chart)
+        - Other / manual
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      options:
+        - Backend / API
+        - Frontend / UI
+        - Horizon (queues / notifications)
+        - Scheduler
+        - Sentinel
+        - Helm chart
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste logs from the affected component. **Remove any secrets or tokens.**
+      render: shell
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "OS, Docker/Kubernetes version, browser (for UI issues), ..."

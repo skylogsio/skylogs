@@ -1,14 +1,6 @@
 import { useState } from "react";
 
-import {
-  Autocomplete,
-  Chip,
-  Grid2 as Grid,
-  IconButton,
-  Stack,
-  TextField,
-  TextFieldProps
-} from "@mui/material";
+import { Autocomplete, Grid, IconButton, Stack, TextField, TextFieldProps } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { HiX } from "react-icons/hi";
 
@@ -55,20 +47,13 @@ export default function ExtraField({
             keyTextFieldProps.onChange(value);
             setSelectedLabel(value);
           }}
-          renderTags={(value: readonly string[], getItemProps) =>
-            value.map((option: string, index: number) => {
-              const { key, ...itemProps } = getItemProps({ index });
-              return <Chip variant="filled" label={option} key={key} {...itemProps} />;
-            })
-          }
           renderInput={(params) => (
             <TextField
-              {...params}
-              slotProps={{
-                input: params.InputProps,
-                inputLabel: params.InputLabelProps,
-                htmlInput: params.inputProps
-              }}
+              id={params.id}
+              disabled={params.disabled}
+              fullWidth={params.fullWidth}
+              size={params.size}
+              slotProps={params.slotProps}
               error={keyTextFieldProps.error}
               helperText={keyTextFieldProps.helperText}
               variant="filled"
@@ -78,28 +63,27 @@ export default function ExtraField({
         />
       </Grid>
       <Grid size={6}>
-        <Stack direction="row" alignItems="flex-start" spacing={1}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            alignItems: "flex-start"
+          }}
+        >
           <Autocomplete
             options={prometheusLabelValues ?? []}
             freeSolo
             autoSelect
             value={valueTextFieldProps.value}
             onChange={(_, value) => valueTextFieldProps.onChange(value)}
-            renderTags={(value: readonly string[], getItemProps) =>
-              value.map((option: string, index: number) => {
-                const { key, ...itemProps } = getItemProps({ index });
-                return <Chip variant="filled" label={option} key={key} {...itemProps} />;
-              })
-            }
             sx={{ flex: 1 }}
             renderInput={(params) => (
               <TextField
-                {...params}
-                slotProps={{
-                  input: params.InputProps,
-                  inputLabel: params.InputLabelProps,
-                  htmlInput: params.inputProps
-                }}
+                id={params.id}
+                disabled={params.disabled}
+                fullWidth={params.fullWidth}
+                size={params.size}
+                slotProps={params.slotProps}
                 error={valueTextFieldProps.error}
                 helperText={valueTextFieldProps.helperText}
                 variant="filled"

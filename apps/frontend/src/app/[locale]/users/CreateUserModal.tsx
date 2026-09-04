@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
-  Grid2 as Grid,
+  Grid,
   IconButton,
   TextField,
   ToggleButton,
@@ -14,7 +14,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { HiEye, HiEyeOff } from "react-icons/hi";
 import { toast } from "react-toastify";
-import * as z from "zod";
+import { z } from "zod";
 
 import type { BasicCreateOrUpdateModalProps } from "@/@types/global";
 import { createUser } from "@/api/user";
@@ -25,31 +25,12 @@ import { ROLE_TYPES } from "@/utils/userUtils";
 
 const createUserSchema = z
   .object({
-    name: z
-      .string({ required_error: "This field is Required." })
-      .refine((data) => data.trim() !== "", {
-        message: "This field is Required."
-      }),
-    role: z.enum(ROLE_TYPES, {
-      required_error: "This field is Required.",
-      message: "This field is Required."
-    }),
-    username: z
-      .string({ required_error: "This field is Required." })
-      .refine((data) => data.trim() !== "", {
-        message: "This field is Required."
-      }),
+    name: z.string().trim().min(1, "This field is Required."),
+    role: z.enum(ROLE_TYPES, "This field is Required."),
+    username: z.string().trim().min(1, "This field is Required."),
     //TODO: Add more validation for password
-    password: z
-      .string({ required_error: "This field is Required." })
-      .refine((data) => data.trim() !== "", {
-        message: "This field is Required."
-      }),
-    confirmPassword: z
-      .string({ required_error: "This field is Required." })
-      .refine((data) => data.trim() !== "", {
-        message: "This field is Required."
-      })
+    password: z.string().trim().min(1, "This field is Required."),
+    confirmPassword: z.string().trim().min(1, "This field is Required.")
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Confirm Password does not match.",
@@ -80,7 +61,8 @@ export default function CreateUserModal({
     formState: { errors }
   } = useForm<UserFormType>({
     resolver: zodResolver(createUserSchema),
-    defaultValues
+    defaultValues,
+    mode: "onSubmit"
   });
   const { palette } = useTheme();
   const { hasRole } = useRole();
@@ -114,13 +96,28 @@ export default function CreateUserModal({
         onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
-        width="100%"
-        display="flex"
-        marginTop="2rem"
+        sx={{
+          width: 1,
+          display: "flex",
+          marginTop: "2rem"
+        }}
       >
         {hasRole("owner") && (
-          <Grid size={12} display="flex" justifyContent="flex-start" alignItems="center">
-            <Typography variant="body1" component="div" marginRight="0.7rem">
+          <Grid
+            size={12}
+            sx={{
+              display: "flex",
+              justifyContent: "flex-start",
+              alignItems: "center"
+            }}
+          >
+            <Typography
+              variant="body1"
+              component="div"
+              sx={{
+                marginRight: 1
+              }}
+            >
               Role:
             </Typography>
             <ToggleButtonGroup
@@ -205,7 +202,7 @@ export default function CreateUserModal({
             }}
           />
         </Grid>
-        <Grid size={12} marginTop="1rem">
+        <Grid size={12}>
           <Button type="submit" variant="contained" size="large" fullWidth disabled={isCreating}>
             Create
           </Button>

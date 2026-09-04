@@ -123,8 +123,19 @@ export default function AlertRuleAccessManager({ alertId }: AlertRuleAccessManag
   ];
 
   return (
-    <Stack spacing={2} marginTop={1}>
-      <Stack direction="row" spacing={1} alignItems="center">
+    <Stack
+      spacing={2}
+      sx={{
+        marginTop: 1
+      }}
+    >
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          alignItems: "center"
+        }}
+      >
         <Autocomplete
           multiple
           options={accessOptions}
@@ -166,15 +177,21 @@ export default function AlertRuleAccessManager({ alertId }: AlertRuleAccessManag
             const { key, ...otherProps } = props;
             return (
               <Box component="li" key={key} {...otherProps}>
-                <Stack direction="row" alignItems="center" spacing={1}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{
+                    alignItems: "center"
+                  }}
+                >
                   <Typography>{option.label}</Typography>
                 </Stack>
               </Box>
             );
           }}
-          renderTags={(value, getTagProps) =>
+          renderValue={(value, getItemProps) =>
             value.map((option, index) => {
-              const { key, ...tagProps } = getTagProps({ index });
+              const { key, ...tagProps } = getItemProps({ index });
               return (
                 <Chip
                   key={key}
@@ -196,9 +213,10 @@ export default function AlertRuleAccessManager({ alertId }: AlertRuleAccessManag
             <TextField
               {...params}
               slotProps={{
-                input: params.InputProps,
-                inputLabel: params.InputLabelProps,
-                htmlInput: params.inputProps
+                ...params.slotProps,
+                input: params.slotProps.input,
+                inputLabel: params.slotProps.inputLabel,
+                htmlInput: params.slotProps.htmlInput
               }}
               variant="filled"
               label="Access Control (Teams & Users)"

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Fragment, useState } from "react";
+import { useState } from "react";
 
 import {
   alpha,
@@ -49,47 +49,58 @@ export default function TopBarProfile() {
   return (
     <>
       <Box
-        display="flex"
-        alignItems="center"
         onClick={handleOpen}
-        marginRight="1rem"
-        sx={{ cursor: "pointer" }}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          marginRight: 2,
+          cursor: "pointer"
+        }}
       >
         <Image
           src="/static/images/default-profile.png"
           alt="profile"
           width={45}
           height={45}
-          style={{ borderRadius: "10rem", width: "auto", height: "auto" }}
+          style={{ borderRadius: 10, width: "auto", height: "auto" }}
         />
-        <Stack marginX="1rem">
+        <Stack
+          sx={{
+            marginX: 2
+          }}
+        >
           {userInfo ? (
             <>
               <Typography
                 variant="body2"
-                fontWeight="bold"
                 sx={{
+                  fontWeight: "bold",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
-                  maxWidth: "100px",
+                  maxWidth: 100,
                   textOverflow: "ellipsis"
                 }}
               >
                 {userInfo?.name}
               </Typography>
-              <Typography variant="caption" textTransform="capitalize">
+              <Typography
+                variant="caption"
+                sx={{
+                  textTransform: "capitalize"
+                }}
+              >
                 {userInfo?.roles[0]}
               </Typography>
             </>
           ) : (
             <>
-              <Skeleton variant="text" width="60px" />
-              <Skeleton variant="text" width="40px" />
+              <Skeleton variant="text" width={60} />
+              <Skeleton variant="text" width={40} />
             </>
           )}
         </Stack>
         <IconButton
-          sx={{ border: ({ palette }) => `1px solid ${palette.grey[300]}`, padding: "0.2rem" }}
+          sx={{ border: 1, borderColor: ({ palette }) => palette.grey[300], padding: 0.4 }}
         >
           <FaAngleDown size="0.7rem" />
         </IconButton>
@@ -102,7 +113,7 @@ export default function TopBarProfile() {
         slotProps={{
           paper: {
             sx: {
-              borderRadius: "1rem",
+              borderRadius: 4,
               boxShadow: ({ palette }) => `0 1px 10px 0px ${alpha(palette.common.black, 0.1)}`
             }
           }
@@ -125,9 +136,9 @@ export default function TopBarProfile() {
                   component={Link}
                   href={adminButtonHREF}
                   onClick={() => handleClose()}
-                  sx={{ padding: "0.7rem 1rem" }}
+                  sx={{ paddingY: 1.4, paddingX: 2 }}
                 >
-                  <ListItemIcon sx={{ minWidth: 0, marginRight: "1rem" }}>
+                  <ListItemIcon sx={{ minWidth: 0, marginRight: 2 }}>
                     <Image
                       src={
                         isAdminArea
@@ -143,7 +154,12 @@ export default function TopBarProfile() {
                       }}
                     />
                   </ListItemIcon>
-                  <Typography variant="body2" whiteSpace="nowrap">
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      whiteSpace: "nowrap"
+                    }}
+                  >
                     {isAdminArea ? "Alert Area" : "Admin Area"}
                   </Typography>
                 </ListItemButton>
@@ -152,8 +168,8 @@ export default function TopBarProfile() {
             </>
           )}
           <ListItem disablePadding>
-            <ListItemButton sx={{ padding: "0.7rem 1rem" }} onClick={() => signOut()}>
-              <ListItemIcon sx={{ minWidth: 0, marginRight: "1rem" }}>
+            <ListItemButton sx={{ paddingY: 1.4, paddingX: 2 }} onClick={() => signOut()}>
+              <ListItemIcon sx={{ minWidth: 0, marginRight: 2 }}>
                 <Image
                   src="/static/icons/profile-log-out.svg"
                   alt="log-out"
@@ -165,7 +181,12 @@ export default function TopBarProfile() {
                   }}
                 />
               </ListItemIcon>
-              <Typography variant="body2" whiteSpace="nowrap">
+              <Typography
+                variant="body2"
+                sx={{
+                  whiteSpace: "nowrap"
+                }}
+              >
                 {t("list.logout")}
               </Typography>
             </ListItemButton>

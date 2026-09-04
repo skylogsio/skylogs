@@ -179,19 +179,17 @@ export default function AlertRuleModal({ open, onClose, onSubmit, data }: AlertR
     >
       <Fade in={open}>
         <Box
-          width="100%"
-          maxWidth={data === "NEW" ? "1000px" : "800px"}
-          maxHeight="90vh"
           sx={{
+            width: "100%",
+            maxWidth: data === "NEW" ? "1000px" : "800px",
+            maxHeight: "90vh",
             position: "absolute",
             top: "50%",
             left: "50%",
             transform: "translate(-50%,-50%)"
           }}
         >
-          <Paper
-            sx={{ borderRadius: "0.7rem", boxShadow: "none", overflow: "hidden", display: "flex" }}
-          >
+          <Paper sx={{ borderRadius: 4, boxShadow: "none", overflow: "hidden", display: "flex" }}>
             {data === "NEW" && (
               <ButtonGroup
                 variant="text"
@@ -201,7 +199,13 @@ export default function AlertRuleModal({ open, onClose, onSubmit, data }: AlertR
                 {renderAlertRuleSideBar()}
               </ButtonGroup>
             )}
-            <Box maxHeight="90vh" overflow="auto" flex={1}>
+            <Box
+              sx={{
+                maxHeight: "90vh",
+                overflow: "auto",
+                flex: 1
+              }}
+            >
               {handleShowForm()}
             </Box>
           </Paper>

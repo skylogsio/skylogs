@@ -16,16 +16,24 @@ export default function AlertRuleType({
   iconSize
 }: IAlertRuleTypeProps) {
   const alertRuleType = ALERT_RULE_VARIANTS[type];
+  const { sx, ...props } = typographyProps ?? { sx: {} };
 
   if (!alertRuleType) return;
 
   return (
-    <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+    <Stack
+      direction="row"
+      spacing={1}
+      sx={{
+        alignItems: "center",
+        justifyContent: "center"
+      }}
+    >
       <alertRuleType.Icon
         size={iconSize ?? alertRuleType.defaultSize}
         color={iconColor ?? alertRuleType.defaultColor}
       />
-      <Typography component="div" textTransform="capitalize" {...typographyProps}>
+      <Typography component="div" {...props} sx={{ textTransform: "capitalize", ...sx }}>
         {alertRuleType.label}
       </Typography>
     </Stack>

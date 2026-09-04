@@ -76,18 +76,27 @@ export default function DataTable<T>({
   };
 
   return (
-    <Box display="flex" flexDirection="column" width="100%" minHeight="100%">
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        width: 1,
+        minHeight: 1
+      }}
+    >
       <Box
-        width="100%"
-        bgcolor="background.paper"
-        borderRadius="1rem"
-        border="1px solid"
-        borderColor={(theme) => theme.palette.divider}
-        overflow="hidden"
-        marginTop={1}
+        sx={{
+          width: 1,
+          bgcolor: "background.paper",
+          borderRadius: 4,
+          border: 1,
+          borderColor: (theme) => theme.palette.divider,
+          overflow: "hidden",
+          marginTop: 1
+        }}
       >
-        <TableContainer sx={{ width: "100%", maxHeight: "70vh", overflow: "auto" }}>
-          <MuiTable stickyHeader sx={{ width: "100%" }}>
+        <TableContainer sx={{ width: 1, maxHeight: "70vh", overflow: "auto" }}>
+          <MuiTable stickyHeader sx={{ width: 1 }}>
             <TableHead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
@@ -109,10 +118,10 @@ export default function DataTable<T>({
                         ...typography.body1,
                         fontWeight: "bold",
                         width: header.id === "select" ? "50px" : "auto",
-                        paddingY: "1rem",
+                        paddingY: 2,
                         textTransform: "capitalize",
                         borderBottomColor: palette.divider,
-                        fontSize: "0.9rem"
+                        fontSize: 14
                       })}
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
@@ -129,14 +138,14 @@ export default function DataTable<T>({
                         <TableCell
                           key={cellIndex}
                           sx={{
-                            width: cellIndex === 0 ? "40px" : "auto",
+                            width: cellIndex === 0 ? 40 : "auto",
                             borderBottomColor: (theme) => theme.palette.divider
                           }}
                         >
                           <Skeleton
                             variant="text"
-                            width={cellIndex === 0 ? "20px" : "100%"}
-                            height="30px"
+                            width={cellIndex === 0 ? 20 : "100%"}
+                            height={30}
                             className="mx-auto"
                             animation="wave"
                             sx={{ bgcolor: (theme) => theme.palette.action.hover }}
@@ -149,7 +158,7 @@ export default function DataTable<T>({
                     <TableRow
                       key={row.id}
                       sx={{
-                        width: row.id === "select" ? "50px" : "auto",
+                        width: row.id === "select" ? 50 : "auto",
                         transition: "background-color 200ms ease",
                         backgroundColor: ({ palette }) =>
                           row.getIsSelected() ? alpha(palette.primary.main, 0.06) : "transparent",

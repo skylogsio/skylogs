@@ -37,7 +37,7 @@ export function EmailConfigCard({
   onDelete,
   onSetAsDefault
 }: EmailConfigCardProps) {
-  const { palette, spacing } = useTheme();
+  const { palette } = useTheme();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -110,7 +110,13 @@ export function EmailConfigCard({
             <EmailIcon size={32} color="white" />
           </Box>
           <Box sx={{ flex: 1 }}>
-            <Typography variant="h6" fontWeight="bold" sx={{ marginBottom: 0.5 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: "bold",
+                marginBottom: 0.5
+              }}
+            >
               {config.name}
             </Typography>
             {config.isDefault && (
@@ -130,8 +136,8 @@ export function EmailConfigCard({
             size="small"
             sx={{
               position: "absolute",
-              top: spacing(1.5),
-              right: spacing(1.5),
+              top: 12,
+              right: 12,
               color: palette.grey[700],
               backgroundColor: alpha(palette.endpoint.email, 0.1),
               transition: "all 0.2s linear",
@@ -143,7 +149,12 @@ export function EmailConfigCard({
             <HiDotsHorizontal size={20} />
           </IconButton>
         </Box>
-        <Stack padding={3} spacing={2}>
+        <Stack
+          spacing={2}
+          sx={{
+            padding: 3
+          }}
+        >
           <Box
             sx={{
               backgroundColor: palette.background.default,
@@ -153,10 +164,20 @@ export function EmailConfigCard({
               wordBreak: "break-all"
             }}
           >
-            <Typography variant="subtitle2" fontWeight="bold">
+            <Typography
+              variant="subtitle2"
+              sx={{
+                fontWeight: "bold"
+              }}
+            >
               From Address
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography
+              variant="caption"
+              sx={{
+                color: "text.secondary"
+              }}
+            >
               {config.fromAddress}
             </Typography>
           </Box>
@@ -169,10 +190,20 @@ export function EmailConfigCard({
               wordBreak: "break-all"
             }}
           >
-            <Typography variant="subtitle2" fontWeight="bold">
+            <Typography
+              variant="subtitle2"
+              sx={{
+                fontWeight: "bold"
+              }}
+            >
               Mail Host
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography
+              variant="caption"
+              sx={{
+                color: "text.secondary"
+              }}
+            >
               {config.host}:{config.port}
             </Typography>
           </Box>

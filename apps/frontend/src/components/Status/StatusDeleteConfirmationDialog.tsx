@@ -32,16 +32,33 @@ export default function StatusDeleteConfirmationDialog({
     >
       <Stack spacing={1}>
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Name:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary"
+            }}
+          >
             {statusCard.name}
           </Typography>
         </Stack>
 
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Status:
           </Typography>
           {statusCard.criticalCount === 0 && statusCard.warningCount === 0 && (
@@ -51,7 +68,7 @@ export default function StatusDeleteConfirmationDialog({
               sx={{
                 backgroundColor: palette.success.main,
                 color: "white",
-                fontSize: "0.7rem"
+                fontSize: 12
               }}
             />
           )}
@@ -62,7 +79,7 @@ export default function StatusDeleteConfirmationDialog({
               sx={{
                 backgroundColor: palette.error.main,
                 color: "white",
-                fontSize: "0.7rem"
+                fontSize: 12
               }}
             />
           )}
@@ -73,7 +90,7 @@ export default function StatusDeleteConfirmationDialog({
               sx={{
                 backgroundColor: palette.warning.main,
                 color: "white",
-                fontSize: "0.7rem"
+                fontSize: 12
               }}
             />
           )}
@@ -81,10 +98,22 @@ export default function StatusDeleteConfirmationDialog({
 
         {statusCard.tags && statusCard.tags.length > 0 && (
           <Stack direction="row" spacing={1}>
-            <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+            <Typography
+              variant="subtitle2"
+              sx={{
+                color: "text.secondary",
+                fontWeight: "bold"
+              }}
+            >
               Tags:
             </Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                alignItems: "center"
+              }}
+            >
               {statusCard.tags.slice(0, 4).map((tag, index) => (
                 <Chip
                   key={index}
@@ -93,7 +122,7 @@ export default function StatusDeleteConfirmationDialog({
                   variant="outlined"
                   sx={{
                     height: 18,
-                    fontSize: "0.65rem",
+                    fontSize: 10,
                     borderColor: palette.grey[300],
                     color: palette.grey[600]
                   }}
@@ -106,7 +135,7 @@ export default function StatusDeleteConfirmationDialog({
                   variant="outlined"
                   sx={{
                     height: 18,
-                    fontSize: "0.65rem",
+                    fontSize: 10,
                     borderColor: palette.grey[300],
                     color: palette.grey[600]
                   }}
@@ -116,10 +145,21 @@ export default function StatusDeleteConfirmationDialog({
           </Stack>
         )}
         <Stack direction="row" spacing={1}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              fontWeight: "bold"
+            }}
+          >
             Last updated:
           </Typography>
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary"
+            }}
+          >
             {formatTimeAgo(statusCard.updatedAt)}
           </Typography>
         </Stack>
