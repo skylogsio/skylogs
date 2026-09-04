@@ -24,6 +24,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'name', description: 'Unique alert rule name', type: 'string', example: 'High CPU usage'),
         new OA\Property(property: 'description', type: 'string', example: 'Fires when CPU exceeds threshold'),
         new OA\Property(property: 'showAcknowledgeBtn', description: 'Show acknowledge action in notification messages', type: 'boolean', default: false),
+        new OA\Property(property: 'isPrivate', description: 'When true, hides the rule from organization-wide readonly listing/detail access', type: 'boolean', default: false),
         new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string'), example: ['production', 'cpu']),
         new OA\Property(property: 'userIds', description: 'Additional users granted access (MongoDB user ids)', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'teamIds', description: 'Teams granted access', type: 'array', items: new OA\Items(type: 'string')),
@@ -370,11 +371,12 @@ use OpenApi\Attributes as OA;
 
 #[OA\Schema(
     schema: 'AlertRuleUpdateCommonFields',
-    description: 'Fields that can be updated on any alert rule type.',
+    description: 'Fields that can be updated on any alert rule type. `isPrivate` is applied only when the caller has admin access on the rule.',
     properties: [
         new OA\Property(property: 'name', type: 'string'),
         new OA\Property(property: 'description', type: 'string'),
         new OA\Property(property: 'showAcknowledgeBtn', type: 'boolean'),
+        new OA\Property(property: 'isPrivate', description: 'When true, hides the rule from organization-wide readonly access. Only applied for callers with admin access.', type: 'boolean'),
         new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'userIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'teamIds', type: 'array', items: new OA\Items(type: 'string')),

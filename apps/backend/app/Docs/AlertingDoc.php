@@ -17,12 +17,20 @@ class AlertingDoc
         path: '/api/v1/alert-rule',
         operationId: 'getAlertRules',
         summary: 'List alert rules',
-        description: 'Returns a paginated list of alert rules visible to the authenticated user. Pinned rules appear first.',
+        description: 'Returns a paginated list of alert rules visible to the authenticated user. Without sort query params, pinned rules appear first, then `_id`. Each item includes `accessLevel` (`manage` or `readonly`). For `readonly` organization-visible alerts, sensitive fields (tokens, endpoints, query config, etc.) are omitted.',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [
             new OA\Parameter(name: 'page', description: 'Page number', in: 'query', schema: new OA\Schema(type: 'integer', default: 1)),
             new OA\Parameter(name: 'perPage', in: 'query', schema: new OA\Schema(type: 'integer', default: 25)),
+            new OA\Parameter(name: 'sortBy', description: 'Optional sort field. When omitted, the default order is pinned first, then `_id`.', in: 'query', schema: new OA\Schema(type: 'string', enum: ['name'])),
+            new OA\Parameter(name: 'sortDir', description: 'Sort direction used with `sortBy`. Defaults to `asc` when `sortBy` is present.', in: 'query', schema: new OA\Schema(type: 'string', enum: ['asc', 'desc'])),
+            new OA\Parameter(
+                name: 'scope',
+                description: 'Access filter for non-admin users. `assigned` (default) returns rules the user owns or is shared on. `organization` also includes non-private rules from the rest of the organization (returned with `accessLevel: readonly`).',
+                in: 'query',
+                schema: new OA\Schema(type: 'string', enum: ['assigned', 'organization'], default: 'assigned')
+            ),
             new OA\Parameter(name: 'alertname', description: 'Filter by alert rule name (case-insensitive partial match)', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'userId', description: 'Filter by owner or shared user id', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'types', description: 'Comma-separated alert types', in: 'query', schema: new OA\Schema(type: 'string'), example: 'api,prometheus,elastic'),
@@ -86,6 +94,7 @@ class AlertingDoc
         path: '/api/v1/alert-rule/{id}',
         operationId: 'getAlertRule',
         summary: 'Get alert rule by id',
+        description: 'Returns alert rule details when the user has at least readonly access. `accessLevel` is `manage` for owners/shared users/admins, or `readonly` for organization-visible public alerts. Readonly responses omit sensitive configuration (tokens, endpoints, query details, behavior rules, etc.). Private alerts are forbidden to users without manage access.',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [
@@ -110,7 +119,7 @@ class AlertingDoc
         path: '/api/v1/alert-rule',
         operationId: 'createAlertRule',
         summary: 'Create alert rule',
-        description: 'Creates an alert rule. All types use this endpoint; set `type` to select the request body shape (see schema oneOf / discriminator). Prometheus, Grafana, and PMM additionally use `queryType` (`dynamic` vs `textQuery`).',
+        description: 'Creates an alert rule. All types use this endpoint; set `type` to select the request body shape (see schema oneOf / discriminator). Prometheus, Grafana, and PMM additionally use `queryType` (`dynamic` vs `textQuery`). Optional `isPrivate` hides the rule from organization-wide readonly access.',
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
@@ -174,7 +183,7 @@ class AlertingDoc
         path: '/api/v1/alert-rule/{id}',
         operationId: 'updateAlertRule',
         summary: 'Update alert rule',
-        description: 'Updates an alert rule. Send the payload for the rule\'s existing type (type cannot be changed). Non-admin users can only update rules they own.',
+        description: 'Updates an alert rule. Send the payload for the rule\'s existing type (type cannot be changed). Non-admin users can only update rules they own. `isPrivate` can be updated only by users with admin access on the rule.',
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(
             required: true,
@@ -241,6 +250,7 @@ class AlertingDoc
         path: '/api/v1/alert-rule/pin/{id}',
         operationId: 'pinAlertRule',
         summary: 'Toggle pin on alert rule',
+        description: 'Requires manage access (owner, shared user/team, or admin). Readonly organization viewers cannot pin.',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [
@@ -257,6 +267,8 @@ class AlertingDoc
                     ]
                 )
             ),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Not Found'),
         ]
     )]
     public function pin() {}
@@ -340,6 +352,7 @@ class AlertingDoc
         path: '/api/v1/alert-rule/silent/{id}',
         operationId: 'toggleSilentAlertRule',
         summary: 'Toggle silence for current user on a single alert rule',
+        description: 'Requires manage access (owner, shared user/team, or admin). Readonly organization viewers cannot silence.',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [
@@ -356,6 +369,8 @@ class AlertingDoc
                     ]
                 )
             ),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Not Found'),
         ]
     )]
     public function silentToggle() {}
@@ -367,10 +382,19 @@ class AlertingDoc
         path: '/api/v1/alert-rule/filter-endpoints',
         operationId: 'filterEndpoints',
         summary: 'Get selectable endpoints for alert rules',
+        description: 'Alias of GET /api/v1/endpoint/selectableEndpoints. Kept for existing clients.',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         responses: [
-            new OA\Response(response: 200, description: 'Selectable endpoints'),
+            new OA\Response(
+                response: 200,
+                description: 'Selectable endpoints',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(ref: '#/components/schemas/Endpoint')
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
         ]
     )]
     public function filterEndpoints() {}
@@ -411,13 +435,21 @@ class AlertingDoc
         path: '/api/v1/alert-rule/status',
         operationId: 'getAlertRuleStatusTimeline',
         summary: 'Get status timelines for a batch of alert rules',
-        description: 'Returns a fixed-slot status timeline per alert rule over `[fromTime, toTime]`. Consecutive slots from the same status period are merged; each segment count sums to the configured timeline slot count (see `config/alert-status.php`). Alert rules the user cannot access are silently omitted from the response.',
+        description: 'Returns a fixed-slot status timeline per alert rule over `[fromTime, toTime]`. Consecutive slots from the same status period are merged; each segment count sums to the configured timeline slot count (see `config/alert-status.php`). Includes rules the user can manage or read (organization-visible public rules). Alert rules the user cannot access are silently omitted from the response. Response `fromTime`/`toTime` segment bounds are always unix seconds.',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [
-            new OA\Parameter(name: 'alertRuleIds', description: 'Alert rule ids to build timelines for', in: 'query', required: true, schema: new OA\Schema(type: 'array', items: new OA\Items(type: 'string', pattern: '^[0-9a-fA-F]{24}$'))),
-            new OA\Parameter(name: 'fromTime', description: 'Window start (unix timestamp, seconds)', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
-            new OA\Parameter(name: 'toTime', description: 'Window end (unix timestamp, seconds), must be after fromTime', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(
+                name: 'alertRuleIds',
+                description: 'Alert rule MongoDB ids. Accepts a repeated query array, a single id, a comma-separated list, or a JSON array string.',
+                in: 'query',
+                required: true,
+                schema: new OA\Schema(type: 'array', minItems: 1, items: new OA\Items(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+                style: 'form',
+                explode: true
+            ),
+            new OA\Parameter(name: 'fromTime', description: 'Window start (unix timestamp in seconds or milliseconds; ms values are normalized to seconds)', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'toTime', description: 'Window end (unix timestamp in seconds or milliseconds; must be after fromTime). Ms values are normalized to seconds.', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
             new OA\Response(
@@ -437,7 +469,7 @@ class AlertingDoc
         path: '/api/v1/alert-rule/history/{id}',
         operationId: 'getAlertHistory',
         summary: 'Get history for an alert rule',
-        description: 'Returns paginated state-change history. Shape depends on alert type (API instances, Prometheus/Grafana checks, Elastic/VictoriaLogs checks, etc.).',
+        description: 'Returns paginated state-change history. Shape depends on alert type (API instances, Prometheus/Grafana checks, Elastic/VictoriaLogs checks, etc.). Requires read access (manage or readonly for organization-visible public alerts).',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [
@@ -465,13 +497,51 @@ class AlertingDoc
     public function history() {}
 
     // ----------------------------
+    // GET /api/v1/alert-rule/history/{id}/export
+    // ----------------------------
+    #[OA\Get(
+        path: '/api/v1/alert-rule/history/{id}/export',
+        operationId: 'exportAlertHistory',
+        summary: 'Export alert history as Excel or CSV',
+        description: 'Downloads fire/resolve history for an alert rule over `[from, to]`. Spreadsheet columns depend on the alert type (API, notification, Prometheus, Grafana, PMM, Sentry, Zabbix, Elastic, Victoria Logs, Health, Metabase). Splunk is not available. Unix timestamps may be sent as seconds or milliseconds (13-digit values are divided by 1000). Requires read access (manage or readonly for organization-visible public alerts).',
+        security: [['bearerAuth' => []]],
+        tags: ['AlertRule'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+            new OA\Parameter(name: 'from', description: 'Window start (unix timestamp in seconds or milliseconds; ms values are normalized to seconds)', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'to', description: 'Window end (unix timestamp in seconds or milliseconds; must be after from). Ms values are normalized to seconds.', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'format', description: 'Download format', in: 'query', schema: new OA\Schema(type: 'string', enum: ['xlsx', 'csv'], default: 'xlsx')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Spreadsheet download',
+                content: [
+                    new OA\MediaType(
+                        mediaType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        schema: new OA\Schema(type: 'string', format: 'binary')
+                    ),
+                    new OA\MediaType(
+                        mediaType: 'text/csv',
+                        schema: new OA\Schema(type: 'string', format: 'binary')
+                    ),
+                ]
+            ),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Not Found'),
+            new OA\Response(response: 422, description: 'Validation error or unsupported alert type'),
+        ]
+    )]
+    public function exportHistory() {}
+
+    // ----------------------------
     // GET /api/v1/alert-rule/triggered/{id}
     // ----------------------------
     #[OA\Get(
         path: '/api/v1/alert-rule/triggered/{id}',
         operationId: 'getTriggeredAlerts',
         summary: 'Get triggered/fired alerts for an alert rule',
-        description: 'Returns currently firing data: API `AlertInstance` rows, Prometheus/Grafana alert arrays, Zabbix webhook events, or Elastic/VictoriaLogs check documents depending on type.',
+        description: 'Returns currently firing data: API `AlertInstance` rows, Prometheus/Grafana alert arrays, Zabbix webhook events, or Elastic/VictoriaLogs check documents depending on type. Requires read access (manage or readonly for organization-visible public alerts).',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [
@@ -483,6 +553,7 @@ class AlertingDoc
                 description: 'Fired instances or active check payload',
                 content: new OA\JsonContent(type: 'array', items: new OA\Items(type: 'object'))
             ),
+            new OA\Response(response: 403, description: 'Forbidden'),
             new OA\Response(response: 404, description: 'Not Found'),
         ]
     )]
@@ -1166,28 +1237,40 @@ class AlertRuleStatusResponseSchema {}
 class AlertRuleExtraFieldSchema {}
 
 #[OA\Schema(
+    schema: 'AlertRuleAccessLevel',
+    description: 'Caller access on an alert rule. `manage` = owner, shared, or admin. `readonly` = organization-visible public alert. `none` is never returned in successful responses.',
+    type: 'string',
+    enum: ['manage', 'readonly', 'none'],
+    example: 'manage'
+)]
+class AlertRuleAccessLevelSchema {}
+
+#[OA\Schema(
     schema: 'AlertRuleListItem',
+    description: 'Alert rule list row. When `accessLevel` is `readonly`, sensitive fields (tokens, endpoints, teams, query config, etc.) are omitted.',
     properties: [
         new OA\Property(property: '_id', type: 'string'),
         new OA\Property(property: 'name', type: 'string'),
         new OA\Property(property: 'type', type: 'string'),
         new OA\Property(property: 'description', type: 'string'),
         new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'teamIds', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'teamIds', description: 'Present only for `manage` access', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'showAcknowledgeBtn', type: 'boolean'),
-        new OA\Property(property: 'hasActionAccess', type: 'boolean'),
+        new OA\Property(property: 'accessLevel', ref: '#/components/schemas/AlertRuleAccessLevel'),
+        new OA\Property(property: 'isPrivate', description: 'When true, the rule is hidden from organization-wide readonly access', type: 'boolean'),
+        new OA\Property(property: 'hasActionAccess', description: 'True when the caller can perform admin actions (acknowledge resolve UI, etc.) — typically the owner/admin with manage access', type: 'boolean'),
         new OA\Property(property: 'statusLabel', ref: '#/components/schemas/AlertRuleState'),
         new OA\Property(property: 'status_label', ref: '#/components/schemas/AlertRuleState'),
         new OA\Property(property: 'state', ref: '#/components/schemas/AlertRuleState', nullable: true),
         new OA\Property(property: 'statusCount', type: 'integer'),
-        new OA\Property(property: 'isSilent', description: 'Manual per-user silence (toggle via POST /api/v1/alert-rule/silent/{id})', type: 'boolean'),
+        new OA\Property(property: 'isSilent', description: 'Manual per-user silence (toggle via POST /api/v1/alert-rule/silent/{id}). Always false for readonly viewers.', type: 'boolean'),
         new OA\Property(property: 'is_silent', type: 'boolean'),
         new OA\Property(property: 'isSilentByBehavior', description: 'Read-only: true when a silent behavior rule currently suppresses notifications', type: 'boolean'),
         new OA\Property(property: 'is_silent_by_behavior', type: 'boolean'),
         new OA\Property(property: 'isPinned', type: 'boolean'),
-        new OA\Property(property: 'countEndpoints', type: 'integer'),
+        new OA\Property(property: 'countEndpoints', description: 'Present only for `manage` access', type: 'integer'),
         new OA\Property(property: 'count_endpoints', type: 'integer'),
-        new OA\Property(property: 'extraField', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleExtraField')),
+        new OA\Property(property: 'extraField', description: 'Present only for `manage` access', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleExtraField')),
     ]
 )]
 class AlertRuleListItemSchema {}
@@ -1219,21 +1302,23 @@ class AlertStatusTimelineSchema {}
 
 #[OA\Schema(
     schema: 'AlertRuleDetail',
+    description: 'Alert rule detail. Manage responses include configuration fields below; readonly responses only include the base list fields (plus `accessLevel` / `isPrivate`) with sensitive attributes stripped.',
     allOf: [
         new OA\Schema(ref: '#/components/schemas/AlertRuleListItem'),
         new OA\Schema(
             properties: [
-                new OA\Property(property: 'ownerName', type: 'string'),
-                new OA\Property(property: 'dataSourceLabels', type: 'array', items: new OA\Items(type: 'string'), nullable: true),
-                new OA\Property(property: 'dataSourceIds', type: 'array', items: new OA\Items(type: 'string'), nullable: true),
-                new OA\Property(property: 'dataSourceId', type: 'string', nullable: true),
-                new OA\Property(property: 'dataSourceAlertName', type: 'string', nullable: true),
-                new OA\Property(property: 'queryType', type: 'string', enum: ['dynamic', 'textQuery'], nullable: true),
-                new OA\Property(property: 'queryText', type: 'string', nullable: true),
-                new OA\Property(property: 'queryObject', type: 'object', nullable: true),
-                new OA\Property(property: 'enableAutoResolve', type: 'boolean', nullable: true),
-                new OA\Property(property: 'autoResolveMinutes', type: 'integer', nullable: true),
-                new OA\Property(property: 'rules', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRule')),
+                new OA\Property(property: 'ownerName', description: 'Present only for `manage` access', type: 'string'),
+                new OA\Property(property: 'dataSourceLabels', description: 'Present only for `manage` access', type: 'array', items: new OA\Items(type: 'string'), nullable: true),
+                new OA\Property(property: 'dataSourceIds', description: 'Present only for `manage` access', type: 'array', items: new OA\Items(type: 'string'), nullable: true),
+                new OA\Property(property: 'dataSourceId', description: 'Present only for `manage` access', type: 'string', nullable: true),
+                new OA\Property(property: 'dataSourceAlertName', description: 'Present only for `manage` access', type: 'string', nullable: true),
+                new OA\Property(property: 'queryType', description: 'Present only for `manage` access', type: 'string', enum: ['dynamic', 'textQuery'], nullable: true),
+                new OA\Property(property: 'queryText', description: 'Present only for `manage` access', type: 'string', nullable: true),
+                new OA\Property(property: 'queryObject', description: 'Present only for `manage` access', type: 'object', nullable: true),
+                new OA\Property(property: 'enableAutoResolve', description: 'Present only for `manage` access', type: 'boolean', nullable: true),
+                new OA\Property(property: 'autoResolveMinutes', description: 'Present only for `manage` access', type: 'integer', nullable: true),
+                new OA\Property(property: 'apiToken', description: 'Present only for API/notification owners (admin access)', type: 'string', nullable: true),
+                new OA\Property(property: 'rules', description: 'Behavior rules; present only for `manage` access', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleBehaviorRule')),
             ]
         ),
     ]

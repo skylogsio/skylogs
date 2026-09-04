@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\AlertRule;
 use App\Models\VictoriaLogsCheck;
 use App\Models\VictoriaLogsHistory;
+use App\Queue\Middleware\EnsureLeader;
 use App\Services\SendNotifyService;
 use App\Services\VictoriaLogsService;
 use Illuminate\Bus\Queueable;
@@ -23,6 +24,14 @@ class CheckVictoriaLogsJob implements ShouldQueue
     {
         $this->onQueue('httpRequests');
         $this->alert = $alert;
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new EnsureLeader];
     }
 
     /**
@@ -46,6 +55,11 @@ class CheckVictoriaLogsJob implements ShouldQueue
         );
 
         $countDocuments = VictoriaLogsService::countDocuments($check);
+
+        if ($countDocuments === null) {
+            return;
+        }
+
         $check->refresh();
         if (empty($this->alert->conditionType) || $this->alert->conditionType == VictoriaLogsCheck::CONDITION_TYPE_GREATER_OR_EQUAL) {
             $isFired = $countDocuments >= $check->countDocument;

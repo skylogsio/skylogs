@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\AlertRuleAccessLevel;
 use App\Enums\AlertRuleType;
 use App\Models\AlertRule;
 use App\Models\Team;
@@ -145,6 +146,95 @@ describe('AlertRuleService access', function () {
             ['userId' => 'member-id'],
             ['userIds' => 'member-id'],
         ]);
+    });
+
+    it('grants readonly access to non-private alerts for strangers', function () {
+        $service = makeAlertRuleServiceWithTeams(collect());
+        $stranger = makeAccessTestUser('stranger-id');
+        $alert = makeAccessTestAlert(['isPrivate' => false]);
+
+        expect($service->hasReadAccessAlert($stranger, $alert))->toBeTrue()
+            ->and($service->resolveAccessLevel($stranger, $alert))->toBe(AlertRuleAccessLevel::Readonly);
+    });
+
+    it('denies readonly access to private alerts for strangers', function () {
+        $service = makeAlertRuleServiceWithTeams(collect());
+        $stranger = makeAccessTestUser('stranger-id');
+        $alert = makeAccessTestAlert(['isPrivate' => true]);
+
+        expect($service->hasReadAccessAlert($stranger, $alert))->toBeFalse()
+            ->and($service->resolveAccessLevel($stranger, $alert))->toBe(AlertRuleAccessLevel::None);
+    });
+
+    it('treats alerts without isPrivate as organization-visible', function () {
+        $service = makeAlertRuleServiceWithTeams(collect());
+        $stranger = makeAccessTestUser('stranger-id');
+        $alert = makeAccessTestAlert();
+
+        expect($service->isPrivateAlert($alert))->toBeFalse()
+            ->and($service->hasReadAccessAlert($stranger, $alert))->toBeTrue();
+    });
+
+    it('adds organization scope filter for non-admin list queries', function () {
+        $service = makeAlertRuleServiceWithTeams(collect());
+        $user = makeAccessTestUser('member-id');
+
+        $this->actingAs($user);
+
+        $match = [];
+        $service->getMatchFilterArray(
+            Request::create('/', 'GET', ['scope' => 'organization']),
+            $match
+        );
+
+        expect($match['$or'])->toContain(['isPrivate' => ['$ne' => true]]);
+    });
+
+    it('preserves access $or when filtering by userId for non-admins', function () {
+        $team = new Team;
+        $team->setAttribute('id', 'team-1');
+
+        $service = makeAlertRuleServiceWithTeams(collect([$team]));
+        $user = makeAccessTestUser('member-id');
+
+        $this->actingAs($user);
+
+        $match = [];
+        $service->getMatchFilterArray(
+            Request::create('/', 'GET', ['userId' => 'other-user-id']),
+            $match
+        );
+
+        expect($match)->not->toHaveKey('$or')
+            ->and($match)->not->toHaveKey('userId')
+            ->and($match['$and'])->toHaveCount(2)
+            ->and($match['$and'][0]['$or'])->toContain(['userId' => 'member-id'])
+            ->and($match['$and'][0]['$or'])->toContain(['userIds' => 'member-id'])
+            ->and($match['$and'][0]['$or'])->toContain(['teamIds' => ['$in' => ['team-1']]])
+            ->and($match['$and'][1]['$or'])->toBe([
+                ['userId' => 'other-user-id'],
+                ['userIds' => 'other-user-id'],
+            ]);
+    });
+
+    it('applies userId filter without access $or for admins', function () {
+        $service = makeAlertRuleServiceWithTeams(collect());
+        $admin = makeAccessTestUser('admin-id', isAdmin: true);
+
+        $this->actingAs($admin);
+
+        $match = [];
+        $service->getMatchFilterArray(
+            Request::create('/', 'GET', ['userId' => 'other-user-id']),
+            $match
+        );
+
+        expect($match)->not->toHaveKey('$and')
+            ->and($match)->not->toHaveKey('userId')
+            ->and($match['$or'])->toBe([
+                ['userId' => 'other-user-id'],
+                ['userIds' => 'other-user-id'],
+            ]);
     });
 });
 

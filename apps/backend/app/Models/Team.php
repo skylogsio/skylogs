@@ -6,6 +6,7 @@ use App\Observers\TeamObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Collection;
 use MongoDB\Laravel\Relations\BelongsTo;
+use MongoDB\Laravel\Relations\HasOne;
 
 #[ObservedBy(TeamObserver::class)]
 class Team extends BaseModel
@@ -19,6 +20,11 @@ class Team extends BaseModel
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'ownerId', '_id');
+    }
+
+    public function onCallPlan(): HasOne
+    {
+        return $this->hasOne(OnCallPlan::class, 'teamId', '_id');
     }
 
     /**

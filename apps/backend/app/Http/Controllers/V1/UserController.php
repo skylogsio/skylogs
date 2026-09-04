@@ -42,8 +42,8 @@ class UserController extends Controller
 
     public function Show(Request $request, $id)
     {
-        $model = User::where('_id', $id);
-        $model = $model->firstOrFail();
+        $model = User::where('_id', $id)->firstOrFail();
+        $model->roles = $model->roles()->pluck('name')->toArray();
 
         return response()->json($model);
     }
@@ -94,7 +94,7 @@ class UserController extends Controller
     public function Create(Request $request)
     {
 
-        \Validator::validate(
+        Validator::validate(
             $request->all(),
             [
                 'username' => 'required|unique:users,username',
@@ -113,7 +113,7 @@ class UserController extends Controller
         $model = User::create([
             'username' => $request->post('username'),
             'name' => $request->post('name'),
-            'password' => \Hash::make($request->post('password')),
+            'password' => Hash::make($request->post('password')),
         ]);
 
         if (auth()->user()->hasRole(Constants::ROLE_OWNER)) {

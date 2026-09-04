@@ -1,27 +1,56 @@
+# ---------------------------------------------------------------------------
+# Skylogs stack
+#
+#   Single zone, no clustering (default):
+#       docker compose up -d
+#
+#   With Raft HA inside the zone:
+#       COMPOSE_PROFILES=ha docker compose up -d
+#
+#   With Sentinel cross-zone federation:
+#       COMPOSE_PROFILES=multizone docker compose up -d
+#
+#   Full HA + multi-zone:
+#       COMPOSE_PROFILES=ha,multizone docker compose up -d
+#
+# Set COMPOSE_PROFILES in .env so plain `docker compose up -d` does the
+# right thing without any flags. See .env.example.
+# ---------------------------------------------------------------------------
+
 x-back-env: &back-env
   environment:
-  - APP_DEBUG=true
-  - APP_URL=http://localhost:8000
-  - FRONTEND_URL=http://localhost:8080
-  - DB_CONNECTION="mongodb"
-  - DB_HOST="mongodb"
-  - DB_PORT=27017
-  - DB_DATABASE="skylog"
-  - DB_USERNAME="admin"
-  - DB_PASSWORD="TuY8dgQP52p6nHEMSe4rhk"
-  - REDIS_DB="0"
-  - REDIS_HOST=redis
-  - REDIS_PASSWORD=ASdfasdfa097sdfg
-  - REDIS_PORT="6379"
-  - REDIS_QUEUE_DB=1
-  - REDIS_CACHE_DB=2
-#  Change the secret
-  - JWT_SECRET=mysecret
-  - DEPLOY_TYPE=web
+    - APP_DEBUG=true
+    - APP_URL=http://localhost:8000
+    - FRONTEND_URL=http://localhost:8080
+    - DB_CONNECTION="mongodb"
+    - DB_HOST="mongodb"
+    - DB_PORT=27017
+    - DB_DATABASE="skylog"
+    - DB_USERNAME="admin"
+    - DB_PASSWORD="TuY8dgQP52p6nHEMSe4rhk"
+    - REDIS_DB="0"
+    - REDIS_HOST=redis
+    - REDIS_PASSWORD=ASdfasdfa097sdfg
+    - REDIS_PORT="6379"
+    - REDIS_QUEUE_DB=1
+    - REDIS_CACHE_DB=2
+    #  Change the secret
+    - JWT_SECRET=mysecret
+    - DEPLOY_TYPE=${DEPLOY_TYPE:-web}
+    # --- clustering / federation switches -------------------------------
+    # These must match the profiles you enable. Starting the raft container
+    # without RAFT_ENABLED=true does nothing useful, and setting
+    # RAFT_ENABLED=true without the `ha` profile makes the backend dial a
+    # host that isn't there.
+    - RAFT_ENABLED=${RAFT_ENABLED:-false}
+    - RAFT_HTTP_URL=${RAFT_HTTP_URL:-http://skylogs-raft:8000}
+    - RAFT_BIND_ADDR=${RAFT_BIND_ADDR:-skylogs-raft:7000}
+    - SENTINEL_ENABLED=${SENTINEL_ENABLED:-false}
+    - SENTINEL_URL=${SENTINEL_URL:-http://skylogs-sentinel:9191}
 
 x-front-env: &front-env
   environment:
-#   Change the secret (at least 32 characters)
+    #   Change the secret (at least 32 characters)
     - NEXTAUTH_SECRET=GK/IKHJ55WUBSIDAFLT3vcQmud1t5PIZHsclw40JtVs=
     - NEXTAUTH_URL=https://app2.skylogs.io
     - BASE_URL=http://nginx_back:80/api/v1/
@@ -33,7 +62,7 @@ services:
     image: skylogsio/skylogs-api
     restart: unless-stopped
     ports:
-     - 9001:9000
+      - 9001:9000
     volumes:
       - skylogs_back:/var/www/html:rw
     networks:
@@ -53,12 +82,13 @@ services:
       - mongodb
       - redis
     <<: *back-env
+
   skylogs-front:
     container_name: skylogs-front
     image: skylogsio/skylogs-frontend
     restart: unless-stopped
     ports:
-     - 8080:3000
+      - 8080:3000
     networks:
       - skylogs
     depends_on:
@@ -95,12 +125,12 @@ services:
 
 ########### MONGODB ############
   mongodb:
-    image: mongo:4.4 
+    image: mongo:4.4
     ports:
-     - 27017:27017
+      - 27017:27017
     environment:
-     - MONGO_INITDB_ROOT_USERNAME=admin
-     - MONGO_INITDB_ROOT_PASSWORD=TuY8dgQP52p6nHEMSe4rhk
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=TuY8dgQP52p6nHEMSe4rhk
     volumes:
       - mongo_data:/data/db
     networks:
@@ -129,6 +159,50 @@ services:
       - skylogs
     depends_on:
       - skylogs-back
+
+##########  RAFT  (profile: ha)  #################
+# Only starts when the `ha` profile is enabled. Pair with RAFT_ENABLED=true.
+  skylogs-raft:
+    image: skylogsio/skylogs-raft
+    container_name: skylogs-raft
+    profiles: ["ha"]
+    env_file:
+      - path: raft.env
+        required: false
+    ports:
+      - "7000:7000"
+      - "8000:8000"
+    volumes:
+      - raft-data:/data
+    restart: unless-stopped
+    networks:
+      - skylogs
+
+######### SENTINEL  (profile: multizone)  ######################
+# Only starts when the `multizone` profile is enabled.
+# Pair with SENTINEL_ENABLED=true.
+  skylogs-sentinel:
+    image: skylogsio/skylogs-sentinel
+    container_name: skylogs-sentinel
+    profiles: ["multizone"]
+    restart: always
+    depends_on:
+      - skylogs-back
+    environment:
+      - SENTINEL_ID=${SENTINEL_ID:-dc2-sentinel}
+      - SENTINEL_ROLE=${SENTINEL_ROLE:-secondary}
+      - MAIN_SKYLOGS_HEARTBEAT_URL=${MAIN_SKYLOGS_HEARTBEAT_URL:-http://nginx_back:80/heartbeat}
+      - HEARTBEAT_INTERVAL=${HEARTBEAT_INTERVAL:-5s}
+      - HEARTBEAT_TIMEOUT=${HEARTBEAT_TIMEOUT:-3s}
+      - FAIL_THRESHOLD=${FAIL_THRESHOLD:-3}
+      - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL:-http://nginx_back:80/internal/alerts/sentinel}
+    volumes:
+      - ./apps/sentinel/config.yaml:/app/config.yaml:ro
+    ports:
+      - "9191:9191"
+    networks:
+      - skylogs
+
 networks:
   skylogs:
     driver: bridge
@@ -136,10 +210,12 @@ networks:
       driver: default
       config:
         - subnet: "192.168.17.0/24"  # Define the subnet range
-          gateway: "192.168.17.1"     # Define the gateway
+          gateway: "192.168.17.1"    # Define the gateway
 
 volumes:
   skylogs_back:
     driver: local
   mongo_data:
+    driver: local
+  raft-data:
     driver: local

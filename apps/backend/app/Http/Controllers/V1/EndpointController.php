@@ -24,6 +24,13 @@ class EndpointController extends Controller
         return response()->json($endpoints);
     }
 
+    public function SelectableEndpoints()
+    {
+        $endpoints = $this->endpointService->selectableUserEndpoint(\Auth::user())->values();
+
+        return response()->json($endpoints);
+    }
+
     public function Index(Request $request)
     {
         $perPage = $request->perPage ?? 25;

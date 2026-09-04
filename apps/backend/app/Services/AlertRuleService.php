@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\AlertRuleAccessLevel;
 use App\Enums\AlertRuleType;
 use App\Enums\HealthAlertType;
+use App\Exports\AlertHistoryExport;
 use App\Helpers\Constants;
 use App\Helpers\Utilities;
 use App\Jobs\SendNotifyJob;
@@ -33,10 +35,15 @@ use App\Services\AlertStatus\AlertStatusEventSourceFactory;
 use App\Services\AlertStatus\AlertStatusTimelineBuilder;
 use Cache;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
+use Maatwebsite\Excel\Excel as ExcelFormat;
+use Maatwebsite\Excel\Facades\Excel;
 use MongoDB\BSON\UTCDateTime;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AlertRuleService
 {
@@ -193,15 +200,23 @@ class AlertRuleService
     {
 
         $user = \Auth::user();
+        $scope = $request->input('scope', 'assigned');
 
         if (! $user->isAdmin()) {
-            $match['$or'] = [
+            $assignedOr = [
                 ['userId' => $user->id],
                 ['userIds' => $user->id],
             ];
             $userTeams = $this->teamService->userTeams($user)->pluck('id')->toArray();
             if (! empty($userTeams)) {
-                $match['$or'][] = ['teamIds' => ['$in' => $userTeams]];
+                $assignedOr[] = ['teamIds' => ['$in' => $userTeams]];
+            }
+
+            if ($scope === 'organization') {
+                $assignedOr[] = ['isPrivate' => ['$ne' => true]];
+                $match['$or'] = $assignedOr;
+            } else {
+                $match['$or'] = $assignedOr;
             }
 
         }
@@ -214,13 +229,20 @@ class AlertRuleService
         }
 
         if ($request->filled('userId')) {
-            $match['$or'] = [
+            $userFilterOr = [
                 ['userId' => $request->userId],
                 ['userIds' => $request->userId],
             ];
-            $userTeams = $this->teamService->userTeams($user)->pluck('id')->toArray();
-            if (! empty($userTeams)) {
-                $match['$or'][] = ['teamIds' => ['$in' => $userTeams]];
+
+            // Keep access-control $or for non-admins; AND the userId filter with it.
+            if (isset($match['$or'])) {
+                $match['$and'] = [
+                    ['$or' => $match['$or']],
+                    ['$or' => $userFilterOr],
+                ];
+                unset($match['$or']);
+            } else {
+                $match['$or'] = $userFilterOr;
             }
         }
 
@@ -245,10 +267,6 @@ class AlertRuleService
 
         if ($request->filled('endpointId')) {
             $match['endpointIds'] = ['$in' => [$request->endpointId]];
-        }
-
-        if ($request->filled('userId')) {
-            $match['userId'] = $request->userId;
         }
 
         if ($request->filled('status')) {
@@ -661,29 +679,30 @@ class AlertRuleService
 
     }
 
-    public function getHistory($alert,
-        int $perPage = 50,
-        ?Carbon $from = null,
-        ?Carbon $to = null)
+    public function historyQuery(AlertRule $alert): Builder
     {
-
         $query = match ($alert->type) {
-            AlertRuleType::PMM => GrafanaWebhookAlert::query(),
-            AlertRuleType::GRAFANA => GrafanaWebhookAlert::query(),
+            AlertRuleType::PMM, AlertRuleType::GRAFANA => GrafanaWebhookAlert::query(),
             AlertRuleType::PROMETHEUS => PrometheusHistory::query(),
             AlertRuleType::SENTRY => SentryWebhookAlert::query(),
-            AlertRuleType::SPLUNK => SplunkWebhookAlert::query(),
             AlertRuleType::METABASE => MetabaseWebhookAlert::query(),
             AlertRuleType::ZABBIX => ZabbixWebhookAlert::query(),
-            AlertRuleType::API => ApiAlertHistory::query(),
-            AlertRuleType::NOTIFICATION => ApiAlertHistory::query(),
+            AlertRuleType::API, AlertRuleType::NOTIFICATION => ApiAlertHistory::query(),
             AlertRuleType::HEALTH => HealthHistory::query(),
             AlertRuleType::ELASTIC => ElasticHistory::query(),
             AlertRuleType::VICTORIA_LOGS => VictoriaLogsHistory::query(),
             default => throw new ModelNotFoundException,
         };
 
-        $query->where('alertRuleId', $alert->id)->latest();
+        return $query->where('alertRuleId', $alert->id)->latest();
+    }
+
+    public function getHistory($alert,
+        int $perPage = 50,
+        ?Carbon $from = null,
+        ?Carbon $to = null)
+    {
+        $query = $this->historyQuery($alert);
 
         if ($from) {
             $query->where('createdAt', '>=', $from);
@@ -703,6 +722,34 @@ class AlertRuleService
         $data['data'] = $arrayData;
 
         return $data;
+    }
+
+    public function exportHistory(
+        AlertRule $alert,
+        int $from,
+        int $to,
+        string $format = 'xlsx',
+    ): BinaryFileResponse {
+        if ($alert->type === AlertRuleType::SPLUNK) {
+            abort(422, 'History export is not available for Splunk alert rules.');
+        }
+
+        $fromCarbon = Carbon::createFromTimestamp($from);
+        $toCarbon = Carbon::createFromTimestamp($to);
+        $extension = $format === 'csv' ? 'csv' : 'xlsx';
+        $writerType = $format === 'csv' ? ExcelFormat::CSV : ExcelFormat::XLSX;
+        $slug = Str::slug((string) $alert->name) ?: (string) $alert->id;
+
+        $rows = $this->historyQuery($alert)
+            ->where('createdAt', '>=', $fromCarbon)
+            ->where('createdAt', '<=', $toCarbon)
+            ->get();
+
+        return Excel::download(
+            new AlertHistoryExport($alert, $rows),
+            "alert-history-{$slug}.{$extension}",
+            $writerType,
+        );
     }
 
     public function createHealthDataSource(DataSource $dataSource) {}
@@ -750,6 +797,37 @@ class AlertRuleService
         }
 
         return $this->userOwnsAlert($user, $alert);
+    }
+
+    public function isPrivateAlert(AlertRule $alert): bool
+    {
+        return (bool) ($alert->isPrivate ?? false);
+    }
+
+    public function hasReadAccessAlert(User $user, AlertRule $alert): bool
+    {
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        if ($this->hasUserAccessAlert($user, $alert)) {
+            return true;
+        }
+
+        return ! $this->isPrivateAlert($alert);
+    }
+
+    public function resolveAccessLevel(User $user, AlertRule $alert): AlertRuleAccessLevel
+    {
+        if ($this->hasUserAccessAlert($user, $alert)) {
+            return AlertRuleAccessLevel::Manage;
+        }
+
+        if ($this->hasReadAccessAlert($user, $alert)) {
+            return AlertRuleAccessLevel::Readonly;
+        }
+
+        return AlertRuleAccessLevel::None;
     }
 
     public function hasTeamAccessAlert(User $user, AlertRule $alert): bool
@@ -1052,7 +1130,7 @@ class AlertRuleService
         $slotCount = (int) config('alert-status.timeline_slot_count', 100);
         $alertRules = AlertRule::whereIn('_id', $alertRuleIds)
             ->get()
-            ->filter(fn (AlertRule $alertRule) => $this->hasUserAccessAlert($user, $alertRule))
+            ->filter(fn (AlertRule $alertRule) => $this->hasReadAccessAlert($user, $alertRule))
             ->keyBy(fn (AlertRule $alertRule) => (string) $alertRule->_id);
 
         if ($alertRules->isEmpty()) {

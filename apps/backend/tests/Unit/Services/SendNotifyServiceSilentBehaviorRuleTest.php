@@ -36,7 +36,7 @@ describe('SendNotifyService silent behavior rules', function () {
         $behaviorRuleService = Mockery::mock(AlertRuleBehaviorRuleService::class);
         $behaviorRuleService->shouldReceive('resolveIsSilent')
             ->once()
-            ->with($alertRule)
+            ->with($alertRule, $notify->alert)
             ->andReturnTrue();
         $behaviorRuleService->shouldNotReceive('resolveEndpointIds');
 

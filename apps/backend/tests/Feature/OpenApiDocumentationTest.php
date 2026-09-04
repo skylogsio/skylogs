@@ -12,6 +12,8 @@ function openApiExcludedRoutePatterns(): array
     return [
         'api',
         'api/cluster/sync-data',
+        'api/ha/apply',
+        'api/ha/config-sync',
         'api/documentation',
         'api/docs',
         'api/oauth2-callback',
@@ -74,6 +76,11 @@ it('documents behavior rule create payloads per type with discriminator', functi
         'resolved',
         'critical',
     ]);
+
+    $silentSchema = $docs['components']['schemas']['AlertRuleBehaviorRuleSilent']['properties'];
+
+    expect($silentSchema)->toHaveKeys(['filters', 'startsAt', 'endsAt'])
+        ->and($docs['components']['schemas']['AlertRuleBehaviorRuleStoreSilent']['required'])->toBe(['name', 'type']);
 
     expect($docs['paths']['/api/v1/alert-rule-behavior-rule/{alertRuleId}']['get']['tags'])->toBe(['AlertRule Behavior Rules']);
 });

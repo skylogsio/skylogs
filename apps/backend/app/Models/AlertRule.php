@@ -29,6 +29,7 @@ class AlertRule extends BaseModel implements Messageable
     protected $casts = [
         'type' => AlertRuleType::class,
         'checkType' => HealthAlertType::class,
+        'isPrivate' => 'boolean',
     ];
 
     public const DYNAMIC_QUERY_TYPE = 'dynamic';
@@ -236,11 +237,6 @@ class AlertRule extends BaseModel implements Messageable
     public function accessUsers()
     {
         return $this->embedsMany(User::class, 'accessUsers');
-    }
-
-    public function service(): BelongsTo
-    {
-        return $this->belongsTo(Service::class, 'service_id', '_id');
     }
 
     public function endpoints()

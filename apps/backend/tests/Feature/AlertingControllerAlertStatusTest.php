@@ -79,11 +79,34 @@ describe('AlertingController AlertStatus', function () {
             ->assertJsonValidationErrors(['toTime']);
     });
 
+    it('accepts millisecond timestamps and returns second-based segments', function () {
+        $this->apiAlert = AlertRule::create([
+            'name' => 'API Alert',
+            'type' => 'api',
+            'userId' => $this->owner->id,
+        ]);
+
+        $response = $this->actingAs($this->owner, 'api')
+            ->getJson('/api/v1/alert-rule/status?'.http_build_query([
+                'alertRuleIds' => [$this->apiAlert->id],
+                'fromTime' => $this->fromTime * 1000,
+                'toTime' => $this->toTime * 1000,
+            ]))
+            ->assertSuccessful()
+            ->assertJsonCount(1);
+
+        $timeline = $response->json('0');
+
+        expect($timeline['segments'][0]['fromTime'])->toBe($this->fromTime)
+            ->and($timeline['segments'][array_key_last($timeline['segments'])]['toTime'])->toBe($this->toTime);
+    });
+
     it('silently excludes alert rules the requesting user cannot access', function () {
         $this->privateAlert = AlertRule::create([
             'name' => 'Private Alert',
             'type' => 'api',
             'userId' => $this->owner->id,
+            'isPrivate' => true,
         ]);
 
         $this->apiAlert = AlertRule::create([
@@ -103,6 +126,29 @@ describe('AlertingController AlertStatus', function () {
 
         expect(collect($response)->pluck('alertRuleId')->all())
             ->toBe([$this->apiAlert->id]);
+    });
+
+    it('includes organization-visible alerts in status history for readonly users', function () {
+        $publicAlert = AlertRule::create([
+            'name' => 'Public Alert',
+            'type' => 'api',
+            'userId' => $this->owner->id,
+            'isPrivate' => false,
+        ]);
+
+        $response = $this->actingAs($this->outsider, 'api')
+            ->getJson('/api/v1/alert-rule/status?'.http_build_query([
+                'alertRuleIds' => [$publicAlert->id],
+                'fromTime' => $this->fromTime,
+                'toTime' => $this->toTime,
+            ]))
+            ->assertSuccessful()
+            ->json();
+
+        expect(collect($response)->pluck('alertRuleId')->all())
+            ->toBe([$publicAlert->id]);
+
+        AlertRule::query()->where('_id', $publicAlert->_id)->delete();
     });
 
     it('returns resolved segments spanning the whole window when an api alert has no history', function () {

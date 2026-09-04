@@ -7,7 +7,7 @@ use Carbon\Carbon;
 
 class ElasticService
 {
-    public static function countDocuments(ElasticCheck $elasticCheck): int
+    public static function countDocuments(ElasticCheck $elasticCheck): ?int
     {
         $dataSource = $elasticCheck->alertRule->dataSource;
 
@@ -27,12 +27,16 @@ class ElasticService
                     ],
                 ]);
 
+            if (! $response->successful()) {
+                return null;
+            }
+
             $body = $response->json();
 
             return (int) ($body['count'] ?? 0);
 
         } catch (\Exception $exception) {
-            return 0;
+            return null;
         }
     }
 }

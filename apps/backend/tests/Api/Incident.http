@@ -1,0 +1,173 @@
+// Run Auth.http login first so {{authToken}} is set.
+// Then run "pick team" and "pick alert rule" (or create them) before POST /incident.
+
+###
+// Current user — ownerId / userIds for creating a team
+POST {{domain}}/auth/me
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+> {%
+    client.global.set("userId", response.body.id || response.body._id);
+%}
+
+###
+// Pick first team → {{teamId}}
+GET {{domain}}/team/all
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+> {%
+    const body = response.body;
+    const teams = Array.isArray(body) ? body : (body.data || []);
+    const team = teams[0];
+    if (team) {
+        client.global.set("teamId", String(team.id || team._id));
+    }
+%}
+
+###
+// Create a team if you have none (owner/manager). Re-run pick team after this.
+POST {{domain}}/team/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "Incident-Test-Team",
+    "ownerId": "{{userId}}",
+    "userIds": ["{{userId}}"],
+    "description": "http client fixture"
+}
+
+> {%
+    const team = response.body.data || response.body;
+    if (team && (team.id || team._id)) {
+        client.global.set("teamId", String(team.id || team._id));
+    }
+%}
+
+###
+// Pick first alert rule → {{alertRuleId}}
+GET {{domain}}/alert-rule?page=1&perPage=1
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+> {%
+    const rules = (response.body && response.body.data) || [];
+    const rule = rules[0];
+    if (rule) {
+        client.global.set("alertRuleId", String(rule.id || rule._id));
+    }
+%}
+
+###
+// Create a simple API alert rule if you have none, then re-run pick alert rule
+POST {{domain}}/alert-rule/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "Incident-Test-Rule",
+    "type": "api",
+    "enableAutoResolve": true,
+    "autoResolveMinutes": 5,
+    "endpoints": [],
+    "accessUsers": []
+}
+
+###
+GET {{domain}}/incident?page=1&perPage=25
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+GET {{domain}}/incident?search=Incident-Test&severity=SEV1&status=open
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+POST {{domain}}/incident/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "title": "Incident-Test",
+    "severity": "SEV1",
+    "teamIds": ["{{teamId}}"],
+    "description": "http client fixture",
+    "alertRuleIds": ["{{alertRuleId}}"]
+}
+
+> {%
+    const incident = response.body.data || response.body;
+    if (incident && (incident.id || incident._id)) {
+        client.global.set("incidentId", String(incident.id || incident._id));
+    }
+%}
+
+###
+// Create without linking an alert rule
+POST {{domain}}/incident/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "title": "Incident-Test-No-Rule",
+    "severity": "SEV2",
+    "teamIds": ["{{teamId}}"],
+    "description": "http client fixture"
+}
+
+###
+GET {{domain}}/incident/{{incidentId}}
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+PUT {{domain}}/incident/{{incidentId}}
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "title": "Incident-Test-Updated",
+    "severity": "SEV2",
+    "teamIds": ["{{teamId}}"],
+    "description": "updated",
+    "alertRuleIds": ["{{alertRuleId}}"],
+    "tags": ["http-client"]
+}
+
+###
+POST {{domain}}/incident/{{incidentId}}/acknowledge
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "teamId": "{{teamId}}"
+}
+
+###
+POST {{domain}}/incident/{{incidentId}}/resolve
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+{}
+
+###
+DELETE {{domain}}/incident/{{incidentId}}
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{authToken}}

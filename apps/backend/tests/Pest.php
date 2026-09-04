@@ -14,3 +14,17 @@ use Tests\TestCase;
 
 uses(TestCase::class)->in('Feature');
 uses(TestCase::class)->in('Unit');
+
+/**
+ * @return list<string>
+ */
+function laravelPaginatorStructure(): array
+{
+    return [
+        'current_page',
+        'data',
+        'last_page',
+        'per_page',
+        'total',
+    ];
+}

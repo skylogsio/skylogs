@@ -78,7 +78,7 @@ class AlertInstance extends BaseModel implements Messageable
             $isResolved = true;
             $alertFireInstances = [];
             foreach ($instances as $instance) {
-                if ($instance->instance == self::FIRE) {
+                if ($instance->state == self::FIRE) {
                     $isResolved = false;
                     $alertFireInstances[] = $history->toArray();
                 }

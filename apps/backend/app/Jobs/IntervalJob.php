@@ -6,6 +6,7 @@ use App\Models\AlertRule;
 use App\Models\ElasticCheck;
 use App\Models\HealthCheck;
 use App\Models\PrometheusCheck;
+use App\Queue\Middleware\EnsureLeader;
 use App\Services\SendNotifyService;
 use App\Utility\Constants;
 use Illuminate\Bus\Queueable;
@@ -19,6 +20,14 @@ class IntervalJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function __construct() {}
+
+    /**
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new EnsureLeader];
+    }
 
     /**
      * Execute the job.

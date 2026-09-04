@@ -4,7 +4,9 @@ namespace App\Models\Auth;
 
 use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
 use MongoDB\Laravel\Eloquent\Model;
+use Spatie\Permission\Contracts\Permission;
 use Spatie\Permission\Contracts\Role as RoleContract;
 use Spatie\Permission\Exceptions\GuardDoesNotMatch;
 use Spatie\Permission\Exceptions\PermissionDoesNotExist;
@@ -16,8 +18,8 @@ use Spatie\Permission\Traits\HasPermissions;
 use Spatie\Permission\Traits\RefreshesPermissionCache;
 
 /**
- * @property ?\Illuminate\Support\Carbon $createdAt
- * @property ?\Illuminate\Support\Carbon $updatedAt
+ * @property ?Carbon $createdAt
+ * @property ?Carbon $updatedAt
  */
 class Role extends BaseModel implements RoleContract
 {
@@ -173,7 +175,7 @@ class Role extends BaseModel implements RoleContract
     /**
      * Determine if the role may perform the given permission.
      *
-     * @param  string|int|\Spatie\Permission\Contracts\Permission|\BackedEnum  $permission
+     * @param  string|int|Permission|\BackedEnum  $permission
      *
      * @throws PermissionDoesNotExist|GuardDoesNotMatch
      */
