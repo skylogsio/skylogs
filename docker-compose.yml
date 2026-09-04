@@ -67,17 +67,6 @@ services:
       - skylogs_back:/var/www/html:rw
     networks:
       - skylogs
-    entrypoint: >
-      sh -c "rm -rf  /var/www/html/* &&
-            cp -rf /opt/skylogs-api/* /var/www/html &&
-            cp -f /opt/skylogs-api/.env /var/www/html &&
-            chmod -R 777 /var/www/html/storage &&
-            chmod -R 777 /var/www/html/bootstrap &&
-            php artisan migrate --force &&
-            php artisan optimize:clear &&
-            php artisan config:cache &&
-            php artisan route:cache &&
-            exec php-fpm"
     depends_on:
       - mongodb
       - redis
