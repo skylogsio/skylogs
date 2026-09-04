@@ -27,9 +27,6 @@ x-back-env: &back-env
     - APP_DEBUG=true
     - APP_URL=http://localhost:8000
     - FRONTEND_URL=http://localhost:8080
-    - KAVENEGAR_TOKEN=
-    - KAVENEGAR_SENDER_NUMBER=
-    - TELEGRAM_BOT_TOKEN=
     # Override hosts from a developer .env that may be baked into the image.
     - DB_HOST=mongo
     - REDIS_HOST=redis
