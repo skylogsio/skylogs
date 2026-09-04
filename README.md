@@ -90,11 +90,23 @@ Together, these two layers form a simple mental model: **HA inside the zone, fed
 ## Quick start
 
 **Prerequisites:** Docker and Docker Compose.
-
+### docker compose latest release
+```bash
+git clone https://github.com/skylogsio/skylogs.git
+cd skylogs
+docker compose up -d 
+```
+### docker compose build current branch
 ```bash
 git clone https://github.com/skylogsio/skylogs.git
 cd skylogs
 docker compose up -d --build
+```
+### deploy on kubernetes
+```bash
+git clone https://github.com/skylogsio/skylogs.git
+cd skylogs/helm
+helm --upgrade --install skylogs
 ```
 
 Then open `http://localhost:PORT` and log in with the default credentials.
