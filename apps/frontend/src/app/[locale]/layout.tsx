@@ -40,14 +40,15 @@ export default async function RootLayout({
 }: PropsWithChildren<{ params: Promise<{ locale: string }> }>) {
   const { locale } = await params;
   const dir = await getCurrentDirection();
-  const cookieStore = cookies();
-  const theme = (await cookieStore).get("theme")?.value;
+  const cookieStore = await cookies();
+  const theme = cookieStore.get("theme")?.value;
+  const sidebarCollapsed = cookieStore.get("skylogs-sidebar-collapsed")?.value === "true";
 
   return (
     <html lang={locale} dir={dir}>
       <body className={dir === "ltr" ? inter.className : vazir.className}>
         <AppRouterCacheProvider>
-          <Provider locale={locale}>
+          <Provider locale={locale} sidebarCollapsed={sidebarCollapsed}>
             <Wrapper>{children}</Wrapper>
           </Provider>
         </AppRouterCacheProvider>

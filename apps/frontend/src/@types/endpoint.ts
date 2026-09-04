@@ -1,7 +1,7 @@
 export interface IEndpoint {
   userId: string;
   name: string;
-  type: "sms" | "telegram" | "teams" | "call";
+  type: "sms" | "telegram" | "bale" | "teams" | "call" | "email" | "discord" | "matter-most";
   value: string;
   hasActionAccess: boolean;
   accessTeamIds: string[];

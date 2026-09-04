@@ -30,7 +30,7 @@ const authMiddleware = withAuth(
   }
 );
 
-export default async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = await getToken({ req: request });
   const isAuthenticated = !!token;

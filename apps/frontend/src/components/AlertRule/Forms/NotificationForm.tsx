@@ -21,7 +21,8 @@ const notificationSchema = z.object({
   teamIds: z.array(z.string()),
   tags: z.array(z.string()),
   description: z.string(),
-  showAcknowledgeBtn: z.boolean()
+  showAcknowledgeBtn: z.boolean(),
+  isPrivate: z.boolean()
 });
 
 type NotificationFormType = z.infer<typeof notificationSchema>;
@@ -38,7 +39,8 @@ const emptyFormValues: NotificationFormType = {
   endpointIds: [],
   tags: [],
   description: "",
-  showAcknowledgeBtn: false
+  showAcknowledgeBtn: false,
+  isPrivate: false
 };
 
 function getFormValues(data: CreateUpdateModal<IAlertRule>): NotificationFormType {
@@ -81,7 +83,7 @@ export default function NotificationForm({ onClose, onSubmit, data }: Notificati
       updateAlertRule(id, body),
     onSuccess: (data) => {
       if (data.status) {
-        toast.success("Client Api Alert Rule Created Successfully.");
+        toast.success("Notification Alert Rule Created Successfully.");
         onSubmit();
         onClose?.();
       }

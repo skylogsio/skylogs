@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
@@ -14,20 +14,36 @@ export function useDebuggingData({ alertRuleIds }: Pick<GetDebuggingsParams, "al
   const fromTime = start.dateTime.getTime();
   const toTime = end.dateTime.getTime();
   const alertRuleIdsKey = alertRuleIds.join(",");
+  const stableAlertRuleIds = useMemo(
+    () => (alertRuleIdsKey ? alertRuleIdsKey.split(",") : []),
+    [alertRuleIdsKey]
+  );
 
   const [debounced, setDebounced] = useState({
     fromTime,
     toTime,
-    alertRuleIds
+    alertRuleIds: stableAlertRuleIds
   });
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      setDebounced({ fromTime, toTime, alertRuleIds });
+      setDebounced((prev) => {
+        const prevAlertRuleIdsKey = prev.alertRuleIds.join(",");
+
+        if (
+          prev.fromTime === fromTime &&
+          prev.toTime === toTime &&
+          prevAlertRuleIdsKey === alertRuleIdsKey
+        ) {
+          return prev;
+        }
+
+        return { fromTime, toTime, alertRuleIds: stableAlertRuleIds };
+      });
     }, 500);
 
     return () => clearTimeout(timeout);
-  }, [fromTime, toTime, alertRuleIdsKey, alertRuleIds]);
+  }, [fromTime, toTime, alertRuleIdsKey, stableAlertRuleIds]);
 
   const params: GetDebuggingsParams = {
     alertRuleIds: debounced.alertRuleIds,

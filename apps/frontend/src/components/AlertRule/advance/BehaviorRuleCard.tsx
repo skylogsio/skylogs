@@ -4,18 +4,19 @@ import {
   alpha,
   Box,
   Button,
-  Chip,
   IconButton,
   Menu,
   MenuItem,
   Stack,
+  Tooltip,
   Typography,
   useTheme
 } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { HiDotsVertical, HiPencil, HiTrash, HiOutlineDuplicate } from "react-icons/hi";
+import { HiDotsVertical, HiPencil, HiTrash } from "react-icons/hi";
 
 import BehaviorRuleChip from "./BehaviorRuleChip";
+import BehaviorRuleDetails from "./BehaviorRuleDetails";
 import type { BehaviorRuleItem } from "./BehaviorRuleType";
 import { BEHAVIOR_RULE_TYPE_CONFIG } from "./BehaviorRuleUtils";
 import DeleteBehaviorRuleModal from "./DeleteBehaviorRuleModal";
@@ -42,37 +43,12 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
     queryClient.invalidateQueries({ queryKey: ["get-behavior-rule"] });
   }
 
-  function renderChip() {
-    switch (item.type) {
-      case "notification":
-        return item.endpoints.map((endpoint) => (
-          <Chip key={endpoint.id} label={endpoint.name} variant="filled" size="small" />
-        ));
-      case "silent":
-        return item.dependsOnAlertRules.map((alertRule) => (
-          <Chip key={alertRule.id} label={alertRule.name} variant="filled" size="small" />
-        ));
-      case "template":
-        return (
-          <Typography
-            variant="caption"
-            component="pre"
-            sx={{ wordBreak: "break-word", textWrap: "wrap" }}
-          >
-            {item.template}
-          </Typography>
-        );
-      default:
-        break;
-    }
-  }
-
   return (
     <>
       <Box
         sx={{
           backgroundColor: palette.background.paper,
-          borderRadius: 3,
+          borderRadius: "0.5rem",
           padding: 2.5,
           height: 1,
           display: "flex",
@@ -91,12 +67,12 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
           direction="row"
           sx={{ justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}
         >
-          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0, flex: 1 }}>
             <Box
               sx={{
                 width: 44,
                 height: 44,
-                borderRadius: 2,
+                borderRadius: "0.5rem",
                 backgroundColor: config.bgColor,
                 display: "flex",
                 alignItems: "center",
@@ -107,8 +83,17 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
             >
               {config.icon}
             </Box>
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 700,
+                  lineHeight: 1.2,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap"
+                }}
+              >
                 {item.name}
               </Typography>
               <BehaviorRuleChip label={item.type} showNotification showTemplate size="small" />
@@ -117,7 +102,7 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
           <IconButton
             size="small"
             onClick={(e) => setAnchorEl(e.currentTarget)}
-            sx={{ color: palette.text.secondary, mt: -0.5 }}
+            sx={{ color: palette.text.secondary, mt: -0.5, ml: 0.5 }}
           >
             <HiDotsVertical size={18} />
           </IconButton>
@@ -129,28 +114,32 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
             transformOrigin={{ vertical: "top", horizontal: "right" }}
           >
             <MenuItem onClick={handleEdit}>Edit</MenuItem>
-            <MenuItem onClick={() => setAnchorEl(null)}>Duplicate</MenuItem>
-            <MenuItem onClick={() => setAnchorEl(null)} sx={{ color: "error.main" }}>
+            <MenuItem
+              onClick={() => {
+                setAnchorEl(null);
+                setDeleteModalData(item);
+              }}
+              sx={{ color: "error.main" }}
+            >
               Delete
             </MenuItem>
           </Menu>
         </Stack>
 
-        <Stack
-          direction="row"
+        <Box
           sx={{
             backgroundColor: palette.background.default,
-            borderRadius: 1.5,
-            maxHeight: 120,
-            p: 0.75,
+            borderRadius: "0.4rem",
+            minHeight: 88,
+            maxHeight: 140,
+            p: 1.25,
             mb: 1.5,
             flex: 1,
             overflowY: "auto"
           }}
-          spacing={0.5}
         >
-          {renderChip()}
-        </Stack>
+          <BehaviorRuleDetails item={item} />
+        </Box>
 
         <Stack direction="row" spacing={1}>
           <Button
@@ -165,50 +154,28 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
               fontSize: 12,
               paddingY: 1,
               textTransform: "none",
-              borderRadius: 1.5,
-              "&:hover": { borderColor: palette.text.secondary }
+              "&:hover": { borderColor: config.color, color: config.color }
             }}
           >
             Edit
           </Button>
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<HiOutlineDuplicate />}
-            sx={{
-              flex: 1,
-              borderColor: palette.divider,
-              color: palette.text.secondary,
-              fontSize: 12,
-              paddingY: 1,
-              textTransform: "none",
-              borderRadius: 1.5,
-              "&:hover": { borderColor: palette.text.secondary }
-            }}
-          >
-            Duplicate
-          </Button>
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<HiTrash />}
-            onClick={() => setDeleteModalData(item)}
-            sx={{
-              flex: 1,
-              borderColor: alpha(palette.error.light, 0.4),
-              color: "error.main",
-              paddingY: 1,
-              fontSize: 12,
-              textTransform: "none",
-              borderRadius: 1.5,
-              "&:hover": {
-                borderColor: "error.main",
-                backgroundColor: alpha(palette.error.light, 0.04)
-              }
-            }}
-          >
-            Delete
-          </Button>
+          <Tooltip title="Delete">
+            <IconButton
+              size="small"
+              onClick={() => setDeleteModalData(item)}
+              sx={{
+                border: 1,
+                borderColor: alpha(palette.error.main, 0.35),
+                color: "error.main",
+                "&:hover": {
+                  borderColor: "error.main",
+                  backgroundColor: alpha(palette.error.main, 0.06)
+                }
+              }}
+            >
+              <HiTrash size={16} />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </Box>
       {deleteModalData && (

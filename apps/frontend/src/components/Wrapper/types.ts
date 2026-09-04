@@ -8,4 +8,6 @@ export type URLType = {
   label: string;
   role?: RoleType | RoleType[];
   icon: React.ComponentType<{ size?: number | string; className?: string }>;
+  /** Compensates for uneven SVG viewBox padding in icon packs */
+  iconScale?: number;
 };

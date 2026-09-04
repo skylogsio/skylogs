@@ -32,7 +32,8 @@ const zabbixAlertRuleSchema = z.object({
   severities: z.array(z.string()),
   dataSourceIds: z.array(z.string()).min(1, "This field is Required."),
   description: z.string(),
-  showAcknowledgeBtn: z.boolean()
+  showAcknowledgeBtn: z.boolean(),
+  isPrivate: z.boolean()
 });
 
 type ZabbixFromType = z.infer<typeof zabbixAlertRuleSchema>;
@@ -53,7 +54,8 @@ const emptyFormValues: ZabbixFromType = {
   dataSourceIds: [],
   severities: [],
   description: "",
-  showAcknowledgeBtn: false
+  showAcknowledgeBtn: false,
+  isPrivate: false
 };
 
 function getFormValues(data: CreateUpdateModal<IAlertRule>): ZabbixFromType {

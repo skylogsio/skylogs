@@ -80,7 +80,7 @@ export const authOptions: NextAuthOptions = {
       }
     }
   },
-  //! Attention: It should be the same as pages in middleware file
+  //! Attention: It should be the same as pages in proxy file
   pages: {
     signIn: "/next-auth/signIn"
   }

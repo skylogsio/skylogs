@@ -54,6 +54,17 @@ axiosInstance.interceptors.request.use(
 
     config.headers["X-Cluster"] = zone;
 
+    // Let the runtime set multipart boundaries; keep Accept: application/json.
+    if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+      if (config.headers && typeof config.headers.set === "function") {
+        config.headers.set("Content-Type", undefined as unknown as string);
+        config.headers.delete("Content-Type");
+      } else if (config.headers) {
+        delete (config.headers as Record<string, unknown>)["Content-Type"];
+      }
+      config.headers.Accept = config.headers.Accept ?? "application/json";
+    }
+
     return config;
   },
   function (error) {

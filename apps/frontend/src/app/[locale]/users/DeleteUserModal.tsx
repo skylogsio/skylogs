@@ -1,4 +1,4 @@
-import { alpha, Chip, Stack, Typography } from "@mui/material";
+import { Stack, Typography, useTheme } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 
@@ -6,7 +6,10 @@ import type { IUser } from "@/@types/user";
 import { deleteUser } from "@/api/user";
 import DeleteModalContainer from "@/components/DeleteModal/DeleteModalContainer";
 import type { DeleteModalProps } from "@/components/DeleteModal/DeleteModalTypes";
-import { ROLE_COLORS } from "@/utils/userUtils";
+import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
+import { useCurrentTheme } from "@/hooks";
+
+import UserRoleChip from "./UserRoleChip";
 
 export default function DeleteUserModal({
   data,
@@ -14,6 +17,8 @@ export default function DeleteUserModal({
   ...props
 }: DeleteModalProps & { data: IUser }) {
   const { id, name, username, roles } = data;
+  const theme = useTheme();
+  const { isDark } = useCurrentTheme();
 
   const { mutate: deleteUserMutation, isPending } = useMutation({
     mutationFn: () => deleteUser(id),
@@ -24,20 +29,24 @@ export default function DeleteUserModal({
   });
 
   return (
-    <DeleteModalContainer {...props} onAfterDelete={deleteUserMutation} isLoading={isPending}>
-      <Stack spacing={1}>
+    <DeleteModalContainer
+      {...props}
+      onAfterDelete={deleteUserMutation}
+      isLoading={isPending}
+      paperSx={getGlassCardSx(theme, isDark)}
+    >
+      <Stack spacing={1.25} sx={{ width: 1 }}>
         <Stack direction="row" spacing={1}>
           <Typography
             variant="subtitle2"
             sx={{
               color: "text.secondary",
-              fontWeight: "bold"
-            }}>
+              fontWeight: 700
+            }}
+          >
             Username:
           </Typography>
-          <Typography variant="subtitle2" sx={{
-            color: "text.secondary"
-          }}>
+          <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
             {username}
           </Typography>
         </Stack>
@@ -46,36 +55,27 @@ export default function DeleteUserModal({
             variant="subtitle2"
             sx={{
               color: "text.secondary",
-              fontWeight: "bold"
-            }}>
+              fontWeight: 700
+            }}
+          >
             Full Name:
           </Typography>
-          <Typography variant="subtitle2" sx={{
-            color: "text.secondary"
-          }}>
+          <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
             {name}
           </Typography>
         </Stack>
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
           <Typography
             variant="subtitle2"
             sx={{
               color: "text.secondary",
-              fontWeight: "bold"
-            }}>
+              fontWeight: 700
+            }}
+          >
             Role:
           </Typography>
-          {roles.map((item, index) => (
-            <Chip
-              key={index}
-              label={item}
-              size="small"
-              sx={{
-                textTransform: "capitalize",
-                color: ROLE_COLORS[item],
-                backgroundColor: alpha(ROLE_COLORS[item], 0.1)
-              }}
-            />
+          {roles.map((item) => (
+            <UserRoleChip key={item} role={item} />
           ))}
         </Stack>
       </Stack>

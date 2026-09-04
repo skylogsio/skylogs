@@ -24,7 +24,8 @@ const clientApiSchema = z
     teamIds: z.array(z.string()),
     description: z.string(),
     tags: z.array(z.string()),
-    showAcknowledgeBtn: z.boolean()
+    showAcknowledgeBtn: z.boolean(),
+    isPrivate: z.boolean()
   })
   .superRefine((data, ctx) => {
     if (data.enableAutoResolve) {
@@ -60,7 +61,8 @@ const emptyFormValues: ClientAPIFormType = {
   autoResolveMinutes: 0,
   tags: [],
   description: "",
-  showAcknowledgeBtn: false
+  showAcknowledgeBtn: false,
+  isPrivate: false
 };
 
 function getFormValues(data: CreateUpdateModal<IAlertRule>): ClientAPIFormType {
@@ -104,7 +106,7 @@ export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModa
       updateAlertRule(id, body),
     onSuccess: (data) => {
       if (data.status) {
-        toast.success("Client Api Alert Rule Created Successfully.");
+        toast.success("Client Api Alert Rule Updated Successfully.");
         onSubmit();
         onClose?.();
       }

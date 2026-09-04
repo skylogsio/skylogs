@@ -23,7 +23,8 @@ export default function ModalContainer({
   children,
   disableAccidentalClose,
   disableEscapeKeyDown,
-  onClose
+  onClose,
+  paperSx
 }: ModalContainerProps) {
   const handleClose: ModalProps["onClose"] = (event, reason) => {
     if (disableAccidentalClose) return;
@@ -54,7 +55,7 @@ export default function ModalContainer({
             transform: "translate(-50%,-50%)"
           }}
         >
-          <Paper sx={{ padding, borderRadius: 4, boxShadow: "none" }}>
+          <Paper sx={{ padding, borderRadius: 4, boxShadow: "none", ...paperSx }}>
             <Box
               sx={{
                 width: 1,

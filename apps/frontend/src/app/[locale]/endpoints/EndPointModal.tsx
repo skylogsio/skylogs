@@ -30,6 +30,7 @@ const ENDPOINTS_TYPE = [
   "call",
   "email",
   "telegram",
+  "bale",
   "teams",
   "matter-most",
   "discord"
@@ -69,13 +70,13 @@ function getFormValues(data: CreateUpdateModal<IEndpoint>): EndpointFormType {
     return emptyFormValues;
   }
 
-  if (data.type === "telegram") {
+  if (data.type === "telegram" || data.type === "bale") {
     return {
       name: data.name,
       type: data.type,
       value: data.chatId ?? data.value,
       isPublic: data.isPublic ?? false,
-      threadId: data.threadId ?? null,
+      threadId: data.type === "telegram" ? (data.threadId ?? null) : null,
       botToken: null,
       accessTeamIds: data.accessTeamIds ?? [],
       accessUserIds: data.accessUserIds ?? []
@@ -223,7 +224,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
         </Grid>
         <Grid size={watch("type") === "telegram" ? 6 : 12}>
           <TextField
-            label={watch("type") === "telegram" ? "ChatID" : "Value"}
+            label={watch("type") === "telegram" || watch("type") === "bale" ? "ChatID" : "Value"}
             variant="filled"
             error={!!errors.value}
             helperText={errors.value?.message}
@@ -241,7 +242,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
             />
           </Grid>
         )}
-        {watch("type") === "telegram" && (
+        {(watch("type") === "telegram" || watch("type") === "bale") && (
           <Grid size={12}>
             <TextField
               label="Bot Token"

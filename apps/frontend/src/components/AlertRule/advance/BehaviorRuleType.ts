@@ -33,12 +33,18 @@ export interface SilentRuleItem {
   id: string;
   name: string;
   type: "silent";
+  filters: Array<{
+    key: string;
+    value: string;
+  }>;
   dependsOnAlertRuleIds: string[];
   dependsOnAlertRules: Array<{
     id: string;
     name: string;
   }>;
   triggerState: TriggerStateType;
+  startsAt: number | null;
+  endsAt: number | null;
 }
 
 export type BehaviorRuleItem = TemplateItem | NotificationRuleItem | SilentRuleItem;

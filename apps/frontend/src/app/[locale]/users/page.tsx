@@ -1,22 +1,26 @@
 "use client";
 import { useRef, useState } from "react";
 
-import { alpha, Chip } from "@mui/material";
+import { Stack, useTheme } from "@mui/material";
 
 import type { IUser } from "@/@types/user";
-import ActionColumn from "@/components/ActionColumn";
 import Table from "@/components/Table/SmartTable";
 import type { TableComponentRef } from "@/components/Table/types";
-import { useRole } from "@/hooks";
-import { ROLE_COLORS, RoleType } from "@/utils/userUtils";
+import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
+import { useCurrentTheme, useRole } from "@/hooks";
+import { type RoleType } from "@/utils/userUtils";
 
 import ChangePasswordModal from "./ChangePasswordModal";
 import CreateUserModal from "./CreateUserModal";
 import DeleteUserModal from "./DeleteUserModal";
 import EditUserModal from "./EditUserModal";
+import UserActionButtons from "./UserActionButtons";
+import UserRoleChip from "./UserRoleChip";
 
 export default function Users() {
   const tableRef = useRef<TableComponentRef>(null);
+  const theme = useTheme();
+  const { isDark } = useCurrentTheme();
   const { hasRole } = useRole();
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [editModalUserData, setEditModalUserData] = useState<IUser | null>(null);
@@ -49,29 +53,26 @@ export default function Users() {
         url="user"
         searchKey="username"
         defaultPageSize={10}
+        tablePaperSx={getGlassCardSx(theme, isDark)}
+        onCreate={() => setOpenCreateModal(true)}
         columns={[
           { header: "Row", accessorFn: (_, index) => ++index },
           { header: "Username", accessorKey: "username" },
           { header: "Full Name", accessorKey: "name" },
           {
             header: "Role",
-            cell: ({ row }) =>
-              row.original.roles.map((item, index) => (
-                <Chip
-                  key={index}
-                  label={item}
-                  sx={{
-                    textTransform: "capitalize",
-                    color: ROLE_COLORS[item],
-                    backgroundColor: alpha(ROLE_COLORS[item], 0.1)
-                  }}
-                />
-              ))
+            cell: ({ row }) => (
+              <Stack direction="row" spacing={0.75} sx={{ justifyContent: "center" }}>
+                {row.original.roles.map((item) => (
+                  <UserRoleChip key={item} role={item} />
+                ))}
+              </Stack>
+            )
           },
           {
             header: "Action",
             cell: ({ row }) => (
-              <ActionColumn
+              <UserActionButtons
                 onEdit={
                   checkAccess(row.original.roles[0]) && row.original.username !== "admin"
                     ? () => setEditModalUserData(row.original)
@@ -91,7 +92,6 @@ export default function Users() {
             )
           }
         ]}
-        onCreate={() => setOpenCreateModal(true)}
       />
       {openCreateModal && (
         <CreateUserModal

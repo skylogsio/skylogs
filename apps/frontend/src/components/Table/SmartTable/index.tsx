@@ -1,7 +1,15 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { forwardRef, useImperativeHandle, useMemo, useState, useEffect } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 
 import {
   Table as MuiTable,
@@ -16,10 +24,7 @@ import {
   Box,
   alpha,
   Typography,
-  Button,
   useTheme,
-  Stack,
-  Collapse,
   tablePaginationClasses
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
@@ -32,16 +37,24 @@ import {
   type PaginationState,
   type Row
 } from "@tanstack/react-table";
-import { HiOutlinePlusSm, HiFilter } from "react-icons/hi";
 
 import { fetchTableData } from "@/components/Table/SmartTable/fetchTableData";
 import { useCurrentDirection } from "@/hooks";
 import { useScopedI18n } from "@/locales/client";
 
-import SearchBox from "../SearchBox";
-import type { SmartTableComponentProps, TableComponentRef } from "../types";
+import FilterPanel from "./FilterPanel";
+import TableToolbar from "./TableToolbar";
+import type { SmartTableProps, TableComponentRef } from "./types";
+import {
+  areFiltersEqual,
+  cleanFilters,
+  countActiveFilters,
+  filtersToSearchParams,
+  omitFilterKeys,
+  parseFiltersFromUrl
+} from "./utils";
 
-function Table<T>(
+function SmartTableInner<T>(
   {
     title,
     url,
@@ -51,12 +64,23 @@ function Table<T>(
     defaultPageSize,
     rowsPerPageOptions = [10, 25, 50, 100],
     onCreate,
+    createLabel,
     refetchInterval,
     filterComponent,
+    defaultFilters = {},
     searchKey = "name",
+    syncSearchToUrl = false,
     onRowClick,
-    onGroupActionClick
-  }: SmartTableComponentProps<T>,
+    onGroupActionClick,
+    toolbarActions,
+    toolbarStart,
+    toolbarEnd,
+    renderToolbar,
+    forceShowFilter = false,
+    hideSearch = false,
+    excludeFilterKeys = [],
+    tablePaperSx
+  }: SmartTableProps<T>,
   ref: React.Ref<TableComponentRef>
 ) {
   const { palette } = useTheme();
@@ -76,51 +100,29 @@ function Table<T>(
     };
   };
 
+  const urlFilters = useMemo(
+    () => parseFiltersFromUrl(searchParams.get("filters")),
+    [searchParams]
+  );
+
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>(getInitialPagination);
   const [openFilterBox, setOpenFilterBox] = useState(false);
-  const [filter, setFilter] = useState<Record<string, unknown>>({});
-  const [searchValue, setSearchValue] = useState("");
+  const [draftFilter, setDraftFilter] = useState<Record<string, unknown>>(() => ({
+    ...defaultFilters,
+    ...parseFiltersFromUrl(searchParams.get("filters"))
+  }));
+  const [filterInstanceKey, setFilterInstanceKey] = useState(0);
+  const [searchValue, setSearchValue] = useState(() =>
+    syncSearchToUrl ? (searchParams.get("q") ?? "") : ""
+  );
+  const defaultFiltersRef = useRef(defaultFilters);
+  defaultFiltersRef.current = defaultFilters;
 
   useEffect(() => {
-    const filterParam = searchParams.get("filters");
-    if (filterParam) {
-      try {
-        const parsedFilters = JSON.parse(decodeURIComponent(filterParam));
-        setFilter(parsedFilters);
-      } catch (error) {
-        console.error("Error parsing filters from URL:", error);
-      }
-    }
-  }, [searchParams]);
+    setDraftFilter({ ...defaultFiltersRef.current, ...urlFilters });
+  }, [urlFilters]);
 
-  const filterSearchParams = useMemo(() => {
-    const filterParam = searchParams.get("filters");
-    if (filterParam) {
-      try {
-        const parsedFilters = JSON.parse(decodeURIComponent(filterParam));
-        const params = new URLSearchParams();
-        Object.entries(parsedFilters).forEach(([key, value]) => {
-          if (
-            value !== undefined &&
-            value !== null &&
-            value !== "" &&
-            !(Array.isArray(value) && value.length === 0)
-          ) {
-            if (Array.isArray(value)) {
-              params.append(key, value.join(","));
-            } else {
-              params.append(key, String(value));
-            }
-          }
-        });
-        return params.toString();
-      } catch (error) {
-        console.error("Error parsing filters from URL:", error);
-        return "";
-      }
-    }
-    return "";
-  }, [searchParams]);
+  const filterSearchParams = useMemo(() => filtersToSearchParams(urlFilters), [urlFilters]);
 
   const { data, isPending, isError, refetch } = useQuery({
     queryKey: ["tableData", url, pageIndex, pageSize, filterSearchParams, searchValue, searchKey],
@@ -168,11 +170,20 @@ function Table<T>(
     return columns;
   }, [columns, hasCheckbox]);
 
+  const pushParams = useCallback(
+    (mutate: (params: URLSearchParams) => void) => {
+      const params = new URLSearchParams(searchParams.toString());
+      mutate(params);
+      router.push(`${pathname}?${params.toString()}`);
+    },
+    [pathname, router, searchParams]
+  );
+
   const updateUrlWithPagination = (newPageIndex: number, newPageSize: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", String(newPageIndex + 1));
-    params.set("perPage", String(newPageSize));
-    router.push(`${pathname}?${params.toString()}`);
+    pushParams((params) => {
+      params.set("page", String(newPageIndex + 1));
+      params.set("perPage", String(newPageSize));
+    });
   };
 
   const table = useReactTable({
@@ -192,84 +203,99 @@ function Table<T>(
   const handleSearch = (search: string) => {
     setSearchValue(search);
     table.setPageIndex(defaultPage);
-    updateUrlWithPagination(defaultPage, pageSize);
+    pushParams((params) => {
+      params.set("page", String(defaultPage + 1));
+      params.set("perPage", String(pageSize));
+      if (syncSearchToUrl) {
+        if (search) params.set("q", search);
+        else params.delete("q");
+      }
+    });
   };
 
   function handleChangeFilter(key: string, value: unknown) {
-    setFilter((prev) => ({ ...prev, [key]: value }));
+    setDraftFilter((prev) => ({ ...prev, [key]: value }));
   }
 
   function handleSetFilter() {
-    const cleanedFilter = Object.entries(filter).reduce(
-      (acc, [key, value]) => {
-        if (
-          value !== undefined &&
-          value !== null &&
-          value !== "" &&
-          !(Array.isArray(value) && value.length === 0)
-        ) {
-          acc[key] = value;
-        }
-        return acc;
-      },
-      {} as Record<string, unknown>
+    const preserved = Object.fromEntries(
+      excludeFilterKeys
+        .filter(
+          (key) =>
+            urlFilters[key] !== undefined && urlFilters[key] !== null && urlFilters[key] !== ""
+        )
+        .map((key) => [key, urlFilters[key]])
     );
-
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (Object.keys(cleanedFilter).length > 0) {
-      params.set("filters", encodeURIComponent(JSON.stringify(cleanedFilter)));
-    } else {
-      params.delete("filters");
-    }
+    const panelFilters = omitFilterKeys(cleanFilters(draftFilter), excludeFilterKeys);
+    const cleanedFilter = cleanFilters({ ...preserved, ...panelFilters });
 
     table.setPageIndex(defaultPage);
-    params.set("page", String(defaultPage + 1));
-    params.set("perPage", String(pageSize));
-
-    router.push(`${pathname}?${params.toString()}`);
+    pushParams((params) => {
+      if (Object.keys(cleanedFilter).length > 0) {
+        params.set("filters", encodeURIComponent(JSON.stringify(cleanedFilter)));
+      } else {
+        params.delete("filters");
+      }
+      params.set("page", String(defaultPage + 1));
+      params.set("perPage", String(pageSize));
+    });
+    setOpenFilterBox(false);
   }
 
   function handleClearFilters() {
-    setFilter({});
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("filters");
+    const preserved = Object.fromEntries(
+      excludeFilterKeys
+        .filter(
+          (key) =>
+            urlFilters[key] !== undefined && urlFilters[key] !== null && urlFilters[key] !== ""
+        )
+        .map((key) => [key, urlFilters[key]])
+    );
+    const nextDraft = { ...defaultFilters, ...preserved };
 
+    setDraftFilter(nextDraft);
+    setFilterInstanceKey((prev) => prev + 1);
     table.setPageIndex(defaultPage);
-    params.set("page", String(defaultPage + 1));
-    params.set("perPage", String(pageSize));
-
-    router.push(`${pathname}?${params.toString()}`);
+    pushParams((params) => {
+      const cleanedPreserved = cleanFilters(preserved);
+      if (Object.keys(cleanedPreserved).length > 0) {
+        params.set("filters", encodeURIComponent(JSON.stringify(cleanedPreserved)));
+      } else {
+        params.delete("filters");
+      }
+      params.set("page", String(defaultPage + 1));
+      params.set("perPage", String(pageSize));
+    });
   }
 
-  if (isError)
+  function handleResetDraft() {
+    setDraftFilter({ ...defaultFilters, ...urlFilters });
+    setFilterInstanceKey((prev) => prev + 1);
+  }
+
+  const handleRowClick = (row: Row<T>) => {
+    onRowClick?.(row.original);
+  };
+
+  const activeFilterCount = countActiveFilters(urlFilters, excludeFilterKeys);
+  const hasActiveFilters = activeFilterCount > 0;
+  const isFilterDirty = !areFiltersEqual(
+    omitFilterKeys(draftFilter, excludeFilterKeys),
+    omitFilterKeys({ ...defaultFilters, ...urlFilters }, excludeFilterKeys)
+  );
+  const hasFilterFields = Boolean(filterComponent);
+  const showFilter = forceShowFilter || hasFilterFields;
+
+  if (isError) {
     return (
-      <Typography
-        variant="h5"
-        color="error"
-        sx={{
-          mt: "2rem"
-        }}
-      >
+      <Typography variant="h5" color="error" sx={{ mt: "2rem" }}>
         {t("errorOnGettingData")}
       </Typography>
     );
+  }
 
-  const handleRowClick = (row: Row<T>) => {
-    if (onRowClick) {
-      onRowClick(row.original);
-    }
-  };
-
-  const hasActiveFilters = Object.keys(filter).some((key) => {
-    const value = filter[key];
-    return (
-      value !== undefined &&
-      value !== null &&
-      value !== "" &&
-      !(Array.isArray(value) && value.length === 0)
-    );
-  });
+  const columnCount = tableColumns.length;
+  const hasRows = Boolean(data?.data?.length);
 
   return (
     <Box
@@ -277,129 +303,60 @@ function Table<T>(
         display: "flex",
         flexDirection: "column",
         width: 1,
-        minHeight: 1
+        minHeight: 1,
+        gap: 0
       }}
     >
-      <Box
-        sx={{
-          width: 1,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-end",
-          paddingX: 1
-        }}
-      >
-        {title && (
-          <Typography
-            variant="h5"
-            component="span"
-            sx={{
-              fontSize: 28,
-              fontWeight: 700
-            }}
-          >
-            {title}
-          </Typography>
-        )}
-        <Stack direction="row" spacing={1}>
-          <SearchBox title={title} onSearch={handleSearch} />
-          <Button
-            startIcon={<HiFilter />}
-            size="small"
-            variant="outlined"
-            onClick={() => setOpenFilterBox((prev) => !prev)}
-            sx={{
-              backgroundColor:
-                openFilterBox || hasActiveFilters
-                  ? palette.secondary.dark
-                  : palette.background.paper,
-              borderColor: hasActiveFilters ? palette.secondary.dark : palette.secondary.light,
-              paddingY: "0.19rem",
-              color:
-                openFilterBox || hasActiveFilters
-                  ? palette.background.paper
-                  : palette.secondary.dark,
-              paddingRight: 1.5,
-              textTransform: "none"
-            }}
-          >
-            {t("filterButton")}{" "}
-            {hasActiveFilters &&
-              `(${
-                Object.keys(filter).filter((key) => {
-                  const value = filter[key];
-                  return (
-                    value !== undefined &&
-                    value !== null &&
-                    value !== "" &&
-                    !(Array.isArray(value) && value.length === 0)
-                  );
-                }).length
-              })`}
-          </Button>
-          {onCreate && (
-            <Button
-              startIcon={<HiOutlinePlusSm size="1.3rem" />}
-              onClick={onCreate}
-              size="small"
-              variant="contained"
-              sx={{ paddingRight: 2 }}
-            >
-              {t("createButton")}
-            </Button>
-          )}
-        </Stack>
-      </Box>
-      <Collapse in={openFilterBox}>
-        <Stack
-          spacing={1}
-          sx={{
-            padding: 1,
-            bgcolor: palette.background.paper,
-            borderRadius: 4,
-            marginTop: 1,
-            border: 1,
-            borderColor: palette.divider
-          }}
+      <TableToolbar
+        title={title}
+        searchValue={searchValue}
+        onSearch={handleSearch}
+        hideSearch={hideSearch}
+        showFilter={showFilter}
+        openFilter={openFilterBox}
+        onToggleFilter={() => setOpenFilterBox((prev) => !prev)}
+        hasActiveFilters={hasActiveFilters}
+        activeFilterCount={activeFilterCount}
+        isFilterDirty={isFilterDirty}
+        onCreate={onCreate}
+        createLabel={createLabel}
+        toolbarActions={toolbarActions}
+        toolbarStart={toolbarStart}
+        toolbarEnd={toolbarEnd}
+        renderToolbar={renderToolbar}
+      />
+
+      {showFilter && (
+        <FilterPanel
+          open={openFilterBox}
+          isDirty={isFilterDirty}
+          hasActiveFilters={hasActiveFilters}
+          onApply={handleSetFilter}
+          onClear={handleClearFilters}
+          onResetDraft={handleResetDraft}
+          onGroupActionClick={onGroupActionClick}
         >
-          {filterComponent?.({ onChange: handleChangeFilter })}
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{
-              justifyContent: "space-between"
-            }}
-          >
-            <Box>
-              {hasActiveFilters && (
-                <Button size="small" variant="text" onClick={handleClearFilters}>
-                  Clear Filters
-                </Button>
-              )}
-            </Box>
-            <Stack direction="row" spacing={1}>
-              {onGroupActionClick && (
-                <Button size="small" variant="outlined" onClick={onGroupActionClick}>
-                  Group Actions
-                </Button>
-              )}
-              <Button size="small" variant="contained" onClick={handleSetFilter}>
-                Apply Filters
-              </Button>
-            </Stack>
-          </Stack>
-        </Stack>
-      </Collapse>
+          <Box key={filterInstanceKey}>
+            {filterComponent?.({
+              onChange: handleChangeFilter,
+              values: draftFilter,
+              setValues: setDraftFilter
+            })}
+          </Box>
+        </FilterPanel>
+      )}
+
       <Box
         sx={{
           width: 1,
           height: "70vh",
+          mt: 1,
           bgcolor: "background.paper",
-          borderRadius: 4,
-          border: 1,
-          borderColor: (theme) => theme.palette.divider,
+          borderRadius: 3,
+          border: `1px solid ${alpha(palette.text.primary, 0.08)}`,
           overflow: "hidden",
-          marginTop: 1
+          boxShadow: `0 1px 2px ${alpha(palette.common.black, palette.mode === "dark" ? 0.2 : 0.04)}`,
+          ...tablePaperSx
         }}
       >
         <TableContainer sx={{ width: 1, maxHeight: 1, overflow: "auto" }}>
@@ -410,10 +367,11 @@ function Table<T>(
                   key={headerGroup.id}
                   sx={{
                     "& th": {
-                      backgroundColor: (theme) =>
-                        theme.palette.mode === "dark"
-                          ? theme.palette.grey[900]
-                          : theme.palette.grey[50]
+                      backgroundColor:
+                        palette.mode === "dark"
+                          ? alpha(palette.common.white, 0.04)
+                          : alpha(palette.grey[500], 0.06),
+                      backdropFilter: "blur(8px)"
                     }
                   }}
                 >
@@ -421,14 +379,16 @@ function Table<T>(
                     <TableCell
                       key={header.id}
                       align="center"
-                      sx={({ typography, palette }) => ({
-                        ...typography.body1,
-                        fontWeight: "bold",
-                        width: header.id === "select" ? "50px" : "auto",
-                        paddingY: 2,
+                      sx={({ typography }) => ({
+                        ...typography.body2,
+                        fontWeight: 700,
+                        width: header.id === "select" ? 52 : "auto",
+                        py: 1.75,
                         textTransform: "capitalize",
-                        borderBottomColor: palette.divider,
-                        fontSize: 14
+                        borderBottomColor: alpha(palette.text.primary, 0.08),
+                        color: palette.text.secondary,
+                        letterSpacing: "0.02em",
+                        fontSize: 13.5
                       })}
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
@@ -438,58 +398,72 @@ function Table<T>(
               ))}
             </TableHead>
             <TableBody>
-              {!data || isPending
-                ? Array.from({ length: pageSize }).map((_, index) => (
-                    <TableRow key={index}>
-                      {Array.from({ length: tableColumns.length }).map((_, cellIndex) => (
-                        <TableCell
-                          key={cellIndex}
+              {!data || isPending ? (
+                Array.from({ length: pageSize }).map((_, index) => (
+                  <TableRow key={index}>
+                    {Array.from({ length: columnCount }).map((_, cellIndex) => (
+                      <TableCell
+                        key={cellIndex}
+                        sx={{
+                          width: cellIndex === 0 ? 40 : "auto",
+                          borderBottomColor: alpha(palette.text.primary, 0.06),
+                          py: 1.5
+                        }}
+                      >
+                        <Skeleton
+                          variant="rounded"
+                          width={cellIndex === 0 ? 20 : "72%"}
+                          height={18}
+                          animation="wave"
                           sx={{
-                            width: cellIndex === 0 ? 40 : "auto",
-                            borderBottomColor: (theme) => theme.palette.divider
+                            mx: "auto",
+                            bgcolor: alpha(palette.text.primary, 0.06),
+                            borderRadius: 1
                           }}
-                        >
-                          <Skeleton
-                            variant="text"
-                            width={cellIndex === 0 ? 20 : "100%"}
-                            height={30}
-                            className="mx-auto"
-                            animation="wave"
-                            sx={{ bgcolor: (theme) => theme.palette.action.hover }}
-                          />
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                : table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      sx={{
-                        width: row.id === "select" ? 50 : "auto",
-                        transition: "background-color 200ms ease",
-                        backgroundColor: ({ palette }) =>
-                          row.getIsSelected() ? alpha(palette.primary.main, 0.06) : "transparent",
-                        "&:hover": {
-                          backgroundColor: ({ palette }) => alpha(palette.primary.main, 0.06)
-                        }
-                      }}
-                      onClick={() => handleRowClick(row)}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell
-                          key={cell.id}
-                          sx={{ borderBottomColor: (theme) => theme.palette.divider }}
-                          align="center"
-                        >
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
+                        />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : hasRows ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    hover
+                    sx={{
+                      cursor: onRowClick ? "pointer" : "default",
+                      transition: "background-color 160ms ease",
+                      backgroundColor: row.getIsSelected()
+                        ? alpha(palette.primary.main, 0.06)
+                        : "transparent",
+                      "&:hover": {
+                        backgroundColor: alpha(palette.primary.main, 0.05)
+                      },
+                      "& td": {
+                        borderBottomColor: alpha(palette.text.primary, 0.06)
+                      }
+                    }}
+                    onClick={() => handleRowClick(row)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} align="center" sx={{ py: 1.5 }}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columnCount} align="center" sx={{ py: 8, border: 0 }}>
+                    <StackEmptyState />
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </MuiTable>
         </TableContainer>
       </Box>
+
       <TablePagination
         component="div"
         count={data?.total ?? 0}
@@ -516,25 +490,25 @@ function Table<T>(
           width: "100%",
           [`& .${tablePaginationClasses.displayedRows}`]: {
             marginLeft: "auto",
-            color: (theme) => theme.palette.text.secondary
+            color: palette.text.secondary
           },
           [`& .${tablePaginationClasses.spacer}`]: {
             display: "none"
           },
           [`& .${tablePaginationClasses.selectLabel}`]: {
-            color: (theme) => theme.palette.text.secondary
+            color: palette.text.secondary
           },
           [`& .${tablePaginationClasses.input}`]: {
-            color: (theme) => theme.palette.text.secondary
+            color: palette.text.secondary
           },
           [`& .${tablePaginationClasses.actions}`]: {
             "& button": {
               transform: `rotateY(${direction === "ltr" ? 0 : "180deg"})`,
               "svg path": {
-                color: (theme) => theme.palette.text.secondary
+                color: palette.text.secondary
               },
               "&.Mui-disabled svg path": {
-                color: (theme) => theme.palette.action.disabled
+                color: palette.action.disabled
               }
             }
           }
@@ -544,6 +518,31 @@ function Table<T>(
   );
 }
 
-export default forwardRef(Table) as <T>(
-  props: SmartTableComponentProps<T> & { ref?: React.Ref<TableComponentRef> }
+function StackEmptyState() {
+  const t = useScopedI18n("table");
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0.75 }}>
+      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+        {t("emptyStateTitle")}
+      </Typography>
+      <Typography variant="body2" sx={{ color: "text.secondary" }}>
+        {t("emptyStateSubtitle")}
+      </Typography>
+    </Box>
+  );
+}
+
+export default forwardRef(SmartTableInner) as <T>(
+  props: SmartTableProps<T> & { ref?: React.Ref<TableComponentRef> }
 ) => React.ReactElement;
+
+export type {
+  SmartTableProps,
+  TableFilterComponentProps,
+  SmartTableToolbarSlots,
+  ToolbarAction,
+  ToolbarActionContext,
+  CustomToolbarAction,
+  BuiltInToolbarAction,
+  TableComponentRef
+} from "./types";

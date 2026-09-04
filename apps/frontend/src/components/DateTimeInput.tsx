@@ -38,7 +38,7 @@ type Props = {
 const DISPLAY_FORMAT: Record<PickerType, string> = {
   time: "HH:mm",
   date: "yyyy/MM/dd",
-  "date-time": "yyyy/MM/dd @ HH:mm"
+  "date-time": "yyyy/MM/dd HH:mm"
 };
 
 export default function DateTimeInput({
@@ -84,15 +84,17 @@ export default function DateTimeInput({
     ...textfieldProps,
     variant: "filled" as const,
     slotProps: {
-      ...textfieldProps?.slotProps,
-      input: { disableUnderline: true, ...textfieldProps?.slotProps?.input }
+      ...textfieldProps?.slotProps
     },
     onClick: () => {
       if (!disabled) setOpen(true);
     },
     sx: {
       [`& .${pickersInputBaseClasses.root}`]: {
-        borderRadius: "0.55rem"
+        borderRadius: "0.55rem",
+        "&:before, &:after": {
+          display: "none"
+        }
       },
 
       ...textfieldProps?.sx
@@ -101,21 +103,54 @@ export default function DateTimeInput({
 
   const commonSlotProps: DatePickerSlotProps = {
     textField: commonTextFieldProps as never,
-    inputAdornment: { sx: { display: "none" } },
-    openPickerButton: { sx: { display: "none" } }
+    openPickerButton: { sx: { display: "none" } },
+    popper: {
+      placement: "bottom-start",
+      modifiers: [
+        {
+          name: "flip",
+          enabled: true,
+          options: {
+            fallbackPlacements: ["top-start", "bottom-end", "top-end"],
+            padding: 8
+          }
+        },
+        {
+          name: "preventOverflow",
+          enabled: true,
+          options: {
+            altAxis: true,
+            tether: true,
+            padding: 8,
+            rootBoundary: "viewport"
+          }
+        }
+      ]
+    },
+    desktopPaper: {
+      sx: {
+        maxHeight: "calc(100vh - 32px)",
+        overflow: "auto"
+      }
+    }
   };
 
   const pickerValue = toDate(isoValue);
+  const hasValue = pickerValue !== null;
+
+  const handleClear = (pickerType: PickerType) => {
+    setIsoValue(null);
+    onChange?.({
+      iso: null,
+      formatted: "",
+      calendar,
+      type: pickerType
+    });
+  };
 
   const handleSingleChange = (newVal: Date | null, pickerType: PickerType) => {
     if (!newVal || Number.isNaN(newVal.getTime())) {
-      setIsoValue(null);
-      onChange?.({
-        iso: null,
-        formatted: "",
-        calendar,
-        type: pickerType
-      });
+      handleClear(pickerType);
       return;
     }
 
@@ -129,6 +164,29 @@ export default function DateTimeInput({
       type: pickerType
     });
   };
+
+  const getSlotProps = (pickerType: PickerType): DatePickerSlotProps => ({
+    ...commonSlotProps,
+    field: {
+      clearable: hasValue && !disabled,
+      onClear: (event) => {
+        event.stopPropagation();
+        handleClear(pickerType);
+      }
+    },
+    clearButton: {
+      size: "small",
+      onClick: (event) => {
+        event.stopPropagation();
+        handleClear(pickerType);
+      },
+      sx: {
+        p: 0.5,
+        mr: 0.5
+      }
+    },
+    openPickerButton: { sx: { display: "none" } }
+  });
 
   return (
     <LocalizationProvider
@@ -147,7 +205,7 @@ export default function DateTimeInput({
           open={open}
           onOpen={() => setOpen(true)}
           onClose={() => setOpen(false)}
-          slotProps={commonSlotProps}
+          slotProps={getSlotProps("time")}
         />
       )}
 
@@ -161,7 +219,7 @@ export default function DateTimeInput({
           open={open}
           onOpen={() => setOpen(true)}
           onClose={() => setOpen(false)}
-          slotProps={commonSlotProps}
+          slotProps={getSlotProps("date")}
         />
       )}
 
@@ -176,7 +234,7 @@ export default function DateTimeInput({
           open={open}
           onOpen={() => setOpen(true)}
           onClose={() => setOpen(false)}
-          slotProps={commonSlotProps}
+          slotProps={getSlotProps("date-time")}
         />
       )}
     </LocalizationProvider>

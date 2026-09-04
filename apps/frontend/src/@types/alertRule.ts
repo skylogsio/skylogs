@@ -17,6 +17,7 @@ export interface IZabbixCreateData {
 export type AlertRuleStatus = "resolved" | "warning" | "critical" | "triggered" | "unknown";
 
 export interface IAlertRule {
+  accessLevel: "readonly" | "manage";
   apiToken?: string;
   name: string;
   type: AlertRuleType;
@@ -34,6 +35,7 @@ export interface IAlertRule {
   status_label: AlertRuleStatus;
   is_silent: boolean;
   isPinned: boolean;
+  isPrivate: boolean;
   count_endpoints: number;
   tags: string[];
   dataSourceAlertName?: string;

@@ -28,7 +28,8 @@ const splunkAlertRuleSchema = z.object({
   dataSourceIds: z.array(z.string()).min(1, "This field is Required."),
   dataSourceAlertName: z.string().trim().min(1, "This field is Required."),
   description: z.string(),
-  showAcknowledgeBtn: z.boolean()
+  showAcknowledgeBtn: z.boolean(),
+  isPrivate: z.boolean()
 });
 
 type SplunkFromType = z.infer<typeof splunkAlertRuleSchema>;
@@ -47,7 +48,8 @@ const emptyFormValues: SplunkFromType = {
   dataSourceIds: [],
   dataSourceAlertName: "",
   description: "",
-  showAcknowledgeBtn: false
+  showAcknowledgeBtn: false,
+  isPrivate: false
 };
 
 function getFormValues(data: CreateUpdateModal<IAlertRule>): SplunkFromType {

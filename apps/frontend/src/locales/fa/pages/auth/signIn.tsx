@@ -7,6 +7,7 @@ export default {
     Password: "کلمه‌عبور",
     "Forget Password": "کلمه‌عبور خود را فراموش کرده‌اید؟",
     "Sign In": "ورود",
+    "Signing In": "در حال ورود...",
     RequiredUsername: "نام‌کابری الزامی است.",
     RequiredPassword: "کلمه‌عبور الزامی است."
   }
