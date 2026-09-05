@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/images/skylogLogo1000x300.png" alt="Skylogs" width="500"/>
+  <img src="public/images/skylogs-logo.jpg" alt="Skylogs" width="300"/>
 </p>
 
 <h3 align="center">Open-source incident response that survives the incident.</h3>
