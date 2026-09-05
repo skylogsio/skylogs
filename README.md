@@ -104,10 +104,13 @@ docker compose up -d --build
 ```
 ### deploy on kubernetes
 ```bash
-git clone https://github.com/skylogsio/skylogs.git
-cd skylogs/helm
-helm --upgrade --install skylogs
+helm repo add skylogs https://skylogsio.github.io/helm-charts/
+helm repo update
+helm install skylogs skylogs/skylogs \
+  --namespace skylogs --create-namespace \
+  -f my-values.yaml
 ```
+Chart source and configuration reference: https://github.com/skylogsio/helm-charts
 
 Then open `http://localhost:PORT` and log in with the default credentials.
 <!-- TODO: fill in the real port, default credentials, and the 2–3 steps to fire a first test alert.
