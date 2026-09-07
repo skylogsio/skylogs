@@ -7,6 +7,7 @@ import { Box, alpha, useTheme } from "@mui/material";
 import { motion, useReducedMotion } from "framer-motion";
 import { AiOutlineFileProtect, AiOutlineWarning } from "react-icons/ai";
 
+import { getPrimaryGradient } from "@/components/Wrapper/topBarStyles";
 import { useCurrentTheme } from "@/hooks";
 
 const VIEWS = [
@@ -32,14 +33,14 @@ export default function IncidentWorkspaceSwitch() {
   const reduceMotion = useReducedMotion();
   const activeView = pathname.includes("/incidents/policies") ? "policies" : "incidents";
 
-  const gradient = `linear-gradient(135deg, ${palette.secondary.main} 0%, ${palette.primary.main} 100%)`;
+  const gradient = getPrimaryGradient(theme);
 
   const thumbSx = {
     position: "absolute" as const,
     inset: 0,
     borderRadius: "9px",
     background: gradient,
-    boxShadow: `0 2px 8px ${alpha(palette.primary.main, isDark ? 0.35 : 0.28)}`,
+    boxShadow: `0 -2px 8px ${alpha(palette.primary.main, isDark ? 0.35 : 0.8)}`,
     pointerEvents: "none" as const
   };
 

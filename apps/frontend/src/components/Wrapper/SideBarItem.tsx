@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useSideBar } from "@/context/SideBarContext";
 import { useRole } from "@/hooks";
 
+import { getPrimaryGradient } from "./topBarStyles";
 import type { URLType } from "./types";
 
 interface SideBarItemProps {
@@ -18,7 +19,8 @@ const ICON_BOX_SIZE = 22;
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
 export function SideBarItem({ url, isActive, index = 0 }: SideBarItemProps) {
-  const { palette } = useTheme();
+  const theme = useTheme();
+  const { palette } = theme;
   const { hasRole } = useRole();
   const { collapsed } = useSideBar();
   const reduceMotion = useReducedMotion();
@@ -31,6 +33,8 @@ export function SideBarItem({ url, isActive, index = 0 }: SideBarItemProps) {
   const opticalScale = url.iconScale ?? 1;
   const activeScale = collapsed && isActive ? 1.06 : 1;
   const iconScale = opticalScale * activeScale;
+  const activeGradient = getPrimaryGradient(theme);
+  const activeHoverGradient = getPrimaryGradient(theme, { midStop: 40 });
 
   const button = (
     <ListItemButton
@@ -56,7 +60,7 @@ export function SideBarItem({ url, isActive, index = 0 }: SideBarItemProps) {
         border: "none",
         background: isActive
           ? collapsed
-            ? `linear-gradient(145deg, ${palette.primary.light} 0%, ${palette.primary.main} 48%, ${palette.primary.dark} 100%) !important`
+            ? `${activeGradient} !important`
             : undefined
           : "transparent",
         backgroundColor: isActive
@@ -82,7 +86,7 @@ export function SideBarItem({ url, isActive, index = 0 }: SideBarItemProps) {
         "&:hover": collapsed
           ? {
               background: isActive
-                ? `linear-gradient(145deg, ${palette.primary.light} 0%, ${palette.primary.main} 40%, ${palette.primary.dark} 100%) !important`
+                ? `${activeHoverGradient} !important`
                 : alpha(palette.primary.main, 0.1),
               backgroundColor: isActive
                 ? "transparent !important"

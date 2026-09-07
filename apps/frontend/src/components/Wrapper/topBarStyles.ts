@@ -93,6 +93,13 @@ export function getAppBackgroundSx(theme: Theme, isDark: boolean) {
   };
 }
 
+export function getPrimaryGradient(theme: Theme, options?: { midStop?: number }) {
+  const { palette } = theme;
+  const midStop = options?.midStop ?? 48;
+
+  return `linear-gradient(145deg, ${palette.primary.light} 0%, ${palette.primary.main} ${midStop}%, ${palette.primary.dark} 100%)`;
+}
+
 export function getGlassCardSx(theme: Theme, isDark: boolean) {
   const { palette } = theme;
 
