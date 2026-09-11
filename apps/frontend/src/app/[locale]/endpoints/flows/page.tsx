@@ -1,21 +1,39 @@
 "use client";
+
 import { useRef, useState } from "react";
 
-import { Step, StepLabel, Stepper, useTheme } from "@mui/material";
-import { AiFillApi, AiFillClockCircle } from "react-icons/ai";
+import { Box, useTheme } from "@mui/material";
+import { alpha } from "@mui/material";
 
 import type { IFlow } from "@/@types/flow";
 import { CreateUpdateModal } from "@/@types/global";
 import DeleteFlowModal from "@/app/[locale]/endpoints/DeleteFlowModal";
+import FlowDetailsModal from "@/app/[locale]/endpoints/FlowDetailsModal";
 import FlowModal from "@/app/[locale]/endpoints/FlowModal";
-import ActionColumn from "@/components/ActionColumn";
+import EndpointActionButtons from "@/components/Endpoint/EndpointActionButtons";
+import EndpointWorkspaceToolbar from "@/components/Endpoint/EndpointWorkspaceToolbar";
+import FlowStepChip from "@/components/Endpoint/FlowStepChip";
 import Table from "@/components/Table/SmartTable";
-import { type TableComponentRef } from "@/components/Table/types";
+import type { TableComponentRef } from "@/components/Table/types";
+import { useCurrentTheme } from "@/hooks";
+import { useScopedI18n } from "@/locales/client";
 
-export default function Flows() {
-  const { palette } = useTheme();
+type FlowsProps = {
+  tablePaperSx?: Record<string, unknown>;
+  tabValue: "endpoints" | "flows";
+  onTabChange: (value: "endpoints" | "flows") => void;
+  labels: Record<"endpoints" | "flows", string>;
+};
+
+export default function Flows({ tablePaperSx, tabValue, onTabChange, labels }: FlowsProps) {
+  const theme = useTheme();
+  const { palette } = theme;
+  const { isDark } = useCurrentTheme();
+  const t = useScopedI18n("endpoints");
+
   const tableRef = useRef<TableComponentRef>(null);
   const [modalData, setModalData] = useState<CreateUpdateModal<IFlow>>(null);
+  const [viewModalData, setViewModalData] = useState<IFlow | null>(null);
   const [deleteModalData, setDeleteModalData] = useState<IFlow | null>(null);
 
   function handleEdit(data: IFlow) {
@@ -34,39 +52,44 @@ export default function Flows() {
   }
 
   const renderSteps = (steps: IFlow["steps"]) => {
+    if (!steps || steps.length === 0) {
+      return t("flow.emptySteps");
+    }
+
+    const visible = steps.slice(0, 5);
+    const remaining = steps.length - visible.length;
+
     return (
-      <Stepper
-        activeStep={1}
-        alternativeLabel
-        sx={{
-          "& .MuiStepConnector-root": {
-            top: "50%",
-            transfrom: "translateY(-50%)"
-          }
-        }}
-      >
-        {steps.map((step, index) => (
-          <Step key={index}>
-            <StepLabel
-              sx={{
-                "& .MuiStepLabel-iconContainer": {
-                  backgroundColor: `${palette.grey[100]}!important`,
-                  padding: 1,
+      <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, flexWrap: "wrap" }}>
+        {visible.map((step, index) => (
+          <Box key={index} sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+            {index > 0 && (
+              <Box
+                sx={{
+                  width: 6,
+                  height: 6,
                   borderRadius: "50%",
-                  aspectRatio: "1/1"
-                }
-              }}
-              icon={
-                step.type === "wait" ? (
-                  <AiFillClockCircle size={20} color={palette.warning.main} />
-                ) : (
-                  <AiFillApi size={20} color={palette.primary.main} />
-                )
-              }
-            ></StepLabel>
-          </Step>
+                  bgcolor: alpha(palette.primary.main, 0.4)
+                }}
+              />
+            )}
+            <FlowStepChip type={step.type} duration={step.duration} timeUnit={step.timeUnit} />
+          </Box>
         ))}
-      </Stepper>
+        {remaining > 0 && (
+          <Box
+            component="span"
+            sx={{
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              color: "text.secondary",
+              ml: 0.25
+            }}
+          >
+            +{remaining}
+          </Box>
+        )}
+      </Box>
     );
   };
 
@@ -74,25 +97,31 @@ export default function Flows() {
     <>
       <Table<IFlow>
         ref={tableRef}
-        title="Flows"
+        title={t("flow.title")}
         url="endpoint/indexFlow"
         defaultPageSize={10}
+        tablePaperSx={tablePaperSx}
+        renderToolbar={(slots) => (
+          <EndpointWorkspaceToolbar
+            slots={slots}
+            value={tabValue}
+            onChange={onTabChange}
+            labels={labels}
+          />
+        )}
         columns={[
           { header: "Row", accessorFn: (_, index) => ++index },
-          { header: "Name", accessorKey: "name" },
+          { header: t("list.column.name"), accessorKey: "name" },
           {
-            header: "Steps",
+            header: t("flow.column.steps"),
             cell: ({ row }) => renderSteps(row.original.steps)
-          },
-          {
-            header: "Created At",
-            cell: ({ row }) => row.original.createdAt
           },
           {
             header: "Action",
             cell: ({ row }) =>
               row.original.hasActionAccess ? (
-                <ActionColumn
+                <EndpointActionButtons
+                  onView={() => setViewModalData(row.original)}
                   onEdit={() => handleEdit(row.original)}
                   onDelete={() => setDeleteModalData(row.original)}
                 />
@@ -115,6 +144,13 @@ export default function Flows() {
           onClose={() => setDeleteModalData(null)}
           data={deleteModalData}
           onAfterDelete={handleDelete}
+        />
+      )}
+      {viewModalData && (
+        <FlowDetailsModal
+          open={!!viewModalData}
+          onClose={() => setViewModalData(null)}
+          data={viewModalData}
         />
       )}
     </>

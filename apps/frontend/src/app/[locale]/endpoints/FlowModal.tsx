@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   Checkbox,
-  Chip,
   FormControlLabel,
   Grid,
   IconButton,
@@ -17,6 +16,7 @@ import {
 } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { Chip } from "@mui/material";
 import { AiFillClockCircle, AiFillApi } from "react-icons/ai";
 import { MdDelete } from "react-icons/md";
 import { toast } from "react-toastify";
@@ -29,6 +29,10 @@ import { getAllEndpoints } from "@/api/flow";
 import AccessUsersAndTeams from "@/components/AccessUsersAndTeams";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
+import GradientSubmitButton from "@/components/GradientSubmitButton";
+import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
+import { useCurrentTheme } from "@/hooks";
+import { useScopedI18n } from "@/locales/client";
 
 const TIME_UNITS = [
   { value: "s", label: "Seconds" },
@@ -64,7 +68,7 @@ type FlowModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
 
 const emptyFormValues: FlowFormType = {
   name: "",
-  steps: [{ type: "wait" as const, duration: 0, timeUnit: "s" as const }],
+  steps: [{ type: "wait" as const, duration: "" as unknown as number, timeUnit: "s" as const }],
   isPublic: false,
   accessTeamIds: [],
   accessUserIds: []
@@ -85,7 +89,11 @@ function getFormValues(data: CreateUpdateModal<IFlow>): FlowFormType {
 }
 
 export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalProps) {
-  const { palette } = useTheme();
+  const theme = useTheme();
+  const { palette } = theme;
+  const { isDark } = useCurrentTheme();
+  const t = useScopedI18n("endpoints");
+
   const {
     register,
     handleSubmit,
@@ -150,7 +158,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
   }
 
   function addWaitStep() {
-    append({ type: "wait" as const, duration: 0, timeUnit: "s" as const });
+    append({ type: "wait" as const, duration: "" as unknown as number, timeUnit: "s" as const });
   }
 
   function addEndpointStep() {
@@ -197,16 +205,20 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
 
   return (
     <ModalContainer
-      title={data === "NEW" ? "Create New Flow" : "Update Flow"}
+      title={data === "NEW" ? t("modal.createTitle") : t("modal.updateTitle")}
       open={open}
       onClose={onClose}
       disableEscapeKeyDown
       maxWidth="md"
+      paperSx={{
+        ...getGlassCardSx(theme, isDark),
+        maxWidth: "md"
+      }}
     >
       <Box component="form" onSubmit={handleSubmit(handleSubmitForm)} sx={{ width: 1, mt: 2 }}>
         <TextField
           fullWidth
-          label="Name"
+          label={t("modal.field.name")}
           variant="filled"
           error={!!errors.name}
           helperText={errors.name?.message}
@@ -218,11 +230,10 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
           sx={{
             my: 2,
             p: 2,
-            maxHeight: "50vh",
+            maxHeight: "35vh",
             overflow: "auto",
-            border: 1,
-            borderColor: palette.grey[200],
-            borderRadius: 2
+            border: `1px solid ${alpha(palette.primary.main, isDark ? 0.12 : 0.18)}`,
+            borderRadius: 1
           }}
         >
           {fields.map((field, index) => (
@@ -255,7 +266,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
                               bottom: "100%",
                               width: "1px",
                               height: "75%",
-                              backgroundColor: palette.grey[300]
+                              backgroundColor: palette.warning.main
                             }
                           }
                         : {})
@@ -305,7 +316,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
                               bottom: "100%",
                               width: "1px",
                               height: "75%",
-                              backgroundColor: palette.grey[300]
+                              backgroundColor: palette.primary.main
                             }
                           }
                         : {})
@@ -345,9 +356,9 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
               )}
               <IconButton
                 sx={{
-                  backgroundColor: palette.grey[100],
+                  backgroundColor: alpha(palette.primary.main, isDark ? 0.18 : 0.08),
                   transition: "all 200ms ease",
-                  "&:hover": { backgroundColor: palette.grey[200] }
+                  "&:hover": { backgroundColor: alpha(palette.primary.main, isDark ? 0.28 : 0.14) }
                 }}
                 onClick={() => remove(index)}
               >
@@ -365,14 +376,14 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
             sx={{
               color: palette.warning.main,
               backgroundColor: alpha(palette.warning.main, 0.1),
-              border: "none",
+              border: `1px solid ${alpha(palette.warning.main, isDark ? 0.24 : 0.36)}`,
               "&:hover": {
                 borderColor: palette.warning.main,
-                backgroundColor: "rgba(255, 152, 0, 0.04)"
+                backgroundColor: alpha(palette.warning.main, isDark ? 0.18 : 0.14)
               }
             }}
           >
-            ADD WAIT
+            {t("modal.addWait")}
           </Button>
           <Button
             variant="outlined"
@@ -381,14 +392,14 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
             sx={{
               color: palette.primary.main,
               backgroundColor: alpha(palette.primary.main, 0.1),
-              border: "none",
+              border: `1px solid ${alpha(palette.primary.main, isDark ? 0.24 : 0.36)}`,
               "&:hover": {
                 borderColor: palette.primary.main,
-                backgroundColor: "rgba(33, 150, 243, 0.04)"
+                backgroundColor: alpha(palette.primary.main, isDark ? 0.18 : 0.14)
               }
             }}
           >
-            ADD ENDPOINTS
+            {t("modal.addEndpoint")}
           </Button>
         </Box>
         <Grid size={12}>
@@ -401,7 +412,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
         </Grid>
         <FormControlLabel
           sx={{ mb: 3 }}
-          label="Is Public"
+          label={t("modal.field.isPublic")}
           control={
             <Checkbox
               checked={watch("isPublic")}
@@ -409,15 +420,13 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
             />
           }
         />
-        <Button
+        <GradientSubmitButton
           disabled={isCreating || isUpdating}
           type="submit"
-          variant="contained"
-          size="large"
           fullWidth
         >
-          {data === "NEW" ? "Create" : "Update"}
-        </Button>
+          {data === "NEW" ? t("modal.submit.create") : t("modal.submit.update")}
+        </GradientSubmitButton>
       </Box>
     </ModalContainer>
   );

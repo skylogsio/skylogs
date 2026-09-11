@@ -78,14 +78,14 @@ const storageManager = createStorageManager();
 
 export const ENDPOINT_COLORS = {
   sms: "#4880FF",
-  telegram: "#2AABEE",
-  bale: "#00A693",
-  teams: "#454DB3",
+  telegram: "#24A1DE",
+  bale: "#00B894",
+  teams: "#5059C9",
   call: "#11AC26",
-  email: "#F05A28",
-  flow: "#ff00ff",
+  email: "#EA4335",
+  flow: "#8B5CF6",
   discord: "#5865F2",
-  "matter-most": "#284077"
+  "matter-most": "#1C58D9"
 } as const;
 
 export default function MuiProvider({ children }: PropsWithChildren<object>) {

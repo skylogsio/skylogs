@@ -23,7 +23,12 @@ import { createEndpoint, sendOTP, updateEndpoint } from "@/api/endpoint";
 import AccessUsersAndTeams from "@/components/AccessUsersAndTeams";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
+import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
+import GradientSubmitButton from "@/components/GradientSubmitButton";
 import OTP from "@/components/OTP";
+import { useCurrentTheme } from "@/hooks";
+import { useTheme } from "@mui/material";
+import { useScopedI18n } from "@/locales/client";
 
 const ENDPOINTS_TYPE = [
   "sms",
@@ -94,13 +99,16 @@ function getFormValues(data: CreateUpdateModal<IEndpoint>): EndpointFormType {
 }
 
 export default function EndPointModal({ open, onClose, data, onSubmit }: EndpointModalProps) {
+  const theme = useTheme();
+  const { isDark } = useCurrentTheme();
+  const t = useScopedI18n("endpoints");
+
   const {
     register,
     handleSubmit,
     watch,
     reset,
     setValue,
-    getValues,
     setError,
     formState: { errors }
   } = useForm<EndpointFormType>({
@@ -150,7 +158,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
   }
 
   function handleSendOTP() {
-    const [type, value] = getValues(["type", "value"]);
+    const [type, value] = watch(["type", "value"]);
     if (value.trim().length === 0) {
       setError("value", { message: "This field is Required." });
       return;
@@ -160,8 +168,8 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
   }
 
   const showOTPSection =
-    OTP_REQUIRED_ENDPOINT_TYPES.includes(getValues("type")) &&
-    (data === "NEW" || data?.value !== watch("value") || data?.type !== getValues("type"));
+    OTP_REQUIRED_ENDPOINT_TYPES.includes(watch("type")) &&
+    (data === "NEW" || data?.value !== watch("value") || data?.type !== watch("type"));
 
   useEffect(() => {
     reset(getFormValues(data));
@@ -174,12 +182,16 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
     }
   }, [remainedSeconds]);
 
+  const isCreate = data === "NEW";
+
   return (
     <ModalContainer
-      title={`${data === "NEW" ? "Create New" : "Update"} Endpoint`}
+      title={isCreate ? t("modal.createTitle") : t("modal.updateTitle")}
       open={open}
       onClose={onClose}
       disableEscapeKeyDown
+      maxWidth={640}
+      paperSx={getGlassCardSx(theme, isDark)}
     >
       <Grid
         component="form"
@@ -194,16 +206,17 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
       >
         <Grid size={6}>
           <TextField
-            label="Name"
+            label={t("modal.field.name")}
             variant="filled"
             error={!!errors.name}
             helperText={errors.name?.message}
             {...register("name")}
+            fullWidth
           />
         </Grid>
         <Grid size={6}>
           <TextField
-            label="Type"
+            label={t("modal.field.type")}
             variant="filled"
             error={!!errors.type}
             helperText={errors.type?.message}
@@ -224,7 +237,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
         </Grid>
         <Grid size={watch("type") === "telegram" ? 6 : 12}>
           <TextField
-            label={watch("type") === "telegram" || watch("type") === "bale" ? "ChatID" : "Value"}
+            label={watch("type") === "telegram" || watch("type") === "bale" ? t("modal.field.chatId") : t("modal.field.value")}
             variant="filled"
             error={!!errors.value}
             helperText={errors.value?.message}
@@ -234,7 +247,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
         {watch("type") === "telegram" && (
           <Grid size={6}>
             <TextField
-              label="ThreadID"
+              label={t("modal.field.threadId")}
               variant="filled"
               error={!!errors.threadId}
               helperText={errors.threadId?.message}
@@ -245,7 +258,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
         {(watch("type") === "telegram" || watch("type") === "bale") && (
           <Grid size={12}>
             <TextField
-              label="Bot Token"
+              label={t("modal.field.botToken")}
               variant="filled"
               error={!!errors.botToken}
               helperText={errors.botToken?.message}
@@ -264,7 +277,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
         <Grid size={12}>
           <FormControlLabel
             sx={{ margin: 0 }}
-            label="Is Public"
+            label={t("modal.field.isPublic")}
             control={
               <Checkbox
                 checked={watch("isPublic")}
@@ -317,23 +330,21 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
                     ? `${`0${parseInt(String(remainedSeconds / 60))}`.slice(-2)}:${`0${parseInt(String(remainedSeconds % 60))}`.slice(
                         -2
                       )}`
-                    : "Resend"
-                  : "Send OTP Code"}
+                    : t("modal.otp.resend")
+                  : t("modal.otp.send")}
               </Button>
             </Stack>
           </Grid>
         )}
         {(!showOTPSection || (showOTPSection && isOTPSent)) && (
           <Grid size={12}>
-            <Button
-              disabled={isCreating || isUpdating}
+            <GradientSubmitButton
               type="submit"
-              variant="contained"
-              size="large"
               fullWidth
+              loading={isCreating || isUpdating}
             >
-              {data === "NEW" ? "Create" : "Update"}
-            </Button>
+              {isCreate ? t("modal.submit.create") : t("modal.submit.update")}
+            </GradientSubmitButton>
           </Grid>
         )}
       </Grid>
