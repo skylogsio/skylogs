@@ -1,4 +1,4 @@
-FROM php:8.4-fpm-alpine
+FROM php:8.5-fpm-alpine
 # Set tehran timezone
 RUN rm -rf /etc/localtime && ln -s /usr/share/zoneinfo/Asia/Tehran /etc/localtime
 
