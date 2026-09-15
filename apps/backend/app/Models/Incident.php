@@ -47,6 +47,11 @@ class Incident extends BaseModel
         return $this->belongsTo(User::class, 'resolvedBy', '_id');
     }
 
+    public function commanderUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'commanderId', '_id');
+    }
+
     public function postMortem(): HasOne
     {
         return $this->hasOne(PostMortem::class, 'incidentId', '_id');
@@ -113,5 +118,47 @@ class Incident extends BaseModel
     public function hasTeamAcknowledged(string $teamId): bool
     {
         return $this->acknowledgementForTeam($teamId) !== null;
+    }
+
+    public function hasAllTeamsAcknowledged(): bool
+    {
+        return $this->unacknowledgedTeamIds() === [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function unacknowledgedTeamIds(): array
+    {
+        return array_values(array_filter(
+            array_values(array_unique(array_map('strval', $this->teamIds ?? []))),
+            fn (string $teamId): bool => ! $this->hasTeamAcknowledged($teamId),
+        ));
+    }
+
+    /**
+     * Outstanding policy follow-through for related staff. Null once the incident is resolved.
+     *
+     * @return array{
+     *     unacknowledgedTeamIds: list<string>,
+     *     commanderRequired: bool,
+     *     statusPageUpdateRequired: bool,
+     *     postmortemRequired: bool
+     * }|null
+     */
+    public function remaining(): ?array
+    {
+        if ($this->status === IncidentStatus::Resolved) {
+            return null;
+        }
+
+        $sla = $this->policySla ?? [];
+
+        return [
+            'unacknowledgedTeamIds' => $this->unacknowledgedTeamIds(),
+            'commanderRequired' => (bool) (($sla['requireCommander'] ?? false) && empty($this->commanderId)),
+            'statusPageUpdateRequired' => (bool) ($sla['statusPageUpdateRequired'] ?? false),
+            'postmortemRequired' => (bool) ($sla['postmortemRequired'] ?? false),
+        ];
     }
 }

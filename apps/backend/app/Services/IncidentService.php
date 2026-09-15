@@ -14,6 +14,7 @@ use App\Models\IncidentTimelineEntry;
 use App\Models\PostMortem;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\IncidentPolicy\PolicyIncidentFollowThrough;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
@@ -25,6 +26,7 @@ class IncidentService
         private readonly IncidentTimelineService $timelineService,
         private readonly IncidentDocumentService $documentService,
         private readonly PostMortemService $postMortemService,
+        private readonly PolicyIncidentFollowThrough $followThrough,
     ) {}
 
     /**
@@ -189,7 +191,15 @@ class IncidentService
 
         $becameResolved = $resolvedAt !== null && $incident->status !== IncidentStatus::Resolved;
 
-        $incident->update([
+        if (array_key_exists('commanderId', $validated)) {
+            $incident->commanderId = $validated['commanderId'];
+        }
+
+        if ($becameResolved) {
+            $this->followThrough->assertCanResolve($incident);
+        }
+
+        $updates = [
             'title' => $validated['title'],
             'description' => $validated['description'] ?? '',
             'teamIds' => $validated['teamIds'],
@@ -201,10 +211,26 @@ class IncidentService
             'alertRuleIds' => $validated['alertRuleIds'] ?? [],
             'severity' => $validated['severity'],
             'status' => $becameResolved ? IncidentStatus::Resolved : $incident->status,
-        ]);
+        ];
+
+        if (array_key_exists('commanderId', $validated)) {
+            $updates['commanderId'] = $validated['commanderId'];
+        }
+
+        $previousCommanderId = $incident->commanderId;
+        $incident->update($updates);
+
+        if (array_key_exists('commanderId', $validated) && $validated['commanderId'] !== $previousCommanderId && $validated['commanderId'] !== null) {
+            $this->followThrough->recordCommander(
+                $incident,
+                (string) $validated['commanderId'],
+                'Commander assigned.',
+            );
+        }
 
         if ($becameResolved) {
             $this->recordResolution($incident, $user);
+            $this->followThrough->onResolved($incident->fresh() ?? $incident);
         }
 
         return $this->attachNestedDocumentation($user, $incident, $validated, $documentFiles);
@@ -329,15 +355,32 @@ class IncidentService
 
         $incident->update($updates);
 
+        if (empty($incident->commanderId) && (($incident->policySla ?? [])['requireCommander'] ?? false)) {
+            $incident->update(['commanderId' => $user->id]);
+            $this->followThrough->recordCommander(
+                $incident,
+                (string) $user->id,
+                'Commander set from acknowledgement.',
+            );
+        }
+
         $teamNames = Team::query()->whereIn('_id', $teamIds)->pluck('name')->all();
+        $ackFor = 'Acknowledged for '.(implode(', ', $teamNames) ?: implode(', ', $teamIds)).'.';
+        $remainder = $this->followThrough->remainderMessage($incident);
+        $message = $remainder === null ? $ackFor : $ackFor.' '.$remainder;
 
         $this->timelineService->recordSystemEntry(
             $incident,
             IncidentTimelineEntryType::Acknowledged,
-            'Acknowledged for '.(implode(', ', $teamNames) ?: implode(', ', $teamIds)).'.',
+            $message,
             $user,
-            ['teamIds' => $teamIds],
+            [
+                'teamIds' => $teamIds,
+                'unacknowledgedTeamIds' => $incident->unacknowledgedTeamIds(),
+            ],
         );
+
+        $this->followThrough->notifyRemainingAfterAck($incident);
 
         $this->recordStatusChange($incident, $previousStatus, $user);
 
@@ -348,6 +391,8 @@ class IncidentService
 
     public function resolve(User $user, Incident $incident, ?string $resolvedAt = null): Incident
     {
+        $this->followThrough->assertCanResolve($incident);
+
         $incident->update([
             'status' => IncidentStatus::Resolved,
             'resolvedBy' => $user->id,
@@ -355,6 +400,7 @@ class IncidentService
         ]);
 
         $this->recordResolution($incident, $user);
+        $this->followThrough->onResolved($incident->fresh() ?? $incident);
 
         $incident->load('createdByUser');
 

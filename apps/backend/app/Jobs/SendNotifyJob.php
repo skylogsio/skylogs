@@ -56,6 +56,65 @@ class SendNotifyJob implements ShouldQueue
 
     public const SENTRY_WEBHOOK_TEST = 'sentry-webhook-test';
 
+    public const INCIDENT_POLICY_PAGE = 'incident-policy-page';
+
+    /**
+     * @var list<string>
+     */
+    public const INCIDENT_FIRE_TYPES = [
+        self::HEALTH_CHECK,
+        self::ELASTIC_CHECK,
+        self::VICTORIA_LOGS_CHECK,
+        self::PROMETHEUS_WEBHOOK_FIRE,
+        self::GRAFANA_WEBHOOK,
+        self::PROMETHEUS_FIRE,
+        self::API_FIRE,
+        self::SENTRY_WEBHOOK,
+        self::METABASE_WEBHOOK,
+        self::ZABBIX_WEBHOOK,
+    ];
+
+    /**
+     * Fire and resolve share this type, so AlertRule.state decides whether to open or clear.
+     *
+     * @var list<string>
+     */
+    public const INCIDENT_DUAL_PURPOSE_TYPES = [
+        self::HEALTH_CHECK,
+        self::ELASTIC_CHECK,
+        self::VICTORIA_LOGS_CHECK,
+        self::GRAFANA_WEBHOOK,
+        self::PROMETHEUS_FIRE,
+        self::SENTRY_WEBHOOK,
+        self::METABASE_WEBHOOK,
+        self::ZABBIX_WEBHOOK,
+    ];
+
+    /**
+     * @var list<string>
+     */
+    public const INCIDENT_RESOLVE_TYPES = [
+        self::RESOLVED_MANUALLY,
+        self::PROMETHEUS_WEBHOOK_RESOLVE,
+        self::PROMETHEUS_RESOLVE,
+        self::API_RESOLVE,
+    ];
+
+    public static function opensIncident(string $type): bool
+    {
+        return in_array($type, self::INCIDENT_FIRE_TYPES, true);
+    }
+
+    public static function isDualPurposeIncidentType(string $type): bool
+    {
+        return in_array($type, self::INCIDENT_DUAL_PURPOSE_TYPES, true);
+    }
+
+    public static function clearsIncident(string $type): bool
+    {
+        return in_array($type, self::INCIDENT_RESOLVE_TYPES, true);
+    }
+
     /**
      * Create a new job instance.
      *
@@ -92,6 +151,7 @@ class SendNotifyJob implements ShouldQueue
             case self::ZABBIX_WEBHOOK:
             case self::PROMETHEUS_RESOLVE:
             case self::PROMETHEUS_FIRE:
+            case self::INCIDENT_POLICY_PAGE:
                 app(SendNotifyService::class)->SendMessage($this->notify);
                 break;
             case self::ALERT_RULE_TEST:

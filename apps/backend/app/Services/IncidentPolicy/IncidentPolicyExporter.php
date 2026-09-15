@@ -6,7 +6,6 @@ use App\Enums\IncidentSeverity;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\IncidentPolicy;
-use App\Models\OnCallPlan;
 use App\Models\Profile\ProfileService;
 use App\Models\Team;
 use App\Models\User;
@@ -94,19 +93,12 @@ class IncidentPolicyExporter
     {
         $stored = $policy->rules ?? [];
         $endpointIds = [];
-        $onCallPlanIds = [];
 
         foreach ($stored as $rule) {
             $endpointIds = [...$endpointIds, ...($rule['notifyEndpointIds'] ?? [])];
-            $onCallPlanId = $rule['escalation']['onCallPlanId'] ?? null;
-
-            if ($onCallPlanId !== null) {
-                $onCallPlanIds[] = $onCallPlanId;
-            }
         }
 
         $endpointNames = $this->nameMap(Endpoint::class, 'name', $endpointIds);
-        $onCallPlanNames = $this->nameMap(OnCallPlan::class, 'name', $onCallPlanIds);
         $rules = [];
 
         foreach (IncidentSeverity::cases() as $severity) {
@@ -115,8 +107,6 @@ class IncidentPolicyExporter
             if ($rule === null) {
                 continue;
             }
-
-            $onCallPlanId = $rule['escalation']['onCallPlanId'] ?? null;
 
             $rules[] = $this->omitEmpty([
                 'severity' => $severity->value,
@@ -129,10 +119,9 @@ class IncidentPolicyExporter
                         $rule['notifyEndpointIds'],
                     ),
                 ],
-                'escalation' => $onCallPlanId === null ? null : $this->omitEmpty([
-                    'onCallPlan' => 'onCallPlan:'.($onCallPlanNames[$onCallPlanId] ?? $onCallPlanId),
-                    'useLayers' => $rule['escalation']['useLayers'] ?? true,
-                ]),
+                'escalation' => ($rule['escalation']['useLayers'] ?? true) === true ? null : [
+                    'useLayers' => false,
+                ],
                 'communication' => $this->omitEmpty([
                     'stakeholderUpdateEveryMinutes' => $rule['communication']['stakeholderUpdateEveryMinutes'] ?? null,
                     'statusPageUpdateRequired' => ($rule['communication']['statusPageUpdateRequired'] ?? false) ?: null,

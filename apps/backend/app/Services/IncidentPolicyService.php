@@ -189,7 +189,6 @@ class IncidentPolicyService
                 'requireCommander' => (bool) ($rule['requireCommander'] ?? false),
                 'notifyEndpointIds' => $this->stringList($rule['notifyEndpointIds'] ?? []),
                 'escalation' => [
-                    'onCallPlanId' => $rule['escalation']['onCallPlanId'] ?? null,
                     'useLayers' => (bool) ($rule['escalation']['useLayers'] ?? true),
                 ],
                 'communication' => [

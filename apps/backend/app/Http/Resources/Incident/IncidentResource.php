@@ -26,6 +26,8 @@ class IncidentResource extends JsonResource
             'severity' => $this->severity,
             'status' => $this->status,
             'source' => $this->source,
+            'policyId' => $this->policyId,
+            'groupingKey' => $this->groupingKey,
             'startedAt' => $this->startedAt,
             'detectedAt' => $this->detectedAt,
             'resolvedAt' => $this->resolvedAt,
@@ -38,6 +40,11 @@ class IncidentResource extends JsonResource
                 'name' => $this->createdByUser->name,
             ]),
             'resolvedBy' => $this->resolvedBy,
+            'commanderId' => $this->commanderId,
+            'commander' => $this->whenLoaded('commanderUser', fn () => $this->commanderUser ? [
+                'id' => $this->commanderUser->id,
+                'name' => $this->commanderUser->name,
+            ] : null),
             'acknowledgements' => $this->acknowledgements ?? [],
             'teams' => $teams->map(function ($team) {
                 $acknowledgement = $this->acknowledgementForTeam((string) $team->id);
@@ -60,6 +67,8 @@ class IncidentResource extends JsonResource
                 'name' => $rule->name,
             ]),
             'postMortem' => $this->postMortemSummary(),
+            'policySla' => $this->policySla,
+            'remaining' => $this->remaining(),
             'counts' => $this->counts ?? null,
             'canEdit' => $this->canEdit ?? false,
             'canDelete' => $this->canDelete ?? false,

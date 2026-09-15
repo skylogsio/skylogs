@@ -188,7 +188,9 @@ class EndpointService
                 break;
         }
 
-        return $model;
+        $this->syncOnCallFlag($model, $request);
+
+        return $model->fresh();
     }
 
     public function update($endpoint, $request)
@@ -277,7 +279,28 @@ class EndpointService
                 break;
         }
 
-        return $model;
+        $this->syncOnCallFlag($endpoint->fresh(), $request);
+
+        return $endpoint->fresh();
+    }
+
+    public function syncOnCallFlag(Endpoint $endpoint, $request): void
+    {
+        if (! $request->exists('onCall')) {
+            return;
+        }
+
+        $onCall = $request->boolean('onCall');
+
+        if ($onCall) {
+            Endpoint::query()
+                ->where('userId', $endpoint->userId)
+                ->where('_id', '!=', $endpoint->id)
+                ->update(['onCall' => false]);
+        }
+
+        $endpoint->onCall = $onCall;
+        $endpoint->save();
     }
 
     public function validateFlowEndpointData($request): void

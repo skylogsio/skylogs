@@ -37,6 +37,7 @@ class IncidentPolicyTestData
         return OnCallPlan::create([
             'name' => $name ?? 'test-plan-'.uniqid(),
             'teamId' => $team->id,
+            'timezone' => 'UTC',
             'layers' => [],
         ]);
     }
@@ -58,8 +59,8 @@ class IncidentPolicyTestData
     {
         $alertRule = $overrides['alertRule'] ?? 'placeholder-rule';
         $channel = $overrides['channel'] ?? null;
-        $onCallPlan = $overrides['onCallPlan'] ?? null;
         $ackWithinMinutes = $overrides['ackWithinMinutes'] ?? '5';
+        $useLayers = $overrides['useLayers'] ?? null;
         $services = $overrides['services'] ?? null;
         $matchServices = $services === null ? '' : <<<YAML
 
@@ -72,10 +73,10 @@ class IncidentPolicyTestData
                 channels: [endpoint:{$channel}]
         YAML;
 
-        $escalation = $onCallPlan === null ? '' : <<<YAML
+        $escalation = $useLayers === null ? '' : <<<YAML
 
               escalation:
-                onCallPlan: onCallPlan:{$onCallPlan}
+                useLayers: {$useLayers}
         YAML;
 
         return <<<YAML
@@ -109,6 +110,53 @@ class IncidentPolicyTestData
             - severity: SEV3
               ack: { withinMinutes: 30 }
         YAML;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    public static function createPolicy(array $attributes = []): IncidentPolicy
+    {
+        $match = array_replace([
+            'alertRuleIds' => [],
+            'tags' => [],
+            'serviceIds' => [],
+            'dataSourceTypes' => [],
+        ], $attributes['match'] ?? []);
+
+        $incident = array_replace([
+            'autoCreate' => true,
+            'autoResolveOnAlertClear' => false,
+            'titleTemplate' => null,
+            'defaultSeverity' => 'SEV3',
+            'severityMap' => [],
+        ], $attributes['incident'] ?? []);
+
+        $grouping = array_replace([
+            'key' => [],
+            'windowMinutes' => 15,
+        ], $attributes['grouping'] ?? []);
+
+        unset($attributes['match'], $attributes['incident'], $attributes['grouping']);
+
+        return IncidentPolicy::create(array_replace([
+            'name' => 'policy-'.uniqid(),
+            'description' => '',
+            'enabled' => true,
+            'teamIds' => [],
+            'match' => $match,
+            'grouping' => $grouping,
+            'incident' => $incident,
+            'rules' => [
+                'SEV3' => ['ackWithinMinutes' => 30],
+            ],
+            'version' => 1,
+        ], $attributes));
+    }
+
+    public static function deletePolicy(IncidentPolicy $policy): void
+    {
+        IncidentPolicy::query()->where('_id', $policy->id)->delete();
     }
 
     public static function deletePolicyByName(string $name): void
