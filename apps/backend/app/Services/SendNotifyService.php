@@ -19,11 +19,20 @@ use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\Notify;
 use App\Services\Ha\HaReplicationContext;
+use App\Services\IncidentPolicy\AlertMatchContext;
+use App\Services\IncidentPolicy\PolicyIncidentCloser;
+use App\Services\IncidentPolicy\PolicyIncidentOpener;
 use App\Support\NotifyMessagePayload;
 use Illuminate\Support\Collection;
+use Throwable;
 
 class SendNotifyService
 {
+    public function __construct(
+        private readonly PolicyIncidentOpener $policyIncidentOpener,
+        private readonly PolicyIncidentCloser $policyIncidentCloser,
+    ) {}
+
     /**
      * A follower applying the leader's state must never notify: the leader has
      * already paged whoever needed paging, and a second message for the same
@@ -66,13 +75,57 @@ class SendNotifyService
         $notify->status = Notify::STATUS_CREATED;
 
         $notify->save();
+        $this->syncPolicyIncidents($type, $alertRuleId);
         SendNotifyJob::dispatch($notify);
 
         return $notify;
     }
 
+    private function syncPolicyIncidents(mixed $type, mixed $alertRuleId): void
+    {
+        if (! is_string($type) || empty($alertRuleId)) {
+            return;
+        }
+
+        $opens = SendNotifyJob::opensIncident($type);
+        $clears = SendNotifyJob::clearsIncident($type);
+
+        if (! $opens && ! $clears) {
+            return;
+        }
+
+        try {
+            $alertRule = AlertRule::query()->where('_id', $alertRuleId)->first()
+                ?? AlertRule::query()->where('id', $alertRuleId)->first();
+
+            if ($alertRule === null) {
+                return;
+            }
+
+            $firing = AlertRule::isFiringState($alertRule->state);
+            $dualPurpose = SendNotifyJob::isDualPurposeIncidentType($type);
+
+            if ($opens && ($firing || ! $dualPurpose)) {
+                $this->policyIncidentOpener->open(AlertMatchContext::fromAlertRule($alertRule));
+
+                return;
+            }
+
+            if ($clears || ($dualPurpose && ! $firing)) {
+                $this->policyIncidentCloser->clear($alertRule);
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+    }
+
     public function SendMessage(Notify $notify, $isTest = false, $isAcknowledged = false)
     {
+        if ($notify->type === SendNotifyJob::INCIDENT_POLICY_PAGE) {
+            $this->sendPolicyPage($notify);
+
+            return;
+        }
 
         if (empty($notify->alertRule) || ! ($notify->alertRule instanceof AlertRule)) {
             return;
@@ -317,7 +370,7 @@ class SendNotifyService
     {
         try {
             return $sender();
-        } catch (\Throwable $throwable) {
+        } catch (Throwable $throwable) {
             return $throwable->getMessage();
         }
     }
@@ -369,7 +422,41 @@ class SendNotifyService
         return in_array($notify->type, [
             SendNotifyJob::ALERT_RULE_TEST,
             SendNotifyJob::ALERT_RULE_ACKNOWLEDGED,
+            SendNotifyJob::INCIDENT_POLICY_PAGE,
         ], true);
+    }
+
+    private function sendPolicyPage(Notify $notify): void
+    {
+        $endpointIds = array_values(array_filter(array_map('strval', $notify->endpointIds ?? [])));
+
+        if ($endpointIds === []) {
+            return;
+        }
+
+        $endpoints = Endpoint::query()->whereIn('_id', $endpointIds)->get();
+        $flows = $endpoints->where('type', EndpointType::FLOW->value);
+
+        if ($flows->isNotEmpty()) {
+            $resultFlows = $notify->resultFlows ?? [];
+
+            foreach ($flows as $flow) {
+                NotifyFlowEndpointJob::dispatch($notify, $flow->id);
+            }
+
+            $notify->resultFlows = $resultFlows;
+        }
+
+        $notify->resultSms = $this->trySendChannel(fn () => $this->sendSmsAlerts($endpoints->where('type', EndpointType::SMS->value), $notify));
+        $notify->resultCall = $this->trySendChannel(fn () => $this->sendCallAlerts($endpoints->where('type', EndpointType::CALL->value), $notify));
+        $notify->resultTeams = $this->trySendChannel(fn () => $this->sendTeamsAlerts($endpoints->where('type', EndpointType::TEAMS->value), $notify));
+        $notify->resultDiscords = $this->trySendChannel(fn () => $this->sendDiscordAlerts($endpoints->where('type', EndpointType::DISCORD->value), $notify));
+        $notify->resultMatterMost = $this->trySendChannel(fn () => $this->sendMatterMostAlerts($endpoints->where('type', EndpointType::MATTER_MOST->value), $notify));
+        $notify->resultTelegram = $this->trySendChannel(fn () => $this->sendTelegramAlerts($endpoints->where('type', EndpointType::TELEGRAM->value), $notify));
+        $notify->resultBale = $this->trySendChannel(fn () => $this->sendBaleAlerts($endpoints->where('type', EndpointType::BALE->value), $notify));
+        $notify->resultEmail = $this->trySendChannel(fn () => $this->sendEmailAlerts($endpoints->where('type', EndpointType::EMAIL->value), $notify));
+
+        $notify->save();
     }
 
     public function processStep(Notify $notify, $endpointId, int $currentStepIndex = 0)

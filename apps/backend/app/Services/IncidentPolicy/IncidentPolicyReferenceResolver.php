@@ -4,7 +4,6 @@ namespace App\Services\IncidentPolicy;
 
 use App\Models\AlertRule;
 use App\Models\Endpoint;
-use App\Models\OnCallPlan;
 use App\Models\Profile\ProfileService;
 use App\Models\Team;
 use App\Models\User;
@@ -30,7 +29,6 @@ class IncidentPolicyReferenceResolver
         'alertRule' => [AlertRule::class, 'name', 'Alert rule'],
         'service' => [ProfileService::class, 'name', 'Service'],
         'endpoint' => [Endpoint::class, 'name', 'Endpoint'],
-        'onCallPlan' => [OnCallPlan::class, 'name', 'On-call plan'],
     ];
 
     public function __construct(private readonly RunbookNameResolver $runbookResolver) {}
@@ -89,8 +87,6 @@ class IncidentPolicyReferenceResolver
         $rules = [];
 
         foreach ($policy->rules as $severity => $rule) {
-            $onCallPlan = $rule['escalation']['onCallPlan'];
-
             $rules[$severity] = [
                 'ackWithinMinutes' => $rule['ackWithinMinutes'],
                 'resolveWithinMinutes' => $rule['resolveWithinMinutes'],
@@ -102,12 +98,6 @@ class IncidentPolicyReferenceResolver
                     $errors,
                 ),
                 'escalation' => [
-                    'onCallPlanId' => $onCallPlan === null ? null : $this->resolveOne(
-                        $onCallPlan,
-                        'onCallPlan',
-                        $policy->rulePath($severity, 'escalation.onCallPlan'),
-                        $errors,
-                    ),
                     'useLayers' => $rule['escalation']['useLayers'],
                 ],
                 'communication' => $rule['communication'],
@@ -118,16 +108,6 @@ class IncidentPolicyReferenceResolver
         }
 
         return $rules;
-    }
-
-    /**
-     * @param  list<IncidentPolicyDslError>  $errors
-     */
-    private function resolveOne(string $reference, string $kind, string $path, array &$errors): ?string
-    {
-        $resolved = $this->resolveMany([$reference], $kind, $path, $errors, indexed: false);
-
-        return $resolved[0] ?? null;
     }
 
     /**
