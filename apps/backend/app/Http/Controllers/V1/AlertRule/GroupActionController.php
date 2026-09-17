@@ -4,6 +4,7 @@ namespace App\Http\Controllers\V1\AlertRule;
 
 use App\Http\Controllers\Controller;
 use App\Services\AlertRuleService;
+use App\Services\AlertRuleWatchListService;
 use App\Services\EndpointService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,7 @@ class GroupActionController extends Controller
     public function __construct(
         protected AlertRuleService $alertRuleService,
         protected EndpointService $endpointService,
+        protected AlertRuleWatchListService $watchListService,
     ) {}
 
     public function AddUserAccessNotify(Request $request)
@@ -90,6 +92,30 @@ class GroupActionController extends Controller
 
         return response()->json(['status' => true]);
 
+    }
+
+    public function Watch(Request $request)
+    {
+        $alertRules = $this->alertRuleService->getAlertRules($request);
+        $user = Auth::user();
+
+        foreach ($alertRules as $alert) {
+            $this->watchListService->watch($user, $alert);
+        }
+
+        return response()->json(['status' => true]);
+    }
+
+    public function UnWatch(Request $request)
+    {
+        $alertRules = $this->alertRuleService->getAlertRules($request);
+        $user = Auth::user();
+
+        foreach ($alertRules as $alert) {
+            $this->watchListService->unWatch($user, $alert);
+        }
+
+        return response()->json(['status' => true]);
     }
 
     public function Delete(Request $request)

@@ -194,6 +194,37 @@ class AlertRule extends BaseModel implements Messageable
         $this->save();
     }
 
+    public function isWatched(?User $user = null): bool
+    {
+        $user ??= \Auth::user();
+        $watchUserIds = $this->watchUserIds ?? [];
+
+        if ($user === null || $watchUserIds === []) {
+            return false;
+        }
+
+        $watchUserIds = array_map('strval', $watchUserIds);
+
+        return in_array((string) $user->_id, $watchUserIds, true)
+            || in_array((string) $user->id, $watchUserIds, true);
+    }
+
+    public function watch(?User $user = null): void
+    {
+        $user ??= \Auth::user();
+
+        $this->push('watchUserIds', $user->_id, true);
+        $this->save();
+    }
+
+    public function unWatch(?User $user = null): void
+    {
+        $user ??= \Auth::user();
+
+        $this->pull('watchUserIds', $user->_id);
+        $this->save();
+    }
+
     public function getStatus(): array
     {
         $alertCount = 0;

@@ -30,6 +30,7 @@ class AlertRuleResponseFormatter
         'userId',
         'silentUserIds',
         'pinUserIds',
+        'watchUserIds',
         'url',
         'hosts',
         'actions',
@@ -124,6 +125,10 @@ class AlertRuleResponseFormatter
         $alert->isSilent = $isSilent;
         $alert->is_silent = $isSilent;
         $alert->isSilentByBehavior = $this->behaviorRuleService->resolveIsSilent($alert);
+
+        $isWatched = $alert->isWatched($user);
+        $alert->isWatched = $isWatched;
+        $alert->is_watched = $isWatched;
     }
 
     /**

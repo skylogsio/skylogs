@@ -13,6 +13,7 @@ use App\Http\Controllers\V1\AlertRule\GroupActionController;
 use App\Http\Controllers\V1\AlertRule\NotifyController;
 use App\Http\Controllers\V1\AlertRule\PrometheusController;
 use App\Http\Controllers\V1\AlertRule\TagsController;
+use App\Http\Controllers\V1\AlertRule\WatchListController;
 use App\Http\Controllers\V1\AuthController;
 use App\Http\Controllers\V1\Config\CallController;
 use App\Http\Controllers\V1\Config\EmailController;
@@ -324,9 +325,14 @@ Route::prefix('v1')->group(function () {
                     ->group(function () {
                         Route::post('/silent', 'Silent');
                         Route::post('/unsilent', 'UnSilent');
+                        Route::post('/watch', 'Watch');
+                        Route::post('/unwatch', 'UnWatch');
                         Route::post('/delete', 'Delete');
                         Route::post('/add-user-notify', 'AddUserAccessNotify');
                     });
+
+                Route::get('/watch-list', [WatchListController::class, 'index']);
+                Route::post('/watch/{id}', [WatchListController::class, 'toggle'])->where('id', '[0-9a-fA-F]{24}');
 
                 Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                 Route::post('/', 'Store');

@@ -122,7 +122,7 @@ class SendNotifyService
     public function SendMessage(Notify $notify, $isTest = false, $isAcknowledged = false)
     {
         if ($notify->type === SendNotifyJob::INCIDENT_POLICY_PAGE) {
-            $this->sendPolicyPage($notify);
+            $this->sendToNotifyEndpoints($notify);
 
             return;
         }
@@ -426,7 +426,7 @@ class SendNotifyService
         ], true);
     }
 
-    private function sendPolicyPage(Notify $notify): void
+    private function sendToNotifyEndpoints(Notify $notify): void
     {
         $endpointIds = array_values(array_filter(array_map('strval', $notify->endpointIds ?? [])));
 

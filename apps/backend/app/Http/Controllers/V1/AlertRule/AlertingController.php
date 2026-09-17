@@ -57,6 +57,12 @@ class AlertingController extends Controller
                         ['$ifNull' => ['$pinUserIds', []]],
                     ],
                 ],
+                'isWatched' => [
+                    '$in' => [
+                        $currentUser->_id,
+                        ['$ifNull' => ['$watchUserIds', []]],
+                    ],
+                ],
             ],
         ];
 
