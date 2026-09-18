@@ -21,6 +21,7 @@ import { FaClockRotateLeft } from "react-icons/fa6";
 import { HiFire, HiPencil, HiTrash } from "react-icons/hi";
 import { IoNotifications, IoNotificationsOff } from "react-icons/io5";
 import { RiTestTubeFill } from "react-icons/ri";
+import { BsCheck2, BsTerminalFill } from "react-icons/bs";
 
 import type { IZabbixAlertRule, IAlertRule } from "@/@types/alertRule";
 import { getAlertRuleById, silenceAlertRule, testAlertRule } from "@/api/alertRule";
@@ -63,6 +64,7 @@ export default function ViewAlertRule() {
   const [testConfirmationAnchorEl, setTestConfirmationAnchorEl] =
     useState<HTMLButtonElement | null>(null);
   const [currentOpenModal, setCurrentOpenModal] = useState<"DELETE" | "EDIT" | null>(null);
+  const [curlCopied, setCurlCopied] = useState(false);
 
   const { data, refetch } = useQuery({
     queryKey: ["view-alert-rule", alertId],
@@ -113,6 +115,19 @@ export default function ViewAlertRule() {
   async function handleCopyApiTokenToClipboard() {
     try {
       await window.navigator.clipboard.writeText(data!.apiToken!);
+    } catch (err) {
+      console.error("Unable to copy to clipboard.", err);
+      alert("Copy to clipboard failed.");
+    }
+  }
+
+  async function handleCopyCurlCommand() {
+    try {
+      const domain = window.location.origin;
+      const curlCommand = `curl -X POST "${domain}/api/v1/fire-alert" -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer ${data!.apiToken!}" -d '{"instance": "test-instance", "description": "TEST API"}'`;
+      await window.navigator.clipboard.writeText(curlCommand);
+      setCurlCopied(true);
+      setTimeout(() => setCurlCopied(false), 2000);
     } catch (err) {
       console.error("Unable to copy to clipboard.", err);
       alert("Copy to clipboard failed.");
@@ -270,6 +285,21 @@ export default function ViewAlertRule() {
                   >
                     Test
                   </Button>
+                  {data.type === "api" && data.apiToken && (
+                    <Button
+                      onClick={handleCopyCurlCommand}
+                      startIcon={curlCopied ? <BsCheck2 size="1.4rem" /> : <BsTerminalFill size="1.4rem" />}
+                      sx={{
+                        textTransform: "capitalize !important",
+                        color: curlCopied ? palette.success.main : palette.info.main,
+                        backgroundColor: curlCopied ? alpha(palette.success.main, 0.1) : alpha(palette.info.main, 0.05),
+                        paddingX: 2,
+                        transition: "all 0.2s ease-in-out"
+                      }}
+                    >
+                      {curlCopied ? "Copied!" : "Copy Curl"}
+                    </Button>
+                  )}
                 </Stack>
               )}
               {data.apiToken && (

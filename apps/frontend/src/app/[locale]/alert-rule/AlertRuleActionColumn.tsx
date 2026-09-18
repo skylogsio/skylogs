@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 
-import { alpha, Button, IconButton, Popover, Stack, Typography } from "@mui/material";
+import { alpha, Button, IconButton, Popover, Stack, Tooltip, Typography } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
+import { BsCheck2, BsTerminalFill } from "react-icons/bs";
 import { FaThumbtack, FaThumbtackSlash } from "react-icons/fa6";
 import { HiDotsHorizontal } from "react-icons/hi";
 import { IoNotifications, IoNotificationsOff } from "react-icons/io5";
 import { RiTestTubeFill } from "react-icons/ri";
 
-import { IAlertRule } from "@/@types/alertRule";
+import type { IAlertRule } from "@/@types/alertRule";
 import { pinAlertRule, silenceAlertRule, testAlertRule } from "@/api/alertRule";
 import ActionColumn, { ActionColumnProps } from "@/components/ActionColumn";
 import AlertRuleAccessModal from "@/components/AlertRule/Users/AlertRuleAccessModal";
@@ -18,13 +19,23 @@ interface AlertRuleActionColumnProps
   rowId: string;
   isSilent: boolean;
   isPinned: boolean;
+  type: IAlertRule["type"];
+  apiToken?: string;
   refreshData?: () => void;
+}
+
+async function copyCurlCommand(apiToken: string) {
+  const domain = window.location.origin;
+  const curlCommand = `curl -X POST "${domain}/api/v1/fire-alert" -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer ${apiToken}" -d '{"instance": "test-instance", "description": "TEST API"}'`;
+  await window.navigator.clipboard.writeText(curlCommand);
 }
 
 export default function AlertRuleActionColumn({
   rowId,
   isSilent,
   isPinned,
+  type,
+  apiToken,
   onEdit,
   onDelete,
   refreshData,
@@ -35,6 +46,7 @@ export default function AlertRuleActionColumn({
   const [showMoreAnchorEl, setShowMoreAnchorEl] = useState<HTMLButtonElement | null>(null);
   const [isSilentStatus, setIsSilentStatus] = useState<boolean>(Boolean(isSilent));
   const [isPinnedStatus, setIsPinnedStatus] = useState<boolean>(Boolean(isPinned));
+  const [curlCopied, setCurlCopied] = useState(false);
 
   const handleCloseTestConfirmationPopover = () => {
     setTestConfirmationAnchorEl(null);
@@ -42,6 +54,12 @@ export default function AlertRuleActionColumn({
 
   function handleTest(event: React.MouseEvent<HTMLButtonElement>) {
     setTestConfirmationAnchorEl(event.currentTarget);
+  }
+
+  async function handleCopyCurl() {
+    await copyCurlCommand(apiToken!);
+    setCurlCopied(true);
+    setTimeout(() => setCurlCopied(false), 2000);
   }
 
   const openTestConfirmationPopover = Boolean(testConfirmationAnchorEl);
@@ -164,6 +182,22 @@ export default function AlertRuleActionColumn({
           >
             {isPinnedStatus ? <FaThumbtackSlash size="1.3rem" /> : <FaThumbtack size="1.3rem" />}
           </IconButton>
+          {type === "api" && apiToken && (
+            <Tooltip title={curlCopied ? "Copied!" : "Copy curl command"}>
+              <IconButton
+                onClick={handleCopyCurl}
+                sx={({ palette }) => ({
+                  color: curlCopied ? palette.success.main : palette.info.main,
+                  backgroundColor: curlCopied
+                    ? alpha(palette.success.main, 0.1)
+                    : alpha(palette.info.main, 0.05),
+                  transition: "all 0.2s ease-in-out"
+                })}
+              >
+                {curlCopied ? <BsCheck2 size="1.3rem" /> : <BsTerminalFill size="1.3rem" />}
+              </IconButton>
+            </Tooltip>
+          )}
         </Stack>
       </Popover>
       <Popover

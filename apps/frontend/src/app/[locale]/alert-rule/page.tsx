@@ -137,8 +137,10 @@ export default function AlertRule() {
                   hasActionAccess={row.original.hasActionAccess}
                   refreshData={handleRefreshData}
                   isSilent={row.original.is_silent}
-                  rowId={row.original.id}
                   isPinned={row.original.isPinned}
+                  type={row.original.type}
+                  apiToken={row.original.apiToken}
+                  rowId={row.original.id}
                   onEdit={() => setModalData(row.original)}
                   onDelete={() => setDeleteModalData(row.original)}
                 />
