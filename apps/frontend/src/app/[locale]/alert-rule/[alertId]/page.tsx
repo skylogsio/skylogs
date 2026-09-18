@@ -124,7 +124,8 @@ export default function ViewAlertRule() {
   async function handleCopyCurlCommand() {
     try {
       const domain = window.location.origin;
-      const curlCommand = `curl -X POST "${domain}/api/v1/fire-alert" -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer ${data!.apiToken!}" -d '{"instance": "test-instance", "description": "TEST API"}'`;
+      const endpoint = data!.type === "api" ? "fire-alert" : "notification-alert";
+      const curlCommand = `curl -X POST "${domain}/api/v1/${endpoint}" -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer ${data!.apiToken!}" -d '{"instance": "test-instance", "description": "TEST API"}'`;
       await window.navigator.clipboard.writeText(curlCommand);
       setCurlCopied(true);
       setTimeout(() => setCurlCopied(false), 2000);
@@ -285,7 +286,7 @@ export default function ViewAlertRule() {
                   >
                     Test
                   </Button>
-                  {data.type === "api" && data.apiToken && (
+                  {(data.type === "api" || data.type === "notification") && data.apiToken && (
                     <Button
                       onClick={handleCopyCurlCommand}
                       startIcon={curlCopied ? <BsCheck2 size="1.4rem" /> : <BsTerminalFill size="1.4rem" />}

@@ -24,9 +24,10 @@ interface AlertRuleActionColumnProps
   refreshData?: () => void;
 }
 
-async function copyCurlCommand(apiToken: string) {
+async function copyCurlCommand(apiToken: string, type: "api" | "notification") {
   const domain = window.location.origin;
-  const curlCommand = `curl -X POST "${domain}/api/v1/fire-alert" -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer ${apiToken}" -d '{"instance": "test-instance", "description": "TEST API"}'`;
+  const endpoint = type === "api" ? "fire-alert" : "notification-alert";
+  const curlCommand = `curl -X POST "${domain}/api/v1/${endpoint}" -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer ${apiToken}" -d '{"instance": "test-instance", "description": "TEST API"}'`;
   await window.navigator.clipboard.writeText(curlCommand);
 }
 
@@ -57,7 +58,7 @@ export default function AlertRuleActionColumn({
   }
 
   async function handleCopyCurl() {
-    await copyCurlCommand(apiToken!);
+    await copyCurlCommand(apiToken!, type as "api" | "notification");
     setCurlCopied(true);
     setTimeout(() => setCurlCopied(false), 2000);
   }
@@ -182,7 +183,7 @@ export default function AlertRuleActionColumn({
           >
             {isPinnedStatus ? <FaThumbtackSlash size="1.3rem" /> : <FaThumbtack size="1.3rem" />}
           </IconButton>
-          {type === "api" && apiToken && (
+          {(type === "api" || type === "notification") && apiToken && (
             <Tooltip title={curlCopied ? "Copied!" : "Copy curl command"}>
               <IconButton
                 onClick={handleCopyCurl}
