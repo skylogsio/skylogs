@@ -44,7 +44,9 @@ export default function AdvanceSection({ type }: { type: AlertRuleType }) {
   const [modalData, setModalData] = useState<"NEW" | BehaviorRuleItem>();
 
   const showNotificationSection = !["elastic", "victoria_logs", "health", "sentry"].includes(type);
-  const showTemplateSection = ["grafana", "prometheus", "pmm"].includes(type);
+  const showTemplateSection = ["grafana", "prometheus", "pmm", "api", "notification"].includes(
+    type
+  );
 
   const { data } = useQuery({
     queryKey: ["get-behavior-rule", alertId],
