@@ -3,6 +3,7 @@
 namespace App\Services\AlertMessage;
 
 use App\Enums\AlertRuleType;
+use App\Models\AlertInstance;
 use App\Models\AlertRule;
 use App\Models\GrafanaWebhookAlert;
 use App\Models\PrometheusCheck;
@@ -22,6 +23,7 @@ final class AlertMessageFormatting
         return match ($type) {
             AlertRuleType::PROMETHEUS => self::prometheusStateLine($payload),
             AlertRuleType::GRAFANA, AlertRuleType::PMM => self::grafanaStateLine($payload),
+            AlertRuleType::API, AlertRuleType::NOTIFICATION => self::apiStateLine($payload),
             default => self::genericStateLine($rule),
         };
     }
@@ -37,6 +39,12 @@ final class AlertMessageFormatting
             AlertRuleType::GRAFANA, AlertRuleType::PMM => match ($payload['status'] ?? '') {
                 GrafanaWebhookAlert::RESOLVED => AlertRule::RESOlVED,
                 GrafanaWebhookAlert::FIRING => AlertRule::CRITICAL,
+                default => (string) ($rule->state ?? ''),
+            },
+            AlertRuleType::API, AlertRuleType::NOTIFICATION => match ((int) ($payload['state'] ?? 0)) {
+                AlertInstance::RESOLVED => AlertRule::RESOlVED,
+                AlertInstance::FIRE => AlertRule::CRITICAL,
+                AlertInstance::NOTIFICATION => 'notification',
                 default => (string) ($rule->state ?? ''),
             },
             default => (string) ($rule->state ?? ''),
@@ -138,6 +146,16 @@ final class AlertMessageFormatting
         };
 
         return $line !== '' ? $line."\n\n" : '';
+    }
+
+    private static function apiStateLine(array $payload): string
+    {
+        return match ((int) ($payload['state'] ?? 0)) {
+            AlertInstance::FIRE => 'State: Fire 🔥',
+            AlertInstance::RESOLVED => 'State: Resolve ✅',
+            AlertInstance::NOTIFICATION => 'State: Notification 📢',
+            default => 'state: Unknown',
+        };
     }
 
     private static function genericStateLine(AlertRule $rule): string

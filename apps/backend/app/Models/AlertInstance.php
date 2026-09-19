@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\ProvidesDefaultChannelMessages;
 use App\Interfaces\Messageable;
+use App\Services\AlertMessage\AlertMessageTemplateRenderer;
 use MongoDB\Laravel\Relations\BelongsTo;
 use Morilog\Jalali\Jalalian;
 
@@ -104,6 +105,12 @@ class AlertInstance extends BaseModel implements Messageable
 
     public function defaultMessage()
     {
+        $alertRule = $this->alertRule;
+
+        if ($alertRule) {
+            return AlertMessageTemplateRenderer::make()->renderDefault($alertRule, $this->toArray());
+        }
+
         $text = $this->alertRuleName;
 
         $text .= match ($this->state) {
@@ -122,7 +129,6 @@ class AlertInstance extends BaseModel implements Messageable
         }
 
         $text .= "\nDate: ".$this->updatedAtString();
-        //        $text .= $this->description;
 
         return $text;
     }
