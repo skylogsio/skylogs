@@ -195,6 +195,7 @@ Route::prefix('v1')->group(function () {
                 Route::delete('/', 'destroy');
             });
 
+        Route::get('/on-call-plan/template', [OnCallPlanController::class, 'template']);
         Route::get('/on-call-plan/current', [OnCallPlanController::class, 'current']);
 
         Route::prefix('/incident')

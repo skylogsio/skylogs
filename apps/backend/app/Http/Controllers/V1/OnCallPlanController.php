@@ -12,10 +12,12 @@ use App\Http\Resources\OnCallPlan\OnCallPlanResource;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\OnCallPlanExcelImporter;
+use App\Services\OnCallPlanExcelTemplate;
 use App\Services\OnCallPlanService;
 use App\Services\OnCallResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class OnCallPlanController extends Controller
 {
@@ -23,6 +25,7 @@ class OnCallPlanController extends Controller
         private readonly OnCallPlanService $onCallPlanService,
         private readonly OnCallResolver $resolver,
         private readonly OnCallPlanExcelImporter $importer,
+        private readonly OnCallPlanExcelTemplate $excelTemplate,
     ) {}
 
     public function show(string $teamId): OnCallPlanResource
@@ -93,6 +96,20 @@ class OnCallPlanController extends Controller
         return response()->json(
             $this->resolver->at($plan, $at === null ? null : Carbon::parse($at)),
         );
+    }
+
+    public function template(): BinaryFileResponse
+    {
+        $path = tempnam(sys_get_temp_dir(), 'oncall').'.xlsx';
+        $this->excelTemplate->save($this->excelTemplate->blank(), $path);
+
+        return response()
+            ->download(
+                $path,
+                'on-call-plan-template.xlsx',
+                ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+            )
+            ->deleteFileAfterSend(true);
     }
 
     public function current(CurrentOnCallPlanRequest $request): JsonResponse

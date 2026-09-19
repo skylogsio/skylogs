@@ -28,14 +28,14 @@ describe('OnCallPlanController', function () {
             [
                 'title' => 'Layer 1',
                 'rows' => [
-                    ['Mon 00:00–08:00', $this->owner->name],
-                    ['Mon 08:00–16:00', $this->member->name],
+                    ['00:00–08:00', $this->owner->name],
+                    ['08:00–16:00', $this->member->name],
                 ],
             ],
             [
                 'title' => 'Layer 2',
                 'rows' => [
-                    ['Mon 00:00–24:00', $this->member->name],
+                    ['00:00–24:00', $this->member->name],
                 ],
             ],
         ];
@@ -105,7 +105,7 @@ describe('OnCallPlanController', function () {
             [
                 'title' => 'Layer 1',
                 'rows' => [
-                    ['Mon 00:00–08:00', 'Nobody-Here'],
+                    ['00:00–08:00', 'Nobody-Here'],
                 ],
             ],
         ]);
@@ -122,8 +122,8 @@ describe('OnCallPlanController', function () {
             [
                 'title' => 'Layer 1',
                 'rows' => [
-                    ['Mon 08:00–16:00', $this->owner->name],
-                    ['Mon 12:00–20:00', $this->member->name],
+                    ['08:00–16:00', $this->owner->name],
+                    ['12:00–20:00', $this->member->name],
                 ],
             ],
         ]);
@@ -164,7 +164,7 @@ describe('OnCallPlanController', function () {
             [
                 'title' => 'Layer 1',
                 'rows' => [
-                    ['Mon 00:00–24:00', $this->member->name],
+                    ['00:00–24:00', $this->member->name],
                 ],
             ],
         ]);
@@ -206,7 +206,7 @@ describe('OnCallPlanController', function () {
             [
                 'title' => 'Layer 1',
                 'rows' => [
-                    ['Mon 00:00–08:00', $this->owner->name],
+                    ['00:00–08:00', $this->owner->name],
                 ],
             ],
         ]);
@@ -227,13 +227,7 @@ describe('OnCallPlanController', function () {
             [
                 'title' => 'Layer 1',
                 'rows' => [
-                    ['Mon 00:00–24:00', $this->owner->name],
-                    ['Tue 00:00–24:00', $this->owner->name],
-                    ['Wed 00:00–24:00', $this->owner->name],
-                    ['Thu 00:00–24:00', $this->owner->name],
-                    ['Fri 00:00–24:00', $this->owner->name],
-                    ['Sat 00:00–24:00', $this->owner->name],
-                    ['Sun 00:00–24:00', $this->owner->name],
+                    OnCallPlanTestData::allDays('00:00–24:00', $this->owner->name),
                 ],
             ],
         ]);
@@ -262,7 +256,7 @@ describe('OnCallPlanController', function () {
             [
                 'title' => 'Layer 1',
                 'rows' => [
-                    ['Tue 00:00–24:00', $this->owner->name],
+                    ['00:00–24:00', '', $this->owner->name],
                 ],
             ],
         ], [
@@ -294,5 +288,13 @@ describe('OnCallPlanController', function () {
             ->assertJsonPath('status', true);
 
         expect(OnCallPlan::query()->where('teamId', $this->team->id)->exists())->toBeFalse();
+    });
+
+    it('downloads a calendar excel template', function () {
+        $this->actingAs($this->owner, 'api')
+            ->withHeaders(['Accept' => '*/*'])
+            ->get('/api/v1/on-call-plan/template')
+            ->assertSuccessful()
+            ->assertDownload('on-call-plan-template.xlsx');
     });
 });

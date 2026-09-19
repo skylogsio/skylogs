@@ -31,7 +31,7 @@ class OnCallPlanDocs
         path: '/api/v1/team/{teamId}/on-call-plan',
         operationId: 'createTeamOnCallPlan',
         summary: 'Create the team on-call plan',
-        description: 'Multipart: name, timezone, optional layerDelays, and an xlsx file (one sheet per layer, Time + User). Fails with 422 if the team already has a plan. Admin or the team owner.',
+        description: 'Multipart: name, timezone, optional layerDelays, and an xlsx weekly calendar (one Layer sheet per escalation level). Fails with 422 if the team already has a plan. Admin or the team owner.',
         security: [['bearerAuth' => []]],
         tags: ['On-Call Plans'],
         parameters: [
@@ -128,6 +128,23 @@ class OnCallPlanDocs
         ]
     )]
     public function current() {}
+
+    #[OA\Get(
+        path: '/api/v1/on-call-plan/template',
+        operationId: 'downloadOnCallPlanTemplate',
+        summary: 'Download the on-call Excel template',
+        description: 'Blank weekly calendar workbook (Instructions, Layer 1, Layer 2, Legend). Logged-in users.',
+        security: [['bearerAuth' => []]],
+        tags: ['On-Call Plans'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'xlsx template',
+                content: new OA\MediaType(mediaType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ),
+        ]
+    )]
+    public function template() {}
 }
 
 #[OA\Schema(
@@ -158,7 +175,7 @@ class OnCallPlanSchema {}
     properties: [
         new OA\Property(property: 'name', type: 'string'),
         new OA\Property(property: 'timezone', type: 'string', example: 'Asia/Tehran'),
-        new OA\Property(property: 'file', type: 'string', format: 'binary', description: 'xlsx, one sheet per layer, Time and User columns'),
+        new OA\Property(property: 'file', type: 'string', format: 'binary', description: 'xlsx weekly calendar: columns Monday–Sunday, rows are shifts, cell text is the username'),
         new OA\Property(property: 'layerDelays', type: 'array', items: new OA\Items(type: 'integer'), description: 'Minutes to wait after each layer, in sheet order'),
     ]
 )]

@@ -11,7 +11,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class OnCallPlanTestData
 {
     /**
-     * @param  list<array{title: string, rows: list<array{0: string, 1: string}>}>  $sheets
+     * @param  list<array{title: string, rows: list<list<mixed>>}>  $sheets
      * @param  array<string, mixed>  $fields
      * @return array<string, mixed>
      */
@@ -33,7 +33,7 @@ class OnCallPlanTestData
     }
 
     /**
-     * @param  list<array{title: string, rows: list<array{0: string, 1: string}>}>  $sheets
+     * @param  list<array{title: string, rows: list<list<mixed>>, merge?: list<string>}>  $sheets
      */
     public static function workbook(array $sheets): string
     {
@@ -44,9 +44,13 @@ class OnCallPlanTestData
             $worksheet = $spreadsheet->createSheet($index);
             $worksheet->setTitle($sheet['title']);
             $worksheet->fromArray([
-                ['Time', 'User'],
+                ['Time', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
                 ...$sheet['rows'],
             ]);
+
+            foreach ($sheet['merge'] ?? [] as $range) {
+                $worksheet->mergeCells($range);
+            }
         }
 
         $path = tempnam(sys_get_temp_dir(), 'oncall').'.xlsx';
@@ -79,5 +83,13 @@ class OnCallPlanTestData
     public static function deleteForTeam(Team $team): void
     {
         OnCallPlan::query()->where('teamId', (string) $team->id)->delete();
+    }
+
+    /**
+     * @return list<string|null>
+     */
+    public static function allDays(string $time, string $user): array
+    {
+        return [$time, $user, $user, $user, $user, $user, $user, $user];
     }
 }
