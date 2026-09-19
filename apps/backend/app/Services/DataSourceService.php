@@ -65,6 +65,18 @@ class DataSourceService
         return DataSource::query()->where('webhookToken', $token)->firstOrFail();
     }
 
+    public function byWebhookToken(string $token, DataSourceType $type): ?DataSource
+    {
+        if ($token === '') {
+            return null;
+        }
+
+        return DataSource::query()
+            ->where('webhookToken', $token)
+            ->where('type', $type)
+            ->first();
+    }
+
     public static function flushCache()
     {
         cache()->tags(['dataSource'])->flush();
