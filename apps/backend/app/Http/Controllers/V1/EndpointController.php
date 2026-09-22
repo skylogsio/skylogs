@@ -138,6 +138,7 @@ class EndpointController extends Controller
                         'matter-most',
                     ]),
                 ],
+                'onCall' => 'nullable|boolean',
             ],
         );
         if ($va->passes()) {
@@ -208,10 +209,11 @@ class EndpointController extends Controller
                         'matter-most',
                     ]),
                 ],
+                'onCall' => 'nullable|boolean',
             ],
         );
         if ($va->passes()) {
-            $this->endpointService->update($model, $request);
+            $model = $this->endpointService->update($model, $request);
 
             return response()->json([
                 'status' => true,

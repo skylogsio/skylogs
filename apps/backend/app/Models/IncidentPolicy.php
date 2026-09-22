@@ -33,7 +33,7 @@ use MongoDB\Laravel\Relations\BelongsTo;
  *     resolveWithinMinutes: int|null,
  *     requireCommander: bool,
  *     notifyEndpointIds: list<string>,
- *     escalation: array{onCallPlanId: string|null, useLayers: bool},
+ *     escalation: array{useLayers: bool},
  *     communication: array{stakeholderUpdateEveryMinutes: int|null, statusPageUpdateRequired: bool},
  *     postmortem: array{required: bool, dueDays: int|null, reviewRequired: bool},
  *     runbookNames: list<string>,

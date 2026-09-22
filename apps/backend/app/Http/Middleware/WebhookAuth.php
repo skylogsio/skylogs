@@ -40,10 +40,8 @@ class WebhookAuth
             abort(Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $token = $request->route('token');
-        $dataSource = $this->dataSourceService->get($dataSourceType)
-            ->where('webhookToken', $token)
-            ->first();
+        $token = (string) $request->route('token');
+        $dataSource = $this->dataSourceService->byWebhookToken($token, $dataSourceType);
         if (! $dataSource) {
             abort(403);
         }

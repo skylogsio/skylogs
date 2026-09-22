@@ -9,8 +9,6 @@ use App\Models\AlertRule;
 
 class ApiService
 {
-    public function __construct(protected AlertRuleService $alertRuleService) {}
-
     public function fireAlert($post): array
     {
         $alertRule = AlertRule::firstWhere('apiToken', $post['apiToken']);
@@ -196,16 +194,13 @@ class ApiService
 
     public function alertRuleByToken($token, ?AlertRuleType $type = null)
     {
-
-        $alertRules = $this->alertRuleService->getAlerts($type);
-
-        $alert = $alertRules->where('apiToken', $token)->first();
-
-        if ($alert) {
-            return $alert;
+        if (! is_string($token) || $token === '') {
+            return null;
         }
 
-        return null;
+        return AlertRule::where('apiToken', $token)
+            ->when($type, fn ($query) => $query->where('type', $type))
+            ->first();
     }
 
     public function refreshStatus(AlertRule $alertRule)

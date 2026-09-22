@@ -25,6 +25,16 @@ class Endpoint extends BaseModel
 
     protected $guarded = ['id', '_id'];
 
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'onCall' => 'boolean',
+        ];
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

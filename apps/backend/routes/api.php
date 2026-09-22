@@ -13,6 +13,7 @@ use App\Http\Controllers\V1\AlertRule\GroupActionController;
 use App\Http\Controllers\V1\AlertRule\NotifyController;
 use App\Http\Controllers\V1\AlertRule\PrometheusController;
 use App\Http\Controllers\V1\AlertRule\TagsController;
+use App\Http\Controllers\V1\AlertRule\WatchListController;
 use App\Http\Controllers\V1\AuthController;
 use App\Http\Controllers\V1\Config\CallController;
 use App\Http\Controllers\V1\Config\EmailController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\V1\Incident\TimelineController;
 use App\Http\Controllers\V1\IncidentActionItemController;
 use App\Http\Controllers\V1\IncidentController;
 use App\Http\Controllers\V1\IncidentPolicyController;
+use App\Http\Controllers\V1\OnCallPlanController;
 use App\Http\Controllers\V1\Profile\AssetController;
 use App\Http\Controllers\V1\RunbookController;
 use App\Http\Controllers\V1\SkylogsInstanceController;
@@ -182,6 +184,20 @@ Route::prefix('v1')->group(function () {
                 Route::middleware('role:'.Constants::ROLE_OWNER->value.'|'.Constants::ROLE_MANAGER->value)->delete('/{id}', 'Delete');
             });
 
+        Route::prefix('/team/{teamId}/on-call-plan')
+            ->where(['teamId' => '[0-9a-fA-F]{24}'])
+            ->controller(OnCallPlanController::class)
+            ->group(function () {
+                Route::get('/', 'show');
+                Route::get('/at', 'at');
+                Route::post('/', 'store');
+                Route::put('/', 'update');
+                Route::delete('/', 'destroy');
+            });
+
+        Route::get('/on-call-plan/template', [OnCallPlanController::class, 'template']);
+        Route::get('/on-call-plan/current', [OnCallPlanController::class, 'current']);
+
         Route::prefix('/incident')
             ->controller(IncidentController::class)
             ->group(function () {
@@ -310,9 +326,14 @@ Route::prefix('v1')->group(function () {
                     ->group(function () {
                         Route::post('/silent', 'Silent');
                         Route::post('/unsilent', 'UnSilent');
+                        Route::post('/watch', 'Watch');
+                        Route::post('/unwatch', 'UnWatch');
                         Route::post('/delete', 'Delete');
                         Route::post('/add-user-notify', 'AddUserAccessNotify');
                     });
+
+                Route::get('/watch-list', [WatchListController::class, 'index']);
+                Route::post('/watch/{id}', [WatchListController::class, 'toggle'])->where('id', '[0-9a-fA-F]{24}');
 
                 Route::get('/{id}', 'Show')->where('id', '[0-9a-fA-F]{24}');
                 Route::post('/', 'Store');

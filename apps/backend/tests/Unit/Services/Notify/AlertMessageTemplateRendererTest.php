@@ -1,12 +1,15 @@
 <?php
 
 use App\Enums\AlertRuleType;
+use App\Models\AlertInstance;
 use App\Models\AlertRule;
 use App\Models\GrafanaWebhookAlert;
 use App\Models\Notify;
 use App\Models\PrometheusCheck;
 use App\Services\AlertMessage\AlertMessageTemplateRenderer;
 use App\Services\NotifyMessageComposer;
+use Carbon\Carbon;
+use Morilog\Jalali\Jalalian;
 use Tests\Support\Factories\AlertRuleFactory;
 
 /**
@@ -61,6 +64,22 @@ function grafana_test_payload(): array
                 ],
             ],
         ],
+    ];
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function api_test_payload(): array
+{
+    return [
+        'alertRuleName' => 'API Alert',
+        'state' => AlertInstance::FIRE,
+        'instance' => 'host-1',
+        'description' => 'disk full',
+        'summary' => 'capacity',
+        'job' => 'api-check',
+        'updatedAt' => '2026-09-19T16:30:00.000000Z',
     ];
 }
 
@@ -206,6 +225,72 @@ describe('AlertMessageTemplateRenderer', function () {
             ->toContain("runbook_url : https://example.test/runbook\n")
             ->toMatch('/Date: \d{4}\/\d{2}\/\d{2}$/');
     });
+
+    it('renders api instance placeholders', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'API Alert',
+            'type' => AlertRuleType::API,
+        ]);
+
+        $body = AlertMessageTemplateRenderer::make()->renderFromPayload(
+            $rule,
+            api_test_payload(),
+            '{{name}}|{{instance}}|{{description}}|{{summary}}|{{job}}|{{alert.instance}}',
+        );
+
+        expect($body)->toBe('API Alert|host-1|disk full|capacity|api-check|host-1');
+    });
+
+    it('renders api default template matching legacy structure', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'API Alert',
+            'type' => AlertRuleType::API,
+        ]);
+
+        $payload = api_test_payload();
+        $body = AlertMessageTemplateRenderer::make()->renderDefault($rule, $payload);
+        $expectedDate = 'Date: '.Jalalian::fromCarbon(Carbon::parse($payload['updatedAt']))->format('Y/m/d H:i:s');
+
+        expect($body)->toBe(
+            "API Alert\nState: Fire 🔥\nInstance: host-1\nDescription: disk full\n".$expectedDate
+        );
+    });
+
+    it('omits empty api instance and description lines', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'API Alert',
+            'type' => AlertRuleType::API,
+        ]);
+
+        $body = AlertMessageTemplateRenderer::make()->renderDefault($rule, [
+            'state' => AlertInstance::RESOLVED,
+            'updatedAt' => '2026-09-19T16:30:00.000000Z',
+        ]);
+
+        expect($body)
+            ->toContain("API Alert\nState: Resolve ✅\nDate: ")
+            ->not->toContain('Instance:')
+            ->not->toContain('Description:');
+    });
+
+    it('renders notification alerts using the api builder', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'Notify Alert',
+            'type' => AlertRuleType::NOTIFICATION,
+        ]);
+
+        $body = AlertMessageTemplateRenderer::make()->renderFromPayload(
+            $rule,
+            [
+                'state' => AlertInstance::NOTIFICATION,
+                'instance' => 'worker-7',
+                'description' => 'deploy finished',
+            ],
+            '{{name}}|{{state}}|{{state_line}}|{{instance}}',
+        );
+
+        expect($body)->toBe('Notify Alert|notification|State: Notification 📢|worker-7');
+    });
 });
 
 describe('PrometheusCheck defaultMessage', function () {
@@ -250,6 +335,27 @@ describe('GrafanaWebhookAlert defaultMessage', function () {
     });
 });
 
+describe('AlertInstance defaultMessage', function () {
+    it('uses the shared default template renderer for api alerts', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'API Alert',
+            'type' => AlertRuleType::API,
+        ]);
+
+        $instance = AlertInstance::withoutEvents(function () {
+            $model = new AlertInstance;
+            $model->forceFill(api_test_payload());
+
+            return $model;
+        });
+        $instance->setRelation('alertRule', $rule);
+
+        $expected = AlertMessageTemplateRenderer::make()->renderDefault($rule, $instance->toArray());
+
+        expect($instance->defaultMessage())->toBe($expected);
+    });
+});
+
 describe('NotifyMessageComposer prometheus templates', function () {
     it('preserves telegram meta when applying prometheus template via notify', function () {
         $rule = AlertRuleFactory::unsaved([
@@ -283,5 +389,41 @@ describe('NotifyMessageComposer prometheus templates', function () {
         expect($payload->telegram())->toBeArray()
             ->and($payload->telegram()['message'])->toBe('CPU Alert on api-1')
             ->and($payload->telegram()['meta'][0]['text'] ?? null)->toBe('Acknowledge');
+    });
+});
+
+describe('NotifyMessageComposer api templates', function () {
+    it('applies api template placeholders via notify', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'API Alert',
+            'type' => AlertRuleType::API,
+            'showAcknowledgeBtn' => true,
+        ]);
+
+        $instance = AlertInstance::withoutEvents(function () {
+            $model = new AlertInstance;
+            $model->forceFill([
+                ...api_test_payload(),
+                'alertRuleId' => '507f1f77bcf86cd799439011',
+            ]);
+
+            return $model;
+        });
+        $instance->setRelation('alertRule', $rule);
+
+        $notify = Notify::withoutEvents(fn () => new Notify([
+            'alert' => $instance->toArray(),
+            'messages' => NotifyMessageComposer::fromMessageable($instance)->toArray(),
+        ]));
+
+        $payload = NotifyMessageComposer::composeFromSingleTemplate(
+            $rule,
+            $notify,
+            '{{name}} on {{instance}}: {{description}}',
+        );
+
+        expect($payload->telegram())->toBeArray()
+            ->and($payload->telegram()['message'])->toBe('API Alert on host-1: disk full')
+            ->and($payload->defaultMessage())->toBe('API Alert on host-1: disk full');
     });
 });

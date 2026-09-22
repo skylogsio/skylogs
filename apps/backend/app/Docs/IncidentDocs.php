@@ -182,14 +182,54 @@ class IncidentDocs
         new OA\Property(property: 'severity', type: 'string', enum: ['SEV1', 'SEV2', 'SEV3', 'SEV4']),
         new OA\Property(property: 'status', type: 'string', enum: ['open', 'investigating', 'resolved']),
         new OA\Property(property: 'source', type: 'string', enum: ['manual', 'policy']),
+        new OA\Property(property: 'policyId', type: 'string', nullable: true, description: 'Set when the incident was opened from an incident policy'),
+        new OA\Property(property: 'groupingKey', type: 'string', nullable: true, description: 'Fingerprint used to collapse alert storms into one incident'),
         new OA\Property(property: 'startedAt', type: 'string', format: 'date-time', description: 'When the incident occurred / started'),
         new OA\Property(property: 'detectedAt', type: 'string', format: 'date-time', description: 'When the incident was detected'),
         new OA\Property(property: 'resolvedAt', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'teamIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'alertRuleIds', type: 'array', items: new OA\Items(type: 'string')),
-        new OA\Property(property: 'createdBy', type: 'string'),
+        new OA\Property(property: 'createdBy', type: 'string', nullable: true),
         new OA\Property(property: 'resolvedBy', type: 'string', nullable: true),
+        new OA\Property(property: 'commanderId', type: 'string', nullable: true),
+        new OA\Property(
+            property: 'commander',
+            type: 'object',
+            nullable: true,
+            properties: [
+                new OA\Property(property: 'id', type: 'string'),
+                new OA\Property(property: 'name', type: 'string'),
+            ]
+        ),
+        new OA\Property(
+            property: 'policySla',
+            type: 'object',
+            nullable: true,
+            description: 'Frozen copy of the matching SEV rule used to enforce follow-through',
+            properties: [
+                new OA\Property(property: 'ackWithinMinutes', type: 'integer', nullable: true),
+                new OA\Property(property: 'resolveWithinMinutes', type: 'integer', nullable: true),
+                new OA\Property(property: 'requireCommander', type: 'boolean'),
+                new OA\Property(property: 'stakeholderUpdateEveryMinutes', type: 'integer', nullable: true),
+                new OA\Property(property: 'statusPageUpdateRequired', type: 'boolean'),
+                new OA\Property(property: 'postmortemRequired', type: 'boolean'),
+                new OA\Property(property: 'postmortemDueDays', type: 'integer', nullable: true),
+                new OA\Property(property: 'postmortemReviewRequired', type: 'boolean'),
+            ]
+        ),
+        new OA\Property(
+            property: 'remaining',
+            type: 'object',
+            nullable: true,
+            description: 'Outstanding follow-through for related staff. Null once the incident is resolved. An acknowledged team is not escalated further.',
+            properties: [
+                new OA\Property(property: 'unacknowledgedTeamIds', type: 'array', items: new OA\Items(type: 'string')),
+                new OA\Property(property: 'commanderRequired', type: 'boolean'),
+                new OA\Property(property: 'statusPageUpdateRequired', type: 'boolean'),
+                new OA\Property(property: 'postmortemRequired', type: 'boolean'),
+            ]
+        ),
         new OA\Property(
             property: 'acknowledgements',
             type: 'array',
@@ -279,6 +319,7 @@ class IncidentSchema {}
         ),
         new OA\Property(property: 'alertRuleIds', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'severity', type: 'string', enum: ['SEV1', 'SEV2', 'SEV3', 'SEV4']),
+        new OA\Property(property: 'commanderId', type: 'string', nullable: true, description: 'Optional. Assigns the incident commander on update.'),
         new OA\Property(
             property: 'postMortem',
             ref: '#/components/schemas/PostMortemInput',

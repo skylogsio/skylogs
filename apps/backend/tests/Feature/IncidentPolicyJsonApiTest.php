@@ -17,7 +17,6 @@ describe('IncidentPolicy JSON write API', function () {
         $this->team = TeamTestData::createTeam($this->manager, [$this->manager->id, $this->member->id]);
         $this->alertRule = IncidentPolicyTestData::createAlertRule($this->manager);
         $this->endpoint = IncidentPolicyTestData::createEndpoint($this->manager);
-        $this->onCallPlan = IncidentPolicyTestData::createOnCallPlan($this->team);
         $this->policyNames = [];
         $this->runbooks = [];
         $this->profileServices = [];
@@ -44,7 +43,7 @@ describe('IncidentPolicy JSON write API', function () {
                         'resolveWithinMinutes' => 60,
                         'requireCommander' => true,
                         'notifyEndpointIds' => [$this->endpoint->id],
-                        'escalation' => ['onCallPlanId' => $this->onCallPlan->id],
+                        'escalation' => ['useLayers' => false],
                         'postmortem' => ['required' => true],
                         'runbookNames' => ['payments-api-5xx-triage'],
                     ],
@@ -65,7 +64,6 @@ describe('IncidentPolicy JSON write API', function () {
         }
         IncidentPolicyTestData::deleteAlertRule($this->alertRule);
         IncidentPolicyTestData::deleteEndpoint($this->endpoint);
-        IncidentPolicyTestData::deleteOnCallPlan($this->onCallPlan);
         TeamTestData::deleteTeam($this->team);
         TeamTestData::deleteUser($this->manager);
         TeamTestData::deleteUser($this->member);
@@ -84,7 +82,7 @@ describe('IncidentPolicy JSON write API', function () {
             ->assertJsonPath('data.enabled', true)
             ->assertJsonPath('data.match.alertRuleIds.0', $this->alertRule->id)
             ->assertJsonPath('data.rules.SEV1.ackWithinMinutes', 5)
-            ->assertJsonPath('data.rules.SEV1.escalation.onCallPlanId', $this->onCallPlan->id)
+            ->assertJsonPath('data.rules.SEV1.escalation.useLayers', false)
             ->assertJsonPath('data.canEdit', true);
     });
 
@@ -178,6 +176,20 @@ describe('IncidentPolicy JSON write API', function () {
             ->putJson("/api/v1/incident-policy/{$id}", $payload)
             ->assertSuccessful()
             ->assertJsonPath('data.name', $payload['name']);
+    });
+
+    it('rejects an on-call plan id on the policy', function () {
+        $this->actingAs($this->manager, 'api')
+            ->postJson('/api/v1/incident-policy', ($this->payload)([
+                'rules' => [
+                    'SEV1' => [
+                        'ackWithinMinutes' => 5,
+                        'escalation' => ['onCallPlanId' => str_repeat('a', 24)],
+                    ],
+                ],
+            ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['rules.SEV1.escalation.onCallPlanId']);
     });
 
     it('rejects a policy without any matcher', function () {

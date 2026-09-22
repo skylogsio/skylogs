@@ -143,6 +143,92 @@ describe('EndpointController bale type', function () {
             ->and($match['hasActionAccess'])->toBeTrue();
     });
 
+    it('marks an endpoint as the user on-call endpoint', function () {
+        $response = $this->actingAs($this->user, 'api')
+            ->postJson('/api/v1/endpoint', [
+                'name' => 'On-Call Bale '.uniqid(),
+                'type' => EndpointType::BALE->value,
+                'value' => '-500'.uniqid(),
+                'botToken' => 'oncall-token',
+                'onCall' => true,
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('data.onCall', true);
+
+        $endpointId = $response->json('data.id') ?? $response->json('data._id');
+        $this->createdEndpointIds[] = $endpointId;
+
+        $endpoint = Endpoint::query()->where('_id', $endpointId)->first();
+
+        expect($endpoint->onCall)->toBeTrue();
+    });
+
+    it('keeps only one on-call endpoint per user', function () {
+        $first = Endpoint::create([
+            'userId' => $this->user->id,
+            'name' => 'First On-Call '.uniqid(),
+            'type' => EndpointType::BALE->value,
+            'chatId' => '-600'.uniqid(),
+            'botToken' => 'first-token',
+            'isPublic' => false,
+            'accessUserIds' => [],
+            'accessTeamIds' => [],
+            'onCall' => true,
+        ]);
+        $this->createdEndpointIds[] = $first->id;
+
+        $response = $this->actingAs($this->user, 'api')
+            ->postJson('/api/v1/endpoint', [
+                'name' => 'Second On-Call '.uniqid(),
+                'type' => EndpointType::BALE->value,
+                'value' => '-601'.uniqid(),
+                'botToken' => 'second-token',
+                'onCall' => true,
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('data.onCall', true);
+
+        $secondId = $response->json('data.id') ?? $response->json('data._id');
+        $this->createdEndpointIds[] = $secondId;
+
+        $first->refresh();
+        $second = Endpoint::query()->where('_id', $secondId)->first();
+
+        expect($first->onCall)->toBeFalse()
+            ->and($second->onCall)->toBeTrue();
+    });
+
+    it('can switch the on-call flag on update', function () {
+        $endpoint = Endpoint::create([
+            'userId' => $this->user->id,
+            'name' => 'Switch On-Call '.uniqid(),
+            'type' => EndpointType::BALE->value,
+            'chatId' => '-700'.uniqid(),
+            'botToken' => 'switch-token',
+            'isPublic' => false,
+            'accessUserIds' => [],
+            'accessTeamIds' => [],
+            'onCall' => false,
+        ]);
+        $this->createdEndpointIds[] = $endpoint->id;
+
+        $this->actingAs($this->user, 'api')
+            ->putJson("/api/v1/endpoint/{$endpoint->id}", [
+                'name' => $endpoint->name,
+                'type' => EndpointType::BALE->value,
+                'value' => $endpoint->chatId,
+                'botToken' => $endpoint->botToken,
+                'onCall' => true,
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('data.onCall', true);
+
+        $endpoint->refresh();
+
+        expect($endpoint->onCall)->toBeTrue();
+    });
+
     it('rejects create when type is invalid', function () {
         $this->actingAs($this->user, 'api')
             ->postJson('/api/v1/endpoint', [

@@ -265,6 +265,14 @@ class AlertRuleService
             }
         }
 
+        if ($request->has('watchStatus')) {
+            if ($request->watchStatus == 'watched') {
+                $match['watchUserIds'] = ['$in' => [$user->id]];
+            } else {
+                $match['watchUserIds'] = ['$nin' => [$user->id]];
+            }
+        }
+
         if ($request->filled('endpointId')) {
             $match['endpointIds'] = ['$in' => [$request->endpointId]];
         }

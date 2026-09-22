@@ -11,6 +11,7 @@ final class AlertMessageTemplateRenderer
     public function __construct(
         private readonly PrometheusAlertMessageBuilder $prometheusBuilder = new PrometheusAlertMessageBuilder,
         private readonly GrafanaAlertMessageBuilder $grafanaBuilder = new GrafanaAlertMessageBuilder,
+        private readonly ApiAlertMessageBuilder $apiBuilder = new ApiAlertMessageBuilder,
     ) {}
 
     public static function make(): self
@@ -28,6 +29,7 @@ final class AlertMessageTemplateRenderer
         return match ($rule->type) {
             AlertRuleType::PROMETHEUS => $this->prometheusBuilder->render($rule, $payload, $template),
             AlertRuleType::GRAFANA, AlertRuleType::PMM => $this->grafanaBuilder->render($rule, $payload, $template),
+            AlertRuleType::API, AlertRuleType::NOTIFICATION => $this->apiBuilder->render($rule, $payload, $template),
             default => LegacyAlertMessageRenderer::render($rule, new LegacyPayloadMessageable($payload), $template),
         };
     }
@@ -37,6 +39,7 @@ final class AlertMessageTemplateRenderer
         return match ($rule->type) {
             AlertRuleType::PROMETHEUS => $this->prometheusBuilder->renderDefault($rule, $payload),
             AlertRuleType::GRAFANA, AlertRuleType::PMM => $this->grafanaBuilder->renderDefault($rule, $payload),
+            AlertRuleType::API, AlertRuleType::NOTIFICATION => $this->apiBuilder->renderDefault($rule, $payload),
             default => '',
         };
     }
