@@ -44,6 +44,7 @@ class AlertRuleResponseFormatter
         'enableAutoResolve',
         'autoResolveMinutes',
         'checkType',
+        'target',
         'skylogsInstanceId',
         'extraField',
         'dataSourceAlertName',

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\AlertRuleAccessLevel;
 use App\Enums\AlertRuleType;
-use App\Enums\HealthAlertType;
 use App\Exports\AlertHistoryExport;
 use App\Helpers\Constants;
 use App\Helpers\Utilities;
@@ -12,7 +11,6 @@ use App\Jobs\SendNotifyJob;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
 use App\Models\ApiAlertHistory;
-use App\Models\Config\ConfigSkylogs;
 use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
 use App\Models\ElasticHistory;
@@ -25,7 +23,6 @@ use App\Models\MetabaseWebhookAlert;
 use App\Models\PrometheusCheck;
 use App\Models\PrometheusHistory;
 use App\Models\SentryWebhookAlert;
-use App\Models\SkylogsInstance;
 use App\Models\User;
 use App\Models\VictoriaLogsCheck;
 use App\Models\VictoriaLogsHistory;
@@ -762,42 +759,6 @@ class AlertRuleService
 
     public function createHealthDataSource(DataSource $dataSource) {}
 
-    public function createHealthCluster(SkylogsInstance|ConfigSkylogs $instance)
-    {
-        if ($instance instanceof ConfigSkylogs) {
-            $alert = AlertRule::create([
-                'name' => 'Main Cluster',
-                'type' => AlertRuleType::HEALTH,
-                'userId' => app(UserService::class)->admin()->id,
-                'url' => $instance->sourceUrl,
-                'checkType' => HealthAlertType::SOURCE_CLUSTER,
-                'threshold' => 5,
-                'sourceToken' => $instance->sourceToken,
-            ]);
-        } else {
-            $alert = AlertRule::create([
-                'name' => 'Health Cluster '.$instance->name,
-                'type' => AlertRuleType::HEALTH,
-                'userId' => \Auth::id(),
-                'skylogsInstanceId' => $instance->id,
-                'url' => $instance->url,
-                'checkType' => HealthAlertType::AGENT_CLUSTER,
-                'threshold' => 5,
-                'agentToken' => $instance->token,
-            ]);
-        }
-
-        return $alert;
-
-    }
-
-    public function deleteHealthCluster(SkylogsInstance $instance)
-    {
-        AlertRule::where('skylogsInstanceId', $instance->id)->delete();
-        HealthCheck::where('skylogsInstanceId', $instance->id)->delete();
-        $this->flushCache();
-    }
-
     public function hasAdminAccessAlert(User $user, AlertRule $alert): bool
     {
         if ($user->isAdmin()) {
@@ -933,14 +894,6 @@ class AlertRuleService
         }
     }
 
-    public function update(AlertRule $alertRule)
-    {
-        switch ($alertRule->type) {
-            case AlertRuleType::HEALTH:
-                HealthCheck::where('alertRuleId', $alertRule->id)->delete();
-        }
-    }
-
     public function delete(AlertRule $alertRule)
     {
         $alertRuleId = $alertRule->_id;
@@ -963,6 +916,10 @@ class AlertRuleService
             case AlertRuleType::GRAFANA:
             case AlertRuleType::PMM:
                 GrafanaCheck::where('alertRuleId', $alertRuleId)->delete();
+                break;
+            case AlertRuleType::HEALTH:
+                HealthCheck::where('alertRuleId', $alertRuleId)->delete();
+                HealthHistory::where('alertRuleId', $alertRuleId)->delete();
                 break;
         }
 

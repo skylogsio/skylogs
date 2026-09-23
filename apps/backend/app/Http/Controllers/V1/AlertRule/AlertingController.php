@@ -11,10 +11,12 @@ use App\Jobs\SendNotifyJob;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
 use App\Models\ElasticCheck;
+use App\Models\HealthCheck;
 use App\Models\VictoriaLogsCheck;
 use App\Services\AlertRuleResponseFormatter;
 use App\Services\AlertRuleService;
 use App\Services\EndpointService;
+use App\Services\Health\HealthRuleInput;
 use App\Services\SendNotifyService;
 use App\Services\UserService;
 use App\Services\ZabbixService;
@@ -22,6 +24,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Str;
 
 class AlertingController extends Controller
@@ -320,6 +323,21 @@ class AlertingController extends Controller
                         'countDocument' => ((int) $request->countDocument),
                     ]);
                     break;
+                case AlertRuleType::HEALTH:
+                    try {
+                        $health = HealthRuleInput::validate($request);
+                    } catch (ValidationException $exception) {
+                        return ['status' => false, 'message' => collect($exception->errors())->flatten()->first() ?? 'Error'];
+                    }
+
+                    $alert = AlertRule::create([
+                        ...$commonFields,
+                        'checkType' => $health->checkType,
+                        'threshold' => $health->threshold,
+                        'intervalSeconds' => $health->intervalSeconds,
+                        'target' => $health->target,
+                    ]);
+                    break;
             }
             $alert->tags = collect($request->tags ?? [])->map(fn ($item) => trim($item))->unique()->toArray();
 
@@ -464,6 +482,26 @@ class AlertingController extends Controller
                 $model->countDocument = ((int) $request->countDocument);
                 $model->save();
                 VictoriaLogsCheck::where('alertRuleId', $model->_id)->delete();
+                break;
+
+            case AlertRuleType::HEALTH:
+                try {
+                    $health = HealthRuleInput::validate($request);
+                } catch (ValidationException $exception) {
+                    return ['status' => false, 'message' => collect($exception->errors())->flatten()->first() ?? 'Error'];
+                }
+
+                $resetsCheck = $health->resetsCheck($model);
+                $model->name = $request->name;
+                $model->checkType = $health->checkType;
+                $model->threshold = $health->threshold;
+                $model->intervalSeconds = $health->intervalSeconds;
+                $model->target = $health->target;
+                $model->save();
+
+                if ($resetsCheck) {
+                    HealthCheck::query()->where('alertRuleId', $model->_id)->delete();
+                }
                 break;
 
             case AlertRuleType::NOTIFICATION:

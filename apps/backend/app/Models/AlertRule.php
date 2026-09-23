@@ -78,6 +78,11 @@ class AlertRule extends BaseModel implements Messageable
         return $this->hasOne(PrometheusCheck::class, 'alertRuleId', '_id');
     }
 
+    public function healthCheck()
+    {
+        return $this->hasOne(HealthCheck::class, 'alertRuleId', '_id');
+    }
+
     public function grafanaWebhook()
     {
 

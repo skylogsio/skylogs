@@ -4,6 +4,7 @@ use App\Jobs\AddChecksJob;
 use App\Jobs\AutoResolveApiAlertsJob;
 use App\Jobs\CheckPrometheusJob;
 use App\Jobs\RefreshStatusHistoryJob;
+use App\Jobs\RunHealthChecksJob;
 use Illuminate\Support\Str;
 
 return [
@@ -127,6 +128,7 @@ return [
         CheckPrometheusJob::class,
         AutoResolveApiAlertsJob::class,
         RefreshStatusHistoryJob::class,
+        RunHealthChecksJob::class,
     ],
 
     /*

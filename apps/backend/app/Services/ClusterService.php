@@ -2,14 +2,10 @@
 
 namespace App\Services;
 
-use App\Enums\AlertRuleType;
 use App\Enums\ClusterType;
 use App\Enums\EndpointType;
-use App\Enums\HealthAlertType;
-use App\Models\AlertRule;
 use App\Models\Auth\Permission;
 use App\Models\Auth\Role;
-use App\Models\Config\ConfigSkylogs;
 use App\Models\Endpoint;
 use App\Models\SkylogsInstance;
 use App\Models\Team;
@@ -38,44 +34,6 @@ class ClusterService
     public function clusterById($id): ?SkylogsInstance
     {
         return SkylogsInstance::where('id', $id)->first();
-    }
-
-    public function refreshHealthMain(ConfigSkylogs $model)
-    {
-        $alert = AlertRule::where('type', AlertRuleType::HEALTH)
-            ->where('checkType', HealthAlertType::SOURCE_CLUSTER)
-            ->first();
-        if ($model->type == ClusterType::MAIN) {
-            if ($alert) {
-                $alert->delete();
-            }
-        } else {
-            if ($alert) {
-                $alert->url = $model->sourceUrl;
-                $alert->sourceToken = $model->sourceToken;
-                $alert->save();
-            } else {
-                app(AlertRuleService::class)->createHealthCluster($model);
-            }
-
-        }
-    }
-
-    public function refreshHealthAgent(SkylogsInstance $model)
-    {
-        $alert = AlertRule::where('type', AlertRuleType::HEALTH)
-            ->where('checkType', HealthAlertType::AGENT_CLUSTER)
-            ->where('skylogsInstanceId', $model->id)
-            ->first();
-
-        if ($alert) {
-            $alert->url = $model->url;
-            $alert->agentToken = $model->token;
-            $alert->save();
-        } else {
-            app(AlertRuleService::class)->createHealthCluster($model);
-        }
-
     }
 
     public function getSyncData()

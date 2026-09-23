@@ -5,7 +5,6 @@ namespace App\Http\Controllers\V1\Config;
 use App\Enums\ClusterType;
 use App\Http\Controllers\Controller;
 use App\Models\Config\ConfigSkylogs;
-use App\Services\ClusterService;
 use App\Services\ConfigSkylogsService;
 use Illuminate\Http\Request;
 use Validator;
@@ -56,7 +55,6 @@ class SkylogsController extends Controller
         }
 
         $model->save();
-        app(ClusterService::class)->refreshHealthMain($model);
 
         return response()->json($model);
     }

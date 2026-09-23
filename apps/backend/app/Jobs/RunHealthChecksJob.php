@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Queue\Middleware\EnsureLeader;
-use App\Services\HealthService;
+use App\Services\Health\HealthCheckRunner;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -11,16 +11,17 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class CheckHealthJob implements ShouldBeUnique, ShouldQueue
+class RunHealthChecksJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $alert;
+    public int $timeout = 10;
 
-    public function __construct($alert)
+    public int $uniqueFor = 10;
+
+    public function __construct()
     {
         $this->onQueue('httpRequests');
-        $this->alert = $alert;
     }
 
     /**
@@ -31,20 +32,13 @@ class CheckHealthJob implements ShouldBeUnique, ShouldQueue
         return [new EnsureLeader];
     }
 
-    /**
-     * Execute the job.
-     *
-     * @return void
-     */
-    public function handle()
+    public function uniqueId(): string
     {
-        //        echo "TEST";
-        app(HealthService::class)->check($this->alert);
-
+        return 'run-health-checks';
     }
 
-    public function uniqueId()
+    public function handle(HealthCheckRunner $runner): void
     {
-        return $this->alert->_id;
+        $runner->run();
     }
 }

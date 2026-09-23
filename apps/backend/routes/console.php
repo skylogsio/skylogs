@@ -8,6 +8,7 @@ use App\Jobs\Ha\ReconcileHaStateJob;
 use App\Jobs\Ha\SyncHaConfigJob;
 use App\Jobs\Ha\SyncHaHistoryJob;
 use App\Jobs\RefreshStatusHistoryJob;
+use App\Jobs\RunHealthChecksJob;
 use App\Jobs\SyncCluster;
 use App\Services\ClusterService;
 use App\Services\Ha\HaLeaderService;
@@ -39,6 +40,7 @@ Schedule::call(function () {
 
 Schedule::job(new CheckPrometheusJob)->everyFiveSeconds()->when($onLeader);
 Schedule::job(new AddChecksJob)->everyFiveSeconds()->when($onLeader);
+Schedule::job(new RunHealthChecksJob)->everyTenSeconds()->when($onLeader);
 Schedule::job(new AutoResolveApiAlertsJob)->everyFiveSeconds()->when($onLeader);
 
 /*
