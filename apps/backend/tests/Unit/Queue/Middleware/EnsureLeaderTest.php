@@ -6,7 +6,6 @@ use App\Jobs\CheckElasticJob;
 use App\Jobs\CheckPrometheusJob;
 use App\Jobs\CheckVictoriaLogsJob;
 use App\Jobs\GrafanaWebhookJob;
-use App\Jobs\IntervalJob;
 use App\Jobs\RunHealthChecksJob;
 use App\Jobs\SyncCluster;
 use App\Queue\Middleware\EnsureLeader;
@@ -69,7 +68,6 @@ describe('EnsureLeader', function () {
             new AddChecksJob,
             new AutoResolveApiAlertsJob,
             new SyncCluster,
-            new IntervalJob,
             new CheckElasticJob(null),
             new CheckVictoriaLogsJob(null),
             new RunHealthChecksJob,

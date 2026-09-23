@@ -9,12 +9,16 @@ use App\Models\Endpoint;
 use App\Models\User;
 use App\Services\AlertRuleService;
 use App\Services\EndpointService;
+use App\Services\UserService;
 use Hash;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Validator;
 
 class UserController extends Controller
 {
+    public function __construct(private UserService $users) {}
+
     public function Index(Request $request)
     {
         $perPage = $request->perPage ?? 25;
@@ -53,16 +57,17 @@ class UserController extends Controller
         $model = User::whereNot('username', 'admin')->where('_id', $id)->firstOrFail();
 
         $currentUser = auth()->user();
-        if (($model->hasRole(Constants::ROLE_OWNER) && ! $currentUser->hasRole(Constants::ROLE_OWNER)) ||
-            (! $model->hasRole(Constants::ROLE_MEMBER) && $currentUser->hasRole(Constants::ROLE_MANAGER))
-        ) {
+        if (! $this->users->canManageUser($currentUser, $model)) {
             abort(403);
         }
 
         $admin = User::where('username', 'admin')->firstOrFail();
-        $adminId = $admin->_id;
+        $adminId = (string) $admin->id;
+        $deletedUserId = (string) $model->id;
         $alertRules = AlertRule::get();
-        $modelUserEndpoints = Endpoint::where('userId', $model->_id)->get();
+        $modelUserEndpoints = Endpoint::query()
+            ->where('userId', $deletedUserId)
+            ->get();
 
         foreach ($modelUserEndpoints as $modelUserEndpoint) {
             $modelUserEndpoint->userId = $adminId;
@@ -73,11 +78,15 @@ class UserController extends Controller
             $ruleUserIds = $rule->userIds ?? [];
             $needToUpdate = false;
 
-            if (! empty($ruleUserIds) && in_array($model->_id, $ruleUserIds)) {
-                $rule->pull('userIds', $rule->_id);
+            foreach ($ruleUserIds as $ruleUserId) {
+                if ((string) $ruleUserId !== $deletedUserId) {
+                    continue;
+                }
+
+                $rule->pull('userIds', $ruleUserId);
                 $needToUpdate = true;
             }
-            if ($rule->userId == $model->_id) {
+            if ((string) $rule->userId === $deletedUserId) {
                 $rule->userId = $adminId;
                 $needToUpdate = true;
             }
@@ -105,8 +114,10 @@ class UserController extends Controller
             ],
         );
 
-        if (! auth()->user()->hasRole(Constants::ROLE_OWNER) &&
-            $request->post('role') == Constants::ROLE_OWNER) {
+        $actor = auth()->user();
+        $requestedRole = (string) $request->post('role');
+
+        if (! $actor->hasRole(Constants::ROLE_OWNER) && $requestedRole !== Constants::ROLE_MEMBER->value) {
             abort(403);
         }
 
@@ -116,17 +127,7 @@ class UserController extends Controller
             'password' => Hash::make($request->post('password')),
         ]);
 
-        if (auth()->user()->hasRole(Constants::ROLE_OWNER)) {
-            $role = match ($request->post('role')) {
-                Constants::ROLE_OWNER->value => Constants::ROLE_OWNER->value,
-                Constants::ROLE_MANAGER->value => Constants::ROLE_MANAGER->value,
-                default => Constants::ROLE_MEMBER,
-            };
-        } else {
-            $role = Constants::ROLE_MEMBER->value;
-        }
-
-        $model->assignRole($role);
+        $model->assignRole($this->assignableRole($actor, $requestedRole));
 
         return response()->json([
             'status' => true,
@@ -139,16 +140,20 @@ class UserController extends Controller
     {
 
         Validator::validate($request->all(), [
-            'username' => "required|unique:users,username,{$id}",
+            'username' => ['required', 'string', 'max:255', Rule::unique('users', 'username')->ignore($id, '_id')],
             'name' => 'required|string|max:255',
             'role' => 'required|in:owner,member,manager',
         ]);
 
         $model = User::where('_id', $id)->firstOrFail();
         $currentUser = auth()->user();
-        if (($model->hasRole(Constants::ROLE_OWNER) && ! $currentUser->hasRole(Constants::ROLE_OWNER)) ||
-            (! $model->hasRole(Constants::ROLE_MANAGER) && $currentUser->hasRole(Constants::ROLE_MANAGER))
-        ) {
+        if (! $this->users->canManageUser($currentUser, $model)) {
+            abort(403);
+        }
+
+        $requestedRole = (string) $request->post('role');
+
+        if (! $currentUser->hasRole(Constants::ROLE_OWNER) && $requestedRole !== Constants::ROLE_MEMBER->value) {
             abort(403);
         }
 
@@ -163,17 +168,7 @@ class UserController extends Controller
                 $model->removeRole($role);
             }
 
-            if (auth()->user()->hasRole(Constants::ROLE_OWNER)) {
-                $role = match ($request->post('role')) {
-                    Constants::ROLE_OWNER->value => Constants::ROLE_OWNER->value,
-                    Constants::ROLE_MANAGER->value => Constants::ROLE_MANAGER->value,
-                    default => Constants::ROLE_MEMBER,
-                };
-            } else {
-                $role = Constants::ROLE_MEMBER->value;
-            }
-
-            $model->syncRoles($role);
+            $model->syncRoles($this->assignableRole($currentUser, $requestedRole));
         } else {
             $model->update([
                 'name' => $request->post('name'),
@@ -199,7 +194,7 @@ class UserController extends Controller
 
         $model = User::where('_id', $id)->firstOrFail();
         $currentUser = auth()->user();
-        if (! $currentUser->hasRole(Constants::ROLE_OWNER) && $model->hasRole(Constants::ROLE_OWNER)) {
+        if (! $this->users->canManageUser($currentUser, $model)) {
             abort(403);
         }
 
@@ -226,5 +221,18 @@ class UserController extends Controller
             'status' => true,
         ]);
 
+    }
+
+    private function assignableRole(User $actor, string $requestedRole): string
+    {
+        if (! $actor->hasRole(Constants::ROLE_OWNER)) {
+            return Constants::ROLE_MEMBER->value;
+        }
+
+        return match ($requestedRole) {
+            Constants::ROLE_OWNER->value => Constants::ROLE_OWNER->value,
+            Constants::ROLE_MANAGER->value => Constants::ROLE_MANAGER->value,
+            default => Constants::ROLE_MEMBER->value,
+        };
     }
 }
