@@ -14,12 +14,12 @@ use Tests\Support\TeamTestData;
 describe('CheckVictoriaLogsJob', function () {
     beforeEach(function () {
         $this->owner = TeamTestData::createUser(Constants::ROLE_OWNER);
-        $this->dataSource = DataSource::create([
+        $this->dataSource = DataSource::withoutEvents(fn () => DataSource::create([
             'name' => 'Victoria Logs Test Source',
             'type' => 'victoria_logs',
             'url' => 'https://victoria.example.com',
             'userId' => $this->owner->id,
-        ]);
+        ]));
 
         $this->alertRule = AlertRule::create([
             'name' => 'Victoria Logs Job Test',

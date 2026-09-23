@@ -34,12 +34,12 @@ describe('health target probes', function () {
         string $body,
         ?string $error,
     ) {
-        $this->dataSource = DataSource::create([
+        $this->dataSource = DataSource::withoutEvents(fn () => DataSource::create([
             'name' => 'Probe '.$type->value,
             'type' => $type,
             'url' => 'https://source.example.com',
             ...$credentials,
-        ]);
+        ]));
 
         $rule = new AlertRule([
             'checkType' => HealthAlertType::DATASOURCE,

@@ -14,14 +14,14 @@ use Tests\Support\TeamTestData;
 describe('CheckElasticJob', function () {
     beforeEach(function () {
         $this->owner = TeamTestData::createUser(Constants::ROLE_OWNER);
-        $this->dataSource = DataSource::create([
+        $this->dataSource = DataSource::withoutEvents(fn () => DataSource::create([
             'name' => 'Elastic Test Source',
             'type' => 'elastic',
             'url' => 'https://elastic.example.com',
             'username' => 'elastic-user',
             'password' => 'elastic-pass',
             'userId' => $this->owner->id,
-        ]);
+        ]));
 
         $this->alertRule = AlertRule::create([
             'name' => 'Elastic Job Test',

@@ -48,11 +48,11 @@ describe('health alert flow', function () {
     });
 
     it('creates a health rule for each creatable target and rejects a bad one', function () {
-        $dataSource = DataSource::create([
+        $dataSource = DataSource::withoutEvents(fn () => DataSource::create([
             'name' => 'Health DS '.uniqid(),
             'type' => 'prometheus',
             'url' => 'https://prom.example.com',
-        ]);
+        ]));
         $this->dataSourceIds[] = $dataSource->_id;
 
         $httpName = 'Health HTTP '.uniqid();

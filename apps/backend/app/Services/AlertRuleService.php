@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Enums\AlertRuleAccessLevel;
 use App\Enums\AlertRuleType;
+use App\Enums\Constants as UserRole;
+use App\Enums\HealthAlertType;
 use App\Exports\AlertHistoryExport;
 use App\Helpers\Constants;
 use App\Helpers\Utilities;
@@ -11,6 +13,7 @@ use App\Jobs\SendNotifyJob;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
 use App\Models\ApiAlertHistory;
+use App\Models\Auth\Role;
 use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
 use App\Models\ElasticHistory;
@@ -30,12 +33,15 @@ use App\Models\ZabbixCheck;
 use App\Models\ZabbixWebhookAlert;
 use App\Services\AlertStatus\AlertStatusEventSourceFactory;
 use App\Services\AlertStatus\AlertStatusTimelineBuilder;
+use App\Services\Ha\HaReplicationContext;
 use Cache;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Excel as ExcelFormat;
 use Maatwebsite\Excel\Facades\Excel;
@@ -757,7 +763,175 @@ class AlertRuleService
         );
     }
 
-    public function createHealthDataSource(DataSource $dataSource) {}
+    public function createHealthDataSource(DataSource $dataSource, bool $backfill = false): ?AlertRule
+    {
+        if (HaReplicationContext::isApplying()) {
+            return null;
+        }
+
+        if ($this->datasourceHealthRules($dataSource)->isNotEmpty()) {
+            return null;
+        }
+
+        $userId = $backfill
+            ? $this->backfillHealthRuleUserId($dataSource)
+            : $this->creatingHealthRuleUserId($dataSource);
+
+        if (empty($userId)) {
+            Log::warning('Skipped automatic datasource health rule because no user id could be resolved.', [
+                'dataSourceId' => (string) $dataSource->_id,
+            ]);
+
+            return null;
+        }
+
+        $rule = AlertRule::query()->create([
+            'name' => $this->datasourceHealthRuleName((string) $dataSource->name),
+            'type' => AlertRuleType::HEALTH,
+            'description' => '',
+            'showAcknowledgeBtn' => false,
+            'isPrivate' => false,
+            'userId' => $userId,
+            'endpointIds' => [],
+            'userIds' => [],
+            'teamIds' => [],
+            'checkType' => HealthAlertType::DATASOURCE,
+            'threshold' => 3,
+            'intervalSeconds' => 30,
+            'target' => [
+                'dataSourceId' => (string) $dataSource->_id,
+            ],
+            'autoCreated' => true,
+        ]);
+
+        $this->flushCache();
+
+        return $rule;
+    }
+
+    /**
+     * @return array{created: int, skipped: int, unresolved: int}
+     */
+    public function backfillHealthDataSources(): array
+    {
+        $created = 0;
+        $skipped = 0;
+        $unresolved = 0;
+
+        foreach (DataSource::query()->orderBy('_id')->cursor() as $dataSource) {
+            if ($this->datasourceHealthRules($dataSource)->isNotEmpty()) {
+                $skipped++;
+
+                continue;
+            }
+
+            $rule = $this->createHealthDataSource($dataSource, backfill: true);
+
+            if ($rule === null) {
+                $unresolved++;
+
+                continue;
+            }
+
+            $created++;
+        }
+
+        return [
+            'created' => $created,
+            'skipped' => $skipped,
+            'unresolved' => $unresolved,
+        ];
+    }
+
+    public function deleteHealthDataSource(DataSource $dataSource): void
+    {
+        if (HaReplicationContext::isApplying()) {
+            return;
+        }
+
+        $rules = $this->datasourceHealthRules($dataSource)
+            ->filter(fn (AlertRule $rule): bool => (bool) $rule->autoCreated);
+
+        if ($rules->isEmpty()) {
+            return;
+        }
+
+        foreach ($rules as $rule) {
+            $this->delete($rule);
+        }
+
+        $this->flushCache();
+    }
+
+    /**
+     * @return Collection<int, AlertRule>
+     */
+    private function datasourceHealthRules(DataSource $dataSource): Collection
+    {
+        return AlertRule::query()
+            ->where('type', AlertRuleType::HEALTH)
+            ->where('checkType', HealthAlertType::DATASOURCE)
+            ->where('target.dataSourceId', (string) $dataSource->_id)
+            ->get();
+    }
+
+    private function creatingHealthRuleUserId(DataSource $dataSource): mixed
+    {
+        $authenticated = Auth::id();
+
+        if (! empty($authenticated)) {
+            return $authenticated;
+        }
+
+        return $this->backfillHealthRuleUserId($dataSource);
+    }
+
+    private function backfillHealthRuleUserId(DataSource $dataSource): mixed
+    {
+        if (! empty($dataSource->userId)) {
+            return $dataSource->userId;
+        }
+
+        return $this->firstAdminUserId();
+    }
+
+    private function firstAdminUserId(): mixed
+    {
+        $roleIds = Role::query()
+            ->where('guard_name', 'api')
+            ->whereIn('name', [UserRole::ROLE_OWNER->value, UserRole::ROLE_MANAGER->value])
+            ->get()
+            ->map(fn (Role $role): string => (string) $role->id)
+            ->all();
+
+        if ($roleIds === []) {
+            return null;
+        }
+
+        $admin = User::query()
+            ->whereIn('role_id', $roleIds)
+            ->orderBy('createdAt')
+            ->orderBy('_id')
+            ->first();
+
+        return $admin?->id;
+    }
+
+    private function datasourceHealthRuleName(string $dataSourceName): string
+    {
+        $base = 'Health: '.$dataSourceName;
+        $name = $base;
+
+        for ($suffix = 2; $suffix <= 100; $suffix++) {
+            if (! AlertRule::query()->where('name', $name)->exists()) {
+                return $name;
+            }
+
+            $name = $base.' ('.$suffix.')';
+        }
+
+        return $base.' '.Str::lower(Str::random(4));
+    }
 
     public function hasAdminAccessAlert(User $user, AlertRule $alert): bool
     {

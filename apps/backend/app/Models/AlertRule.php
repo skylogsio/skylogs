@@ -44,6 +44,7 @@ class AlertRule extends BaseModel implements Messageable
         'type' => AlertRuleType::class,
         'checkType' => HealthAlertType::class,
         'isPrivate' => 'boolean',
+        'autoCreated' => 'boolean',
     ];
 
     public const DYNAMIC_QUERY_TYPE = 'dynamic';

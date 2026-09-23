@@ -14,13 +14,13 @@ describe('WebhookAuth', function () {
 
         $this->owner = TeamTestData::createUser(Constants::ROLE_OWNER);
         $this->webhookToken = 'grafana-hook-'.uniqid();
-        $this->dataSource = DataSource::create([
+        $this->dataSource = DataSource::withoutEvents(fn () => DataSource::create([
             'name' => 'Grafana Auth '.uniqid(),
             'type' => DataSourceType::GRAFANA,
             'url' => 'https://grafana.example.com',
             'userId' => $this->owner->id,
             'webhookToken' => $this->webhookToken,
-        ]);
+        ]));
     });
 
     afterEach(function () {
