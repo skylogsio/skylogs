@@ -28,10 +28,10 @@ class NotifyController extends Controller
 
         $alertEndpoints = collect();
         if (! empty($alert->endpointIds)) {
-            $alertEndpoints = Endpoint::whereIn('_id', $alert->endpointIds)->get();
-            foreach ($alertEndpoints as $endpoint) {
-                $endpoint->canRemove = $endpointService->userCanRemoveAlertEndpoint($user, $alert, $endpoint);
-            }
+            $alertEndpoints = Endpoint::whereIn('_id', $alert->endpointIds)
+                ->get()
+                ->map(fn (Endpoint $endpoint) => $endpointService->presentAlertEndpoint($user, $alert, $endpoint))
+                ->values();
         }
 
         return response()->json(compact('alertEndpoints', 'selectableEndpoints'));

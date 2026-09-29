@@ -91,6 +91,23 @@ class EndpointService
     }
 
     /**
+     * Alert endpoint payload. Destination fields stay hidden unless the user can use the endpoint.
+     *
+     * @return array<string, mixed>
+     */
+    public function presentAlertEndpoint(User $user, AlertRule $alert, Endpoint $endpoint): array
+    {
+        if (! $this->userCanUseEndpoint($user, $endpoint)) {
+            $endpoint->makeHidden(['value', 'chatId', 'botToken', 'threadId', 'steps', 'otpCode']);
+        }
+
+        $payload = $endpoint->toArray();
+        $payload['canRemove'] = $this->userCanRemoveAlertEndpoint($user, $alert, $endpoint);
+
+        return $payload;
+    }
+
+    /**
      * Endpoint ids from $endpointIds that this user owns or can access.
      *
      * @param  list<mixed>  $endpointIds

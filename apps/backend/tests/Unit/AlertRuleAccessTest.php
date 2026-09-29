@@ -355,10 +355,19 @@ describe('EndpointService alert access', function () {
         $private->userId = 'other-id';
         $private->accessUserIds = [];
         $private->accessTeamIds = ['team-2'];
+        $private->value = 'secret-phone';
+        $private->chatId = 'secret-chat';
+        $private->botToken = 'secret-token';
 
         $alert = makeAccessTestAlert(['userId' => 'owner-id', 'userIds' => ['member-id']]);
+        $presented = $endpointService->presentAlertEndpoint($member, $alert, $private);
 
-        expect($endpointService->userCanRemoveAlertEndpoint($member, $alert, $owned))->toBeTrue()
+        expect($presented)->not->toHaveKey('value')
+            ->and($presented)->not->toHaveKey('chatId')
+            ->and($presented)->not->toHaveKey('botToken')
+            ->and($presented['canRemove'])->toBeFalse()
+            ->and($endpointService->presentAlertEndpoint($member, $alert, $owned))->toHaveKey('userId')
+            ->and($endpointService->userCanRemoveAlertEndpoint($member, $alert, $owned))->toBeTrue()
             ->and($endpointService->userCanRemoveAlertEndpoint($member, $alert, $private))->toBeFalse()
             ->and($endpointService->userCanRemoveAlertEndpoint(makeAccessTestUser('owner-id'), $alert, $private))->toBeTrue()
             ->and($endpointService->userCanUseEndpoint($member, $owned))->toBeTrue()

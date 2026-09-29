@@ -189,10 +189,14 @@ describe('assigning accessible endpoints to alerts', function () {
                 ->json('alertEndpoints')
         );
 
+        $privatePayload = $alertEndpoints->firstWhere('id', (string) $this->privateEndpoint->id);
+
         expect($alertEndpoints->pluck('id')->all())->toContain((string) $this->ownedEndpoint->id)
             ->and($alertEndpoints->pluck('id')->all())->toContain((string) $this->privateEndpoint->id)
             ->and($alertEndpoints->firstWhere('id', (string) $this->ownedEndpoint->id)['canRemove'])->toBeTrue()
-            ->and($alertEndpoints->firstWhere('id', (string) $this->privateEndpoint->id)['canRemove'])->toBeFalse();
+            ->and($privatePayload['canRemove'])->toBeFalse()
+            ->and($privatePayload)->not->toHaveKey('value')
+            ->and($privatePayload)->not->toHaveKey('chatId');
 
         $this->actingAs($this->member, 'api')
             ->deleteJson('/api/v1/alert-rule-notify/'.$this->userAlert->id.'/'.$this->privateEndpoint->id)
