@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use App\Concerns\ProvidesDefaultChannelMessages;
+use App\Concerns\ProvidesChannelMessages;
 use App\Interfaces\Messageable;
 use MongoDB\Laravel\Relations\BelongsTo;
 use Morilog\Jalali\Jalalian;
 
 class ElasticCheck extends BaseModel implements Messageable
 {
-    use ProvidesDefaultChannelMessages;
+    use ProvidesChannelMessages;
 
     public $timestamps = true;
 

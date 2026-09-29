@@ -3,6 +3,7 @@
 namespace Tests\Support;
 
 use App\Enums\AlertRuleType;
+use App\Enums\EndpointType;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\IncidentPolicy;
@@ -26,7 +27,7 @@ class IncidentPolicyTestData
     {
         return Endpoint::create([
             'name' => $name ?? 'test-endpoint-'.uniqid(),
-            'type' => Endpoint::TELEGRAM,
+            'type' => EndpointType::TELEGRAM->value,
             'userId' => $user->id,
             'value' => '123456',
         ]);

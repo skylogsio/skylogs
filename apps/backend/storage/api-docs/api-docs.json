@@ -121,6 +121,18 @@
                         }
                     },
                     {
+                        "name": "watchStatus",
+                        "in": "query",
+                        "description": "Filter by watch-list state for the current user",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "watched",
+                                "unwatched"
+                            ]
+                        }
+                    },
+                    {
                         "name": "endpointId",
                         "in": "query",
                         "description": "Filter by linked endpoint id",
@@ -537,6 +549,127 @@
                     },
                     "404": {
                         "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/watch/{id}": {
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Toggle watch list membership for the current user",
+                "description": "Requires read access (assigned/manage or organization-visible). Adds the alert to the caller's watch list, or removes it if it is already watched.",
+                "operationId": "toggleWatchAlertRule",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Watch toggled",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "isWatched": {
+                                            "type": "boolean"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/watch-list": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "List the current user's watched alert rules with states",
+                "description": "Returns paginated alert rules on the caller's watch list. Each item includes the current `statusLabel` and `statusCount`. Alerts the user can no longer access are omitted.",
+                "operationId": "getAlertRuleWatchList",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated watch list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AlertRuleWatchListItem"
+                                            }
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
                     }
                 },
                 "security": [
@@ -1464,6 +1597,193 @@
                 "responses": {
                     "200": {
                         "description": "Silence removed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/group-action/watch": {
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Add filtered alert rules to the current user's watch list",
+                "description": "Uses the same query filters as the alert rule list endpoint.",
+                "operationId": "groupWatchAlertRules",
+                "parameters": [
+                    {
+                        "name": "alertname",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "userId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "types",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tags",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "silentStatus",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "silent",
+                                "active"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "watchStatus",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "watched",
+                                "unwatched"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "endpointId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by alert state",
+                        "schema": {
+                            "$ref": "#/components/schemas/AlertRuleState"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rules added to the watch list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StatusResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/group-action/unwatch": {
+            "post": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "Remove filtered alert rules from the current user's watch list",
+                "operationId": "groupUnwatchAlertRules",
+                "parameters": [
+                    {
+                        "name": "alertname",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "userId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "types",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tags",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "silentStatus",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "silent",
+                                "active"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "watchStatus",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "watched",
+                                "unwatched"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "endpointId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by alert state",
+                        "schema": {
+                            "$ref": "#/components/schemas/AlertRuleState"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rules removed from the watch list",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -6959,6 +7279,205 @@
                 ]
             }
         },
+        "/api/v1/notification-deliveries": {
+            "get": {
+                "tags": [
+                    "Notification Deliveries"
+                ],
+                "summary": "List notification deliveries (paginated, newest first)",
+                "description": "Admins see every delivery; other users see deliveries to endpoints they own.",
+                "operationId": "getNotificationDeliveries",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 25,
+                            "maximum": 100
+                        }
+                    },
+                    {
+                        "name": "notifyId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "endpointId",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "sending",
+                                "sent",
+                                "failed",
+                                "skipped"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated deliveries",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/NotificationDelivery"
+                                            }
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/notification-deliveries/{id}": {
+            "get": {
+                "tags": [
+                    "Notification Deliveries"
+                ],
+                "summary": "Get a notification delivery with its attempt log",
+                "operationId": "getNotificationDelivery",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Delivery",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/NotificationDelivery"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/notification-deliveries/{id}/retry": {
+            "post": {
+                "tags": [
+                    "Notification Deliveries"
+                ],
+                "summary": "Retry a failed delivery",
+                "description": "Grants one more attempt and queues it. The same stored message (including any custom template) is sent to the endpoint as it is configured now.",
+                "operationId": "retryNotificationDelivery",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retry queued",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/NotificationDelivery"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "description": "The delivery is not in the failed state"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/team/{teamId}/on-call-plan": {
             "get": {
                 "tags": [
@@ -7058,7 +7577,7 @@
                     "On-Call Plans"
                 ],
                 "summary": "Create the team on-call plan",
-                "description": "Multipart: name, timezone, optional layerDelays, and an xlsx file (one sheet per layer, Time + User). Fails with 422 if the team already has a plan. Admin or the team owner.",
+                "description": "Multipart: name, timezone, optional layerDelays, and an xlsx weekly calendar (one Layer sheet per escalation level). Fails with 422 if the team already has a plan. Admin or the team owner.",
                 "operationId": "createTeamOnCallPlan",
                 "parameters": [
                     {
@@ -7232,6 +7751,29 @@
                                     "type": "object"
                                 }
                             }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/on-call-plan/template": {
+            "get": {
+                "tags": [
+                    "On-Call Plans"
+                ],
+                "summary": "Download the on-call Excel template",
+                "description": "Blank weekly calendar workbook (Instructions, Layer 1, Layer 2, Legend). Logged-in users.",
+                "operationId": "downloadOnCallPlanTemplate",
+                "responses": {
+                    "200": {
+                        "description": "xlsx template",
+                        "content": {
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
                         }
                     }
                 },
@@ -9364,7 +9906,7 @@
             },
             "AlertRuleBehaviorRuleTemplate": {
                 "title": "Template behavior rule",
-                "description": "Uses a custom template string for messages sent to the listed endpoints.\n\n**Prometheus, Grafana, and PMM** support type-aware placeholders:\n\n| Placeholder | Description |\n|-------------|-------------|\n| `{{name}}` | Alert rule name |\n| `{{state}}` / `{{state_line}}` | Rule state value / formatted state line |\n| `{{fireCount}}` | Number of firing alerts |\n| `{{date}}` | Jalali date line (`date:` or `Date:` prefix included) |\n| `{{dataSourceName}}` | Data source name |\n| `{{label.KEY}}` | Label from first firing alert |\n| `{{annotation.KEY}}` | Annotation from first firing alert |\n| `{{severity_line}}` | Severity line with emoji |\n| `{{labels:alertname,pod}}` | Label block (include only listed keys) |\n| `{{labels:* exclude=job}}` | All labels except listed keys |\n| `{{annotations:summary,description}}` | Annotation block (include) |\n| `{{alert_items labels=\"pod\" annotations=\"summary\"}}` | Per-alert section |\n| `{{alert_items labels=\"*\" exclude_labels=\"job\"}}` | Per-alert section with exclusions |\n\n**Default Prometheus template:**\n```\n{{name}}\n\n{{state_line}}\n{{alert_items labels=\"*\" annotations=\"*\"}}\n{{date}}\n```\n\n**Default Grafana / PMM template:**\n```\n{{name}}\n\n{{state_line}}\nData Source: {{dataSourceName}}\n\n{{alert_items labels=\"*\" annotations=\"*\"}}\n{{date}}\n```\n\nOther alert types fall back to generic `{{name}}`, `{{state}}`, and dotted `{{alert.*}}` paths.",
+                "description": "Uses a custom template string for messages sent to the listed endpoints.\n\n**Prometheus, Grafana, and PMM** support type-aware placeholders:\n\n| Placeholder | Description |\n|-------------|-------------|\n| `{{name}}` | Alert rule name |\n| `{{state}}` / `{{state_line}}` | Rule state value / formatted state line |\n| `{{fireCount}}` | Number of firing alerts |\n| `{{date}}` | Jalali date line (`date:` or `Date:` prefix included) |\n| `{{dataSourceName}}` | Data source name |\n| `{{label.KEY}}` | Label from first firing alert |\n| `{{annotation.KEY}}` | Annotation from first firing alert |\n| `{{severity_line}}` | Severity line with emoji |\n| `{{labels:alertname,pod}}` | Label block (include only listed keys) |\n| `{{labels:* exclude=job}}` | All labels except listed keys |\n| `{{annotations:summary,description}}` | Annotation block (include) |\n| `{{alert_items labels=\"pod\" annotations=\"summary\"}}` | Per-alert section |\n| `{{alert_items labels=\"*\" exclude_labels=\"job\"}}` | Per-alert section with exclusions |\n\n**Default Prometheus template:**\n```\n{{name}}\n\n{{state_line}}\n{{alert_items labels=\"*\" annotations=\"*\"}}\n{{date}}\n```\n\n**Default Grafana / PMM template:**\n```\n{{name}}\n\n{{state_line}}\nData Source: {{dataSourceName}}\n\n{{alert_items labels=\"*\" annotations=\"*\"}}\n{{date}}\n```\n\n**API and Notification** support instance-based placeholders:\n\n| Placeholder | Description |\n|-------------|-------------|\n| `{{name}}` | Alert rule name |\n| `{{state}}` / `{{state_line}}` | Instance state value (`critical`, `resolved`, `notification`) / formatted state line |\n| `{{instance}}` / `{{instance_line}}` | Instance value / `Instance: ...` line (omitted when empty) |\n| `{{description}}` / `{{description_line}}` | Description value / `Description: ...` line (omitted when empty) |\n| `{{summary}}` / `{{summary_line}}` | Summary value / `Summary: ...` line (omitted when empty) |\n| `{{job}}` | Optional job field from the API payload |\n| `{{date}}` | Jalali datetime line (`Date: Y/m/d H:i:s`) |\n| `{{fireCount}}` | Number of firing instances |\n| `{{alert.instance}}` | Alias for `{{instance}}` |\n\n**Default API / Notification template:**\n```\n{{name}}\n{{state_line}}\n{{instance_line}}{{description_line}}{{date}}\n```\n\nOther alert types fall back to generic `{{name}}`, `{{state}}`, and dotted `{{alert.*}}` paths.",
                 "required": [
                     "id",
                     "name",
@@ -9586,7 +10128,7 @@
                         "minItems": 1
                     },
                     "template": {
-                        "description": "Message template. See `AlertRuleBehaviorRuleTemplate` for Prometheus/Grafana/PMM placeholder syntax.",
+                        "description": "Message template. See `AlertRuleBehaviorRuleTemplate` for Prometheus/Grafana/PMM/API/Notification placeholder syntax.",
                         "type": "string",
                         "example": "{{name}}\n\n{{state_line}}\n{{alert_items labels=\"pod\" annotations=\"summary\"}}",
                         "minLength": 1
@@ -11217,6 +11759,13 @@
                     "isPinned": {
                         "type": "boolean"
                     },
+                    "isWatched": {
+                        "description": "True when the current user has this alert on their watch list",
+                        "type": "boolean"
+                    },
+                    "is_watched": {
+                        "type": "boolean"
+                    },
                     "countEndpoints": {
                         "description": "Present only for `manage` access",
                         "type": "integer"
@@ -11230,6 +11779,48 @@
                         "items": {
                             "$ref": "#/components/schemas/AlertRuleExtraField"
                         }
+                    }
+                },
+                "type": "object"
+            },
+            "AlertRuleWatchListItem": {
+                "description": "An alert rule on the current user's watch list, including its current state.",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "state": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/AlertRuleState"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "statusLabel": {
+                        "$ref": "#/components/schemas/AlertRuleState"
+                    },
+                    "statusCount": {
+                        "type": "integer"
+                    },
+                    "isWatched": {
+                        "type": "boolean",
+                        "example": true
                     }
                 },
                 "type": "object"
@@ -11941,6 +12532,28 @@
                                 "nullable": true
                             },
                             "postmortemReviewRequired": {
+                                "type": "boolean"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "remaining": {
+                        "description": "Outstanding follow-through for related staff. Null once the incident is resolved. An acknowledged team is not escalated further.",
+                        "properties": {
+                            "unacknowledgedTeamIds": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "commanderRequired": {
+                                "type": "boolean"
+                            },
+                            "statusPageUpdateRequired": {
+                                "type": "boolean"
+                            },
+                            "postmortemRequired": {
                                 "type": "boolean"
                             }
                         },
@@ -13220,6 +13833,163 @@
                 },
                 "type": "object"
             },
+            "NotificationDelivery": {
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "notifyId": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "source": {
+                        "type": "string",
+                        "enum": [
+                            "alert",
+                            "incident_policy",
+                            "flow"
+                        ]
+                    },
+                    "sourceId": {
+                        "description": "Alert rule id, or incident id for incident pages",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "flowEndpointId": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "flowStepIndex": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "endpointId": {
+                        "type": "string"
+                    },
+                    "endpointType": {
+                        "type": "string",
+                        "enum": [
+                            "telegram",
+                            "bale",
+                            "sms",
+                            "call",
+                            "teams",
+                            "discord",
+                            "email",
+                            "matter-most"
+                        ]
+                    },
+                    "endpointName": {
+                        "type": "string"
+                    },
+                    "userId": {
+                        "description": "Owner of the endpoint",
+                        "type": "string"
+                    },
+                    "message": {
+                        "description": "The exact message this endpoint receives; overrides are keyed by endpoint type",
+                        "properties": {
+                            "body": {
+                                "type": "string"
+                            },
+                            "overrides": {
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "templateApplied": {
+                        "type": "boolean"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "sending",
+                            "sent",
+                            "failed",
+                            "skipped"
+                        ]
+                    },
+                    "attempts": {
+                        "type": "integer"
+                    },
+                    "maxAttempts": {
+                        "type": "integer"
+                    },
+                    "canRetry": {
+                        "type": "boolean"
+                    },
+                    "nextRetryAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "lastError": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "attemptLog": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "attempt": {
+                                    "type": "integer"
+                                },
+                                "at": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "status": {
+                                    "type": "string",
+                                    "enum": [
+                                        "sent",
+                                        "failed"
+                                    ]
+                                },
+                                "retryable": {
+                                    "type": "boolean"
+                                },
+                                "httpStatus": {
+                                    "type": "integer",
+                                    "nullable": true
+                                },
+                                "providerMessageId": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "response": {
+                                    "description": "Provider response, truncated; null for providers that return nothing (Teams, Discord, email)"
+                                },
+                                "error": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "durationMs": {
+                                    "type": "integer"
+                                },
+                                "trigger": {
+                                    "type": "string",
+                                    "enum": [
+                                        "auto",
+                                        "manual"
+                                    ]
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "OnCallPlan": {
                 "properties": {
                     "id": {
@@ -13293,7 +14063,7 @@
                         "example": "Asia/Tehran"
                     },
                     "file": {
-                        "description": "xlsx, one sheet per layer, Time and User columns",
+                        "description": "xlsx weekly calendar: columns Monday–Sunday, rows are shifts, cell text is the username",
                         "type": "string",
                         "format": "binary"
                     },
@@ -14011,6 +14781,10 @@
         {
             "name": "Incident Policies",
             "description": "Incident response policies. Definitions can be applied from the YAML DSL (apiVersion skylogs.io/v1) or written as JSON. Matching auto-create policies open or join incidents when a critical, warning, or triggered alert fires. They auto-resolve when autoResolveOnAlertClear is set and every grouped alert has cleared. Opening a new incident pages the matching SEV rule notify endpoints and the current on-call; useLayers walks later on-call layers after each layer delay. Ack/resolve windows, commander, stakeholder reminders, status-page updates, and required postmortems are enforced from the matching SEV rule."
+        },
+        {
+            "name": "Notification Deliveries",
+            "description": "One record per message sent to one endpoint, with every delivery attempt and its provider response."
         },
         {
             "name": "On-Call Plans",

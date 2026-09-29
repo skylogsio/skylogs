@@ -2,6 +2,7 @@
 
 use App\Enums\AlertRuleType;
 use App\Enums\Constants;
+use App\Enums\EndpointType;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\User;
@@ -185,7 +186,7 @@ describe('UserController manager access', function () {
     it('removes a deleted member from alert rules and moves their endpoints to admin', function () {
         $endpoint = Endpoint::create([
             'name' => 'member-endpoint-'.uniqid(),
-            'type' => Endpoint::EMAIL,
+            'type' => EndpointType::EMAIL->value,
             'userId' => $this->member->id,
             'value' => 'member@example.com',
         ]);

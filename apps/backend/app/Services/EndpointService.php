@@ -4,12 +4,11 @@ namespace App\Services;
 
 use App\Enums\EndpointType;
 use App\Enums\FlowEndpointStepType;
-use App\Helpers\Email;
-use App\Helpers\SMS;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\EndpointOTP;
 use App\Models\User;
+use App\Services\Notification\ChannelRegistry;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 
@@ -18,6 +17,7 @@ class EndpointService
     public function __construct(
         protected TeamService $teamService,
         protected AlertRuleService $alertRuleService,
+        protected ChannelRegistry $channels,
     ) {}
 
     public function selectableUserEndpoint(User $user, ?AlertRule $alert = null)
@@ -172,15 +172,10 @@ class EndpointService
 
     public function countUserEndpointAlert(User $user, ?AlertRule $alert = null)
     {
-        if ($alert === null || (! $user->isAdmin() && ! $this->alertRuleService->hasUserAccessAlert($user, $alert))) {
-            return 0;
-        }
+        $selectableEndpoints = $this->selectableUserEndpoint($user, $alert);
+        $alertEndpoints = collect($alert->endpointIds);
 
-        return collect($alert->endpointIds ?? [])
-            ->map(fn ($endpointId) => (string) $endpointId)
-            ->filter(fn (string $endpointId) => $endpointId !== '')
-            ->unique()
-            ->count();
+        return $selectableEndpoints->pluck('id')->intersect($alertEndpoints)->count();
     }
 
     public function deleteEndpointOfAlertRules(Endpoint $endpoint): void
@@ -204,196 +199,47 @@ class EndpointService
         }
     }
 
-    public function create($request)
+    /**
+     * @param  array<string, mixed>  $data  validated endpoint input
+     */
+    public function create(array $data): Endpoint
     {
-        $value = trim($request->value);
-        $isPublic = $request->boolean('isPublic', false);
-        $accessUserIds = $request->accessUserIds ?? [];
-        $accessTeamIds = $request->accessTeamIds ?? [];
+        $this->assertCanWrite($data);
 
-        switch ($request->type) {
-            case EndpointType::TELEGRAM->value:
+        $model = Endpoint::create([
+            'userId' => \Auth::id(),
+            ...$this->attributesFor($data),
+        ]);
 
-                $model = Endpoint::create([
-                    'userId' => \Auth::id(),
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                    'chatId' => $value,
-                    'threadId' => $request->threadId,
-                    'botToken' => $request->botToken,
-                    'isPublic' => $isPublic,
-                ]);
-                break;
-
-            case EndpointType::BALE->value:
-
-                $model = Endpoint::create([
-                    'userId' => \Auth::id(),
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                    'chatId' => $value,
-                    'botToken' => $request->botToken,
-                    'isPublic' => $isPublic,
-                ]);
-                break;
-
-            case EndpointType::FLOW->value:
-                $this->validateFlowEndpointData($request);
-
-                $model = Endpoint::create([
-                    'userId' => \Auth::id(),
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                    'steps' => $request->steps,
-                    'isPublic' => $isPublic,
-                ]);
-                break;
-
-            case EndpointType::CALL->value:
-            case EndpointType::SMS->value:
-            case EndpointType::EMAIL->value:
-                $otp = EndpointOTP::where('value', $request->value)->first();
-
-                if (! $otp || $otp->expiredAt < Carbon::now()) {
-                    abort(422, 'otp code expired try again');
-                }
-
-                if ($otp->otpCode != $request->otpCode) {
-                    abort(422, 'otp code invalid');
-                }
-                $model = Endpoint::create([
-                    'userId' => \Auth::id(),
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'value' => $value,
-                    'isPublic' => $isPublic,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                ]);
-
-                break;
-            default:
-                $model = Endpoint::create([
-                    'userId' => \Auth::id(),
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                    'value' => $value,
-                    'isPublic' => $isPublic,
-                ]);
-                break;
-        }
-
-        $this->syncOnCallFlag($model, $request);
+        $this->syncOnCallFlag($model, $data);
 
         return $model->fresh();
     }
 
-    public function update($endpoint, $request)
+    /**
+     * @param  array<string, mixed>  $data  validated endpoint input
+     */
+    public function update(Endpoint $endpoint, array $data): Endpoint
     {
-        $value = trim($request->value);
-        $isPublic = $request->boolean('isPublic', false);
-        $accessUserIds = $request->accessUserIds ?? [];
-        $accessTeamIds = $request->accessTeamIds ?? [];
+        $this->assertCanWrite($data, $endpoint);
 
-        switch ($request->type) {
-            case EndpointType::TELEGRAM->value:
+        $endpoint->update($this->attributesFor($data));
 
-                $model = $endpoint->update([
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                    'chatId' => $value,
-                    'threadId' => $request->threadId,
-                    'botToken' => $request->botToken,
-                    'isPublic' => $isPublic,
-                ]);
-                break;
-
-            case EndpointType::BALE->value:
-
-                $model = $endpoint->update([
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                    'chatId' => $value,
-                    'botToken' => $request->botToken,
-                    'isPublic' => $isPublic,
-                ]);
-                break;
-
-            case EndpointType::FLOW->value:
-                $this->validateFlowEndpointData($request);
-
-                $model = $endpoint->update([
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                    'steps' => $request->steps,
-                    'isPublic' => $isPublic,
-                ]);
-                break;
-
-            case EndpointType::CALL->value:
-            case EndpointType::SMS->value:
-            case EndpointType::EMAIL->value:
-
-                if ($endpoint->value != $request->value) {
-                    $otp = EndpointOTP::where('value', $request->value)->first();
-
-                    if (! $otp || $otp->expiredAt < Carbon::now()) {
-                        abort(422, 'otp code expired try again');
-                    }
-
-                    if ($otp->otpCode != $request->otpCode) {
-                        abort(422, 'otp code invalid');
-                    }
-                }
-
-                $model = $endpoint->update([
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'value' => $value,
-                    'isPublic' => $isPublic,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                ]);
-                break;
-
-            default:
-                $model = $endpoint->update([
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                    'value' => $value,
-                    'isPublic' => $isPublic,
-                ]);
-                break;
-        }
-
-        $this->syncOnCallFlag($endpoint->fresh(), $request);
+        $this->syncOnCallFlag($endpoint->fresh(), $data);
 
         return $endpoint->fresh();
     }
 
-    public function syncOnCallFlag(Endpoint $endpoint, $request): void
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function syncOnCallFlag(Endpoint $endpoint, array $data): void
     {
-        if (! $request->exists('onCall')) {
+        if (! array_key_exists('onCall', $data)) {
             return;
         }
 
-        $onCall = $request->boolean('onCall');
+        $onCall = (bool) $data['onCall'];
 
         if ($onCall) {
             Endpoint::query()
@@ -406,16 +252,16 @@ class EndpointService
         $endpoint->save();
     }
 
-    public function validateFlowEndpointData($request): void
+    /**
+     * @param  array<int, array<string, mixed>>|null  $steps
+     */
+    public function validateFlowEndpointData(?array $steps): void
     {
-
-        $steps = $request->steps;
-
         if (empty($steps)) {
             abort(422, 'wrong format for flow endpoints. empty steps.');
         }
         foreach ($steps as $step) {
-            switch ($step['type']) {
+            switch ($step['type'] ?? null) {
                 case FlowEndpointStepType::WAIT->value:
                     if (empty($step['timeUnit']) || ! in_array($step['timeUnit'], ['s', 'm', 'h']) || empty($step['duration']) || ! is_int($step['duration'])) {
                         abort(422, 'wrong format for flow endpoints');
@@ -434,9 +280,13 @@ class EndpointService
 
     }
 
-    public function otpRequest($request)
+    /**
+     * @param  array{type: string, value: mixed}  $data
+     * @return array{message: string, expiredAt: int, timeLeft: int}
+     */
+    public function otpRequest(array $data): array
     {
-        $endpointOtp = EndpointOTP::where('type', $request->type)->where('value', $request->value)->first();
+        $endpointOtp = EndpointOTP::where('type', $data['type'])->where('value', $data['value'])->first();
 
         if ($endpointOtp) {
             if (Carbon::now()->lessThan($endpointOtp->expiredAt)) {
@@ -447,12 +297,11 @@ class EndpointService
                     'expiredAt' => $endpointOtp->expiredAt->getTimestamp(),
                     'timeLeft' => intval(Carbon::now()->diffInSeconds($endpointOtp->expiredAt)),
                 ];
-                //                abort(422, "You have to wait $seconds seconds before otp request.");
             }
         } else {
             $endpointOtp = new EndpointOTP;
-            $endpointOtp->type = $request->type;
-            $endpointOtp->value = $request->value;
+            $endpointOtp->type = $data['type'];
+            $endpointOtp->value = $data['value'];
         }
 
         $endpointOtp->status = EndpointOTP::STATUS_PENDING;
@@ -460,25 +309,66 @@ class EndpointService
         $endpointOtp->generateOtpCode();
         $endpointOtp->save();
 
-        switch ($request->type) {
-            case EndpointType::SMS->value:
-                $endpointOtp->result = SMS::sendOTP($endpointOtp);
-                break;
-            case EndpointType::CALL->value:
-                $endpointOtp->result = SMS::sendOTP($endpointOtp);
-                break;
-
-            case EndpointType::EMAIL->value:
-                Email::sendOTP($endpointOtp);
-                break;
-        }
-
+        $endpointOtp->result = $this->channels->for($data['type'])->sendVerification($endpointOtp)->toArray();
         $endpointOtp->save();
 
         return [
             'message' => 'OTP code has been sent to your endpoint',
             'expiredAt' => $endpointOtp->expiredAt->getTimestamp(),
             'timeLeft' => intval(Carbon::now()->diffInSeconds($endpointOtp->expiredAt)),
+        ];
+    }
+
+    /**
+     * Flow steps must be well formed, and channels that verify ownership
+     * need a valid OTP whenever the address is new.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function assertCanWrite(array $data, ?Endpoint $existing = null): void
+    {
+        if ($data['type'] === EndpointType::FLOW->value) {
+            $this->validateFlowEndpointData($data['steps'] ?? null);
+
+            return;
+        }
+
+        if (! $this->channels->for($data['type'])->requiresVerification()) {
+            return;
+        }
+
+        if ($existing !== null && $existing->value == ($data['value'] ?? null)) {
+            return;
+        }
+
+        $otp = EndpointOTP::where('value', $data['value'] ?? null)->first();
+
+        if (! $otp || $otp->expiredAt < Carbon::now()) {
+            abort(422, 'otp code expired try again');
+        }
+
+        if ($otp->otpCode != ($data['otpCode'] ?? null)) {
+            abort(422, 'otp code invalid');
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function attributesFor(array $data): array
+    {
+        $type = $data['type'];
+
+        return [
+            'name' => $data['name'],
+            'type' => $type,
+            'accessUserIds' => $data['accessUserIds'] ?? [],
+            'accessTeamIds' => $data['accessTeamIds'] ?? [],
+            'isPublic' => (bool) ($data['isPublic'] ?? false),
+            ...($type === EndpointType::FLOW->value
+                ? ['steps' => $data['steps']]
+                : $this->channels->for($type)->attributes($data)),
         ];
     }
 }

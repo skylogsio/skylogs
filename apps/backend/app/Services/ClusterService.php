@@ -10,13 +10,14 @@ use App\Models\Endpoint;
 use App\Models\SkylogsInstance;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\Notification\ChannelRegistry;
 use MongoDB\BSON\ObjectId;
 
 class ClusterService
 {
     private ClusterType $clusterType;
 
-    public function __construct()
+    public function __construct(private readonly ChannelRegistry $channels)
     {
         $this->clusterType = app(ConfigSkylogsService::class)->getClusterType();
     }
@@ -106,15 +107,10 @@ class ClusterService
 
                 if ($endpoint['type'] == EndpointType::FLOW->value) {
                     $endpointModel->steps = $endpoint['steps'];
-                } elseif ($endpoint['type'] == EndpointType::TELEGRAM->value) {
-                    $endpointModel->chatId = $endpoint['chatId'] ?? '';
-                    $endpointModel->threadId = $endpoint['threadId'] ?? '';
-                    $endpointModel->botToken = $endpoint['botToken'] ?? '';
-                } elseif ($endpoint['type'] == EndpointType::BALE->value) {
-                    $endpointModel->chatId = $endpoint['chatId'] ?? '';
-                    $endpointModel->botToken = $endpoint['botToken'] ?? '';
-                } else {
-                    $endpointModel->value = $endpoint['value'];
+                } elseif ($this->channels->has($endpoint['type'])) {
+                    foreach ($this->channels->for($endpoint['type'])->storedFields() as $field) {
+                        $endpointModel->{$field} = $endpoint[$field] ?? '';
+                    }
                 }
                 if ($exists && ! $endpointModel->isDirty()) {
                     continue;

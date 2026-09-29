@@ -2,7 +2,8 @@
 
 namespace App\Models;
 
-use App\Concerns\ProvidesDefaultChannelMessages;
+use App\Concerns\ProvidesChannelMessages;
+use App\Enums\EndpointType;
 use App\Interfaces\Messageable;
 use App\Models\DataSource\DataSource;
 use App\Services\AlertMessage\AlertMessageTemplateRenderer;
@@ -10,7 +11,7 @@ use MongoDB\Laravel\Relations\BelongsTo;
 
 class PrometheusCheck extends BaseModel implements Messageable
 {
-    use ProvidesDefaultChannelMessages;
+    use ProvidesChannelMessages;
 
     public $timestamps = true;
 
@@ -89,43 +90,22 @@ class PrometheusCheck extends BaseModel implements Messageable
         return AlertMessageTemplateRenderer::make()->renderDefault($alertRule, $this->toArray());
     }
 
-    public function telegram()
+    /**
+     * @return array<string, mixed>|string|null
+     */
+    public function messageFor(EndpointType $type): array|string|null
     {
-
-        $result = [
-            'message' => $this->defaultMessage(),
-        ];
-        if ($this->alertRule->enableAcknowledgeBtnInMessage() && $this->state == self::FIRE) {
-            $result['meta'] = [
-                [
-                    'text' => 'Acknowledge',
-                    'url' => config('app.url').route('acknowledgeLink', ['id' => $this->alertRuleId], false),
-                ],
-            ];
-        }
-
-        return $result;
+        return match ($type) {
+            EndpointType::TELEGRAM, EndpointType::BALE => $this->messageWithAcknowledgeButton(
+                $this->alertRule->enableAcknowledgeBtnInMessage() && $this->state == self::FIRE,
+                $this->alertRuleId,
+            ),
+            EndpointType::CALL => $this->shortSummary(),
+            default => null,
+        };
     }
 
-    public function baleMessage()
-    {
-
-        $result = [
-            'message' => $this->defaultMessage(),
-        ];
-        if ($this->alertRule->enableAcknowledgeBtnInMessage() && $this->state == self::FIRE) {
-            $result['meta'] = [
-                [
-                    'text' => 'Acknowledge',
-                    'url' => config('app.url').route('acknowledgeLink', ['id' => $this->alertRuleId], false),
-                ],
-            ];
-        }
-
-        return $result;
-    }
-
-    public function callMessage(): string
+    private function shortSummary(): string
     {
 
         $text = 'Alert '.$this->alertRuleName;

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Concerns\ProvidesDefaultChannelMessages;
+use App\Concerns\ProvidesChannelMessages;
 use App\Enums\AlertRuleType;
 use App\Enums\HealthAlertType;
 use App\Interfaces\Messageable;
@@ -14,7 +14,7 @@ use MongoDB\Laravel\Relations\BelongsTo;
 #[ObservedBy(AlertRuleObserver::class)]
 class AlertRule extends BaseModel implements Messageable
 {
-    use ProvidesDefaultChannelMessages;
+    use ProvidesChannelMessages;
 
     public const UNKNOWN = 'unknown';
 
@@ -310,7 +310,7 @@ class AlertRule extends BaseModel implements Messageable
     ];
 
     // ########### ONLY FOR MANUALLY RESOLVE
-    public function defaultMessage()
+    public function defaultMessage(): string
     {
         $text = $this->name;
         $text .= ' resolved manually.';

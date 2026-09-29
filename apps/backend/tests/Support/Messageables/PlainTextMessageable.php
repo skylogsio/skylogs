@@ -2,7 +2,7 @@
 
 namespace Tests\Support\Messageables;
 
-use App\Concerns\ProvidesDefaultChannelMessages;
+use App\Concerns\ProvidesChannelMessages;
 use App\Interfaces\Messageable;
 
 /**
@@ -10,7 +10,7 @@ use App\Interfaces\Messageable;
  */
 final class PlainTextMessageable implements Messageable
 {
-    use ProvidesDefaultChannelMessages;
+    use ProvidesChannelMessages;
 
     public function __construct(
         private readonly string $text = 'plain-body',

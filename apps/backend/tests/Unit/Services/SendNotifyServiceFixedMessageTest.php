@@ -1,71 +1,74 @@
 <?php
 
 use App\Enums\AlertRuleType;
+use App\Enums\EndpointType;
 use App\Jobs\SendNotifyJob;
+use App\Models\AlertRule;
+use App\Models\Endpoint;
 use App\Models\Notify;
+use App\Services\Notification\DeliveryTarget;
 use App\Services\SendNotifyService;
 use App\Support\NotifyMessagePayload;
 use Tests\Support\Factories\AlertRuleFactory;
 
 /**
- * @return array{messageable: mixed, notify: Notify}
+ * @param  list<string>  $endpointIds
+ * @return list<DeliveryTarget>
  */
-function invokeMessageableForTemplate(Notify $notify, string $template): array
+function invokeBuildTargets(Notify $notify, array $endpointIds): array
 {
-    $service = app(SendNotifyService::class);
-    $method = new ReflectionMethod(SendNotifyService::class, 'messageableForTemplate');
+    $endpoints = collect($endpointIds)->map(function (string $id) {
+        $endpoint = new Endpoint(['type' => EndpointType::TELEGRAM->value]);
+        $endpoint->forceFill(['_id' => $id]);
+
+        return $endpoint;
+    });
+
+    $method = new ReflectionMethod(SendNotifyService::class, 'buildTargets');
     $method->setAccessible(true);
 
-    return [
-        'messageable' => $method->invoke($service, $notify, $template),
-        'notify' => $notify,
-    ];
+    return $method->invoke(app(SendNotifyService::class), $notify, $endpoints);
+}
+
+function templatedAlertRule(): AlertRule
+{
+    return AlertRuleFactory::unsaved([
+        'name' => 'CPU Alert',
+        'type' => AlertRuleType::PROMETHEUS,
+        'rules' => [
+            [
+                'id' => 'template-1',
+                'type' => 'template',
+                'template' => '{{name}} on {{label.pod}}',
+                'endpointIds' => ['endpoint-1'],
+            ],
+        ],
+    ]);
 }
 
 describe('SendNotifyService fixed system messages', function () {
-    it('does not apply template behavior rules for test notifications', function () {
-        $alertRule = AlertRuleFactory::unsaved([
-            'name' => 'CPU Alert',
-            'type' => AlertRuleType::PROMETHEUS,
-        ]);
+    it('does not apply template behavior rules to fixed system messages', function (string $type, string $body) {
+        $alertRule = templatedAlertRule();
 
         $notify = Notify::withoutEvents(fn () => new Notify([
-            'type' => SendNotifyJob::ALERT_RULE_TEST,
-            'messages' => NotifyMessagePayload::fromBody('Testing CPU Alert.')->toArray(),
+            'type' => $type,
+            'messages' => NotifyMessagePayload::fromBody($body)->toArray(),
             'alert' => $alertRule->toArray(),
         ]));
         $notify->setRelation('alertRule', $alertRule);
 
-        $result = invokeMessageableForTemplate($notify, '{{name}} on {{label.pod}}');
+        $targets = invokeBuildTargets($notify, ['endpoint-1']);
 
-        expect($result['messageable'])->toBe($notify)
-            ->and($result['messageable']->defaultMessage())->toBe('Testing CPU Alert.');
-    });
+        expect($targets)->toHaveCount(1)
+            ->and($targets[0]->message->defaultMessage())->toBe($body)
+            ->and($targets[0]->templateApplied)->toBeFalse();
+    })->with([
+        'test notification' => [SendNotifyJob::ALERT_RULE_TEST, 'Testing CPU Alert.'],
+        'acknowledge notification' => [SendNotifyJob::ALERT_RULE_ACKNOWLEDGED, 'Jane Acknowledged CPU Alert.'],
+    ]);
 
-    it('does not apply template behavior rules for acknowledge notifications', function () {
-        $alertRule = AlertRuleFactory::unsaved([
-            'name' => 'CPU Alert',
-            'type' => AlertRuleType::PROMETHEUS,
-        ]);
-
-        $notify = Notify::withoutEvents(fn () => new Notify([
-            'type' => SendNotifyJob::ALERT_RULE_ACKNOWLEDGED,
-            'messages' => NotifyMessagePayload::fromBody('Jane Acknowledged CPU Alert.')->toArray(),
-            'alert' => $alertRule->toArray(),
-        ]));
-        $notify->setRelation('alertRule', $alertRule);
-
-        $result = invokeMessageableForTemplate($notify, '{{alert_items labels="*"}}');
-
-        expect($result['messageable'])->toBe($notify)
-            ->and($result['messageable']->defaultMessage())->toBe('Jane Acknowledged CPU Alert.');
-    });
-
-    it('still applies template behavior rules for real alert notifications', function () {
-        $alertRule = AlertRuleFactory::unsaved([
-            'name' => 'CPU Alert',
-            'type' => AlertRuleType::PROMETHEUS,
-        ]);
+    it('applies template behavior rules only to the endpoints they cover', function () {
+        $alertRule = templatedAlertRule();
 
         $notify = Notify::withoutEvents(fn () => new Notify([
             'type' => SendNotifyJob::PROMETHEUS_FIRE,
@@ -82,54 +85,12 @@ describe('SendNotifyService fixed system messages', function () {
         ]));
         $notify->setRelation('alertRule', $alertRule);
 
-        $result = invokeMessageableForTemplate($notify, '{{name}} on {{label.pod}}');
+        $targets = collect(invokeBuildTargets($notify, ['endpoint-1', 'endpoint-2']))
+            ->keyBy(fn (DeliveryTarget $target) => (string) $target->endpoint->id);
 
-        expect($result['messageable'])->not->toBe($notify)
-            ->and($result['messageable']->defaultMessage())->toBe('CPU Alert on api-1');
-    });
-
-    it('sendChannelAlerts uses the stored notify body for test messages', function () {
-        $alertRule = AlertRuleFactory::unsaved([
-            'name' => 'CPU Alert',
-            'type' => AlertRuleType::PROMETHEUS,
-            'rules' => [
-                [
-                    'id' => 'template-1',
-                    'type' => 'template',
-                    'template' => '{{name}} SHOULD NOT APPEAR ALONE',
-                    'endpointIds' => ['endpoint-1'],
-                ],
-            ],
-        ]);
-
-        $notify = Notify::withoutEvents(fn () => new Notify([
-            'type' => SendNotifyJob::ALERT_RULE_TEST,
-            'messages' => NotifyMessagePayload::fromBody('Testing CPU Alert.')->toArray(),
-            'alert' => $alertRule->toArray(),
-        ]));
-        $notify->setRelation('alertRule', $alertRule);
-
-        $endpoints = collect([
-            (object) ['id' => 'endpoint-1', '_id' => 'endpoint-1'],
-        ]);
-
-        $service = app(SendNotifyService::class);
-        $method = new ReflectionMethod(SendNotifyService::class, 'sendChannelAlerts');
-        $method->setAccessible(true);
-
-        $capturedMessageable = null;
-        $method->invoke(
-            $service,
-            $endpoints,
-            $notify,
-            function ($group, $messageable) use (&$capturedMessageable) {
-                $capturedMessageable = $messageable;
-
-                return 'sent';
-            },
-        );
-
-        expect($capturedMessageable)->toBe($notify)
-            ->and($capturedMessageable->defaultMessage())->toBe('Testing CPU Alert.');
+        expect($targets['endpoint-1']->message->defaultMessage())->toBe('CPU Alert on api-1')
+            ->and($targets['endpoint-1']->templateApplied)->toBeTrue()
+            ->and($targets['endpoint-2']->message->defaultMessage())->toBe('stored default')
+            ->and($targets['endpoint-2']->templateApplied)->toBeFalse();
     });
 });

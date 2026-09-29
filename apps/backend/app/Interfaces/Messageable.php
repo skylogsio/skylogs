@@ -2,24 +2,19 @@
 
 namespace App\Interfaces;
 
+use App\Enums\EndpointType;
+
 interface Messageable
 {
-    public function defaultMessage();
+    public function defaultMessage(): string;
 
-    public function telegram();
-
-    public function baleMessage();
-
-    public function matterMostMessage();
-
-    public function teamsMessage();
-
-    public function smsMessage();
-
-    public function discordMessage();
-
-    public function callMessage();
-
-    public function emailMessage();
-    //    public function callMessage();
+    /**
+     * Channel specific content, or null to fall back to defaultMessage().
+     *
+     * Arrays follow the chat shape `['message' => string, 'meta' => [...]]`,
+     * where meta becomes an inline keyboard on channels that support one.
+     *
+     * @return array<string, mixed>|string|null
+     */
+    public function messageFor(EndpointType $type): array|string|null;
 }

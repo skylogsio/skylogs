@@ -3,14 +3,15 @@
 use App\Enums\AlertRuleAccessLevel;
 use App\Enums\AlertRuleType;
 use App\Models\AlertRule;
-use App\Models\Endpoint;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\AlertRuleService;
 use App\Services\EndpointService;
+use App\Services\Notification\ChannelRegistry;
 use App\Services\TeamService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Tests\Support\Factories\AlertRuleFactory;
 
 function makeAccessTestUser(string $id, bool $isAdmin = false): User
@@ -239,7 +240,7 @@ describe('AlertRuleService access', function () {
 });
 
 describe('EndpointService alert access', function () {
-    it('uses global selectable endpoints for team-shared alerts', function () {
+    it('uses user-owned endpoints for team-shared alerts', function () {
         $team = new Team;
         $team->setAttribute('id', 'team-1');
 
@@ -247,53 +248,65 @@ describe('EndpointService alert access', function () {
         $teamService->shouldReceive('userTeams')->andReturn(collect([$team]));
 
         $alertRuleService = new AlertRuleService($teamService);
-        $endpointService = Mockery::mock(EndpointService::class, [$teamService, $alertRuleService])
-            ->makePartial()
-            ->shouldAllowMockingProtectedMethods();
+        $endpointService = new EndpointService($teamService, $alertRuleService, app(ChannelRegistry::class));
 
         $member = makeAccessTestUser('member-id');
         $alert = makeAccessTestAlert([
             'userId' => 'owner-id',
             'teamIds' => ['team-1'],
         ]);
-        $globalEndpoints = collect([(object) ['id' => 'shared-endpoint-1']]);
 
-        $endpointService->shouldReceive('rememberGlobalSelectableEndpoints')
+        $userEndpoints = collect([(object) ['id' => 'member-endpoint-1']]);
+
+        $cacheRepository = Mockery::mock();
+        $cacheRepository->shouldReceive('rememberForever')
             ->once()
-            ->with($member)
-            ->andReturn($globalEndpoints);
+            ->with('endpoint:user:member-id', Mockery::type('Closure'))
+            ->andReturn($userEndpoints);
 
-        expect($endpointService->selectableUserEndpoint($member, $alert))->toBe($globalEndpoints);
+        Cache::shouldReceive('tags')
+            ->once()
+            ->with(['endpoint', 'member-id'])
+            ->andReturn($cacheRepository);
+
+        $endpoints = $endpointService->selectableUserEndpoint($member, $alert);
+
+        expect($endpoints)->toBe($userEndpoints);
     });
 
-    it('uses global selectable endpoints for userIds-shared alerts', function () {
+    it('uses user-owned endpoints for userIds-shared alerts', function () {
         $teamService = Mockery::mock(TeamService::class);
         $teamService->shouldReceive('userTeams')->andReturn(collect());
 
         $alertRuleService = new AlertRuleService($teamService);
-        $endpointService = Mockery::mock(EndpointService::class, [$teamService, $alertRuleService])
-            ->makePartial()
-            ->shouldAllowMockingProtectedMethods();
+        $endpointService = new EndpointService($teamService, $alertRuleService, app(ChannelRegistry::class));
 
         $member = makeAccessTestUser('member-id');
         $alert = makeAccessTestAlert([
             'userId' => 'owner-id',
             'userIds' => ['member-id'],
         ]);
-        $globalEndpoints = collect([(object) ['id' => 'shared-endpoint-1']]);
 
-        $endpointService->shouldReceive('rememberGlobalSelectableEndpoints')
+        $userEndpoints = collect([(object) ['id' => 'member-endpoint-1']]);
+
+        $cacheRepository = Mockery::mock();
+        $cacheRepository->shouldReceive('rememberForever')
             ->once()
-            ->with($member)
-            ->andReturn($globalEndpoints);
+            ->with('endpoint:user:member-id', Mockery::type('Closure'))
+            ->andReturn($userEndpoints);
 
-        expect($endpointService->selectableUserEndpoint($member, $alert))->toBe($globalEndpoints);
+        Cache::shouldReceive('tags')
+            ->once()
+            ->with(['endpoint', 'member-id'])
+            ->andReturn($cacheRepository);
+
+        expect($endpointService->selectableUserEndpoint($member, $alert))->toBe($userEndpoints);
     });
 
     it('uses global selectable endpoints for alert owners', function () {
         $teamService = Mockery::mock(TeamService::class);
         $alertRuleService = new AlertRuleService($teamService);
-        $endpointService = Mockery::mock(EndpointService::class, [$teamService, $alertRuleService])
+        $endpointService = Mockery::mock(EndpointService::class, [$teamService, $alertRuleService, app(ChannelRegistry::class)])
             ->makePartial()
             ->shouldAllowMockingProtectedMethods();
 
@@ -325,63 +338,12 @@ describe('EndpointService alert access', function () {
             ->and($alertRuleService->hasUserAccessAlert($member, $alert))->toBeTrue();
     });
 
-    it('treats owned, user-shared, and team-shared endpoints as usable', function () {
-        $team = new Team;
-        $team->setAttribute('id', 'team-1');
-        $team->setAttribute('_id', 'team-1');
-
-        $teamService = Mockery::mock(TeamService::class);
-        $teamService->shouldReceive('userTeams')->andReturn(collect([$team]));
-
-        $endpointService = new EndpointService($teamService, new AlertRuleService($teamService));
-        $member = makeAccessTestUser('member-id');
-
-        $owned = new Endpoint;
-        $owned->userId = 'member-id';
-        $owned->accessUserIds = [];
-        $owned->accessTeamIds = [];
-
-        $userShared = new Endpoint;
-        $userShared->userId = 'other-id';
-        $userShared->accessUserIds = ['member-id'];
-        $userShared->accessTeamIds = [];
-
-        $teamShared = new Endpoint;
-        $teamShared->userId = 'other-id';
-        $teamShared->accessUserIds = [];
-        $teamShared->accessTeamIds = ['team-1'];
-
-        $private = new Endpoint;
-        $private->userId = 'other-id';
-        $private->accessUserIds = [];
-        $private->accessTeamIds = ['team-2'];
-        $private->value = 'secret-phone';
-        $private->chatId = 'secret-chat';
-        $private->botToken = 'secret-token';
-
-        $alert = makeAccessTestAlert(['userId' => 'owner-id', 'userIds' => ['member-id']]);
-        $presented = $endpointService->presentAlertEndpoint($member, $alert, $private);
-
-        expect($presented)->not->toHaveKey('value')
-            ->and($presented)->not->toHaveKey('chatId')
-            ->and($presented)->not->toHaveKey('botToken')
-            ->and($presented['canRemove'])->toBeFalse()
-            ->and($endpointService->presentAlertEndpoint($member, $alert, $owned))->toHaveKey('userId')
-            ->and($endpointService->userCanRemoveAlertEndpoint($member, $alert, $owned))->toBeTrue()
-            ->and($endpointService->userCanRemoveAlertEndpoint($member, $alert, $private))->toBeFalse()
-            ->and($endpointService->userCanRemoveAlertEndpoint(makeAccessTestUser('owner-id'), $alert, $private))->toBeTrue()
-            ->and($endpointService->userCanUseEndpoint($member, $owned))->toBeTrue()
-            ->and($endpointService->userCanUseEndpoint($member, $userShared))->toBeTrue()
-            ->and($endpointService->userCanUseEndpoint($member, $teamShared))->toBeTrue()
-            ->and($endpointService->userCanUseEndpoint($member, $private))->toBeFalse();
-    });
-
     it('returns empty collection when user has no alert access', function () {
         $teamService = Mockery::mock(TeamService::class);
         $teamService->shouldReceive('userTeams')->andReturn(collect());
 
         $alertRuleService = new AlertRuleService($teamService);
-        $endpointService = new EndpointService($teamService, $alertRuleService);
+        $endpointService = new EndpointService($teamService, $alertRuleService, app(ChannelRegistry::class));
 
         $stranger = makeAccessTestUser('stranger-id');
         $alert = makeAccessTestAlert(['userId' => 'owner-id']);

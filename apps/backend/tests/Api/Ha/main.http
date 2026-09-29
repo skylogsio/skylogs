@@ -1,0 +1,14 @@
+### GET request to example server
+GET http://127.0.0.1:8801/leader
+
+###
+GET http://127.0.0.1:8802/leader
+
+###
+GET http://127.0.0.1:8803/leader
+
+###
+
+GET http://127.0.0.1:8801/get
+
+

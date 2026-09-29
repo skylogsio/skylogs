@@ -29,8 +29,10 @@ use App\Http\Controllers\V1\Incident\TimelineController;
 use App\Http\Controllers\V1\IncidentActionItemController;
 use App\Http\Controllers\V1\IncidentController;
 use App\Http\Controllers\V1\IncidentPolicyController;
+use App\Http\Controllers\V1\NotificationDeliveryController;
 use App\Http\Controllers\V1\OnCallPlanController;
 use App\Http\Controllers\V1\Profile\AssetController;
+use App\Http\Controllers\V1\RetryNotificationDeliveryController;
 use App\Http\Controllers\V1\RunbookController;
 use App\Http\Controllers\V1\SkylogsInstanceController;
 use App\Http\Controllers\V1\StatusController;
@@ -142,6 +144,12 @@ Route::prefix('v1')->group(function () {
                 Route::post('/changeOwner/{id}', 'ChangeOwner');
                 Route::delete('/{id}', 'Delete');
             });
+
+        Route::prefix('/notification-deliveries')->group(function () {
+            Route::get('/', [NotificationDeliveryController::class, 'index']);
+            Route::get('/{id}', [NotificationDeliveryController::class, 'show'])->where('id', '[0-9a-fA-F]{24}');
+            Route::post('/{id}/retry', RetryNotificationDeliveryController::class)->where('id', '[0-9a-fA-F]{24}');
+        });
         Route::prefix('/skylogs-instance')
             ->controller(SkylogsInstanceController::class)
             ->withoutMiddleware(['clusterProxy'])

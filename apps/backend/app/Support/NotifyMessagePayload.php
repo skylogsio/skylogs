@@ -2,17 +2,16 @@
 
 namespace App\Support;
 
-use App\Concerns\ProvidesDefaultChannelMessages;
+use App\Enums\EndpointType;
 use App\Interfaces\Messageable;
+use App\Services\Notification\ChannelRegistry;
 
+/**
+ * Snapshot of a message: one canonical body plus the channel specific content
+ * the source model produced, keyed by endpoint type value.
+ */
 class NotifyMessagePayload implements Messageable
 {
-    use ProvidesDefaultChannelMessages {
-        telegram as protected defaultTelegram;
-        baleMessage as protected defaultBaleMessage;
-        callMessage as protected defaultCallMessage;
-    }
-
     /**
      * @param  array<string, mixed>  $overrides
      */
@@ -21,6 +20,9 @@ class NotifyMessagePayload implements Messageable
         private readonly array $overrides = [],
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $overrides
+     */
     public static function fromBody(string $body, array $overrides = []): self
     {
         return new self($body, $overrides);
@@ -31,23 +33,16 @@ class NotifyMessagePayload implements Messageable
         $body = (string) $alert->defaultMessage();
         $overrides = [];
 
-        $telegram = $alert->telegram();
-        if (is_array($telegram)) {
-            $overrides['telegram'] = $telegram;
-        } elseif ((string) $telegram !== $body) {
-            $overrides['telegram'] = (string) $telegram;
-        }
+        foreach (app(ChannelRegistry::class)->types() as $type) {
+            $content = $alert->messageFor($type);
 
-        $bale = $alert->baleMessage();
-        if (is_array($bale)) {
-            $overrides['bale'] = $bale;
-        } elseif ((string) $bale !== $body) {
-            $overrides['bale'] = (string) $bale;
-        }
+            if ($content === null) {
+                continue;
+            }
 
-        $call = (string) $alert->callMessage();
-        if ($call !== $body) {
-            $overrides['call'] = $call;
+            if (is_array($content) || (string) $content !== $body) {
+                $overrides[$type->value] = is_array($content) ? $content : (string) $content;
+            }
         }
 
         return new self($body, $overrides);
@@ -68,9 +63,9 @@ class NotifyMessagePayload implements Messageable
         $body = (string) ($stored['defaultMessage'] ?? '');
 
         return new self($body, array_filter([
-            'telegram' => self::legacyTelegramOverride($stored, $body),
-            'bale' => self::legacyBaleOverride($stored, $body),
-            'call' => self::legacyCallOverride($stored, $body),
+            EndpointType::TELEGRAM->value => self::legacyChatOverride($stored, 'telegram', $body),
+            EndpointType::BALE->value => self::legacyChatOverride($stored, 'bale', $body),
+            EndpointType::CALL->value => self::legacyCallOverride($stored, $body),
         ], fn (mixed $value): bool => $value !== null));
     }
 
@@ -79,19 +74,33 @@ class NotifyMessagePayload implements Messageable
         return $this->body;
     }
 
-    public function telegram(): array|string
+    /**
+     * @return array<string, mixed>|string|null
+     */
+    public function messageFor(EndpointType $type): array|string|null
     {
-        return $this->overrides['telegram'] ?? $this->defaultTelegram();
+        return $this->overrides[$type->value] ?? null;
     }
 
-    public function baleMessage(): array|string
+    /**
+     * What a channel should send: its own content when the source provided
+     * one, the canonical body otherwise.
+     *
+     * @return array<string, mixed>|string
+     */
+    public function forChannel(EndpointType $type): array|string
     {
-        return $this->overrides['bale'] ?? $this->defaultBaleMessage();
+        return $this->messageFor($type) ?? $this->body;
     }
 
-    public function callMessage(): string
+    /**
+     * Plain text for the channel, dropping any chat metadata.
+     */
+    public function textFor(EndpointType $type): string
     {
-        return (string) ($this->overrides['call'] ?? $this->defaultCallMessage());
+        $content = $this->forChannel($type);
+
+        return is_array($content) ? (string) ($content['message'] ?? $this->body) : $content;
     }
 
     /**
@@ -107,38 +116,21 @@ class NotifyMessagePayload implements Messageable
 
     /**
      * @param  array<string, mixed>  $stored
+     * @return array<string, mixed>|string|null
      */
-    private static function legacyTelegramOverride(array $stored, string $body): array|string|null
+    private static function legacyChatOverride(array $stored, string $key, string $body): array|string|null
     {
-        if (! array_key_exists('telegram', $stored)) {
+        if (! array_key_exists($key, $stored)) {
             return null;
         }
 
-        $telegram = $stored['telegram'];
+        $content = $stored[$key];
 
-        if (is_array($telegram)) {
-            return $telegram;
+        if (is_array($content)) {
+            return $content;
         }
 
-        return (string) $telegram !== $body ? (string) $telegram : null;
-    }
-
-    /**
-     * @param  array<string, mixed>  $stored
-     */
-    private static function legacyBaleOverride(array $stored, string $body): array|string|null
-    {
-        if (! array_key_exists('bale', $stored)) {
-            return null;
-        }
-
-        $bale = $stored['bale'];
-
-        if (is_array($bale)) {
-            return $bale;
-        }
-
-        return (string) $bale !== $body ? (string) $bale : null;
+        return (string) $content !== $body ? (string) $content : null;
     }
 
     /**

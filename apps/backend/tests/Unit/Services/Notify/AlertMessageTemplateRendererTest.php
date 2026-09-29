@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\AlertRuleType;
+use App\Enums\EndpointType;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
 use App\Models\GrafanaWebhookAlert;
@@ -386,9 +387,11 @@ describe('NotifyMessageComposer prometheus templates', function () {
             '{{name}} on {{label.pod}}',
         );
 
-        expect($payload->telegram())->toBeArray()
-            ->and($payload->telegram()['message'])->toBe('CPU Alert on api-1')
-            ->and($payload->telegram()['meta'][0]['text'] ?? null)->toBe('Acknowledge');
+        $telegram = $payload->forChannel(EndpointType::TELEGRAM);
+
+        expect($telegram)->toBeArray()
+            ->and($telegram['message'])->toBe('CPU Alert on api-1')
+            ->and($telegram['meta'][0]['text'] ?? null)->toBe('Acknowledge');
     });
 });
 
@@ -422,8 +425,10 @@ describe('NotifyMessageComposer api templates', function () {
             '{{name}} on {{instance}}: {{description}}',
         );
 
-        expect($payload->telegram())->toBeArray()
-            ->and($payload->telegram()['message'])->toBe('API Alert on host-1: disk full')
+        $telegram = $payload->forChannel(EndpointType::TELEGRAM);
+
+        expect($telegram)->toBeArray()
+            ->and($telegram['message'])->toBe('API Alert on host-1: disk full')
             ->and($payload->defaultMessage())->toBe('API Alert on host-1: disk full');
     });
 });
