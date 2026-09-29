@@ -16,17 +16,22 @@ class NotifyController extends Controller
 {
     public function Create($id)
     {
-
+        $user = auth()->user();
         $alert = AlertRule::where('_id', $id)->firstOrFail();
 
-        $selectableEndpoints = app(EndpointService::class)->selectableUserEndpoint(auth()->user(), $alert);
+        if (! app(AlertRuleService::class)->hasUserAccessAlert($user, $alert)) {
+            abort(403);
+        }
 
-        $alertEndpoints = [];
-        $selectableEndpointsIds = $selectableEndpoints->pluck('id')->toArray();
-        if (! empty($alert->endpointIds) && ! empty($selectableEndpointsIds)) {
-            $alertEndpoints = Endpoint::whereIn('_id', $alert->endpointIds)
-                ->whereIn('_id', $selectableEndpointsIds)
-                ->get();
+        $endpointService = app(EndpointService::class);
+        $selectableEndpoints = $endpointService->selectableUserEndpoint($user, $alert);
+
+        $alertEndpoints = collect();
+        if (! empty($alert->endpointIds)) {
+            $alertEndpoints = Endpoint::whereIn('_id', $alert->endpointIds)->get();
+            foreach ($alertEndpoints as $endpoint) {
+                $endpoint->canRemove = $endpointService->userCanRemoveAlertEndpoint($user, $alert, $endpoint);
+            }
         }
 
         return response()->json(compact('alertEndpoints', 'selectableEndpoints'));
@@ -57,20 +62,14 @@ class NotifyController extends Controller
     {
 
         $currentUser = Auth::user();
-        $isAdmin = $currentUser->isAdmin();
         if ($request->has('endpointIds') && ! empty($request->post('endpointIds'))) {
 
             $alert = AlertRule::where('_id', $id)->firstOrFail();
 
-            $selectableEndpointIds = app(EndpointService::class)->selectableUserEndpoint($currentUser, $alert)->pluck('id');
-            foreach ($request->endpointIds as $endpointId) {
-
-                $hasAccessToAdd = $isAdmin || $selectableEndpointIds->contains($endpointId);
-
-                if ($hasAccessToAdd) {
+            if (app(AlertRuleService::class)->hasUserAccessAlert($currentUser, $alert)) {
+                foreach (app(EndpointService::class)->assignableEndpointIds($currentUser, $request->endpointIds) as $endpointId) {
                     $alert->push('endpointIds', $endpointId, true);
                 }
-
             }
 
             $alert->save();
@@ -84,7 +83,6 @@ class NotifyController extends Controller
     {
 
         $currentUser = Auth::user();
-        $isAdmin = $currentUser->isAdmin();
         $alertIds = [];
         if ($request->has('alertIds') && ! empty($request->post('alertIds'))) {
             $alertIds = $request->post('alertIds');
@@ -94,15 +92,12 @@ class NotifyController extends Controller
             foreach ($alertIds as $id) {
                 $alert = AlertRule::where('_id', $id)->first();
 
-                $selectableEndpointIds = app(EndpointService::class)->selectableUserEndpoint($currentUser, $alert)->pluck('id');
-                foreach ($request->endpoints as $endpointId) {
+                if ($alert === null || ! app(AlertRuleService::class)->hasUserAccessAlert($currentUser, $alert)) {
+                    continue;
+                }
 
-                    $hasAccessToAdd = $isAdmin || $selectableEndpointIds->contains($endpointId);
-
-                    if ($hasAccessToAdd) {
-                        $alert->push('endpointIds', $endpointId, true);
-                    }
-
+                foreach (app(EndpointService::class)->assignableEndpointIds($currentUser, $request->endpoints) as $endpointId) {
+                    $alert->push('endpointIds', $endpointId, true);
                 }
 
                 $alert->save();
@@ -115,8 +110,22 @@ class NotifyController extends Controller
 
     public function Delete($alertId, $endpointId)
     {
-
+        $user = Auth::user();
         $alert = AlertRule::where('_id', $alertId)->firstOrFail();
+
+        if (! app(AlertRuleService::class)->hasUserAccessAlert($user, $alert)) {
+            abort(403);
+        }
+
+        $endpoint = Endpoint::where('_id', $endpointId)->first();
+        $canRemove = app(AlertRuleService::class)->userOwnsAlert($user, $alert)
+            || $user->isAdmin()
+            || ($endpoint !== null && app(EndpointService::class)->userCanUseEndpoint($user, $endpoint));
+
+        if (! $canRemove) {
+            abort(403);
+        }
+
         $alert->pull('endpointIds', $endpointId);
         $alert->save();
 

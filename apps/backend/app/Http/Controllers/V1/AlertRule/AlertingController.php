@@ -343,10 +343,8 @@ class AlertingController extends Controller
 
             $alert->save();
 
-            if ($request->has('endpointIds') && ! empty($request->endpointIds)) {
-                foreach ($request->endpointIds as $end) {
-                    $alert->push('endpointIds', $end, true);
-                }
+            foreach ($this->endpointService->assignableEndpointIds(auth()->user(), $request->array('endpointIds')) as $endpointId) {
+                $alert->push('endpointIds', $endpointId, true);
             }
 
             if ($request->has('userIds') && ! empty($request->userIds)) {
@@ -383,12 +381,12 @@ class AlertingController extends Controller
 
     public function StoreUpdate(Request $request, $id)
     {
-        $model = AlertRule::where('_id', $id);
-        if (! auth()->user()->isAdmin()) {
-            $model = $model->where('userId', auth()->id());
-        }
-        $model = $model->firstOrFail();
+        $model = AlertRule::where('_id', $id)->firstOrFail();
         $currentUser = auth()->user();
+
+        if (! $this->alertRuleService->hasAdminAccessAlert($currentUser, $model)) {
+            abort(403);
+        }
 
         if ($request->has('isPrivate') && $this->alertRuleService->hasAdminAccessAlert($currentUser, $model)) {
             $model->isPrivate = $request->boolean('isPrivate');
@@ -523,20 +521,8 @@ class AlertingController extends Controller
                 break;
         }
 
-        $alertEndpoints = collect($model->endpointIds);
-        $endpointsIds = collect($request->array('endpointIds'));
-        $selectableEndpoints = $this->endpointService->selectableUserEndpoint(auth()->user());
-
-        foreach ($alertEndpoints as $end) {
-            if ($selectableEndpoints->contains($end)) {
-                if ($endpointsIds->doesntContain($end)) {
-                    $model->pull('endpointIds', $end);
-                }
-            }
-        }
-
-        foreach ($endpointsIds as $endpointId) {
-            $model->push('endpointIds', $endpointId, true);
+        if ($request->exists('endpointIds')) {
+            $this->endpointService->attachAlertEndpoints($currentUser, $model, $request->array('endpointIds'));
         }
 
         $alertUserIds = collect($model->userIds);

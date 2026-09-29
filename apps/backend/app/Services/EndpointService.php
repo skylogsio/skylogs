@@ -31,15 +31,9 @@ class EndpointService
 
         if (
             ! $alert
-            || $this->alertRuleService->userOwnsAlert($user, $alert)
+            || $this->alertRuleService->hasUserAccessAlert($user, $alert)
         ) {
             return $this->rememberGlobalSelectableEndpoints($user);
-        }
-
-        if ($this->alertRuleService->userIsListedOnAlert($user, $alert)
-            || $this->alertRuleService->hasTeamAccessAlert($user, $alert)) {
-            return Cache::tags(['endpoint', $user->id])
-                ->rememberForever("endpoint:user:$user->id", fn () => Endpoint::where('userId', $user->_id)->get());
         }
 
         return collect();
@@ -50,13 +44,101 @@ class EndpointService
     {
         return Cache::tags(['endpoint', $user->id])
             ->rememberForever("endpoint:global:$user->id", function () use ($user) {
-                $teamIds = $this->teamService->userTeams($user)->pluck('id')->toArray();
+                $teamIds = $this->userTeamIds($user);
 
-                return Endpoint::where('userId', $user->id)
-                    ->orWhereIn('accessUserIds', [$user->id])
-                    ->orWhereIn('accessTeamIds', $teamIds)
+                return Endpoint::query()
+                    ->where(function ($query) use ($user, $teamIds) {
+                        $query->where('userId', $user->id)
+                            ->orWhereIn('accessUserIds', [$user->id]);
+
+                        if ($teamIds !== []) {
+                            $query->orWhereIn('accessTeamIds', $teamIds);
+                        }
+                    })
                     ->get();
             });
+    }
+
+    public function userCanUseEndpoint(User $user, Endpoint $endpoint): bool
+    {
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        $userId = (string) $user->id;
+
+        if ((string) $endpoint->userId === $userId) {
+            return true;
+        }
+
+        $accessUserIds = array_map(strval(...), $endpoint->accessUserIds ?? []);
+        if (in_array($userId, $accessUserIds, true)) {
+            return true;
+        }
+
+        $accessTeamIds = array_map(strval(...), $endpoint->accessTeamIds ?? []);
+
+        return array_intersect($this->userTeamIds($user), $accessTeamIds) !== [];
+    }
+
+    public function userCanRemoveAlertEndpoint(User $user, AlertRule $alert, Endpoint $endpoint): bool
+    {
+        if ($user->isAdmin() || $this->alertRuleService->userOwnsAlert($user, $alert)) {
+            return true;
+        }
+
+        return $this->userCanUseEndpoint($user, $endpoint);
+    }
+
+    /**
+     * Endpoint ids from $endpointIds that this user owns or can access.
+     *
+     * @param  list<mixed>  $endpointIds
+     * @return list<string>
+     */
+    public function assignableEndpointIds(User $user, array $endpointIds): array
+    {
+        $endpointIds = array_values(array_filter(array_map(
+            fn ($endpointId) => trim((string) $endpointId),
+            $endpointIds,
+        ), fn (string $endpointId) => $endpointId !== ''));
+
+        if ($endpointIds === []) {
+            return [];
+        }
+
+        return Endpoint::query()
+            ->whereIn('_id', $endpointIds)
+            ->get()
+            ->filter(fn (Endpoint $endpoint) => $this->userCanUseEndpoint($user, $endpoint))
+            ->map(fn (Endpoint $endpoint) => (string) $endpoint->id)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Add endpoints the user can use. Existing alert endpoints are left in place.
+     *
+     * @param  list<mixed>  $endpointIds
+     */
+    public function attachAlertEndpoints(User $user, AlertRule $alert, array $endpointIds): void
+    {
+        foreach ($this->assignableEndpointIds($user, $endpointIds) as $endpointId) {
+            $alert->push('endpointIds', $endpointId, true);
+        }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function userTeamIds(User $user): array
+    {
+        return $this->teamService->userTeams($user)
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->filter(fn (string $id) => $id !== '')
+            ->values()
+            ->all();
     }
 
     public function hasActionAccess(User $user, Endpoint $endpoint)
@@ -65,7 +147,7 @@ class EndpointService
             return true;
         }
 
-        if ($user->_id == $endpoint->userId) {
+        if ($user->id == $endpoint->userId) {
             return true;
         }
 
@@ -74,10 +156,15 @@ class EndpointService
 
     public function countUserEndpointAlert(User $user, ?AlertRule $alert = null)
     {
-        $selectableEndpoints = $this->selectableUserEndpoint($user, $alert);
-        $alertEndpoints = collect($alert->endpointIds);
+        if ($alert === null || (! $user->isAdmin() && ! $this->alertRuleService->hasUserAccessAlert($user, $alert))) {
+            return 0;
+        }
 
-        return $selectableEndpoints->pluck('id')->intersect($alertEndpoints)->count();
+        return collect($alert->endpointIds ?? [])
+            ->map(fn ($endpointId) => (string) $endpointId)
+            ->filter(fn (string $endpointId) => $endpointId !== '')
+            ->unique()
+            ->count();
     }
 
     public function deleteEndpointOfAlertRules(Endpoint $endpoint): void

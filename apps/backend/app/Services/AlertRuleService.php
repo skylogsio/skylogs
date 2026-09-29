@@ -1003,7 +1003,7 @@ class AlertRuleService
 
     public function userOwnsAlert(User $user, AlertRule $alert): bool
     {
-        return $user->id == $alert->userId || $user->_id == $alert->userId;
+        return $user->id == $alert->userId;
     }
 
     public function userIsListedOnAlert(User $user, AlertRule $alert): bool
