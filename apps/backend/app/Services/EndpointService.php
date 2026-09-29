@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\EndpointType;
 use App\Enums\FlowEndpointStepType;
-use App\Helpers\Call;
 use App\Helpers\Email;
 use App\Helpers\SMS;
 use App\Models\AlertRule;
@@ -466,7 +465,7 @@ class EndpointService
                 $endpointOtp->result = SMS::sendOTP($endpointOtp);
                 break;
             case EndpointType::CALL->value:
-                $endpointOtp->result = Call::sendOTP($endpointOtp);
+                $endpointOtp->result = SMS::sendOTP($endpointOtp);
                 break;
 
             case EndpointType::EMAIL->value:
