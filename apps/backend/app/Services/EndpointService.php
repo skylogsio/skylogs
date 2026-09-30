@@ -25,7 +25,7 @@ class EndpointService
 
         if ($user->isAdmin()) {
             return Cache::tags(['endpoint', 'admin'])
-                ->rememberForever('endpoint:admin', fn () => Endpoint::get());
+                ->remember('endpoint:admin', (int) config('cache.ttl'), fn () => Endpoint::get());
         }
 
         if (
@@ -42,7 +42,7 @@ class EndpointService
     public function rememberGlobalSelectableEndpoints(User $user)
     {
         return Cache::tags(['endpoint', $user->id])
-            ->rememberForever("endpoint:global:$user->id", function () use ($user) {
+            ->remember("endpoint:global:$user->id", (int) config('cache.ttl'), function () use ($user) {
                 $teamIds = $this->userTeamIds($user);
 
                 return Endpoint::query()

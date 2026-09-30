@@ -259,9 +259,9 @@ describe('EndpointService alert access', function () {
         $userEndpoints = collect([(object) ['id' => 'member-endpoint-1']]);
 
         $cacheRepository = Mockery::mock();
-        $cacheRepository->shouldReceive('rememberForever')
+        $cacheRepository->shouldReceive('remember')
             ->once()
-            ->with('endpoint:user:member-id', Mockery::type('Closure'))
+            ->with('endpoint:global:member-id', (int) config('cache.ttl'), Mockery::type('Closure'))
             ->andReturn($userEndpoints);
 
         Cache::shouldReceive('tags')
@@ -290,9 +290,9 @@ describe('EndpointService alert access', function () {
         $userEndpoints = collect([(object) ['id' => 'member-endpoint-1']]);
 
         $cacheRepository = Mockery::mock();
-        $cacheRepository->shouldReceive('rememberForever')
+        $cacheRepository->shouldReceive('remember')
             ->once()
-            ->with('endpoint:user:member-id', Mockery::type('Closure'))
+            ->with('endpoint:global:member-id', (int) config('cache.ttl'), Mockery::type('Closure'))
             ->andReturn($userEndpoints);
 
         Cache::shouldReceive('tags')
