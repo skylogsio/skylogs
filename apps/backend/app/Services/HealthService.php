@@ -60,7 +60,8 @@ class HealthService
 
             $pendingRequest = match ($alert->checkType) {
                 HealthAlertType::SOURCE_CLUSTER => $pendingRequest->withToken($alert->sourceToken),
-                HealthAlertType::AGENT_CLUSTER => $pendingRequest->withToken($alert->agentToken)
+                HealthAlertType::AGENT_CLUSTER => $pendingRequest->withToken($alert->agentToken),
+                default => $pendingRequest,
             };
 
             $response = $pendingRequest->get($check->url);

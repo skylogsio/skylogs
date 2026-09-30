@@ -4,15 +4,29 @@ namespace App\Services\Notification\Channels;
 
 use App\Enums\CallProviderType;
 use App\Enums\EndpointType;
+use App\Models\EndpointOTP;
 use App\Services\ConfigCallService;
+use App\Services\Notification\DeliveryResult;
 
 class CallChannel extends KaveNegarChannel
 {
-    public function __construct(private readonly ConfigCallService $configCallService) {}
+    public function __construct(
+        private readonly ConfigCallService $configCallService,
+        private readonly SmsChannel $smsChannel,
+    ) {}
 
     public function type(): EndpointType
     {
         return EndpointType::CALL;
+    }
+
+    /**
+     * The verification code is sent by SMS to the same number; only alerts
+     * are delivered as voice calls.
+     */
+    public function sendVerification(EndpointOTP $otp): DeliveryResult
+    {
+        return $this->smsChannel->sendVerification($otp);
     }
 
     protected function apiPath(): string

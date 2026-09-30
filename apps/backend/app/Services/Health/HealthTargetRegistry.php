@@ -20,6 +20,7 @@ final class HealthTargetRegistry
         return match ($checkType) {
             HealthAlertType::DATASOURCE => app(DataSourceTarget::class),
             HealthAlertType::HTTP => app(HttpTarget::class),
+            default => throw new HealthTargetUnavailable('target missing'),
         };
     }
 }

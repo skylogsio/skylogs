@@ -162,6 +162,119 @@ describe('assigning accessible endpoints to alerts', function () {
         }
     });
 
+    it('removes deselected endpoints the editor can use when the alert is updated', function () {
+        $this->userAlert->endpointIds = [
+            (string) $this->ownedEndpoint->id,
+            (string) $this->teamSharedEndpoint->id,
+            (string) $this->privateEndpoint->id,
+        ];
+        $this->userAlert->save();
+
+        $this->actingAs($this->owner, 'api')
+            ->putJson('/api/v1/alert-rule/'.$this->userAlert->id, [
+                'name' => 'deselect endpoints',
+                'endpointIds' => [(string) $this->ownedEndpoint->id],
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('status', true);
+
+        $this->userAlert->refresh();
+
+        $endpointIds = array_map(strval(...), $this->userAlert->endpointIds ?? []);
+
+        expect($endpointIds)->not->toContain((string) $this->teamSharedEndpoint->id)
+            ->and($endpointIds)->toContain((string) $this->ownedEndpoint->id)
+            ->and($endpointIds)->toContain((string) $this->privateEndpoint->id);
+    });
+
+    it('only stores endpoints the creator can use when an alert is created', function () {
+        $name = 'Endpoint create '.uniqid();
+
+        try {
+            $this->actingAs($this->member, 'api')
+                ->postJson('/api/v1/alert-rule', [
+                    'name' => $name,
+                    'type' => 'api',
+                    'endpointIds' => [
+                        (string) $this->ownedEndpoint->id,
+                        (string) $this->teamSharedEndpoint->id,
+                        (string) $this->privateEndpoint->id,
+                    ],
+                ])
+                ->assertSuccessful()
+                ->assertJsonPath('status', true);
+
+            $endpointIds = array_map(strval(...), AlertRule::where('name', $name)->firstOrFail()->endpointIds ?? []);
+
+            expect($endpointIds)->toContain((string) $this->ownedEndpoint->id)
+                ->and($endpointIds)->toContain((string) $this->teamSharedEndpoint->id)
+                ->and($endpointIds)->not->toContain((string) $this->privateEndpoint->id);
+        } finally {
+            AlertRule::query()->where('name', $name)->delete();
+        }
+    });
+
+    it('does not let the alert owner add an endpoint they cannot use when updating the alert', function () {
+        $this->actingAs($this->owner, 'api')
+            ->putJson('/api/v1/alert-rule/'.$this->userAlert->id, [
+                'name' => 'add endpoints',
+                'endpointIds' => [
+                    (string) $this->teamSharedEndpoint->id,
+                    (string) $this->privateEndpoint->id,
+                ],
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('status', true);
+
+        $this->userAlert->refresh();
+
+        $endpointIds = array_map(strval(...), $this->userAlert->endpointIds ?? []);
+
+        expect($endpointIds)->toContain((string) $this->teamSharedEndpoint->id)
+            ->and($endpointIds)->not->toContain((string) $this->privateEndpoint->id);
+    });
+
+    it('leaves alert endpoints untouched when the update omits endpointIds', function () {
+        $this->userAlert->endpointIds = [
+            (string) $this->teamSharedEndpoint->id,
+            (string) $this->privateEndpoint->id,
+        ];
+        $this->userAlert->save();
+
+        $this->actingAs($this->owner, 'api')
+            ->putJson('/api/v1/alert-rule/'.$this->userAlert->id, [
+                'name' => 'no endpoint change',
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('status', true);
+
+        $this->userAlert->refresh();
+
+        expect(array_map(strval(...), $this->userAlert->endpointIds ?? []))->toBe([
+            (string) $this->teamSharedEndpoint->id,
+            (string) $this->privateEndpoint->id,
+        ]);
+    });
+
+    it('ignores malformed endpoint ids when updating the alert', function () {
+        $this->userAlert->endpointIds = [(string) $this->teamSharedEndpoint->id];
+        $this->userAlert->save();
+
+        $this->actingAs($this->owner, 'api')
+            ->putJson('/api/v1/alert-rule/'.$this->userAlert->id, [
+                'name' => 'malformed endpoints',
+                'endpointIds' => [['nested'], (string) $this->teamSharedEndpoint->id],
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('status', true);
+
+        $this->userAlert->refresh();
+
+        expect(array_map(strval(...), $this->userAlert->endpointIds ?? []))->toBe([
+            (string) $this->teamSharedEndpoint->id,
+        ]);
+    });
+
     it('rejects alert edits from a user who only has access to the alert', function () {
         $this->actingAs($this->member, 'api')
             ->putJson('/api/v1/alert-rule/'.$this->userAlert->id, [

@@ -60,10 +60,15 @@ class EndpointService
 
     public function userCanUseEndpoint(User $user, Endpoint $endpoint): bool
     {
-        if ($user->isAdmin()) {
-            return true;
-        }
+        return $user->isAdmin() || $this->isEndpointSharedWithUser($user, $endpoint);
+    }
 
+    /**
+     * Whether the user owns the endpoint or it is shared with them or one of
+     * their teams, ignoring the admin override.
+     */
+    public function isEndpointSharedWithUser(User $user, Endpoint $endpoint): bool
+    {
         $userId = (string) $user->id;
 
         if ((string) $endpoint->userId === $userId) {
@@ -114,10 +119,7 @@ class EndpointService
      */
     public function assignableEndpointIds(User $user, array $endpointIds): array
     {
-        $endpointIds = array_values(array_filter(array_map(
-            fn ($endpointId) => trim((string) $endpointId),
-            $endpointIds,
-        ), fn (string $endpointId) => $endpointId !== ''));
+        $endpointIds = $this->normalizeEndpointIds($endpointIds);
 
         if ($endpointIds === []) {
             return [];
@@ -142,6 +144,46 @@ class EndpointService
         foreach ($this->assignableEndpointIds($user, $endpointIds) as $endpointId) {
             $alert->push('endpointIds', $endpointId, true);
         }
+    }
+
+    /**
+     * Make the alert endpoints this user owns or has been shared match
+     * $endpointIds. Other users' endpoints stay on the alert untouched, even
+     * for admins.
+     *
+     * @param  list<mixed>  $endpointIds
+     */
+    public function syncAlertEndpoints(User $user, AlertRule $alert, array $endpointIds): void
+    {
+        $requestedEndpointIds = $this->normalizeEndpointIds($endpointIds);
+        $currentEndpointIds = array_map(strval(...), $alert->endpointIds ?? []);
+
+        $deselectedEndpointIds = Endpoint::query()
+            ->whereIn('_id', array_values(array_diff($currentEndpointIds, $requestedEndpointIds)))
+            ->get()
+            ->filter(fn (Endpoint $endpoint) => $this->isEndpointSharedWithUser($user, $endpoint))
+            ->map(fn (Endpoint $endpoint) => (string) $endpoint->id);
+
+        foreach ($deselectedEndpointIds as $endpointId) {
+            $alert->pull('endpointIds', $endpointId);
+        }
+
+        $this->attachAlertEndpoints($user, $alert, $requestedEndpointIds);
+    }
+
+    /**
+     * @param  list<mixed>  $endpointIds
+     * @return list<string>
+     */
+    private function normalizeEndpointIds(array $endpointIds): array
+    {
+        return collect($endpointIds)
+            ->filter(fn ($endpointId) => is_string($endpointId))
+            ->map(fn (string $endpointId) => trim($endpointId))
+            ->filter(fn (string $endpointId) => $endpointId !== '')
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**

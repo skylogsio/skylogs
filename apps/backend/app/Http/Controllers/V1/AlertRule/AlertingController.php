@@ -522,7 +522,7 @@ class AlertingController extends Controller
         }
 
         if ($request->exists('endpointIds')) {
-            $this->endpointService->attachAlertEndpoints($currentUser, $model, $request->array('endpointIds'));
+            $this->endpointService->syncAlertEndpoints($currentUser, $model, $request->array('endpointIds'));
         }
 
         $alertUserIds = collect($model->userIds);

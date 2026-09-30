@@ -20,12 +20,12 @@ function smsChannel(?ConfigSms $config = null): SmsChannel
     return new SmsChannel($service);
 }
 
-function callChannel(?ConfigCall $config = null): CallChannel
+function callChannel(?ConfigCall $config = null, ?ConfigSms $smsConfig = null): CallChannel
 {
     $service = Mockery::mock(ConfigCallService::class);
     $service->shouldReceive('getDefault')->andReturn($config);
 
-    return new CallChannel($service);
+    return new CallChannel($service, smsChannel($smsConfig));
 }
 
 /**
@@ -159,6 +159,25 @@ describe('CallChannel', function () {
             && ! array_key_exists('sender', $request->data()));
 
         expect($result->providerMessageId)->toBe('77');
+    });
+
+    it('sends verification codes by sms instead of a voice call', function () {
+        Http::fake(['api.kavenegar.com/*' => Http::response(kaveNegarAccepted())]);
+
+        $otp = new EndpointOTP(['type' => EndpointType::CALL->value, 'value' => '0912', 'otpCode' => 54321]);
+
+        $result = callChannel(
+            new ConfigCall(['provider' => 'kaveNegar', 'apiToken' => 'call-token']),
+            new ConfigSms(['provider' => 'kaveNegar', 'apiToken' => 'sms-token', 'senderNumber' => '10004346']),
+        )->sendVerification($otp);
+
+        Http::assertSent(fn ($request) => str_starts_with($request->url(), 'https://api.kavenegar.com/v1/sms-token/sms/send.json')
+            && $request['receptor'] === '0912'
+            && $request['sender'] === '10004346'
+            && str_contains($request['message'], '54321'));
+        Http::assertNotSent(fn ($request) => str_contains($request->url(), '/call/maketts.json'));
+
+        expect($result->isSent())->toBeTrue();
     });
 
     it('requires verification', function () {

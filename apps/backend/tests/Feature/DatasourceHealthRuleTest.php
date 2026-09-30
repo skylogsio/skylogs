@@ -12,6 +12,8 @@ use App\Models\Notify;
 use App\Models\SkylogsInstance;
 use App\Services\AlertRuleService;
 use App\Services\Ha\HaReplicationContext;
+use App\Services\Health\HealthTargetRegistry;
+use App\Services\Health\HealthTargetUnavailable;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -424,6 +426,36 @@ describe('datasource health rules', function () {
 
         expect(AlertRule::query()->where('type', AlertRuleType::HEALTH)->count())->toBe($before);
     });
+
+    it('still lists and shows legacy cluster health rules', function (string $legacyCheckType) {
+        $name = 'Legacy '.$legacyCheckType.' '.uniqid();
+        $rule = AlertRule::query()->create([
+            'name' => $name,
+            'type' => AlertRuleType::HEALTH,
+            'checkType' => $legacyCheckType,
+            'userId' => $this->owner->id,
+            'threshold' => 3,
+            'url' => 'https://legacy-'.uniqid().'.example.com',
+        ]);
+        $this->ruleIds[] = $rule->_id;
+        Cache::flush();
+
+        $this->actingAs($this->owner, 'api')
+            ->getJson('/api/v1/alert-rule?'.http_build_query(['alertname' => $name]))
+            ->assertSuccessful();
+
+        $this->actingAs($this->owner, 'api')
+            ->getJson('/api/v1/alert-rule/'.$rule->_id)
+            ->assertSuccessful()
+            ->assertJsonPath('checkType', $legacyCheckType);
+
+        expect(fn () => app(HealthTargetRegistry::class)->for($rule->fresh()->checkType))
+            ->toThrow(HealthTargetUnavailable::class)
+            ->and(HealthAlertType::creatable())->not->toContain(HealthAlertType::from($legacyCheckType));
+    })->with([
+        'source cluster' => 'sourceCluster',
+        'agent cluster' => 'agentCluster',
+    ]);
 });
 
 /**
