@@ -18,7 +18,7 @@ import { toast } from "react-toastify";
 import { z } from "zod";
 
 import type { IEndpoint } from "@/@types/endpoint";
-import { type CreateUpdateModal } from "@/@types/global";
+import { type CreateUpdateModal, type ErrorResponse } from "@/@types/global";
 import { createEndpoint, sendOTP, updateEndpoint } from "@/api/endpoint";
 import AccessUsersAndTeams from "@/components/AccessUsersAndTeams";
 import ModalContainer from "@/components/Modal";
@@ -119,9 +119,22 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
   const [isOTPSent, setIsOTPSent] = useState(false);
   const [remainedSeconds, setRemainedSeconds] = useState(0);
 
+  function showServerError(response: ErrorResponse) {
+    Object.entries(response.errors ?? {}).forEach(([field, messages]) => {
+      if (field in endpointSchema.shape) {
+        setError(field as keyof typeof endpointSchema.shape, { message: messages[0] });
+      }
+    });
+    toast.error(response.message);
+  }
+
   const { mutate: createEndpointMutation, isPending: isCreating } = useMutation({
     mutationFn: (body: EndpointFormType) => createEndpoint(body),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      if (!response.status) {
+        showServerError(response);
+        return;
+      }
       toast.success("EndPoint Created Successfully.");
       onSubmit();
       onClose?.();
@@ -129,7 +142,11 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
   });
   const { mutate: updateEndpointMutation, isPending: isUpdating } = useMutation({
     mutationFn: ({ id, body }: { id: string; body: EndpointFormType }) => updateEndpoint(id, body),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      if (!response.status) {
+        showServerError(response);
+        return;
+      }
       toast.success("EndPoint Updated Successfully.");
       onSubmit();
       onClose?.();
@@ -137,10 +154,14 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
   });
   const { mutate: sendOTPMutation, isPending: isSendingOTP } = useMutation({
     mutationFn: (body: unknown) => sendOTP(body),
-    onSuccess: (data) => {
-      toast.success(data.message);
+    onSuccess: (response) => {
+      if ("status" in response) {
+        showServerError(response);
+        return;
+      }
+      toast.success(response.message);
       setIsOTPSent(true);
-      setRemainedSeconds(data.timeLeft);
+      setRemainedSeconds(response.timeLeft);
     }
   });
 

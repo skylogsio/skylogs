@@ -1,17 +1,27 @@
 "use server";
 
 import type { IOTPResponse } from "@/@types/endpoint";
-import type { ServerResponse } from "@/@types/global";
+import type { ErrorResponse, ServerResponse } from "@/@types/global";
 import axios from "@/lib/axios";
+import { toErrorResponse } from "@/lib/serverResponse";
 
 const ENDPOINT_URL = "endpoint";
+
+/** Endpoint validation failures come back as `{ status: false, errors }` without a message. */
+function withErrorMessage<T>(payload: ServerResponse<T>, fallbackMessage: string): ServerResponse<T> {
+  if (payload.status === false && !payload.message) {
+    const firstFieldError = Object.values(payload.errors ?? {})[0]?.[0];
+    return { ...payload, message: firstFieldError ?? fallbackMessage };
+  }
+  return payload;
+}
 
 export async function createEndpoint(body: unknown): Promise<ServerResponse<unknown>> {
   try {
     const response = await axios.post<ServerResponse<unknown>>(ENDPOINT_URL, body);
-    return response.data;
+    return withErrorMessage(response.data, "Failed to create endpoint.");
   } catch (error) {
-    throw error;
+    return toErrorResponse(error, "Failed to create endpoint.");
   }
 }
 
@@ -24,9 +34,9 @@ export async function updateEndpoint(
       `${ENDPOINT_URL}/${endpointId}`,
       body
     );
-    return response.data;
+    return withErrorMessage(response.data, "Failed to update endpoint.");
   } catch (error) {
-    throw error;
+    return toErrorResponse(error, "Failed to update endpoint.");
   }
 }
 
@@ -39,11 +49,11 @@ export async function deleteEndpoint(endpointId: string): Promise<ServerResponse
   }
 }
 
-export async function sendOTP(body: unknown): Promise<IOTPResponse> {
+export async function sendOTP(body: unknown): Promise<IOTPResponse | ErrorResponse> {
   try {
     const response = await axios.post<IOTPResponse>(`${ENDPOINT_URL}/sendOTP`, body);
     return response.data;
   } catch (error) {
-    throw error;
+    return toErrorResponse(error, "Failed to send the OTP code.");
   }
 }

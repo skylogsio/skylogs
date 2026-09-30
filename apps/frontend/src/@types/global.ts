@@ -12,7 +12,11 @@ export type ConnectionStatusType = "connected" | "disconnected" | "warning";
 export type ServerSelectableDataType = Array<{ id: string; name: string }>;
 
 //TODO: Should add the type of message which comes from the server
-export type ErrorResponse = { status: false; message: string };
+export type ErrorResponse = {
+  status: false;
+  message: string;
+  errors?: Record<string, string[]>;
+};
 export type SuccessResponse<T> = { status: true; data: T };
 export type ServerResponse<T> = ErrorResponse | SuccessResponse<T>;
 

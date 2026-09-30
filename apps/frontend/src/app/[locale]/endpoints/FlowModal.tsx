@@ -127,7 +127,11 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
       };
       return createEndpoint(payload);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      if (!response.status) {
+        toast.error(response.message);
+        return;
+      }
       toast.success("Endpoint Flow Created Successfully.");
       onSubmit();
       onClose?.();
@@ -142,7 +146,11 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
       };
       return updateEndpoint(id, payload);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      if (!response.status) {
+        toast.error(response.message);
+        return;
+      }
       toast.success("Endpoint Flow Updated Successfully.");
       onSubmit();
       onClose?.();

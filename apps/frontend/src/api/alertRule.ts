@@ -16,6 +16,7 @@ import type {
 import type { ITeam } from "@/@types/team";
 import type { IUser } from "@/@types/user";
 import axios from "@/lib/axios";
+import { toErrorResponse } from "@/lib/serverResponse";
 import { DataSourceType } from "@/utils/dataSourceUtils";
 
 const ALERT_RULE_URL = "alert-rule";
@@ -175,7 +176,7 @@ export async function removeEndpointFromAlertRule(
     );
     return response.data;
   } catch (error) {
-    throw error;
+    return toErrorResponse(error, "You are not allowed to remove this endpoint.");
   }
 }
 

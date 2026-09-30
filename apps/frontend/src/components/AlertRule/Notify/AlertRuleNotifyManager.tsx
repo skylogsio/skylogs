@@ -4,6 +4,7 @@ import { alpha, Autocomplete, Button, Stack, TextField, IconButton, useTheme } f
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AiFillNotification } from "react-icons/ai";
 import { HiOutlinePlusSm, HiTrash } from "react-icons/hi";
+import { toast } from "react-toastify";
 
 import type { IAlertRule } from "@/@types/alertRule";
 import type { IEndpoint } from "@/@types/endpoint";
@@ -40,6 +41,8 @@ export default function AlertRuleNotifyManager({ alertId }: { alertId: IAlertRul
     onSuccess: (data) => {
       if (data.status) {
         refetch();
+      } else {
+        toast.error(data.message);
       }
     }
   });
@@ -114,7 +117,8 @@ export default function AlertRuleNotifyManager({ alertId }: { alertId: IAlertRul
               header: "Actions",
               cell: ({ row }) => (
                 <IconButton
-                  disabled={isRemovingEndpoint}
+                  disabled={isRemovingEndpoint || row.original.canRemove === false}
+                  aria-label="Remove endpoint"
                   onClick={() => removeEndpoint(row.original.id)}
                   sx={({ palette }) => ({
                     color: palette.error.light,
