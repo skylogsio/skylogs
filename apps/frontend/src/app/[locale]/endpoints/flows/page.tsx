@@ -118,14 +118,15 @@ export default function Flows({ tablePaperSx, tabValue, onTabChange, labels }: F
           },
           {
             header: "Action",
-            cell: ({ row }) =>
-              row.original.hasActionAccess ? (
-                <EndpointActionButtons
-                  onView={() => setViewModalData(row.original)}
-                  onEdit={() => handleEdit(row.original)}
-                  onDelete={() => setDeleteModalData(row.original)}
-                />
-              ) : null
+            cell: ({ row }) => (
+              <EndpointActionButtons
+                onView={() => setViewModalData(row.original)}
+                onEdit={row.original.hasActionAccess ? () => handleEdit(row.original) : undefined}
+                onDelete={
+                  row.original.hasActionAccess ? () => setDeleteModalData(row.original) : undefined
+                }
+              />
+            )
           }
         ]}
         onCreate={() => setModalData("NEW")}

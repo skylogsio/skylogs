@@ -7,6 +7,12 @@ export interface IFlowStep {
   endpointIds?: string[];
 }
 
+export interface IFlowStepEndpoint {
+  id: string;
+  name: string;
+  type: string;
+}
+
 export interface IFlow {
   id: string;
   userId: string;
@@ -16,6 +22,7 @@ export interface IFlow {
   accessTeamIds: string[];
   accessUserIds: string[];
   steps: IFlowStep[];
+  stepEndpoints?: IFlowStepEndpoint[];
   isPublic: boolean;
   updatedAt: Date;
   createdAt: Date;

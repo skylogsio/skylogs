@@ -1,9 +1,7 @@
 import { Box, Chip, Stack, Typography, alpha, useTheme } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
 import { AiFillApi, AiFillClockCircle } from "react-icons/ai";
 
 import type { IFlow, IFlowStep } from "@/@types/flow";
-import { getAllEndpoints } from "@/api/flow";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
@@ -101,14 +99,7 @@ export default function FlowDetailsModal({ open, onClose, data }: FlowDetailsMod
   const { palette } = theme;
   const { isDark } = useCurrentTheme();
 
-  const { data: endpoints } = useQuery({
-    queryKey: ["endpoints"],
-    queryFn: () => getAllEndpoints()
-  });
-
-  const endpointNames = new Map(
-    endpoints?.map((ep) => [ep.id, ep.name]) ?? []
-  );
+  const endpointNames = new Map(data.stepEndpoints?.map((endpoint) => [endpoint.id, endpoint.name]) ?? []);
 
   return (
     <ModalContainer
