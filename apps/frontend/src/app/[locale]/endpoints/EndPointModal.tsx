@@ -3,10 +3,8 @@ import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
-  Checkbox,
   Collapse,
   collapseClasses,
-  FormControlLabel,
   Grid,
   MenuItem,
   Stack,
@@ -48,7 +46,6 @@ const endpointSchema = z.object({
   type: z.enum(ENDPOINTS_TYPE, "This field is Required."),
   value: z.string().trim().min(1, "This field is Required."),
   otpCode: z.string().optional(),
-  isPublic: z.boolean(),
   threadId: z.string().nullable().optional(),
   botToken: z.string().nullable().optional(),
   accessTeamIds: z.array(z.string()),
@@ -65,7 +62,6 @@ const emptyFormValues: EndpointFormType = {
   name: "",
   type: ENDPOINTS_TYPE[0],
   value: "",
-  isPublic: false,
   accessTeamIds: [],
   accessUserIds: []
 };
@@ -80,7 +76,6 @@ function getFormValues(data: CreateUpdateModal<IEndpoint>): EndpointFormType {
       name: data.name,
       type: data.type,
       value: data.chatId ?? data.value,
-      isPublic: data.isPublic ?? false,
       threadId: data.type === "telegram" ? (data.threadId ?? null) : null,
       botToken: null,
       accessTeamIds: data.accessTeamIds ?? [],
@@ -92,7 +87,6 @@ function getFormValues(data: CreateUpdateModal<IEndpoint>): EndpointFormType {
     name: data.name,
     type: data.type,
     value: data.value,
-    isPublic: data.isPublic ?? false,
     accessTeamIds: data.accessTeamIds ?? [],
     accessUserIds: data.accessUserIds ?? []
   };
@@ -298,18 +292,6 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
             selectedUserIds={watch("accessUserIds")}
             onTeamIdsChange={(teamIds) => setValue("accessTeamIds", teamIds)}
             onUserIdsChange={(userIds) => setValue("accessUserIds", userIds)}
-          />
-        </Grid>
-        <Grid size={12}>
-          <FormControlLabel
-            sx={{ margin: 0 }}
-            label={t("modal.field.isPublic")}
-            control={
-              <Checkbox
-                checked={watch("isPublic")}
-                onChange={(_, checked) => setValue("isPublic", checked)}
-              />
-            }
           />
         </Grid>
         {showOTPSection && (

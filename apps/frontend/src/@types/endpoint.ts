@@ -11,7 +11,6 @@ export interface IEndpoint {
   threadId?: string;
   chatId?: string;
   id: string;
-  isPublic: boolean;
   /** Only sent on an alert rule's endpoints; false when the current user may not remove it. */
   canRemove?: boolean;
 }

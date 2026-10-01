@@ -23,7 +23,6 @@ export interface IFlow {
   accessUserIds: string[];
   steps: IFlowStep[];
   stepEndpoints?: IFlowStepEndpoint[];
-  isPublic: boolean;
   updatedAt: Date;
   createdAt: Date;
 }

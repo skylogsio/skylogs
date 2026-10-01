@@ -37,8 +37,7 @@ export default {
         value: "Value",
         chatId: "Chat ID",
         threadId: "Thread ID",
-        botToken: "Bot Token",
-        isPublic: "Is Public"
+        botToken: "Bot Token"
       },
       otp: {
         send: "Send OTP Code",

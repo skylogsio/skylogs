@@ -5,8 +5,6 @@ import {
   alpha,
   Box,
   Button,
-  Checkbox,
-  FormControlLabel,
   Grid,
   IconButton,
   MenuItem,
@@ -55,7 +53,6 @@ const flowStepSchema = z.discriminatedUnion("type", [
 const createFlowSchema = z.object({
   name: z.string().trim().min(1, "This field is Required."),
   steps: z.array(flowStepSchema).min(1, "At least one step is required"),
-  isPublic: z.boolean(),
   accessTeamIds: z.array(z.string()),
   accessUserIds: z.array(z.string())
 });
@@ -69,7 +66,6 @@ type FlowModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
 const emptyFormValues: FlowFormType = {
   name: "",
   steps: [{ type: "wait" as const, duration: "" as unknown as number, timeUnit: "s" as const }],
-  isPublic: false,
   accessTeamIds: [],
   accessUserIds: []
 };
@@ -82,7 +78,6 @@ function getFormValues(data: CreateUpdateModal<IFlow>): FlowFormType {
   return {
     name: data.name,
     steps: (data.steps.length > 0 ? data.steps : emptyFormValues.steps) as FlowFormType["steps"],
-    isPublic: data.isPublic ?? false,
     accessTeamIds: data.accessTeamIds ?? [],
     accessUserIds: data.accessUserIds ?? []
   };
@@ -410,7 +405,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
             {t("modal.addEndpoint")}
           </Button>
         </Box>
-        <Grid size={12}>
+        <Grid size={12} sx={{ mb: 3 }}>
           <AccessUsersAndTeams
             selectedTeamIds={watch("accessTeamIds")}
             selectedUserIds={watch("accessUserIds")}
@@ -418,16 +413,6 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
             onUserIdsChange={(userIds) => setValue("accessUserIds", userIds)}
           />
         </Grid>
-        <FormControlLabel
-          sx={{ mb: 3 }}
-          label={t("modal.field.isPublic")}
-          control={
-            <Checkbox
-              checked={watch("isPublic")}
-              onChange={(_, checked) => setValue("isPublic", checked)}
-            />
-          }
-        />
         <GradientSubmitButton
           disabled={isCreating || isUpdating}
           type="submit"
