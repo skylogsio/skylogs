@@ -165,9 +165,16 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
     }
   });
 
+  function requiresOTP(type: EndpointFormType["type"], value: string) {
+    return (
+      OTP_REQUIRED_ENDPOINT_TYPES.includes(type) &&
+      (data === "NEW" || data?.value !== value || data?.type !== type)
+    );
+  }
+
   function handleSubmitForm(body: EndpointFormType) {
     const trimmedOTP = body.otpCode?.trim() ?? "";
-    if (OTP_REQUIRED_ENDPOINT_TYPES.includes(body.type) && trimmedOTP.length !== 5) {
+    if (requiresOTP(body.type, body.value) && trimmedOTP.length !== 5) {
       setError("otpCode", { message: "Enter a valid OTP code." });
       return null;
     }
@@ -188,9 +195,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
     sendOTPMutation(body);
   }
 
-  const showOTPSection =
-    OTP_REQUIRED_ENDPOINT_TYPES.includes(watch("type")) &&
-    (data === "NEW" || data?.value !== watch("value") || data?.type !== watch("type"));
+  const showOTPSection = requiresOTP(watch("type"), watch("value"));
 
   useEffect(() => {
     reset(getFormValues(data));
