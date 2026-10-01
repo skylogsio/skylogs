@@ -212,6 +212,40 @@ class EndpointService
         return false;
     }
 
+    /**
+     * Attach the name and type of every endpoint referenced by each flow's
+     * steps, so users a flow is shared with can read it without access to
+     * those endpoints. Destination fields are never included.
+     *
+     * @param  iterable<Endpoint>  $flows
+     */
+    public function attachFlowStepEndpoints(iterable $flows): void
+    {
+        $endpointIds = collect($flows)
+            ->flatMap(fn (Endpoint $flow) => collect($flow->steps ?? [])->flatMap(fn ($step) => $step['endpointIds'] ?? []))
+            ->all();
+
+        $endpoints = Endpoint::query()
+            ->whereIn('_id', $this->normalizeEndpointIds($endpointIds))
+            ->get(['name', 'type'])
+            ->keyBy(fn (Endpoint $endpoint) => (string) $endpoint->id);
+
+        foreach ($flows as $flow) {
+            $flow->stepEndpoints = collect($flow->steps ?? [])
+                ->flatMap(fn ($step) => $step['endpointIds'] ?? [])
+                ->map(fn ($endpointId) => $endpoints->get((string) $endpointId))
+                ->filter()
+                ->unique(fn (Endpoint $endpoint) => (string) $endpoint->id)
+                ->map(fn (Endpoint $endpoint) => [
+                    'id' => (string) $endpoint->id,
+                    'name' => $endpoint->name,
+                    'type' => $endpoint->type,
+                ])
+                ->values()
+                ->all();
+        }
+    }
+
     public function countUserEndpointAlert(User $user, ?AlertRule $alert = null)
     {
         $selectableEndpoints = $this->selectableUserEndpoint($user, $alert);

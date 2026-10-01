@@ -89,19 +89,20 @@ class EndpointController extends Controller
             $endpoint->hasActionAccess = $this->endpointService->hasActionAccess($user, $endpoint);
         }
 
+        $this->endpointService->attachFlowStepEndpoints($data->getCollection());
+
         return response()->json($data);
     }
 
     public function Show(Request $request, $id)
     {
-        $model = Endpoint::where('id', $id);
-        $isAdmin = auth()->user()->isAdmin();
-        if (! $isAdmin) {
-            $model = $model->where('userId', auth()->id());
-        }
-        $model = $model->firstOrFail();
+        $user = auth()->user();
+        $model = Endpoint::where('_id', $id)->firstOrFail();
+
+        abort_unless($this->endpointService->userCanUseEndpoint($user, $model), 404);
 
         $model->botToken = $model->botToken ?? '';
+        $model->hasActionAccess = $this->endpointService->hasActionAccess($user, $model);
 
         return response()->json($model);
     }
