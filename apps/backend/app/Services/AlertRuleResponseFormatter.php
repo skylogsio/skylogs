@@ -72,7 +72,7 @@ class AlertRuleResponseFormatter
         } else {
             $alert->teamIds = $alert->teamIds ?? [];
             $alert->extraField = $this->formatExtraField($alert->extraField ?? []);
-            $alert->countEndpoints = $this->endpointService->countUserEndpointAlert($user, $alert);
+            $alert->countEndpoints = $this->endpointService->countAlertEndpoints($alert);
             $alert->count_endpoints = $alert->countEndpoints;
         }
 
@@ -96,7 +96,7 @@ class AlertRuleResponseFormatter
             $alert->teamIds = $alert->teamIds ?? [];
             $alert->extraField = $this->formatExtraField($alert->extraField ?? []);
             $alert->ownerName = $alert->user->name;
-            $alert->countEndpoints = $this->endpointService->countUserEndpointAlert($user, $alert);
+            $alert->countEndpoints = $this->endpointService->countAlertEndpoints($alert);
             $alert->count_endpoints = $alert->countEndpoints;
             $alert->rules = $this->behaviorRuleService->formatRulesForApi($alert->rules ?? []);
         } else {

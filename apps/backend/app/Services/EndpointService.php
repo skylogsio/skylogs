@@ -147,9 +147,9 @@ class EndpointService
     }
 
     /**
-     * Make the alert endpoints this user owns or has been shared match
-     * $endpointIds. Other users' endpoints stay on the alert untouched, even
-     * for admins.
+     * Make the alert endpoints match $endpointIds. Deselected endpoints are only
+     * removed when the user may remove them (alert owner, admin, or an endpoint
+     * they can use); new endpoints are only added when the user can use them.
      *
      * @param  list<mixed>  $endpointIds
      */
@@ -161,7 +161,7 @@ class EndpointService
         $deselectedEndpointIds = Endpoint::query()
             ->whereIn('_id', array_values(array_diff($currentEndpointIds, $requestedEndpointIds)))
             ->get()
-            ->filter(fn (Endpoint $endpoint) => $this->isEndpointSharedWithUser($user, $endpoint))
+            ->filter(fn (Endpoint $endpoint) => $this->userCanRemoveAlertEndpoint($user, $alert, $endpoint))
             ->map(fn (Endpoint $endpoint) => (string) $endpoint->id);
 
         foreach ($deselectedEndpointIds as $endpointId) {
@@ -246,12 +246,12 @@ class EndpointService
         }
     }
 
-    public function countUserEndpointAlert(User $user, ?AlertRule $alert = null)
+    /**
+     * Number of endpoints assigned to the alert, regardless of who can use them.
+     */
+    public function countAlertEndpoints(AlertRule $alert): int
     {
-        $selectableEndpoints = $this->selectableUserEndpoint($user, $alert);
-        $alertEndpoints = collect($alert->endpointIds);
-
-        return $selectableEndpoints->pluck('id')->intersect($alertEndpoints)->count();
+        return count($this->normalizeEndpointIds(array_map(strval(...), $alert->endpointIds ?? [])));
     }
 
     public function deleteEndpointOfAlertRules(Endpoint $endpoint): void

@@ -131,7 +131,7 @@ describe('assigning accessible endpoints to alerts', function () {
             ->and($endpointIds)->toContain((string) $this->teamSharedEndpoint->id);
     });
 
-    it('keeps another users endpoint when the alert owner updates the alert', function () {
+    it('removes another users endpoint when the alert owner updates the alert', function () {
         $manager = TeamTestData::createUser(Constants::ROLE_MANAGER);
         $alert = AlertRule::create([
             'name' => 'Endpoint keep '.uniqid(),
@@ -155,14 +155,14 @@ describe('assigning accessible endpoints to alerts', function () {
             $alert->refresh();
 
             expect($alert->name)->toBe('renamed by owner')
-                ->and(array_map(strval(...), $alert->endpointIds ?? []))->toContain((string) $this->ownedEndpoint->id);
+                ->and(array_map(strval(...), $alert->endpointIds ?? []))->not->toContain((string) $this->ownedEndpoint->id);
         } finally {
             AlertRule::query()->where('_id', $alert->id)->delete();
             TeamTestData::deleteUser($manager);
         }
     });
 
-    it('removes deselected endpoints the editor can use when the alert is updated', function () {
+    it('removes every deselected endpoint when the alert owner updates the alert', function () {
         $this->userAlert->endpointIds = [
             (string) $this->ownedEndpoint->id,
             (string) $this->teamSharedEndpoint->id,
@@ -184,7 +184,21 @@ describe('assigning accessible endpoints to alerts', function () {
 
         expect($endpointIds)->not->toContain((string) $this->teamSharedEndpoint->id)
             ->and($endpointIds)->toContain((string) $this->ownedEndpoint->id)
-            ->and($endpointIds)->toContain((string) $this->privateEndpoint->id);
+            ->and($endpointIds)->not->toContain((string) $this->privateEndpoint->id);
+    });
+
+    it('counts every endpoint assigned to the alert for a user with access', function () {
+        $this->userAlert->endpointIds = [
+            (string) $this->ownedEndpoint->id,
+            (string) $this->privateEndpoint->id,
+        ];
+        $this->userAlert->save();
+
+        $this->actingAs($this->member, 'api')
+            ->getJson('/api/v1/alert-rule/'.$this->userAlert->id)
+            ->assertSuccessful()
+            ->assertJsonPath('countEndpoints', 2)
+            ->assertJsonPath('count_endpoints', 2);
     });
 
     it('only stores endpoints the creator can use when an alert is created', function () {
