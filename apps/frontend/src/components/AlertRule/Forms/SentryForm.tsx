@@ -175,6 +175,7 @@ export default function SentryAlertRuleForm({
         <AlertRuleGeneralFields<SentryFromType>
           methods={{ control, getValues, setValue, watch }}
           errors={errors}
+          alertId={data && data !== "NEW" ? data.id : undefined}
         >
           <Grid size={6}>
             <Autocomplete

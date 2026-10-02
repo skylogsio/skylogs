@@ -174,6 +174,7 @@ export default function ElasticAlertRuleForm({
         <AlertRuleGeneralFields<ElasticFormType>
           methods={{ control, getValues, setValue, watch }}
           errors={errors}
+          alertId={data && data !== "NEW" ? data.id : undefined}
         >
           <Grid size={12}>
             <Autocomplete

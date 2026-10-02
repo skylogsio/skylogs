@@ -220,6 +220,7 @@ export default function GeneralAlertRuleForm({
         <AlertRuleGeneralFields<GeneralAlertRuleType>
           methods={{ control, getValues, setValue, watch }}
           errors={errors}
+          alertId={data && data !== "NEW" ? data.id : undefined}
         >
           <Grid
             size={12}

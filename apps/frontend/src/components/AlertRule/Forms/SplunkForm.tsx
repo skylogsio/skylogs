@@ -175,6 +175,7 @@ export default function SplunkAlertRuleForm({
         <AlertRuleGeneralFields<SplunkFromType>
           methods={{ control, getValues, setValue, watch }}
           errors={errors}
+          alertId={data && data !== "NEW" ? data.id : undefined}
         >
           <Grid size={6}>
             <Autocomplete

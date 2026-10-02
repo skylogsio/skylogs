@@ -35,7 +35,12 @@ import NotificationRuleModal from "./NotificationRule";
 import SilentRuleModal from "./SilentRule";
 import TemplateModal from "./Template";
 
-export default function AdvanceSection({ type }: { type: AlertRuleType }) {
+interface AdvanceSectionProps {
+  type: AlertRuleType;
+  readOnly?: boolean;
+}
+
+export default function AdvanceSection({ type, readOnly = false }: AdvanceSectionProps) {
   const { alertId } = useParams<{ alertId: string }>();
   const { palette } = useTheme();
   const [filter, setFilter] = useState<BehaviorRuleFilterType>("all");
@@ -80,61 +85,64 @@ export default function AdvanceSection({ type }: { type: AlertRuleType }) {
               Advance
             </Typography>
             <Typography variant="body2" sx={{ color: palette.text.secondary, mt: 0.7, mb: 2 }}>
-              Manage and organize your {showTemplateSection && "Templates &"}{" "}
+              {readOnly ? "View" : "Manage and organize"} your{" "}
+              {showTemplateSection && "Templates &"}{" "}
               {showNotificationSection && "Notification Rule &"} Silent Rules.
             </Typography>
           </Box>
-          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-            <Button
-              variant="contained"
-              startIcon={<HiOutlinePlusSm size={18} />}
-              onClick={(e) => setCreateMenuAnchor(e.currentTarget)}
-              sx={{
-                borderRadius: 2,
-                textTransform: "none",
-                fontWeight: 600,
-                paddingX: 2.5,
-                backgroundColor: palette.primary.main
-              }}
-            >
-              CREATE NEW ONE
-            </Button>
-            <Menu
-              anchorEl={createMenuAnchor}
-              open={Boolean(createMenuAnchor)}
-              onClose={() => setCreateMenuAnchor(null)}
-              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-              transformOrigin={{ vertical: "top", horizontal: "right" }}
-              slotProps={{
-                paper: {
-                  sx: {
-                    mt: 0.5,
-                    minWidth: 180,
-                    borderRadius: 2,
-                    border: `1px solid ${alpha(palette.divider, 0.6)}`,
-                    boxShadow: `0 8px 24px ${alpha(palette.common.black, 0.12)}`
+          {!readOnly && (
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+              <Button
+                variant="contained"
+                startIcon={<HiOutlinePlusSm size={18} />}
+                onClick={(e) => setCreateMenuAnchor(e.currentTarget)}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontWeight: 600,
+                  paddingX: 2.5,
+                  backgroundColor: palette.primary.main
+                }}
+              >
+                CREATE NEW ONE
+              </Button>
+              <Menu
+                anchorEl={createMenuAnchor}
+                open={Boolean(createMenuAnchor)}
+                onClose={() => setCreateMenuAnchor(null)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      mt: 0.5,
+                      minWidth: 180,
+                      borderRadius: 2,
+                      border: `1px solid ${alpha(palette.divider, 0.6)}`,
+                      boxShadow: `0 8px 24px ${alpha(palette.common.black, 0.12)}`
+                    }
                   }
-                }
-              }}
-            >
-              {showTemplateSection && (
-                <MenuItem
-                  onClick={() => handleOpenModal("template")}
-                  sx={{ color: palette.primary.main, fontWeight: 600, fontSize: 14 }}
-                >
-                  Template
+                }}
+              >
+                {showTemplateSection && (
+                  <MenuItem
+                    onClick={() => handleOpenModal("template")}
+                    sx={{ color: palette.primary.main, fontWeight: 600, fontSize: 14 }}
+                  >
+                    Template
+                  </MenuItem>
+                )}
+                {showNotificationSection && (
+                  <MenuItem onClick={() => handleOpenModal("notification")} sx={{ fontSize: 14 }}>
+                    Notification Rule
+                  </MenuItem>
+                )}
+                <MenuItem onClick={() => handleOpenModal("silent")} sx={{ fontSize: 14 }}>
+                  Silent Rule
                 </MenuItem>
-              )}
-              {showNotificationSection && (
-                <MenuItem onClick={() => handleOpenModal("notification")} sx={{ fontSize: 14 }}>
-                  Notification Rule
-                </MenuItem>
-              )}
-              <MenuItem onClick={() => handleOpenModal("silent")} sx={{ fontSize: 14 }}>
-                Silent Rule
-              </MenuItem>
-            </Menu>
-          </Stack>
+              </Menu>
+            </Stack>
+          )}
         </Stack>
         {(showNotificationSection || showTemplateSection) && (
           <Stack direction="row" spacing={0.5} sx={{ mb: 3 }}>
@@ -166,10 +174,14 @@ export default function AdvanceSection({ type }: { type: AlertRuleType }) {
               <Grid key={item.id} size={{ xs: 12, sm: 6, lg: 4 }}>
                 <BehaviorRuleCard
                   item={item}
-                  onEdit={() => {
-                    setSelectedModal(item.type);
-                    setModalData(item);
-                  }}
+                  onEdit={
+                    readOnly
+                      ? undefined
+                      : () => {
+                          setSelectedModal(item.type);
+                          setModalData(item);
+                        }
+                  }
                 />
               </Grid>
             ))

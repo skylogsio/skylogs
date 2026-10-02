@@ -23,7 +23,8 @@ import DeleteBehaviorRuleModal from "./DeleteBehaviorRuleModal";
 
 interface BehaviorRuleCardProps {
   item: BehaviorRuleItem;
-  onEdit: () => void;
+  /** Omit to render the card read-only, without edit and delete actions. */
+  onEdit?: () => void;
 }
 
 export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps) {
@@ -34,7 +35,7 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
   const config = BEHAVIOR_RULE_TYPE_CONFIG[item.type];
 
   function handleEdit() {
-    onEdit();
+    onEdit?.();
     setAnchorEl(null);
   }
 
@@ -99,31 +100,35 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
               <BehaviorRuleChip label={item.type} showNotification showTemplate size="small" />
             </Box>
           </Stack>
-          <IconButton
-            size="small"
-            onClick={(e) => setAnchorEl(e.currentTarget)}
-            sx={{ color: palette.text.secondary, mt: -0.5, ml: 0.5 }}
-          >
-            <HiDotsVertical size={18} />
-          </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={() => setAnchorEl(null)}
-            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            transformOrigin={{ vertical: "top", horizontal: "right" }}
-          >
-            <MenuItem onClick={handleEdit}>Edit</MenuItem>
-            <MenuItem
-              onClick={() => {
-                setAnchorEl(null);
-                setDeleteModalData(item);
-              }}
-              sx={{ color: "error.main" }}
-            >
-              Delete
-            </MenuItem>
-          </Menu>
+          {onEdit && (
+            <>
+              <IconButton
+                size="small"
+                onClick={(e) => setAnchorEl(e.currentTarget)}
+                sx={{ color: palette.text.secondary, mt: -0.5, ml: 0.5 }}
+              >
+                <HiDotsVertical size={18} />
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={() => setAnchorEl(null)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+              >
+                <MenuItem onClick={handleEdit}>Edit</MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    setAnchorEl(null);
+                    setDeleteModalData(item);
+                  }}
+                  sx={{ color: "error.main" }}
+                >
+                  Delete
+                </MenuItem>
+              </Menu>
+            </>
+          )}
         </Stack>
 
         <Box
@@ -141,42 +146,44 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
           <BehaviorRuleDetails item={item} />
         </Box>
 
-        <Stack direction="row" spacing={1}>
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={handleEdit}
-            startIcon={<HiPencil />}
-            sx={{
-              flex: 1,
-              borderColor: palette.divider,
-              color: palette.text.secondary,
-              fontSize: 12,
-              paddingY: 1,
-              textTransform: "none",
-              "&:hover": { borderColor: config.color, color: config.color }
-            }}
-          >
-            Edit
-          </Button>
-          <Tooltip title="Delete">
-            <IconButton
+        {onEdit && (
+          <Stack direction="row" spacing={1}>
+            <Button
               size="small"
-              onClick={() => setDeleteModalData(item)}
+              variant="outlined"
+              onClick={handleEdit}
+              startIcon={<HiPencil />}
               sx={{
-                border: 1,
-                borderColor: alpha(palette.error.main, 0.35),
-                color: "error.main",
-                "&:hover": {
-                  borderColor: "error.main",
-                  backgroundColor: alpha(palette.error.main, 0.06)
-                }
+                flex: 1,
+                borderColor: palette.divider,
+                color: palette.text.secondary,
+                fontSize: 12,
+                paddingY: 1,
+                textTransform: "none",
+                "&:hover": { borderColor: config.color, color: config.color }
               }}
             >
-              <HiTrash size={16} />
-            </IconButton>
-          </Tooltip>
-        </Stack>
+              Edit
+            </Button>
+            <Tooltip title="Delete">
+              <IconButton
+                size="small"
+                onClick={() => setDeleteModalData(item)}
+                sx={{
+                  border: 1,
+                  borderColor: alpha(palette.error.main, 0.35),
+                  color: "error.main",
+                  "&:hover": {
+                    borderColor: "error.main",
+                    backgroundColor: alpha(palette.error.main, 0.06)
+                  }
+                }}
+              >
+                <HiTrash size={16} />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        )}
       </Box>
       {deleteModalData && (
         <DeleteBehaviorRuleModal

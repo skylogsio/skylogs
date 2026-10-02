@@ -189,7 +189,7 @@ export default function ViewAlertRule() {
       case "fire":
         return <AlertRuleFiredInstances alertId={alertId} type={data!.type} />;
       case "advance":
-        return <AdvanceSection type={data!.type} />;
+        return <AdvanceSection type={data!.type} readOnly={!data!.hasActionAccess} />;
       default:
         return null;
     }
@@ -231,30 +231,34 @@ export default function ViewAlertRule() {
             <Stack spacing={1} sx={{ alignItems: "flex-end" }}>
               {!isReadonly && (
                 <Stack direction="row-reverse" spacing={1}>
-                  <Button
-                    startIcon={<HiTrash />}
-                    onClick={() => setCurrentOpenModal("DELETE")}
-                    sx={{
-                      textTransform: "capitalize !important",
-                      color: palette.error.main,
-                      backgroundColor: alpha(palette.error.main, 0.05),
-                      paddingX: 2
-                    }}
-                  >
-                    Delete
-                  </Button>
-                  <Button
-                    startIcon={<HiPencil />}
-                    onClick={() => setCurrentOpenModal("EDIT")}
-                    sx={{
-                      textTransform: "capitalize !important",
-                      color: palette.info.light,
-                      backgroundColor: alpha(palette.info.light, 0.05),
-                      paddingX: 2
-                    }}
-                  >
-                    Edit
-                  </Button>
+                  {data.hasActionAccess && (
+                    <>
+                      <Button
+                        startIcon={<HiTrash />}
+                        onClick={() => setCurrentOpenModal("DELETE")}
+                        sx={{
+                          textTransform: "capitalize !important",
+                          color: palette.error.main,
+                          backgroundColor: alpha(palette.error.main, 0.05),
+                          paddingX: 2
+                        }}
+                      >
+                        Delete
+                      </Button>
+                      <Button
+                        startIcon={<HiPencil />}
+                        onClick={() => setCurrentOpenModal("EDIT")}
+                        sx={{
+                          textTransform: "capitalize !important",
+                          color: palette.info.light,
+                          backgroundColor: alpha(palette.info.light, 0.05),
+                          paddingX: 2
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    </>
+                  )}
                   <Button
                     startIcon={
                       data.is_silent ? (
@@ -289,11 +293,15 @@ export default function ViewAlertRule() {
                   {(data.type === "api" || data.type === "notification") && data.apiToken && (
                     <Button
                       onClick={handleCopyCurlCommand}
-                      startIcon={curlCopied ? <BsCheck2 size="1.4rem" /> : <BsTerminalFill size="1.4rem" />}
+                      startIcon={
+                        curlCopied ? <BsCheck2 size="1.4rem" /> : <BsTerminalFill size="1.4rem" />
+                      }
                       sx={{
                         textTransform: "capitalize !important",
                         color: curlCopied ? palette.success.main : palette.info.main,
-                        backgroundColor: curlCopied ? alpha(palette.success.main, 0.1) : alpha(palette.info.main, 0.05),
+                        backgroundColor: curlCopied
+                          ? alpha(palette.success.main, 0.1)
+                          : alpha(palette.info.main, 0.05),
                         paddingX: 2,
                         transition: "all 0.2s ease-in-out"
                       }}

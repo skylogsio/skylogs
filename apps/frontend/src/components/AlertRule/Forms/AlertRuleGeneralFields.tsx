@@ -12,7 +12,7 @@ import {
   Box,
   Typography
 } from "@mui/material";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   Controller,
   type Path,
@@ -22,7 +22,13 @@ import {
 } from "react-hook-form";
 import { MdInfoOutline } from "react-icons/md";
 
-import { getAlertRuleCreateData, getAlertRuleTags } from "@/api/alertRule";
+import type { IAlertRule } from "@/@types/alertRule";
+import type { IEndpoint } from "@/@types/endpoint";
+import {
+  getAlertRuleCreateData,
+  getAlertRuleEndpointsList,
+  getAlertRuleTags
+} from "@/api/alertRule";
 import AccessUsersAndTeams from "@/components/AccessUsersAndTeams";
 
 type MustHaveFields = {
@@ -38,12 +44,15 @@ type MustHaveFields = {
 type AlertRuleEndpointUserSelectorProps<T extends MustHaveFields> = {
   methods: Pick<UseFormReturn<T>, "control" | "watch" | "setValue" | "getValues">;
   errors: FormState<T>["errors"];
+  /** Set when editing, so endpoints already on the alert are listed even if the editor cannot use them. */
+  alertId?: IAlertRule["id"];
   children?: ReactNode;
 };
 
 export default function AlertRuleGeneralFields<T extends MustHaveFields>({
   methods,
   errors,
+  alertId,
   children
 }: AlertRuleEndpointUserSelectorProps<T>) {
   const { control, setValue, watch } = methods;
@@ -61,7 +70,23 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
     ]
   });
 
-  const endpoints = data?.endpoints ?? [];
+  const { data: alertEndpointsList } = useQuery({
+    queryKey: ["alert-rule-endpoint-list", alertId],
+    queryFn: () => getAlertRuleEndpointsList(alertId!),
+    enabled: Boolean(alertId)
+  });
+
+  const alertEndpoints = alertEndpointsList?.alertEndpoints ?? [];
+  const endpoints: IEndpoint[] = [
+    ...alertEndpoints,
+    ...(data?.endpoints ?? []).filter(
+      (endpoint) => !alertEndpoints.some((alertEndpoint) => alertEndpoint.id === endpoint.id)
+    )
+  ];
+
+  function isFixedEndpoint(endpoint: IEndpoint) {
+    return endpoint.canRemove === false;
+  }
 
   return (
     <>
@@ -81,9 +106,12 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
             control={control}
             name={"endpointIds" as Path<T>}
             render={({ field }) => {
-              const selectedEndpoints = endpoints.filter((ep) =>
-                (field.value as string[])?.includes(ep.id)
-              );
+              const selectedIds = (field.value as string[]) ?? [];
+              const selectedEndpoints = endpoints.filter((ep) => selectedIds.includes(ep.id));
+              const keptIds = selectedIds.filter((id) => {
+                const endpoint = endpoints.find((ep) => ep.id === id);
+                return !endpoint || isFixedEndpoint(endpoint);
+              });
 
               return (
                 <Autocomplete
@@ -92,13 +120,23 @@ export default function AlertRuleGeneralFields<T extends MustHaveFields>({
                   getOptionLabel={(option) => option.name}
                   value={selectedEndpoints}
                   onChange={(_, newValue) => {
-                    field.onChange(newValue.map((ep) => ep.id) as PathValue<T, Path<T>>);
+                    const ids = new Set([...keptIds, ...newValue.map((ep) => ep.id)]);
+                    field.onChange([...ids] as PathValue<T, Path<T>>);
                   }}
                   isOptionEqualToValue={(option, value) => option.id === value.id}
+                  getOptionDisabled={isFixedEndpoint}
                   renderValue={(value, getItemProps) =>
                     value.map((option, index) => {
-                      const { key, ...itemProps } = getItemProps({ index });
-                      return <Chip key={key} label={option.name} size="small" {...itemProps} />;
+                      const { key, onDelete, ...itemProps } = getItemProps({ index });
+                      return (
+                        <Chip
+                          key={key}
+                          label={option.name}
+                          size="small"
+                          {...itemProps}
+                          onDelete={isFixedEndpoint(option) ? undefined : onDelete}
+                        />
+                      );
                     })
                   }
                   renderInput={(params) => (

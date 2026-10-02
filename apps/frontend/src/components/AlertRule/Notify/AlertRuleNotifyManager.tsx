@@ -1,6 +1,15 @@
 import { useState } from "react";
 
-import { alpha, Autocomplete, Button, Stack, TextField, IconButton, useTheme } from "@mui/material";
+import {
+  alpha,
+  Autocomplete,
+  Button,
+  Stack,
+  TextField,
+  IconButton,
+  Tooltip,
+  useTheme
+} from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AiFillNotification } from "react-icons/ai";
 import { HiOutlinePlusSm, HiTrash } from "react-icons/hi";
@@ -47,6 +56,11 @@ export default function AlertRuleNotifyManager({ alertId }: { alertId: IAlertRul
     }
   });
 
+  const assignedEndpointIds = new Set(endpointsList?.alertEndpoints.map((item) => item.id));
+  const addableEndpoints = (endpointsList?.selectableEndpoints ?? []).filter(
+    (item) => !assignedEndpointIds.has(item.id)
+  );
+
   function handleAddEndpoint() {
     const endpointIds = selectedEndpoints.map((item) => item.id);
     if (endpointIds.length > 0) {
@@ -72,8 +86,9 @@ export default function AlertRuleNotifyManager({ alertId }: { alertId: IAlertRul
           multiple
           id="endpoints"
           size="small"
-          options={endpointsList?.selectableEndpoints ?? []}
+          options={addableEndpoints}
           getOptionLabel={(option) => option.name}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
           value={selectedEndpoints}
           onChange={(_, value) => setSelectedEndpoints(value)}
           sx={{ flex: 1 }}
@@ -115,19 +130,33 @@ export default function AlertRuleNotifyManager({ alertId }: { alertId: IAlertRul
             },
             {
               header: "Actions",
-              cell: ({ row }) => (
-                <IconButton
-                  disabled={isRemovingEndpoint || row.original.canRemove === false}
-                  aria-label="Remove endpoint"
-                  onClick={() => removeEndpoint(row.original.id)}
-                  sx={({ palette }) => ({
-                    color: palette.error.light,
-                    backgroundColor: alpha(palette.error.light, 0.05)
-                  })}
-                >
-                  <HiTrash size="1.4rem" />
-                </IconButton>
-              )
+              cell: ({ row }) => {
+                const canRemove = row.original.canRemove !== false;
+
+                return (
+                  <Tooltip
+                    title={
+                      canRemove
+                        ? "Remove endpoint"
+                        : "Only the alert owner or a user with access to this endpoint can remove it."
+                    }
+                  >
+                    <span>
+                      <IconButton
+                        disabled={isRemovingEndpoint || !canRemove}
+                        aria-label="Remove endpoint"
+                        onClick={() => removeEndpoint(row.original.id)}
+                        sx={({ palette }) => ({
+                          color: palette.error.light,
+                          backgroundColor: alpha(palette.error.light, 0.05)
+                        })}
+                      >
+                        <HiTrash size="1.4rem" />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                );
+              }
             }
           ]}
         />

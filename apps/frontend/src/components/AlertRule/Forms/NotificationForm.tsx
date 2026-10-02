@@ -142,6 +142,7 @@ export default function NotificationForm({ onClose, onSubmit, data }: Notificati
         <AlertRuleGeneralFields<NotificationFormType>
           methods={{ control, getValues, setValue, watch }}
           errors={errors}
+          alertId={data && data !== "NEW" ? data.id : undefined}
         />
       </Grid>
       <Stack

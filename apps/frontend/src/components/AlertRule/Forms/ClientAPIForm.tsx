@@ -172,6 +172,7 @@ export default function ClientAPIForm({ onClose, onSubmit, data }: ClientAPIModa
         <AlertRuleGeneralFields<ClientAPIFormType>
           methods={{ control, getValues, setValue, watch }}
           errors={errors}
+          alertId={data && data !== "NEW" ? data.id : undefined}
         >
           <Grid size={6}>
             <Stack
