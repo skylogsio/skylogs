@@ -362,7 +362,7 @@ class EndpointService
      */
     public function otpRequest(array $data): array
     {
-        $endpointOtp = EndpointOTP::where('type', $data['type'])->where('value', $data['value'])->first();
+        $endpointOtp = $this->otpFor($data['type'], $data['value']);
 
         if ($endpointOtp) {
             if (Carbon::now()->lessThan($endpointOtp->expiredAt)) {
@@ -417,7 +417,7 @@ class EndpointService
             return;
         }
 
-        $otp = EndpointOTP::where('value', $data['value'] ?? null)->first();
+        $otp = $this->otpFor($data['type'], $data['value'] ?? null);
 
         if (! $otp || $otp->expiredAt < Carbon::now()) {
             abort(422, 'otp code expired try again');
@@ -426,6 +426,16 @@ class EndpointService
         if ($otp->otpCode != ($data['otpCode'] ?? null)) {
             abort(422, 'otp code invalid');
         }
+    }
+
+    /**
+     * The row written by otpRequest, matched on channel and address together.
+     * Phone channels share a number, so a lookup by address alone can return
+     * another channel's expired code.
+     */
+    private function otpFor(string $type, mixed $value): ?EndpointOTP
+    {
+        return EndpointOTP::where('type', $type)->where('value', $value)->first();
     }
 
     /**

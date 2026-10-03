@@ -97,6 +97,43 @@ describe('EndpointController channel driven validation', function () {
             ->assertJsonPath('data.value', $this->phone);
     });
 
+    it('accepts a call otp when an older sms otp for the same number is expired', function () {
+        EndpointOTP::create([
+            'type' => EndpointType::SMS->value,
+            'value' => $this->phone,
+            'otpCode' => 11111,
+            'expiredAt' => Carbon::now()->subMinute(),
+        ]);
+
+        EndpointOTP::create([
+            'type' => EndpointType::CALL->value,
+            'value' => $this->phone,
+            'otpCode' => 33333,
+            'expiredAt' => Carbon::now()->addMinutes(3),
+        ]);
+
+        $this->actingAs($this->user, 'api')
+            ->postJson('/api/v1/endpoint', [
+                'name' => 'My Call',
+                'type' => EndpointType::CALL->value,
+                'value' => $this->phone,
+                'otpCode' => '11111',
+            ])
+            ->assertStatus(422);
+
+        $this->actingAs($this->user, 'api')
+            ->postJson('/api/v1/endpoint', [
+                'name' => 'My Call',
+                'type' => EndpointType::CALL->value,
+                'value' => $this->phone,
+                'otpCode' => '33333',
+            ])
+            ->assertSuccessful()
+            ->assertJsonPath('status', true)
+            ->assertJsonPath('data.type', EndpointType::CALL->value)
+            ->assertJsonPath('data.value', $this->phone);
+    });
+
     it('does not ask for an otp when a phone endpoint keeps its number', function () {
         $endpoint = Endpoint::create([
             'userId' => $this->user->id,
