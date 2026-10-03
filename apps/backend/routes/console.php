@@ -38,8 +38,8 @@ Schedule::call(function () {
     }
 })->everyTenMinutes()->when($onLeader);
 
-Schedule::job(new CheckPrometheusJob)->everyFiveSeconds()->when($onLeader);
-Schedule::job(new AddChecksJob)->everyFiveSeconds()->when($onLeader);
+Schedule::job(new CheckPrometheusJob)->everyTenSeconds()->when($onLeader);
+Schedule::job(new AddChecksJob)->everyTenSeconds()->when($onLeader);
 Schedule::job(new RunHealthChecksJob)->everyTenSeconds()->when($onLeader);
 Schedule::job(new AutoResolveApiAlertsJob)->everyFiveSeconds()->when($onLeader);
 
@@ -49,7 +49,7 @@ Schedule::job(new AutoResolveApiAlertsJob)->everyFiveSeconds()->when($onLeader);
 | running it everywhere keeps a follower's dashboard correct without pushing a
 | five second time series through Raft.
 */
-Schedule::job(new RefreshStatusHistoryJob)->everyFiveSeconds();
+Schedule::job(new RefreshStatusHistoryJob)->everyTenSeconds();
 
 /*
 | Also on every node, and for the same reason in reverse: a follower catching up
