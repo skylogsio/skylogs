@@ -3,26 +3,30 @@
 namespace App\Services;
 
 use App\Models\ElasticCheck;
-use Carbon\Carbon;
 
 class ElasticService
 {
+    public const TIME_FIELD = 'timestamp';
+
     public static function countDocuments(ElasticCheck $elasticCheck): ?int
     {
         $dataSource = $elasticCheck->alertRule->dataSource;
 
         try {
-            $nowCarbon = Carbon::now('UTC');
-            $nowString = $nowCarbon->format("Y-m-d\TH:i:s");
-            $agoString = $nowCarbon->copy()->subMinutes($elasticCheck->minutes)->format("Y-m-d\TH:i:s");
+            $minutes = (int) $elasticCheck->minutes;
 
             $response = \Http::acceptJson()
                 ->withBasicAuth($dataSource->username, $dataSource->password)
                 ->post($dataSource->url."/{$elasticCheck->dataviewTitle}/_count", [
                     'query' => [
-                        'query_string' => [
-                            'query' => "timestamp:[$agoString TO $nowString] {$elasticCheck->queryString}",
-                            'default_operator' => 'AND',
+                        'bool' => [
+                            'filter' => [
+                                ['range' => [self::TIME_FIELD => ['gte' => "now-{$minutes}m", 'lte' => 'now']]],
+                                ['query_string' => [
+                                    'query' => $elasticCheck->queryString,
+                                    'default_operator' => 'AND',
+                                ]],
+                            ],
                         ],
                     ],
                 ]);
