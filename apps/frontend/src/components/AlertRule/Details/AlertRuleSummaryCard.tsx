@@ -1,6 +1,6 @@
 import { useRouter } from "next/navigation";
 
-import { Chip, IconButton, Stack, Typography, alpha, useTheme } from "@mui/material";
+import { IconButton, Stack, Typography, alpha, useTheme } from "@mui/material";
 import { IoIosArrowBack } from "react-icons/io";
 
 import type { IAlertRule } from "@/@types/alertRule";
@@ -56,13 +56,6 @@ export default function AlertRuleSummaryCard({
           showAcknowledge={!isReadonly && !alert.acknowledgedBy}
         />
       </Stack>
-      {alert.dataSourceLabels && alert.dataSourceLabels.length > 0 && (
-        <Stack direction="row" sx={{ marginLeft: "auto", flexWrap: "wrap", gap: 1 }}>
-          {alert.dataSourceLabels.map((label, index) => (
-            <Chip key={index} variant="filled" label={label} size="small" />
-          ))}
-        </Stack>
-      )}
     </Stack>
   );
 }

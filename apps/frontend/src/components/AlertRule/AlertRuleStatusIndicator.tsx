@@ -68,7 +68,17 @@ export default function AlertRuleStatusIndicator({
   );
 
   if (!status || status === "unknown") {
-    return "-";
+    return (
+      <Chip
+        label="Unknown"
+        size={size}
+        sx={{
+          textTransform: "capitalize",
+          color: palette.text.secondary,
+          backgroundColor: alpha(palette.text.secondary, 0.07)
+        }}
+      />
+    );
   }
 
   return (
