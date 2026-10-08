@@ -65,7 +65,6 @@ export default function ViewAlertRule() {
     enabled: Boolean(alertId),
     refetchInterval: 10 * 1000
   });
-  console.log("🚀 ~ ViewAlertRule ~ data:", data);
 
   const isReadonly = data?.accessLevel === "readonly";
   const availableTabs = isReadonly ? READONLY_TABS : TABS;
