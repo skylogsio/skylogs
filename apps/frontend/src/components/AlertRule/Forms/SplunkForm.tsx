@@ -18,7 +18,7 @@ import {
 import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGeneralFields";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
-const splunkAlertRuleSchema = z.object({
+export const splunkAlertRuleSchema = z.object({
   name: z.string().trim().min(1, "This field is Required."),
   type: z.literal("splunk"),
   endpointIds: z.array(z.string()),

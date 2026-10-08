@@ -21,7 +21,7 @@ import type { ModalContainerProps } from "@/components/Modal/types";
 
 const CONDITION_TYPES = ["greaterOrEqual", "lessOrEqual"] as const;
 
-const elasticAlertRuleSchema = z.object({
+export const elasticAlertRuleSchema = z.object({
   name: z.string().trim().min(1, "This field is Required."),
   type: z.literal("elastic"),
   endpointIds: z.array(z.string()),

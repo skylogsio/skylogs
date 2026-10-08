@@ -13,7 +13,7 @@ import { createAlertRule, updateAlertRule } from "@/api/alertRule";
 import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGeneralFields";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
-const clientApiSchema = z
+export const clientApiSchema = z
   .object({
     name: z.string().trim().min(1, "This field is Required."),
     type: z.literal("api"),
