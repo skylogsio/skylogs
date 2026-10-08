@@ -110,7 +110,7 @@ export default function PrometheusAlertsHistory({ alertId }: { alertId: IAlertRu
             },
             { header: "Date", accessorKey: "createdAt" },
             {
-              header: "Actions",
+              header: "More Details",
               cell: ({ row }) => (
                 <IconButton onClick={() => setDetails(row.original)}>
                   <HiInformationCircle color={palette.primary.light} />

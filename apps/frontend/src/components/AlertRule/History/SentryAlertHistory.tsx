@@ -148,7 +148,7 @@ export default function SentryAlertHistory({ alertId }: { alertId: IAlertRule["i
               )
             },
             {
-              header: "Actions",
+              header: "More Details",
               cell: ({ row }) => (
                 <Stack
                   sx={{

@@ -58,7 +58,7 @@ export default function ZabbixAlertHistory({ alertId }: { alertId: IAlertRule["i
             },
             { header: "Date", accessorKey: "createdAt" },
             {
-              header: "Actions",
+              header: "More Details",
               cell: ({ row }) => (
                 <IconButton onClick={() => setDetails(row.original.alert_message)}>
                   <HiInformationCircle color={palette.primary.light} />
