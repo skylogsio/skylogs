@@ -56,16 +56,14 @@ interface AlertRuleDetailsTabProps {
 export default function AlertRuleDetailsTab({ alert }: AlertRuleDetailsTabProps) {
   const { palette } = useTheme();
 
-  const { data: accessList } = useQuery({
-    queryKey: ["alert-rule-access", alert.id],
-    queryFn: () => getAlertRuleAccessList(alert.id),
-    enabled: !alert.userIds || alert.userIds.length === 0
+  const { data: endpointsList, isLoading: isLoadingEndpoints } = useQuery({
+    queryKey: ["alert-rule-endpoint-list", alert.id],
+    queryFn: () => getAlertRuleEndpointsList(alert.id)
   });
 
-  const { data: endpointsList } = useQuery({
-    queryKey: ["alert-rule-endpoint-list", alert.id],
-    queryFn: () => getAlertRuleEndpointsList(alert.id),
-    enabled: !alert.endpointIds || alert.endpointIds.length === 0
+  const { data: accessList, isLoading: isLoadingAccess } = useQuery({
+    queryKey: ["alert-rule-access", alert.id],
+    queryFn: () => getAlertRuleAccessList(alert.id)
   });
 
   const hasDataSources = !["api", "notification", "health"].includes(alert.type);
@@ -74,23 +72,28 @@ export default function AlertRuleDetailsTab({ alert }: AlertRuleDetailsTabProps)
     (!alert.dataSourceLabels || alert.dataSourceLabels.length === 0) &&
     ((alert.dataSourceIds?.length ?? 0) > 0 || Boolean(alert.dataSourceId));
 
-  const { data: dataSourceOptions } = useQuery({
+  const { data: dataSourceOptions, isLoading: isLoadingDataSources } = useQuery({
     queryKey: ["alert-rule-data-source", alert.type],
     queryFn: () => getAlertRuleDataSourcesByAlertType(alert.type as DataSourceType),
     enabled: needsDataSourceNames
   });
 
+  const isLoadingNames = isLoadingEndpoints || isLoadingAccess || isLoadingDataSources;
+
   function resolveNames(fieldKey: string, ids: string[]): string[] {
     if (fieldKey === "endpointIds") {
-      const known = endpointsList?.alertEndpoints ?? [];
+      const known = [
+        ...(endpointsList?.alertEndpoints ?? []),
+        ...(endpointsList?.selectableEndpoints ?? [])
+      ];
       return ids.map((id) => known.find((endpoint) => endpoint.id === id)?.name ?? id);
     }
     if (fieldKey === "userIds") {
-      const known = accessList?.alertUsers ?? [];
+      const known = [...(accessList?.alertUsers ?? []), ...(accessList?.selectableUsers ?? [])];
       return ids.map((id) => known.find((user) => user.id === id)?.name ?? id);
     }
     if (fieldKey === "teamIds") {
-      const known = accessList?.alertTeams ?? [];
+      const known = [...(accessList?.alertTeams ?? []), ...(accessList?.selectableTeams ?? [])];
       return ids.map((id) => known.find((team) => team.id === id)?.name ?? id);
     }
     if (fieldKey === "dataSourceIds") {
@@ -127,6 +130,7 @@ export default function AlertRuleDetailsTab({ alert }: AlertRuleDetailsTabProps)
             alert={alert}
             resolveNames={resolveNames}
             formatValue={formatValue}
+            isLoadingNames={isLoadingNames}
           />
         </Stack>
       </Grid>

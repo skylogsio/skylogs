@@ -1,4 +1,4 @@
-import { Chip, Stack, Typography } from "@mui/material";
+import { Chip, Skeleton, Stack, Typography } from "@mui/material";
 
 import type { IAlertRule } from "@/@types/alertRule";
 
@@ -43,6 +43,7 @@ interface DetailFieldValueProps {
   alert: IAlertRule;
   resolveNames: (fieldKey: string, ids: string[]) => string[];
   formatValue?: (fieldKey: string, value: unknown) => string;
+  isLoadingNames?: boolean;
 }
 
 export function DetailFieldText({ text }: { text: string }) {
@@ -67,9 +68,25 @@ export function DetailFieldValue({
   fieldKey,
   alert,
   resolveNames,
-  formatValue
+  formatValue,
+  isLoadingNames = false
 }: DetailFieldValueProps) {
   const value = alert[fieldKey as keyof IAlertRule] as unknown;
+  const needsNames =
+    fieldKey === "endpointIds" ||
+    fieldKey === "userIds" ||
+    fieldKey === "teamIds" ||
+    fieldKey === "dataSourceIds" ||
+    fieldKey === "dataSourceId";
+
+  if (isLoadingNames && needsNames) {
+    return (
+      <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap" }}>
+        <Skeleton variant="rounded" width={90} height={24} />
+        <Skeleton variant="rounded" width={70} height={24} />
+      </Stack>
+    );
+  }
 
   if (Array.isArray(value)) {
     if (fieldKey === "extraField") {
@@ -93,14 +110,7 @@ export function DetailFieldValue({
       );
     }
     const items = value.map((item) => String(item));
-    const resolved =
-      fieldKey === "endpointIds" ||
-      fieldKey === "userIds" ||
-      fieldKey === "teamIds" ||
-      fieldKey === "dataSourceIds" ||
-      fieldKey === "dataSourceId"
-        ? resolveNames(fieldKey, items)
-        : items;
+    const resolved = needsNames ? resolveNames(fieldKey, items) : items;
     return <DetailValueChips values={resolved} />;
   }
 
