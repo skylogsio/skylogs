@@ -4,6 +4,14 @@ import type { IAlertRule } from "@/@types/alertRule";
 
 const EMPTY_VALUE = "—";
 
+export function DetailEmpty() {
+  return (
+    <Typography variant="body2" sx={{ color: "text.disabled", fontSize: "0.875rem" }}>
+      {EMPTY_VALUE}
+    </Typography>
+  );
+}
+
 function formatScalar(value: unknown): string {
   if (value === null || value === undefined || value === "") {
     return EMPTY_VALUE;
@@ -19,10 +27,10 @@ function formatScalar(value: unknown): string {
 
 export function DetailValueChips({ values }: { values: string[] }) {
   if (values.length === 0) {
-    return <Typography>{EMPTY_VALUE}</Typography>;
+    return <DetailEmpty />;
   }
   return (
-    <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1 }}>
+    <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: "wrap" }}>
       {values.map((value, index) => (
         <Chip key={`${value}-${index}`} variant="filled" label={value} size="small" />
       ))}
@@ -35,6 +43,24 @@ interface DetailFieldValueProps {
   alert: IAlertRule;
   resolveNames: (fieldKey: string, ids: string[]) => string[];
   formatValue?: (fieldKey: string, value: unknown) => string;
+}
+
+export function DetailFieldText({ text }: { text: string }) {
+  const isEmpty = text === EMPTY_VALUE;
+  return (
+    <Typography
+      variant="body1"
+      sx={{
+        fontWeight: 600,
+        fontSize: "0.9375rem",
+        lineHeight: 1.35,
+        wordBreak: "break-word",
+        color: isEmpty ? "text.disabled" : "text.primary"
+      }}
+    >
+      {text}
+    </Typography>
+  );
 }
 
 export function DetailFieldValue({
@@ -51,10 +77,10 @@ export function DetailFieldValue({
         (pair) => pair.key || pair.value
       );
       if (pairs.length === 0) {
-        return <Typography>{EMPTY_VALUE}</Typography>;
+        return <DetailEmpty />;
       }
       return (
-        <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1 }}>
+        <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: "wrap" }}>
           {pairs.map((pair, index) => (
             <Chip
               key={`${pair.key}-${index}`}
@@ -80,9 +106,9 @@ export function DetailFieldValue({
 
   if (fieldKey === "dataSourceId" && typeof value === "string" && value) {
     const resolved = resolveNames(fieldKey, [value]);
-    return <Typography>{resolved[0] ?? value}</Typography>;
+    return <DetailFieldText text={resolved[0] ?? value} />;
   }
 
   const formatted = formatValue ? formatValue(fieldKey, value) : formatScalar(value);
-  return <Typography>{formatted}</Typography>;
+  return <DetailFieldText text={formatted} />;
 }

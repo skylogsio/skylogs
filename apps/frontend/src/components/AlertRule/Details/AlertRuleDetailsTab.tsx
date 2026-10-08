@@ -1,18 +1,53 @@
 "use client";
 
-import { Chip, Stack, Typography, useTheme } from "@mui/material";
+import type { ReactNode } from "react";
+
+import { Chip, Divider, Grid, Stack, Typography, alpha, useTheme } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 
 import type { IAlertRule } from "@/@types/alertRule";
 import { getAlertRuleAccessList, getAlertRuleEndpointsList } from "@/api/alertRule";
 import { getAlertRuleDataSourcesByAlertType } from "@/api/alertRule";
-import { useZone } from "@/context/ZoneContext";
 import type { DataSourceType } from "@/utils/dataSourceUtils";
 
-import { DETAIL_FIELD_LABELS, getDetailFieldKeys } from "./alertDetailConfig";
-import { DetailFieldValue } from "./DetailFieldValue";
+import { DETAIL_FIELD_LABELS, getDetailSections } from "./alertDetailConfig";
+import { DetailEmpty, DetailFieldValue } from "./DetailFieldValue";
 
 const EMPTY_VALUE = "—";
+
+function GroupHeading({ children }: { children: ReactNode }) {
+  return (
+    <Typography
+      variant="overline"
+      sx={{
+        display: "block",
+        color: "text.secondary",
+        fontWeight: 700,
+        fontSize: "0.7rem",
+        letterSpacing: "0.1em",
+        lineHeight: 1.3
+      }}
+    >
+      {children}
+    </Typography>
+  );
+}
+
+function FieldLabel({ children }: { children: ReactNode }) {
+  return (
+    <Typography
+      variant="caption"
+      sx={{
+        color: "text.disabled",
+        fontWeight: 500,
+        fontSize: "0.7rem",
+        letterSpacing: "0.04em"
+      }}
+    >
+      {children}
+    </Typography>
+  );
+}
 
 interface AlertRuleDetailsTabProps {
   alert: IAlertRule;
@@ -20,7 +55,6 @@ interface AlertRuleDetailsTabProps {
 
 export default function AlertRuleDetailsTab({ alert }: AlertRuleDetailsTabProps) {
   const { palette } = useTheme();
-  const { selectedZone } = useZone();
 
   const { data: accessList } = useQuery({
     queryKey: ["alert-rule-access", alert.id],
@@ -83,73 +117,83 @@ export default function AlertRuleDetailsTab({ alert }: AlertRuleDetailsTabProps)
     return String(value);
   }
 
-  const fieldKeys = getDetailFieldKeys(alert.type);
+  function renderField(fieldKey: string, wide: boolean) {
+    return (
+      <Grid key={fieldKey} size={wide ? 12 : 6}>
+        <Stack spacing={0.35} sx={{ minWidth: 0, alignItems: "flex-start" }}>
+          <FieldLabel>{DETAIL_FIELD_LABELS[fieldKey] ?? fieldKey}</FieldLabel>
+          <DetailFieldValue
+            fieldKey={fieldKey}
+            alert={alert}
+            resolveNames={resolveNames}
+            formatValue={formatValue}
+          />
+        </Stack>
+      </Grid>
+    );
+  }
+
+  function isWideField(fieldKey: string): boolean {
+    return (
+      fieldKey === "description" ||
+      fieldKey === "queryString" ||
+      fieldKey === "extraField" ||
+      fieldKey === "showAcknowledgeBtn"
+    );
+  }
+
+  const sections = getDetailSections(alert.type);
 
   return (
-    <Stack spacing={3}>
-      <Stack
-        direction="row"
-        spacing={2}
-        sx={{ width: "100%", alignItems: "flex-start", flexWrap: "wrap", rowGap: 2 }}
-      >
-        <Stack direction="row" spacing={1} sx={{ width: "50%", alignItems: "center" }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-            Owner:
-          </Typography>
-          <Typography>{alert.ownerName || EMPTY_VALUE}</Typography>
-        </Stack>
-        <Stack direction="row" spacing={1} sx={{ width: "50%", alignItems: "center" }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-            Zone:
-          </Typography>
-          <Typography>{selectedZone || EMPTY_VALUE}</Typography>
-        </Stack>
-        <Stack direction="row" spacing={1} sx={{ width: "100%", alignItems: "center" }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-            Tags:
-          </Typography>
-          <Stack direction="row" sx={{ padding: 1, flexWrap: "wrap", gap: 1 }}>
-            {alert.tags && alert.tags.length > 0 ? (
-              alert.tags.map((tag, index) => (
-                <Chip key={index} variant="filled" label={tag} size="small" />
-              ))
-            ) : (
-              <Typography>{EMPTY_VALUE}</Typography>
-            )}
-          </Stack>
-        </Stack>
+    <Stack
+      spacing={2}
+      divider={<Divider sx={{ borderColor: alpha(palette.primary.main, 0.14) }} />}
+      sx={{ minWidth: 0 }}
+    >
+      <Stack spacing={1.5}>
+        <GroupHeading>Overview</GroupHeading>
+        <Grid container spacing={2}>
+          <Grid size={6}>
+            <Stack spacing={0.35} sx={{ minWidth: 0, alignItems: "flex-start" }}>
+              <FieldLabel>Owner</FieldLabel>
+              <Typography
+                variant="body1"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "0.9375rem",
+                  lineHeight: 1.35,
+                  wordBreak: "break-word",
+                  color: alert.ownerName ? "text.primary" : "text.disabled"
+                }}
+              >
+                {alert.ownerName || EMPTY_VALUE}
+              </Typography>
+            </Stack>
+          </Grid>
+          <Grid size={6}>
+            <Stack spacing={0.75} sx={{ minWidth: 0, alignItems: "flex-start" }}>
+              <FieldLabel>Tags</FieldLabel>
+              {alert.tags && alert.tags.length > 0 ? (
+                <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: "wrap" }}>
+                  {alert.tags.map((tag, index) => (
+                    <Chip key={index} variant="filled" label={tag} size="small" />
+                  ))}
+                </Stack>
+              ) : (
+                <DetailEmpty />
+              )}
+            </Stack>
+          </Grid>
+        </Grid>
       </Stack>
-      <Stack direction="row" sx={{ width: "100%", flexWrap: "wrap", rowGap: 2, columnGap: 0 }}>
-        {fieldKeys.map((fieldKey) => (
-          <Stack
-            key={fieldKey}
-            direction="row"
-            spacing={1}
-            sx={{
-              width: { xs: "100%", md: "50%" },
-              alignItems: "flex-start",
-              paddingRight: { xs: 0, md: 2 }
-            }}
-          >
-            <Typography
-              variant="subtitle1"
-              sx={{
-                fontWeight: "bold",
-                minWidth: 140,
-                color: palette.text.primary
-              }}
-            >
-              {DETAIL_FIELD_LABELS[fieldKey] ?? fieldKey}:
-            </Typography>
-            <DetailFieldValue
-              fieldKey={fieldKey}
-              alert={alert}
-              resolveNames={resolveNames}
-              formatValue={formatValue}
-            />
-          </Stack>
-        ))}
-      </Stack>
+      {sections.map((section) => (
+        <Stack key={section.title} spacing={1.5}>
+          <GroupHeading>{section.title}</GroupHeading>
+          <Grid container spacing={2}>
+            {section.keys.map((fieldKey) => renderField(fieldKey, isWideField(fieldKey)))}
+          </Grid>
+        </Stack>
+      ))}
     </Stack>
   );
 }

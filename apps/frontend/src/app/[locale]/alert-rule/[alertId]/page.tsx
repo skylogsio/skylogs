@@ -3,9 +3,17 @@
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import React, { useState } from "react";
 
-import { alpha, Button, IconButton, Popover, Stack, Typography, useTheme } from "@mui/material";
+import {
+  alpha,
+  Button,
+  IconButton,
+  Popover,
+  Stack,
+  Tooltip,
+  Typography,
+  useTheme
+} from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BsFillClipboard2Fill } from "react-icons/bs";
 import { HiPencil, HiTrash } from "react-icons/hi";
 import { IoNotifications, IoNotificationsOff } from "react-icons/io5";
 import { RiTestTubeFill } from "react-icons/ri";
@@ -16,6 +24,7 @@ import { getAlertRuleById, silenceAlertRule, testAlertRule } from "@/api/alertRu
 import AlertRuleModal from "@/app/[locale]/alert-rule/AlertRuleModal";
 import DeleteAlertRuleModal from "@/app/[locale]/alert-rule/DeleteAlertRuleModal";
 import AdvanceSection from "@/components/AlertRule/advance/AdvanceSection";
+import AlertRuleApiToken from "@/components/AlertRule/Details/AlertRuleApiToken";
 import AlertRuleDetailsTab from "@/components/AlertRule/Details/AlertRuleDetailsTab";
 import AlertRuleSummaryCard from "@/components/AlertRule/Details/AlertRuleSummaryCard";
 import AlertRuleTabSwitch, {
@@ -49,7 +58,6 @@ export default function ViewAlertRule() {
     useState<HTMLButtonElement | null>(null);
   const [currentOpenModal, setCurrentOpenModal] = useState<"DELETE" | "EDIT" | null>(null);
   const [curlCopied, setCurlCopied] = useState(false);
-  const [tokenCopied, setTokenCopied] = useState(false);
 
   const { data, refetch } = useQuery({
     queryKey: ["view-alert-rule", alertId],
@@ -98,17 +106,6 @@ export default function ViewAlertRule() {
     }
   });
 
-  async function handleCopyApiTokenToClipboard() {
-    try {
-      await window.navigator.clipboard.writeText(data!.apiToken!);
-      setTokenCopied(true);
-      setTimeout(() => setTokenCopied(false), 2000);
-    } catch (err) {
-      console.error("Unable to copy to clipboard.", err);
-      alert("Copy to clipboard failed.");
-    }
-  }
-
   async function handleCopyCurlCommand() {
     try {
       const domain = window.location.origin;
@@ -140,128 +137,88 @@ export default function ViewAlertRule() {
   );
 
   function renderActionButtons() {
+    const silentLabel = data!.is_silent ? "Unsilent" : "Silent";
+    const curlLabel = curlCopied ? "Copied!" : "Copy Curl";
     return (
       <Stack direction="row-reverse" spacing={1} sx={{ flexWrap: "wrap", rowGap: 1 }}>
         {data!.hasActionAccess && (
           <>
-            <Button
-              startIcon={<HiTrash />}
-              onClick={() => setCurrentOpenModal("DELETE")}
-              sx={{
-                textTransform: "capitalize !important",
-                color: palette.error.main,
-                backgroundColor: alpha(palette.error.main, 0.05),
-                paddingX: 2
-              }}
-            >
-              Delete
-            </Button>
-            <Button
-              startIcon={<HiPencil />}
-              onClick={() => setCurrentOpenModal("EDIT")}
-              sx={{
-                textTransform: "capitalize !important",
-                color: palette.info.light,
-                backgroundColor: alpha(palette.info.light, 0.05),
-                paddingX: 2
-              }}
-            >
-              Edit
-            </Button>
+            <Tooltip title="Delete" placement="bottom" arrow>
+              <IconButton
+                onClick={() => setCurrentOpenModal("DELETE")}
+                aria-label="Delete"
+                sx={{
+                  color: palette.error.main,
+                  backgroundColor: alpha(palette.error.main, 0.12)
+                }}
+              >
+                <HiTrash size="1.4rem" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Edit" placement="bottom" arrow>
+              <IconButton
+                onClick={() => setCurrentOpenModal("EDIT")}
+                aria-label="Edit"
+                sx={{
+                  color: palette.endpoint.telegram,
+                  backgroundColor: alpha(palette.endpoint.telegram, 0.12)
+                }}
+              >
+                <HiPencil size="1.4rem" />
+              </IconButton>
+            </Tooltip>
           </>
         )}
-        <Button
-          startIcon={
-            data!.is_silent ? (
-              <IoNotificationsOff size="1.4rem" />
-            ) : (
-              <IoNotifications size="1.4rem" />
-            )
-          }
-          disabled={isSilencing}
-          onClick={() => silenceAlertRuleMutation()}
-          sx={{
-            textTransform: "capitalize !important",
-            color: palette.warning.main,
-            backgroundColor: alpha(palette.warning.main, 0.05),
-            paddingX: 2
-          }}
-        >
-          {data!.is_silent ? "Unsilent" : "Silent"}
-        </Button>
-        <Button
-          onClick={handleTest}
-          startIcon={<RiTestTubeFill size="1.4rem" />}
-          sx={{
-            textTransform: "capitalize !important",
-            color: palette.primary.light,
-            backgroundColor: alpha(palette.primary.light, 0.05),
-            paddingX: 2
-          }}
-        >
-          Test
-        </Button>
+        <Tooltip title={silentLabel} placement="bottom" arrow>
+          <span>
+            <IconButton
+              disabled={isSilencing}
+              onClick={() => silenceAlertRuleMutation()}
+              aria-label={silentLabel}
+              sx={{
+                color: palette.warning.main,
+                backgroundColor: alpha(palette.warning.main, 0.14)
+              }}
+            >
+              {data!.is_silent ? (
+                <IoNotificationsOff size="1.4rem" />
+              ) : (
+                <IoNotifications size="1.4rem" />
+              )}
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title="Test" placement="bottom" arrow>
+          <span>
+            <IconButton
+              onClick={handleTest}
+              aria-label="Test"
+              sx={{
+                color: palette.endpoint.flow,
+                backgroundColor: alpha(palette.endpoint.flow, 0.12)
+              }}
+            >
+              <RiTestTubeFill size="1.4rem" />
+            </IconButton>
+          </span>
+        </Tooltip>
         {(data!.type === "api" || data!.type === "notification") && data!.apiToken && (
-          <Button
-            onClick={handleCopyCurlCommand}
-            startIcon={curlCopied ? <BsCheck2 size="1.4rem" /> : <BsTerminalFill size="1.4rem" />}
-            sx={{
-              textTransform: "capitalize !important",
-              color: curlCopied ? palette.success.main : palette.info.main,
-              backgroundColor: curlCopied
-                ? alpha(palette.success.main, 0.1)
-                : alpha(palette.info.main, 0.05),
-              paddingX: 2,
-              transition: "all 0.2s ease-in-out"
-            }}
-          >
-            {curlCopied ? "Copied!" : "Copy Curl"}
-          </Button>
+          <Tooltip title={curlLabel} placement="bottom" arrow>
+            <IconButton
+              onClick={handleCopyCurlCommand}
+              aria-label={curlLabel}
+              sx={{
+                color: curlCopied ? palette.success.main : palette.endpoint.discord,
+                backgroundColor: curlCopied
+                  ? alpha(palette.success.main, 0.12)
+                  : alpha(palette.endpoint.discord, 0.12),
+                transition: "all 0.2s ease-in-out"
+              }}
+            >
+              {curlCopied ? <BsCheck2 size="1.4rem" /> : <BsTerminalFill size="1.4rem" />}
+            </IconButton>
+          </Tooltip>
         )}
-      </Stack>
-    );
-  }
-
-  function renderApiToken() {
-    if (!data!.apiToken) {
-      return null;
-    }
-    return (
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{
-          alignItems: "center",
-          alignSelf: "flex-start",
-          bgcolor: alpha(palette.secondary.light, 0.1),
-          borderRadius: 2,
-          paddingY: 0.5,
-          paddingLeft: 1,
-          paddingRight: 0.5,
-          border: 1,
-          borderColor: alpha(palette.secondary.light, 0.4)
-        }}
-      >
-        <Typography
-          variant="caption"
-          color={tokenCopied ? palette.success.main : palette.secondary.main}
-          sx={{
-            maxWidth: "300px",
-            textWrap: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            transition: "color 0.2s ease-in-out"
-          }}
-        >
-          {tokenCopied ? "Copied to clipboard!" : data!.apiToken}
-        </Typography>
-        <IconButton size="small" onClick={() => handleCopyApiTokenToClipboard()}>
-          {tokenCopied ? (
-            <BsCheck2 size="1rem" color={palette.success.main} />
-          ) : (
-            <BsFillClipboard2Fill size="1rem" color={palette.secondary.main} />
-          )}
-        </IconButton>
       </Stack>
     );
   }
@@ -270,7 +227,7 @@ export default function ViewAlertRule() {
     return (
       <Stack spacing={3}>
         {!isReadonly && renderActionButtons()}
-        {renderApiToken()}
+        {data!.apiToken && <AlertRuleApiToken token={data!.apiToken} />}
         <AlertRuleDetailsTab alert={data!} />
       </Stack>
     );

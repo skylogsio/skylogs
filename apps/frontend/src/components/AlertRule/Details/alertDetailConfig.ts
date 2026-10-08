@@ -63,3 +63,46 @@ export const DETAIL_FIELD_LABELS: Record<string, string> = {
   enableAutoResolve: "Auto Resolve",
   autoResolveMinutes: "Auto Resolve After (Minutes)"
 };
+
+export interface DetailSection {
+  title: string;
+  keys: string[];
+}
+
+const GENERAL_KEYS = ["name", "type", "description", "isPrivate", "showAcknowledgeBtn"];
+const RECIPIENT_KEYS = ["endpointIds", "userIds", "teamIds"];
+const SOURCE_KEYS = [
+  "dataSourceIds",
+  "dataSourceId",
+  "dataSourceAlertName",
+  "queryType",
+  "queryString",
+  "dataviewName",
+  "dataviewTitle",
+  "conditionType",
+  "countDocument",
+  "minutes",
+  "actions",
+  "hosts",
+  "severities",
+  "enableAutoResolve",
+  "autoResolveMinutes",
+  "extraField"
+];
+
+export function getDetailSections(type: IAlertRule["type"]): DetailSection[] {
+  const fieldKeys = new Set(getDetailFieldKeys(type));
+  const pick = (keys: string[]) => keys.filter((key) => fieldKeys.has(key));
+  const seen = new Set<string>();
+  const sections: DetailSection[] = [
+    { title: "General", keys: pick(GENERAL_KEYS) },
+    { title: "Recipients", keys: pick(RECIPIENT_KEYS) },
+    { title: "Source & Conditions", keys: pick(SOURCE_KEYS) }
+  ].filter((section) => section.keys.length > 0);
+  sections.forEach((section) => section.keys.forEach((key) => seen.add(key)));
+  const rest = [...fieldKeys].filter((key) => !seen.has(key));
+  if (rest.length > 0) {
+    sections.push({ title: "Other", keys: rest });
+  }
+  return sections;
+}
