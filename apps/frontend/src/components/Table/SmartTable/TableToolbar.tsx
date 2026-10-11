@@ -2,7 +2,7 @@
 
 import { type MouseEventHandler, type ReactNode } from "react";
 
-import { Badge, Box, Button, IconButton, Stack, Typography, alpha, useTheme } from "@mui/material";
+import { Badge, Box, Button, IconButton, Stack, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { HiOutlinePlusSm, HiFilter } from "react-icons/hi";
 
@@ -53,7 +53,6 @@ export default function TableToolbar({
   toolbarEnd,
   renderToolbar
 }: TableToolbarProps) {
-  const { palette } = useTheme();
   const t = useScopedI18n("table");
 
   const actionCtx: ToolbarActionContext = {
@@ -77,31 +76,36 @@ export default function TableToolbar({
       startIcon={<HiFilter size="0.95rem" />}
       onClick={onToggleFilter}
       aria-expanded={openFilter}
-      sx={{
-        height: 33,
-        minHeight: 33,
-        borderRadius: 2,
-        px: 1.35,
-        fontSize: 12.5,
-        textTransform: "none",
-        fontWeight: 400,
-        "& .MuiButton-startIcon": {
-          mr: 0.5
-        },
-        borderColor:
-          openFilter || hasActiveFilters
-            ? alpha(palette.primary.main, 0.45)
-            : alpha(palette.text.primary, 0.12),
-        bgcolor:
-          openFilter || hasActiveFilters
-            ? alpha(palette.primary.main, 0.1)
-            : palette.background.paper,
-        color: openFilter || hasActiveFilters ? palette.primary.main : palette.text.secondary,
-        "&:hover": {
-          borderColor: alpha(palette.primary.main, 0.45),
-          bgcolor: alpha(palette.primary.main, 0.08)
+      sx={[
+        {
+          height: 33,
+          minHeight: 33,
+          borderRadius: 2,
+          px: 1.35,
+          fontSize: 12.5,
+          textTransform: "none",
+          fontWeight: 400,
+          "& .MuiButton-startIcon": {
+            mr: 0.5
+          },
+          borderColor:
+            openFilter || hasActiveFilters
+              ? "color-mix(in srgb, var(--mui-palette-primary-main) 45%, transparent)"
+              : "color-mix(in srgb, var(--mui-palette-text-primary) 12%, transparent)",
+          bgcolor:
+            openFilter || hasActiveFilters
+              ? "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)"
+              : "var(--mui-palette-background-paper)",
+          color:
+            openFilter || hasActiveFilters ? "primary.main" : "text.secondary",
+          "&:hover": {
+            borderColor:
+              "color-mix(in srgb, var(--mui-palette-primary-main) 45%, transparent)",
+            bgcolor:
+              "color-mix(in srgb, var(--mui-palette-primary-main) 8%, transparent)"
+          }
         }
-      }}
+      ]}
     >
       {t("filterButton")}
       <Box
@@ -161,10 +165,10 @@ export default function TableToolbar({
         width: 33,
         height: 33,
         borderRadius: 2,
-        bgcolor: palette.primary.main,
-        color: palette.primary.contrastText,
+        bgcolor: "primary.main",
+        color: "primary.contrastText",
         "&:hover": {
-          bgcolor: palette.primary.dark
+          bgcolor: "primary.dark"
         }
       }}
     >

@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
-import { Box, Button, alpha, useTheme } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import { HiOutlineGlobeAlt, HiOutlineUser } from "react-icons/hi";
 
@@ -16,7 +16,6 @@ const iconMotion = {
 };
 
 export default function ShowAllAlertsToggle() {
-  const { palette } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -104,13 +103,17 @@ export default function ShowAllAlertsToggle() {
           mr: 0.5
         },
         borderColor: showAllAlerts
-          ? alpha(palette.primary.main, 0.45)
-          : alpha(palette.text.primary, 0.12),
-        bgcolor: showAllAlerts ? alpha(palette.primary.main, 0.1) : palette.background.paper,
-        color: showAllAlerts ? palette.primary.main : palette.text.secondary,
+          ? "color-mix(in srgb, var(--mui-palette-primary-main) 45%, transparent)"
+          : "color-mix(in srgb, var(--mui-palette-text-primary) 12%, transparent)",
+        bgcolor: showAllAlerts
+          ? "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)"
+          : "var(--mui-palette-background-paper)",
+        color: showAllAlerts ? "primary.main" : "text.secondary",
         "&:hover": {
-          borderColor: alpha(palette.primary.main, 0.45),
-          bgcolor: alpha(palette.primary.main, 0.08)
+          borderColor:
+            "color-mix(in srgb, var(--mui-palette-primary-main) 45%, transparent)",
+          bgcolor:
+            "color-mix(in srgb, var(--mui-palette-primary-main) 8%, transparent)"
         }
       }}
     >
