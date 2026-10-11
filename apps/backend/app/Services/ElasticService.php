@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\ElasticCheck;
+use App\Services\DataSource\DataSourceAvailability;
+use Illuminate\Http\Client\ConnectionException;
 
 class ElasticService
 {
@@ -11,12 +13,20 @@ class ElasticService
     public static function countDocuments(ElasticCheck $elasticCheck): ?int
     {
         $dataSource = $elasticCheck->alertRule->dataSource;
+        $dataSourceId = (string) ($elasticCheck->alertRule->dataSourceId ?? '');
+        $availability = app(DataSourceAvailability::class);
+
+        if ($availability->isCoolingDown($dataSourceId)) {
+            return null;
+        }
 
         try {
             $minutes = (int) $elasticCheck->minutes;
 
             $response = \Http::acceptJson()
                 ->withBasicAuth($dataSource->username, $dataSource->password)
+                ->connectTimeout((int) config('datasource_checks.connect_timeout', 2))
+                ->timeout((int) config('datasource_checks.timeout', 5))
                 ->post($dataSource->url."/{$elasticCheck->dataviewTitle}/_count", [
                     'query' => [
                         'bool' => [
@@ -39,7 +49,11 @@ class ElasticService
 
             return (int) ($body['count'] ?? 0);
 
-        } catch (\Exception $exception) {
+        } catch (ConnectionException) {
+            $availability->coolDown($dataSourceId);
+
+            return null;
+        } catch (\Exception) {
             return null;
         }
     }

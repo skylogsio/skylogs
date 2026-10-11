@@ -2,17 +2,22 @@
 
 use App\Enums\AlertRuleType;
 use App\Enums\Constants;
+use App\Jobs\AddChecksJob;
 use App\Jobs\CheckElasticJob;
 use App\Models\AlertRule;
 use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
 use App\Models\ElasticHistory;
+use App\Services\DataSource\DataSourceAvailability;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Tests\Support\TeamTestData;
 
 describe('CheckElasticJob', function () {
     beforeEach(function () {
+        config(['cache.default' => 'array']);
         $this->owner = TeamTestData::createUser(Constants::ROLE_OWNER);
         $this->dataSource = DataSource::withoutEvents(fn () => DataSource::create([
             'name' => 'Elastic Test Source',
@@ -42,6 +47,7 @@ describe('CheckElasticJob', function () {
         AlertRule::query()->where('_id', $this->alertRule->_id)->delete();
         DataSource::query()->where('_id', $this->dataSource->_id)->delete();
         TeamTestData::deleteUser($this->owner);
+        Cache::flush();
     });
 
     it('does not write a false resolve when elasticsearch is unreachable while the alert is firing', function () {
@@ -98,5 +104,35 @@ describe('CheckElasticJob', function () {
         expect((int) $check->state)->toBe(ElasticCheck::FIRE)
             ->and($latestHistory)->not->toBeNull()
             ->and((int) $latestHistory->state)->toBe(ElasticHistory::FIRE);
+    });
+
+    it('does not queue a second dispatcher pass while the first lock is held', function () {
+        Queue::fake();
+
+        AddChecksJob::dispatch();
+        AddChecksJob::dispatch();
+
+        Queue::assertPushed(AddChecksJob::class, 1);
+    });
+
+    it('does not queue a second check for the same rule while the first lock is held', function () {
+        Queue::fake();
+
+        CheckElasticJob::dispatch($this->alertRule);
+        CheckElasticJob::dispatch($this->alertRule);
+
+        Queue::assertPushed(CheckElasticJob::class, 1);
+    });
+
+    it('does not dispatch a check while its data source is cooling down', function () {
+        Queue::fake();
+
+        app(DataSourceAvailability::class)->coolDown((string) $this->dataSource->_id);
+
+        (new AddChecksJob)->handle();
+
+        Queue::assertNotPushed(CheckElasticJob::class, function (CheckElasticJob $job) {
+            return (string) $job->alert->_id === (string) $this->alertRule->_id;
+        });
     });
 });

@@ -9,21 +9,32 @@ use App\Queue\Middleware\EnsureLeader;
 use App\Services\ElasticService;
 use App\Services\SendNotifyService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class CheckElasticJob implements ShouldQueue
+class CheckElasticJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public int $timeout = 15;
+
+    public int $uniqueFor;
 
     public $alert;
 
     public function __construct($alert)
     {
-        $this->onQueue('httpRequests');
+        $this->onQueue('logChecks');
         $this->alert = $alert;
+        $this->uniqueFor = (int) config('datasource_checks.unique_for', 30);
+    }
+
+    public function uniqueId(): string
+    {
+        return (string) $this->alert->_id;
     }
 
     /**

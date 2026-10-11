@@ -2,7 +2,9 @@
 
 use App\Jobs\AddChecksJob;
 use App\Jobs\AutoResolveApiAlertsJob;
+use App\Jobs\CheckElasticJob;
 use App\Jobs\CheckPrometheusJob;
+use App\Jobs\CheckVictoriaLogsJob;
 use App\Jobs\RefreshStatusHistoryJob;
 use App\Jobs\RunHealthChecksJob;
 use Illuminate\Support\Str;
@@ -125,7 +127,9 @@ return [
 
     'silenced' => [
         AddChecksJob::class,
+        CheckElasticJob::class,
         CheckPrometheusJob::class,
+        CheckVictoriaLogsJob::class,
         AutoResolveApiAlertsJob::class,
         RefreshStatusHistoryJob::class,
         RunHealthChecksJob::class,
@@ -214,6 +218,18 @@ return [
             'timeout' => 0,
             'nice' => 0,
         ],
+        'supervisor-log' => [
+            'connection' => 'redis',
+            'queue' => ['logChecks'],
+            'balance' => 'auto',
+            'maxProcesses' => 10,
+            'maxTime' => 0,
+            'maxJobs' => 500,
+            'memory' => 80,
+            'tries' => 1,
+            'timeout' => 30,
+            'nice' => 0,
+        ],
         'supervisor-notif' => [
             'connection' => 'redis',
             'queue' => ['sendNotifies'],
@@ -276,6 +292,18 @@ return [
                 'memory' => 80,
                 'tries' => 1,
                 'timeout' => 0,
+                'nice' => 0,
+            ],
+            'supervisor-log' => [
+                'connection' => 'redis',
+                'queue' => ['logChecks'],
+                'balance' => 'auto',
+                'maxProcesses' => 10,
+                'maxTime' => 0,
+                'maxJobs' => 500,
+                'memory' => 80,
+                'tries' => 1,
+                'timeout' => 30,
                 'nice' => 0,
             ],
             'supervisor-notif' => [
@@ -342,6 +370,18 @@ return [
                 'timeout' => 0,
                 'nice' => 0,
             ],
+            'supervisor-log' => [
+                'connection' => 'redis',
+                'queue' => ['logChecks'],
+                'balance' => 'auto',
+                'maxProcesses' => 10,
+                'maxTime' => 0,
+                'maxJobs' => 500,
+                'memory' => 80,
+                'tries' => 1,
+                'timeout' => 30,
+                'nice' => 0,
+            ],
             'supervisor-notif' => [
                 'connection' => 'redis',
                 'queue' => ['sendNotifies'],
@@ -403,6 +443,18 @@ return [
                 'memory' => 512,
                 'tries' => 1,
                 'timeout' => 0,
+                'nice' => 0,
+            ],
+            'supervisor-log' => [
+                'connection' => 'redis',
+                'queue' => ['logChecks'],
+                'balance' => 'auto',
+                'maxProcesses' => 1,
+                'maxTime' => 0,
+                'maxJobs' => 500,
+                'memory' => 512,
+                'tries' => 1,
+                'timeout' => 30,
                 'nice' => 0,
             ],
             'supervisor-notif' => [

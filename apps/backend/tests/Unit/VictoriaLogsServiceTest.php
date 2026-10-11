@@ -2,7 +2,9 @@
 
 use App\Models\DataSource\DataSource;
 use App\Models\VictoriaLogsCheck;
+use App\Services\DataSource\DataSourceAvailability;
 use App\Services\VictoriaLogsService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\Support\Factories\AlertRuleFactory;
 
@@ -37,6 +39,14 @@ function makeVictoriaLogsCheckForTest(array $checkAttributes = []): VictoriaLogs
 }
 
 describe('VictoriaLogsService::countDocuments', function () {
+    beforeEach(function () {
+        config(['cache.default' => 'array']);
+    });
+
+    afterEach(function () {
+        Cache::flush();
+    });
+
     it('returns the count from the victoria logs query endpoint', function () {
         Http::fake([
             'victoria.example.com/*' => Http::response(['total' => 12], 200),
@@ -67,5 +77,17 @@ describe('VictoriaLogsService::countDocuments', function () {
         ]);
 
         expect(VictoriaLogsService::countDocuments(makeVictoriaLogsCheckForTest()))->toBeNull();
+    });
+
+    it('cools down the data source after a connection failure and skips the next call', function () {
+        Http::fake([
+            'victoria.example.com/*' => Http::failedConnection(),
+        ]);
+
+        expect(VictoriaLogsService::countDocuments(makeVictoriaLogsCheckForTest()))->toBeNull()
+            ->and(VictoriaLogsService::countDocuments(makeVictoriaLogsCheckForTest()))->toBeNull()
+            ->and(app(DataSourceAvailability::class)->isCoolingDown('ds-1'))->toBeTrue();
+
+        Http::assertSentCount(1);
     });
 });

@@ -2,8 +2,10 @@
 
 use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
+use App\Services\DataSource\DataSourceAvailability;
 use App\Services\ElasticService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\Support\Factories\AlertRuleFactory;
 
@@ -42,8 +44,13 @@ function makeElasticCheckForTest(array $checkAttributes = []): ElasticCheck
 }
 
 describe('ElasticService::countDocuments', function () {
+    beforeEach(function () {
+        config(['cache.default' => 'array']);
+    });
+
     afterEach(function () {
         Carbon::setTestNow();
+        Cache::flush();
     });
 
     it('returns the count from the elasticsearch _count endpoint', function () {
@@ -60,7 +67,7 @@ describe('ElasticService::countDocuments', function () {
                 && $request['query'] === [
                     'bool' => [
                         'filter' => [
-                            ['range' => ['@timestamp' => ['gte' => 'now-5m', 'lte' => 'now']]],
+                            ['range' => ['timestamp' => ['gte' => 'now-5m', 'lte' => 'now']]],
                             ['query_string' => [
                                 'query' => 'domain:test.io status:>=500',
                                 'default_operator' => 'AND',
@@ -93,5 +100,18 @@ describe('ElasticService::countDocuments', function () {
         ]);
 
         expect(ElasticService::countDocuments(makeElasticCheckForTest()))->toBeNull();
+        expect(app(DataSourceAvailability::class)->isCoolingDown('ds-1'))->toBeFalse();
+    });
+
+    it('cools down the data source after a connection failure and skips the next call', function () {
+        Http::fake([
+            'elastic.example.com/*' => Http::failedConnection(),
+        ]);
+
+        expect(ElasticService::countDocuments(makeElasticCheckForTest()))->toBeNull()
+            ->and(ElasticService::countDocuments(makeElasticCheckForTest()))->toBeNull()
+            ->and(app(DataSourceAvailability::class)->isCoolingDown('ds-1'))->toBeTrue();
+
+        Http::assertSentCount(1);
     });
 });
