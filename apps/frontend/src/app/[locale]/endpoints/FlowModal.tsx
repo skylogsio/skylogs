@@ -28,8 +28,8 @@ import AccessUsersAndTeams from "@/components/AccessUsersAndTeams";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 import GradientSubmitButton from "@/components/GradientSubmitButton";
-import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
-import { useCurrentTheme } from "@/hooks";
+import { getGlassCardSx, mergeSx } from "@/components/Wrapper/topBarStyles";
+import {  } from "@/hooks";
 import { useScopedI18n } from "@/locales/client";
 
 const TIME_UNITS = [
@@ -86,7 +86,6 @@ function getFormValues(data: CreateUpdateModal<IFlow>): FlowFormType {
 export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalProps) {
   const theme = useTheme();
   const { palette } = theme;
-  const { isDark } = useCurrentTheme();
   const t = useScopedI18n("endpoints");
 
   const {
@@ -213,10 +212,9 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
       onClose={onClose}
       disableEscapeKeyDown
       maxWidth="md"
-      paperSx={{
-        ...getGlassCardSx(theme, isDark),
+      paperSx={mergeSx(getGlassCardSx(), {
         maxWidth: "md"
-      }}
+      })}
     >
       <Box component="form" onSubmit={handleSubmit(handleSubmitForm)} sx={{ width: 1, mt: 2 }}>
         <TextField
@@ -235,7 +233,8 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
             p: 2,
             maxHeight: "35vh",
             overflow: "auto",
-            border: `1px solid ${alpha(palette.primary.main, isDark ? 0.12 : 0.18)}`,
+            border:
+              "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)",
             borderRadius: 1
           }}
         >
@@ -358,11 +357,26 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
                 </>
               )}
               <IconButton
-                sx={{
-                  backgroundColor: alpha(palette.primary.main, isDark ? 0.18 : 0.08),
-                  transition: "all 200ms ease",
-                  "&:hover": { backgroundColor: alpha(palette.primary.main, isDark ? 0.28 : 0.14) }
-                }}
+                sx={[
+                  {
+                    backgroundColor:
+                      "color-mix(in srgb, var(--mui-palette-primary-main) 8%, transparent)",
+                    transition: "all 200ms ease",
+                    "&:hover": {
+                      backgroundColor:
+                        "color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
+                    }
+                  },
+                  (muiTheme) =>
+                    muiTheme.applyStyles("dark", {
+                      backgroundColor:
+                        "color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)",
+                      "&:hover": {
+                        backgroundColor:
+                          "color-mix(in srgb, var(--mui-palette-primary-main) 28%, transparent)"
+                      }
+                    })
+                ]}
                 onClick={() => remove(index)}
               >
                 <MdDelete />
@@ -376,31 +390,59 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
             variant="outlined"
             onClick={addWaitStep}
             startIcon={<AiFillClockCircle size={18} />}
-            sx={{
-              color: palette.warning.main,
-              backgroundColor: alpha(palette.warning.main, 0.1),
-              border: `1px solid ${alpha(palette.warning.main, isDark ? 0.24 : 0.36)}`,
-              "&:hover": {
-                borderColor: palette.warning.main,
-                backgroundColor: alpha(palette.warning.main, isDark ? 0.18 : 0.14)
-              }
-            }}
+            sx={[
+              {
+                color: "warning.main",
+                backgroundColor:
+                  "color-mix(in srgb, var(--mui-palette-warning-main) 10%, transparent)",
+                border:
+                  "1px solid color-mix(in srgb, var(--mui-palette-warning-main) 36%, transparent)",
+                "&:hover": {
+                  borderColor: "warning.main",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--mui-palette-warning-main) 14%, transparent)"
+                }
+              },
+              (muiTheme) =>
+                muiTheme.applyStyles("dark", {
+                  border:
+                    "1px solid color-mix(in srgb, var(--mui-palette-warning-main) 24%, transparent)",
+                  "&:hover": {
+                    backgroundColor:
+                      "color-mix(in srgb, var(--mui-palette-warning-main) 18%, transparent)"
+                  }
+                })
+            ]}
           >
             {t("modal.addWait")}
           </Button>
           <Button
             variant="outlined"
             onClick={addEndpointStep}
-            startIcon={<AiFillApi size={18} color={palette.primary.main} />}
-            sx={{
-              color: palette.primary.main,
-              backgroundColor: alpha(palette.primary.main, 0.1),
-              border: `1px solid ${alpha(palette.primary.main, isDark ? 0.24 : 0.36)}`,
-              "&:hover": {
-                borderColor: palette.primary.main,
-                backgroundColor: alpha(palette.primary.main, isDark ? 0.18 : 0.14)
-              }
-            }}
+            startIcon={<AiFillApi size={18} color="var(--mui-palette-primary-main)" />}
+            sx={[
+              {
+                color: "primary.main",
+                backgroundColor:
+                  "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
+                border:
+                  "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 36%, transparent)",
+                "&:hover": {
+                  borderColor: "primary.main",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
+                }
+              },
+              (muiTheme) =>
+                muiTheme.applyStyles("dark", {
+                  border:
+                    "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 24%, transparent)",
+                  "&:hover": {
+                    backgroundColor:
+                      "color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)"
+                  }
+                })
+            ]}
           >
             {t("modal.addEndpoint")}
           </Button>

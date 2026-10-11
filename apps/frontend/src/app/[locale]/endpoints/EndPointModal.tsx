@@ -94,7 +94,6 @@ function getFormValues(data: CreateUpdateModal<IEndpoint>): EndpointFormType {
 
 export default function EndPointModal({ open, onClose, data, onSubmit }: EndpointModalProps) {
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const t = useScopedI18n("endpoints");
 
   const {
@@ -211,7 +210,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
       onClose={onClose}
       disableEscapeKeyDown
       maxWidth={640}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <Grid
         component="form"

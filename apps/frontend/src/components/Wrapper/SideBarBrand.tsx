@@ -1,26 +1,31 @@
-import { Box, Stack, Typography, alpha, useTheme } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 
 import { useSideBar } from "@/context/SideBarContext";
-
 export default function SideBarBrand() {
-  const { palette } = useTheme();
   const { collapsed } = useSideBar();
-  const isDark = palette.mode === "dark";
 
   return (
     <Stack
       spacing={collapsed ? 0 : 1}
-      sx={{
-        alignItems: "center",
-        px: collapsed ? 1 : 2,
-        pt: collapsed ? 2 : 2.5,
-        pb: collapsed ? 1.5 : 2,
-        mb: 1,
-        borderBottom: `1px solid ${alpha(palette.primary.main, isDark ? 0.18 : 0.2)}`,
-        backgroundColor: palette.background.paper,
-        position: "relative",
-        zIndex: 300
-      }}
+      sx={[
+        {
+          alignItems: "center",
+          px: collapsed ? 1 : 2,
+          pt: collapsed ? 2 : 2.5,
+          pb: collapsed ? 1.5 : 2,
+          mb: 1,
+          borderBottom:
+            "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 20%, transparent)",
+          backgroundColor: "background.paper",
+          position: "relative",
+          zIndex: 300
+        },
+        (muiTheme) =>
+          muiTheme.applyStyles("dark", {
+            borderBottom:
+              "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)"
+          })
+      ]}
     >
       <Box
         sx={{
@@ -53,14 +58,20 @@ export default function SideBarBrand() {
       {!collapsed && (
         <Typography
           component="span"
-          sx={{
-            color: isDark ? palette.secondary.main : palette.text.primary,
-            fontWeight: 700,
-            fontSize: "0.8rem",
-            letterSpacing: "0.28em",
-            textTransform: "uppercase",
-            lineHeight: 1
-          }}
+          sx={[
+            {
+              color: "text.primary",
+              fontWeight: 700,
+              fontSize: "0.8rem",
+              letterSpacing: "0.28em",
+              textTransform: "uppercase",
+              lineHeight: 1
+            },
+            (muiTheme) =>
+              muiTheme.applyStyles("dark", {
+                color: "var(--mui-palette-secondary-main)"
+              })
+          ]}
         >
           Skylogs
         </Typography>

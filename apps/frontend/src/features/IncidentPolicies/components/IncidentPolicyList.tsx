@@ -42,7 +42,6 @@ function downloadBase64File(base64: string, filename: string) {
 export default function IncidentPolicyList() {
   const tableRef = useRef<TableComponentRef>(null);
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const { hasRole } = useRole();
   const canWrite = hasRole(["owner", "manager"]);
 
@@ -77,7 +76,7 @@ export default function IncidentPolicyList() {
         url="incident-policy"
         searchKey="name"
         defaultPageSize={10}
-        tablePaperSx={getGlassCardSx(theme, isDark)}
+        tablePaperSx={getGlassCardSx()}
         onCreate={canWrite ? () => setModalData("NEW") : undefined}
         onRowClick={(row) => setDetailsPolicyId(row.id)}
         filterComponent={({ onChange }) => <IncidentPolicyFilter onChange={onChange} />}

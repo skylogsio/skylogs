@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { alpha, Box, ListItem, ListItemButton, Stack, Tooltip, useTheme } from "@mui/material";
+import { Box, ListItem, ListItemButton, Stack, Tooltip, useTheme } from "@mui/material";
 import { motion, useReducedMotion } from "framer-motion";
 
 import { useSideBar } from "@/context/SideBarContext";
@@ -33,67 +33,71 @@ export function SideBarItem({ url, isActive, index = 0 }: SideBarItemProps) {
   const opticalScale = url.iconScale ?? 1;
   const activeScale = collapsed && isActive ? 1.06 : 1;
   const iconScale = opticalScale * activeScale;
-  const activeGradient = getPrimaryGradient(theme);
-  const activeHoverGradient = getPrimaryGradient(theme, { midStop: 40 });
+  const activeGradient = getPrimaryGradient();
+  const activeHoverGradient = getPrimaryGradient({ midStop: 40 });
 
   const button = (
     <ListItemButton
       component={Link}
       href={url.pathname}
-      sx={{
-        ...(collapsed
-          ? {
-              width: 44,
-              height: 44,
-              minWidth: 44,
-              minHeight: 44,
-              maxWidth: 44,
-              maxHeight: 44,
-              padding: 0,
-              aspectRatio: "1 / 1"
-            }
-          : {
-              paddingY: 2,
-              paddingX: 2
-            }),
-        borderRadius: collapsed ? 2.25 : 3,
-        border: "none",
-        background: isActive
-          ? collapsed
-            ? `${activeGradient} !important`
+      sx={[
+        {
+          ...(collapsed
+            ? {
+                width: 44,
+                height: 44,
+                minWidth: 44,
+                minHeight: 44,
+                maxWidth: 44,
+                maxHeight: 44,
+                padding: 0,
+                aspectRatio: "1 / 1"
+              }
+            : {
+                paddingY: 2,
+                paddingX: 2
+              }),
+          borderRadius: collapsed ? 2.25 : 3,
+          border: "none",
+          background: isActive
+            ? collapsed
+              ? `${activeGradient} !important`
+              : undefined
+            : "transparent",
+          backgroundColor: isActive
+            ? collapsed
+              ? "transparent !important"
+              : "color-mix(in srgb, var(--mui-palette-primary-main) 15%, transparent) !important"
+            : "transparent",
+          color:
+            isActive && collapsed ? "var(--mui-palette-secondary-light)" : "inherit",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: collapsed ? "center" : "flex-start",
+          gap: collapsed ? 0 : 1.5,
+          textWrap: "nowrap",
+          whiteSpace: "nowrap",
+          transition: "background 180ms ease, transform 180ms ease",
+          boxShadow:
+            collapsed && isActive
+              ? "0 6px 14px color-mix(in srgb, var(--mui-palette-primary-dark) 28%, transparent)"
+              : "none",
+          "&:hover": collapsed
+            ? {
+                background: isActive
+                  ? `${activeHoverGradient} !important`
+                  : "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
+                backgroundColor: isActive
+                  ? "transparent !important"
+                  : "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)"
+              }
             : undefined
-          : "transparent",
-        backgroundColor: isActive
-          ? collapsed
-            ? "transparent !important"
-            : `${alpha(palette.primary.main, 0.15)}!important`
-          : "transparent",
-        color:
-          isActive && collapsed
-            ? palette.mode === "light"
-              ? palette.secondary.light
-              : palette.primary.contrastText
-            : "inherit",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: collapsed ? "center" : "flex-start",
-        gap: collapsed ? 0 : 1.5,
-        textWrap: "nowrap",
-        whiteSpace: "nowrap",
-        transition: "background 180ms ease, transform 180ms ease",
-        boxShadow:
-          collapsed && isActive ? `0 6px 14px ${alpha(palette.primary.dark, 0.28)}` : "none",
-        "&:hover": collapsed
-          ? {
-              background: isActive
-                ? `${activeHoverGradient} !important`
-                : alpha(palette.primary.main, 0.1),
-              backgroundColor: isActive
-                ? "transparent !important"
-                : alpha(palette.primary.main, 0.1)
-            }
-          : undefined
-      }}
+        },
+        (muiTheme) =>
+          muiTheme.applyStyles("dark", {
+            color: isActive && collapsed ? "var(--mui-palette-primary-contrastText)" : undefined
+          })
+      ]}
     >
       <Box
         component="span"

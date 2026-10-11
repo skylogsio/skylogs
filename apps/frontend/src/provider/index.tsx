@@ -8,18 +8,20 @@ import MuiProvider from "./MuiProvider";
 import NextAuthProvider from "./NextAuthProvider";
 import ReactQueryProvider from "./ReactQueryProvider";
 import RTLProvider from "./RTLProvider";
+import type { ThemeInitialMode } from "./themeStorage";
 
 export default function Provider({
   children,
   locale,
-  sidebarCollapsed = false
-}: PropsWithChildren<{ locale: string; sidebarCollapsed?: boolean }>) {
+  sidebarCollapsed = false,
+  initialMode = "system"
+}: PropsWithChildren<{ locale: string; sidebarCollapsed?: boolean; initialMode?: ThemeInitialMode }>) {
   return (
     <I18nProviderClient locale={locale}>
       <NextAuthProvider>
         <ReactQueryProvider>
           <RTLProvider locale={locale}>
-            <MuiProvider>
+            <MuiProvider defaultMode={initialMode}>
               <ZoneProvider>
                 <SideBarProvider initialCollapsed={sidebarCollapsed}>{children}</SideBarProvider>
               </ZoneProvider>

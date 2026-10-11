@@ -329,7 +329,6 @@ export default function IncidentPolicyModal({
   onSubmit
 }: IncidentPolicyModalProps) {
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const queryClient = useQueryClient();
   const isCreate = data === "NEW";
   const policyId = data && data !== "NEW" ? data.id : null;
@@ -430,7 +429,7 @@ export default function IncidentPolicyModal({
       onClose={onClose}
       disableEscapeKeyDown
       maxWidth={900}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <IncidentPolicyModalBody>
         {isError ? (

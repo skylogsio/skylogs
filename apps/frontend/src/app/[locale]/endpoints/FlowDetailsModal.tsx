@@ -4,7 +4,7 @@ import { AiFillApi, AiFillClockCircle } from "react-icons/ai";
 import type { IFlow, IFlowStep } from "@/@types/flow";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
-import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
+import { getGlassCardSx, mergeSx } from "@/components/Wrapper/topBarStyles";
 import { useCurrentTheme } from "@/hooks";
 
 type FlowDetailsModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
@@ -107,12 +107,11 @@ export default function FlowDetailsModal({ open, onClose, data }: FlowDetailsMod
       open={open}
       onClose={onClose}
       maxWidth={400}
-      paperSx={{
-        ...getGlassCardSx(theme, isDark),
+      paperSx={mergeSx(getGlassCardSx(), {
         maxHeight: "80vh",
         display: "flex",
         flexDirection: "column"
-      }}
+      })}
     >
       <Stack
         divider={

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 
-import { Box, useTheme } from "@mui/material";
+import { Box, type SxProps, type Theme, useTheme } from "@mui/material";
 import { alpha } from "@mui/material";
 
 import type { IFlow } from "@/@types/flow";
@@ -19,7 +19,7 @@ import { useCurrentTheme } from "@/hooks";
 import { useScopedI18n } from "@/locales/client";
 
 type FlowsProps = {
-  tablePaperSx?: Record<string, unknown>;
+  tablePaperSx?: SxProps<Theme>;
   tabValue: "endpoints" | "flows";
   onTabChange: (value: "endpoints" | "flows") => void;
   labels: Record<"endpoints" | "flows", string>;
@@ -28,7 +28,6 @@ type FlowsProps = {
 export default function Flows({ tablePaperSx, tabValue, onTabChange, labels }: FlowsProps) {
   const theme = useTheme();
   const { palette } = theme;
-  const { isDark } = useCurrentTheme();
   const t = useScopedI18n("endpoints");
 
   const tableRef = useRef<TableComponentRef>(null);

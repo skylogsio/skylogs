@@ -1,7 +1,7 @@
 import { type MouseEventHandler, type ReactNode } from "react";
 
 import type { Theme } from "@mui/material";
-import type { SystemStyleObject } from "@mui/system";
+import type { SxProps } from "@mui/material";
 import { type ColumnDef } from "@tanstack/react-table";
 
 import type { TableComponentRef, TableFilterComponentProps } from "../types";
@@ -59,5 +59,5 @@ export interface SmartTableProps<T> {
   forceShowFilter?: boolean;
   hideSearch?: boolean;
   excludeFilterKeys?: string[];
-  tablePaperSx?: SystemStyleObject<Theme>;
+  tablePaperSx?: SxProps<Theme>;
 }

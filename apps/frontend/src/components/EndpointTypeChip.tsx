@@ -1,8 +1,8 @@
 "use client";
 
-import { Chip, alpha, useTheme } from "@mui/material";
+import { Chip } from "@mui/material";
+import { mergeSx, pillSurfaceSx } from "@/components/Wrapper/topBarStyles";
 
-import { useCurrentTheme } from "@/hooks";
 import { ENDPOINT_COLORS } from "@/provider/MuiProvider";
 import { ENDPOINT_CONFIG, EndpointType } from "@/utils/endpointVariants";
 
@@ -13,9 +13,6 @@ export default function EndPointTypeChip({
   type: unknown;
   size?: "small" | "medium";
 }) {
-  const theme = useTheme();
-  const { palette } = theme;
-  const { isDark } = useCurrentTheme();
 
   const variant = type as EndpointType;
   const config = ENDPOINT_CONFIG[variant];
@@ -26,18 +23,16 @@ export default function EndPointTypeChip({
     <Chip
       size={size}
       avatar={<IconComponent style={{ padding: "0.2rem" }} color={color} />}
-      sx={{
+      sx={mergeSx({
         height: 28,
         fontWeight: 700,
         letterSpacing: "0.04em",
         color,
-        backgroundColor: isDark ? "rgba(255, 255, 255, 0.09)" : "#F1EBE1",
-        border: `1px solid ${alpha(palette.primary.main, isDark ? 0.14 : 0.18)}`,
         borderRadius: "10px",
         "& .MuiChip-label": {
           px: 1.25
         }
-      }}
+      }, pillSurfaceSx())}
       label={config.title}
     />
   );

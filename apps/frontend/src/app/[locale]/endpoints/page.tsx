@@ -22,7 +22,6 @@ import Flows from "./flows/page";
 export default function EndPoints() {
   const tableRef = useRef<TableComponentRef>(null);
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const t = useScopedI18n("endpoints");
 
   const [tabValue, setTabValue] = useState<"endpoints" | "flows">("endpoints");
@@ -53,7 +52,7 @@ export default function EndPoints() {
           title={t("list.title")}
           url="endpoint"
           defaultPageSize={10}
-          tablePaperSx={getGlassCardSx(theme, isDark)}
+          tablePaperSx={getGlassCardSx()}
           renderToolbar={(slots) => (
             <EndpointWorkspaceToolbar
               slots={slots}
@@ -92,7 +91,7 @@ export default function EndPoints() {
 
       {tabValue === "flows" && (
         <Flows
-          tablePaperSx={getGlassCardSx(theme, isDark)}
+          tablePaperSx={getGlassCardSx()}
           tabValue={tabValue}
           onTabChange={setTabValue}
           labels={labels}

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(export:*)",
+      "Shell(agent-browser:*)"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}

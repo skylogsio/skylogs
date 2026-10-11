@@ -1,8 +1,7 @@
 "use client";
 
-import { alpha, ToggleButton, ToggleButtonGroup, useTheme } from "@mui/material";
+import { ToggleButton, ToggleButtonGroup } from "@mui/material";
 
-import { useCurrentTheme } from "@/hooks";
 import { ROLE_TYPES, type RoleType } from "@/utils/userUtils";
 
 type UserRoleToggleProps = {
@@ -11,8 +10,6 @@ type UserRoleToggleProps = {
 };
 
 export default function UserRoleToggle({ value, onChange }: UserRoleToggleProps) {
-  const { palette } = useTheme();
-  const { isDark } = useCurrentTheme();
 
   return (
     <ToggleButtonGroup
@@ -23,30 +20,41 @@ export default function UserRoleToggle({ value, onChange }: UserRoleToggleProps)
       }}
       aria-label="User role"
       size="small"
-      sx={{
-        p: 0.25,
-        borderRadius: "8px",
-        backgroundColor: isDark ? "rgba(255, 255, 255, 0.09)" : "#F1EBE1",
-        border: `1px solid ${alpha(palette.primary.main, isDark ? 0.14 : 0.18)}`,
-        "& .MuiToggleButtonGroup-grouped": {
-          border: "none",
-          borderRadius: "6px !important",
-          px: 1.25,
-          py: 0.25,
-          fontSize: "0.8125rem",
-          textTransform: "capitalize",
-          fontWeight: 600,
-          letterSpacing: "0.02em",
-          color: palette.text.secondary,
-          "&.Mui-selected": {
-            backgroundColor: alpha(palette.primary.main, 0.16),
-            color: palette.primary.main,
-            "&:hover": {
-              backgroundColor: alpha(palette.primary.main, 0.24)
+      sx={[
+        {
+          p: 0.25,
+          borderRadius: "8px",
+          backgroundColor: "#F1EBE1",
+          border:
+            "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)",
+          "& .MuiToggleButtonGroup-grouped": {
+            border: "none",
+            borderRadius: "6px !important",
+            px: 1.25,
+            py: 0.25,
+            fontSize: "0.8125rem",
+            textTransform: "capitalize",
+            fontWeight: 600,
+            letterSpacing: "0.02em",
+            color: "text.secondary",
+            "&.Mui-selected": {
+              backgroundColor:
+                "color-mix(in srgb, var(--mui-palette-primary-main) 16%, transparent)",
+              color: "primary.main",
+              "&:hover": {
+                backgroundColor:
+                  "color-mix(in srgb, var(--mui-palette-primary-main) 24%, transparent)"
+              }
             }
           }
-        }
-      }}
+        },
+        (muiTheme) =>
+          muiTheme.applyStyles("dark", {
+            backgroundColor: "rgba(255, 255, 255, 0.09)",
+            border:
+              "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
+          })
+      ]}
     >
       {ROLE_TYPES.filter((role) => role !== "owner").map((role) => (
         <ToggleButton key={role} value={role}>

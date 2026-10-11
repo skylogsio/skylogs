@@ -30,7 +30,6 @@ export default function ResolveIncidentModal({
   onSubmit
 }: ResolveIncidentModalProps) {
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const queryClient = useQueryClient();
   const [resolvedAt, setResolvedAt] = useState<string | null>(null);
 
@@ -55,7 +54,7 @@ export default function ResolveIncidentModal({
       onClose={onClose}
       disableEscapeKeyDown
       maxWidth={480}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <IncidentModalBody>
         <Stack spacing={2.5}>

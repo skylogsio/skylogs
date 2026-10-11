@@ -3,12 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Box, alpha, useTheme } from "@mui/material";
+import { Box, type Theme } from "@mui/material";
 import { motion, useReducedMotion } from "framer-motion";
 import { AiOutlineFileProtect, AiOutlineWarning } from "react-icons/ai";
 
 import { getPrimaryGradient } from "@/components/Wrapper/topBarStyles";
-import { useCurrentTheme } from "@/hooks";
 
 const VIEWS = [
   {
@@ -27,20 +26,24 @@ const VIEWS = [
 
 export default function IncidentWorkspaceSwitch() {
   const pathname = usePathname();
-  const theme = useTheme();
-  const { palette } = theme;
-  const { isDark } = useCurrentTheme();
   const reduceMotion = useReducedMotion();
   const activeView = pathname.includes("/incidents/policies") ? "policies" : "incidents";
 
-  const gradient = getPrimaryGradient(theme);
+  const gradient = getPrimaryGradient();
+
+  const thumbDarkSx = (muiTheme: Theme) =>
+    muiTheme.applyStyles("dark", {
+      boxShadow:
+        "0 -2px 8px color-mix(in srgb, var(--mui-palette-primary-main) 35%, transparent)"
+    });
 
   const thumbSx = {
     position: "absolute" as const,
     inset: 0,
     borderRadius: "9px",
     background: gradient,
-    boxShadow: `0 -2px 8px ${alpha(palette.primary.main, isDark ? 0.35 : 0.8)}`,
+    boxShadow:
+      "0 -2px 8px color-mix(in srgb, var(--mui-palette-primary-main) 80%, transparent)",
     pointerEvents: "none" as const
   };
 
@@ -48,15 +51,25 @@ export default function IncidentWorkspaceSwitch() {
     <Box
       component="nav"
       aria-label="Incident workspace"
-      sx={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 0.5,
-        p: "3px",
-        borderRadius: "11px",
-        backgroundColor: isDark ? alpha("#fff", 0.06) : alpha(palette.primary.main, 0.1),
-        border: `1px solid ${alpha(palette.primary.main, isDark ? 0.18 : 0.22)}`
-      }}
+      sx={[
+        {
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 0.5,
+          p: "3px",
+          borderRadius: "11px",
+          backgroundColor:
+            "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
+          border:
+            "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 22%, transparent)"
+        },
+        (muiTheme) =>
+          muiTheme.applyStyles("dark", {
+            backgroundColor: "rgba(255, 255, 255, 0.06)",
+            border:
+              "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)"
+          })
+      ]}
     >
       {VIEWS.map((view) => {
         const isActive = view.id === activeView;
@@ -79,7 +92,7 @@ export default function IncidentWorkspaceSwitch() {
               minHeight: 38,
               borderRadius: "9px",
               textDecoration: "none",
-              color: isActive ? palette.primary.contrastText : palette.text.secondary,
+              color: isActive ? "primary.contrastText" : "text.secondary",
               fontSize: "0.875rem",
               fontWeight: 700,
               letterSpacing: "0.02em",
@@ -87,18 +100,18 @@ export default function IncidentWorkspaceSwitch() {
               lineHeight: 1,
               transition: "color 180ms ease, filter 220ms ease",
               "&:hover": {
-                color: isActive ? palette.primary.contrastText : palette.text.primary,
+                color: isActive ? "primary.contrastText" : "text.primary",
                 filter: isActive ? "brightness(1.04)" : "none"
               },
               "&:focus-visible": {
-                outline: `2px solid ${palette.primary.main}`,
+                outline: "2px solid var(--mui-palette-primary-main)",
                 outlineOffset: 2
               }
             }}
           >
             {isActive &&
               (reduceMotion ? (
-                <Box component="span" aria-hidden sx={thumbSx} />
+                <Box component="span" aria-hidden sx={[thumbSx, thumbDarkSx]} />
               ) : (
                 <Box
                   component={motion.span}

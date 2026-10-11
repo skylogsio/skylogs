@@ -1,9 +1,10 @@
 "use client";
 
-import { alpha, IconButton, Stack, useTheme } from "@mui/material";
+import { IconButton, Stack } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material";
 import { HiDownload, HiPencil, HiTrash } from "react-icons/hi";
+import { mergeSx, mixPrimary, pillSurfaceSx } from "@/components/Wrapper/topBarStyles";
 
-import { useCurrentTheme } from "@/hooks";
 
 type IncidentPolicyActionButtonsProps = {
   onEdit?: () => void;
@@ -16,23 +17,26 @@ export default function IncidentPolicyActionButtons({
   onExport,
   onDelete
 }: IncidentPolicyActionButtonsProps) {
-  const theme = useTheme();
-  const { palette } = theme;
-  const { isDark } = useCurrentTheme();
 
-  const buttonSx = (color: string) => ({
-    width: 36,
-    height: 36,
-    borderRadius: "10px",
-    color,
-    backgroundColor: isDark ? "rgba(255, 255, 255, 0.09)" : "#F1EBE1",
-    border: `1px solid ${alpha(palette.primary.main, isDark ? 0.14 : 0.18)}`,
-    transition: "background-color 200ms ease, border-color 200ms ease",
-    "&:hover": {
-      backgroundColor: isDark ? "rgba(255, 255, 255, 0.13)" : "#E8E0D4",
-      borderColor: alpha(palette.primary.main, isDark ? 0.22 : 0.28)
-    }
-  });
+  const buttonSx = (color: string): SxProps<Theme> =>
+    mergeSx(
+      {
+        width: 36,
+        height: 36,
+        borderRadius: "10px",
+        color,
+        transition: "background-color 200ms ease, border-color 200ms ease"
+      },
+      pillSurfaceSx(),
+      { "&:hover": { backgroundColor: "#E8E0D4", borderColor: mixPrimary(28) } },
+      (muiTheme) =>
+        muiTheme.applyStyles("dark", {
+          "&:hover": {
+            backgroundColor: "rgba(255, 255, 255, 0.13)",
+            borderColor: mixPrimary(22)
+          }
+        })
+    );
 
   if (!onEdit && !onExport && !onDelete) {
     return <>—</>;
@@ -49,7 +53,7 @@ export default function IncidentPolicyActionButtons({
         <IconButton
           onClick={onEdit}
           aria-label="Edit incident policy"
-          sx={buttonSx(palette.primary.main)}
+          sx={buttonSx("primary.main")}
         >
           <HiPencil size="1.15rem" />
         </IconButton>
@@ -58,7 +62,7 @@ export default function IncidentPolicyActionButtons({
         <IconButton
           onClick={onExport}
           aria-label="Export incident policy YAML"
-          sx={buttonSx(palette.info.main)}
+          sx={buttonSx("info.main")}
         >
           <HiDownload size="1.15rem" />
         </IconButton>
@@ -67,7 +71,7 @@ export default function IncidentPolicyActionButtons({
         <IconButton
           onClick={onDelete}
           aria-label="Delete incident policy"
-          sx={buttonSx(palette.error.main)}
+          sx={buttonSx("error.main")}
         >
           <HiTrash size="1.15rem" />
         </IconButton>

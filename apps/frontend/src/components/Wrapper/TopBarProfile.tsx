@@ -23,7 +23,7 @@ import { useCurrentTheme, useRole, type ThemePreference } from "@/hooks";
 import { useScopedI18n } from "@/locales/client";
 
 import DashboardPillButton from "./DashboardPillButton";
-import { getProfileMenuPaperSx } from "./topBarStyles";
+import { getProfileMenuPaperSx, mergeSx } from "./topBarStyles";
 
 const themeOptions: {
   mode: ThemePreference;
@@ -160,7 +160,7 @@ export default function TopBarProfile() {
         onClose={handleClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{ paper: { sx: { ...getProfileMenuPaperSx(theme, isDark), minWidth: 240 } } }}
+        slotProps={{ paper: { sx: mergeSx(getProfileMenuPaperSx(), { minWidth: 240 }) } }}
       >
         {userInfo && (
           <Box sx={{ px: 1.75, py: 1.25 }}>

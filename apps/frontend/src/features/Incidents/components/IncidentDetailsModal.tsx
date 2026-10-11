@@ -14,14 +14,13 @@ import {
   Tabs,
   Typography,
   alpha,
-  useTheme
+
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
-import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
-import { useCurrentTheme } from "@/hooks";
+import { getGlassCardSx, mergeSx } from "@/components/Wrapper/topBarStyles";
 
 import { getIncidentById } from "../incident.api";
 import type { IIncident } from "../incident.type";
@@ -94,25 +93,31 @@ function MetaItem({ label, value }: { label: string; value: string }) {
 }
 
 function DetailChip({ label }: { label: string }) {
-  const theme = useTheme();
-  const { palette } = theme;
-  const { isDark } = useCurrentTheme();
 
   return (
     <Chip
       label={label}
       size="small"
-      sx={{
-        height: 28,
-        fontWeight: 600,
-        letterSpacing: "0.02em",
-        backgroundColor: isDark ? "rgba(255, 255, 255, 0.09)" : "#F1EBE1",
-        border: `1px solid ${alpha(palette.primary.main, isDark ? 0.14 : 0.18)}`,
-        borderRadius: "10px",
-        "& .MuiChip-label": {
-          px: 1.25
-        }
-      }}
+      sx={[
+        {
+          height: 28,
+          fontWeight: 600,
+          letterSpacing: "0.02em",
+          backgroundColor: "#F1EBE1",
+          border:
+            "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)",
+          borderRadius: "10px",
+          "& .MuiChip-label": {
+            px: 1.25
+          }
+        },
+        (muiTheme) =>
+          muiTheme.applyStyles("dark", {
+            backgroundColor: "rgba(255, 255, 255, 0.09)",
+            border:
+              "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
+          })
+      ]}
     />
   );
 }
@@ -137,20 +142,25 @@ function ChipGroup({ label, items }: { label: string; items: string[] }) {
 }
 
 function CountTile({ label, value }: { label: string; value: number }) {
-  const theme = useTheme();
-  const { palette } = theme;
-  const { isDark } = useCurrentTheme();
-
   return (
     <Box
-      sx={{
-        px: 1.25,
-        py: 1.25,
-        borderRadius: 2,
-        textAlign: "center",
-        bgcolor: isDark ? "rgba(255, 255, 255, 0.09)" : "#F1EBE1",
-        border: `1px solid ${alpha(palette.primary.main, isDark ? 0.14 : 0.18)}`
-      }}
+      sx={[
+        {
+          px: 1.25,
+          py: 1.25,
+          borderRadius: 2,
+          textAlign: "center",
+          bgcolor: "#F1EBE1",
+          border:
+            "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)"
+        },
+        (muiTheme) =>
+          muiTheme.applyStyles("dark", {
+            bgcolor: "rgba(255, 255, 255, 0.09)",
+            border:
+              "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
+          })
+      ]}
     >
       <Typography
         variant="h5"
@@ -179,9 +189,6 @@ export default function IncidentDetailsModal({
   onClose,
   incidentId
 }: IncidentDetailsModalProps) {
-  const theme = useTheme();
-  const { palette } = theme;
-  const { isDark } = useCurrentTheme();
   const [tab, setTab] = useState(0);
 
   const {
@@ -203,12 +210,11 @@ export default function IncidentDetailsModal({
       open={open}
       onClose={onClose}
       maxWidth={760}
-      paperSx={{
-        ...getGlassCardSx(theme, isDark),
+      paperSx={mergeSx(getGlassCardSx(), {
         maxHeight: "90vh",
         display: "flex",
         flexDirection: "column"
-      }}
+      })}
     >
       <IncidentModalBody>
         {isError ? (
@@ -243,7 +249,7 @@ export default function IncidentDetailsModal({
                   spacing={2}
                   divider={
                     <Divider
-                      sx={{ borderColor: alpha(palette.primary.main, isDark ? 0.12 : 0.16) }}
+                      sx={{ borderColor: "color-mix(in srgb, var(--mui-palette-primary-main) 16%, transparent)" }}
                     />
                   }
                   sx={{ minWidth: 0 }}
@@ -300,18 +306,27 @@ export default function IncidentDetailsModal({
                     <Stack spacing={0.35} sx={{ minWidth: 0 }}>
                       <FieldLabel>Description</FieldLabel>
                       <Box
-                        sx={{
-                          px: 1.75,
-                          py: 1.5,
-                          borderRadius: 2,
-                          minWidth: 0,
-                          maxWidth: "100%",
-                          overflow: "hidden",
-                          bgcolor: isDark
-                            ? alpha(palette.primary.main, 0.08)
-                            : alpha(palette.secondary.light, 0.55),
-                          border: `1px solid ${alpha(palette.primary.main, isDark ? 0.14 : 0.18)}`
-                        }}
+                        sx={[
+                          {
+                            px: 1.75,
+                            py: 1.5,
+                            borderRadius: 2,
+                            minWidth: 0,
+                            maxWidth: "100%",
+                            overflow: "hidden",
+                            bgcolor:
+                              "color-mix(in srgb, var(--mui-palette-secondary-light) 55%, transparent)",
+                            border:
+                              "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)"
+                          },
+                          (muiTheme) =>
+                            muiTheme.applyStyles("dark", {
+                              bgcolor:
+                                "color-mix(in srgb, var(--mui-palette-primary-main) 8%, transparent)",
+                              border:
+                                "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
+                            })
+                        ]}
                       >
                         <Typography
                           variant="body1"

@@ -49,7 +49,6 @@ export default function IncidentPolicyYamlModal({
   onSubmit
 }: IncidentPolicyYamlModalProps) {
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -149,7 +148,7 @@ export default function IncidentPolicyYamlModal({
       onClose={handleClose}
       disableEscapeKeyDown
       maxWidth={720}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <IncidentPolicyModalBody>
         <Stack spacing={2}>

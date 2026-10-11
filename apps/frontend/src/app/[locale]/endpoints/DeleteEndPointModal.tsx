@@ -17,7 +17,6 @@ export default function DeleteEndPointModal({
   ...props
 }: DeleteModalProps & { data: IEndpoint }) {
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const t = useScopedI18n("endpoints");
 
   const { id, name, value, type, chatId } = data;
@@ -35,7 +34,7 @@ export default function DeleteEndPointModal({
       {...props}
       onAfterDelete={deleteEndpointMutation}
       isLoading={isPending}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <Stack spacing={1}>
         <Stack direction="row" spacing={1}>

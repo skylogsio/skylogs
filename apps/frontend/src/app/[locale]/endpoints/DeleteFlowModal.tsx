@@ -17,7 +17,6 @@ export default function DeleteFlowModal({
   ...props
 }: DeleteModalProps & { data: IFlow }) {
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const t = useScopedI18n("endpoints");
 
   const { id, name, steps } = data;
@@ -35,7 +34,7 @@ export default function DeleteFlowModal({
       {...props}
       onAfterDelete={deleteFlowMutation}
       isLoading={isPending}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <Stack spacing={1}>
         <Stack direction="row" spacing={1}>

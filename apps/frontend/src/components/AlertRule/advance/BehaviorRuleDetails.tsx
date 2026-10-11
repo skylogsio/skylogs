@@ -214,12 +214,18 @@ export default function BehaviorRuleDetails({ item }: BehaviorRuleDetailsProps) 
             </ChipSection>
           )}
           <Box
-            sx={{
-              p: 1,
-              borderRadius: "0.4rem",
-              backgroundColor: alpha(palette.common.black, palette.mode === "dark" ? 0.18 : 0.03),
-              border: `1px solid ${palette.divider}`
-            }}
+            sx={[
+              {
+                p: 1,
+                borderRadius: "0.4rem",
+                backgroundColor: alpha(palette.common.black, 0.03),
+                border: `1px solid ${palette.divider}`
+              },
+              (theme) =>
+                theme.applyStyles("dark", {
+                  backgroundColor: alpha(palette.common.black, 0.18)
+                })
+            ]}
           >
             <Typography
               variant="caption"

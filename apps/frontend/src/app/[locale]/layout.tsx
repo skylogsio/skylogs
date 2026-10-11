@@ -5,11 +5,13 @@ import { cookies } from "next/headers";
 import { type PropsWithChildren } from "react";
 
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v14-appRouter";
+import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
 import { ToastContainer, Zoom } from "react-toastify";
 
 import Wrapper from "@/components/Wrapper";
 import { getCurrentDirection } from "@/locales/server";
 import Provider from "@/provider";
+import { isThemeInitialMode, type ThemeInitialMode } from "@/provider/themeStorage";
 
 import "react-toastify/dist/ReactToastify.css";
 import "../globals.css";
@@ -42,13 +44,33 @@ export default async function RootLayout({
   const dir = await getCurrentDirection();
   const cookieStore = await cookies();
   const theme = cookieStore.get("theme")?.value;
+  const storedMode = cookieStore.get("mui-mode")?.value;
+  const initialMode: ThemeInitialMode = isThemeInitialMode(storedMode)
+    ? storedMode
+    : isThemeInitialMode(theme)
+      ? theme
+      : "system";
+  const resolvedClass = initialMode === "light" || initialMode === "dark" ? initialMode : undefined;
+  const isDark = initialMode === "dark";
+  const paintStyle =
+    resolvedClass === undefined
+      ? undefined
+      : {
+          backgroundColor: isDark ? "#121110" : "#F3EEE6",
+          colorScheme: isDark ? "dark" : "light"
+        };
   const sidebarCollapsed = cookieStore.get("skylogs-sidebar-collapsed")?.value === "true";
 
   return (
-    <html lang={locale} dir={dir}>
-      <body className={dir === "ltr" ? inter.className : vazir.className}>
+    <html lang={locale} dir={dir} className={resolvedClass} suppressHydrationWarning style={paintStyle}>
+      <body
+        className={dir === "ltr" ? inter.className : vazir.className}
+        suppressHydrationWarning
+        style={resolvedClass === undefined ? undefined : { backgroundColor: isDark ? "#121110" : "#F3EEE6" }}
+      >
+        <InitColorSchemeScript attribute="class" defaultMode={initialMode} />
         <AppRouterCacheProvider>
-          <Provider locale={locale} sidebarCollapsed={sidebarCollapsed}>
+          <Provider locale={locale} sidebarCollapsed={sidebarCollapsed} initialMode={initialMode}>
             <Wrapper>{children}</Wrapper>
           </Provider>
         </AppRouterCacheProvider>

@@ -13,6 +13,7 @@ import {
 import { HiOutlineX } from "react-icons/hi";
 
 import { type ModalContainerProps } from "./types";
+import { mergeSx } from "@/components/Wrapper/topBarStyles";
 
 export default function ModalContainer({
   open,
@@ -55,7 +56,7 @@ export default function ModalContainer({
             transform: "translate(-50%,-50%)"
           }}
         >
-          <Paper sx={{ padding, borderRadius: 4, boxShadow: "none", ...paperSx }}>
+          <Paper sx={mergeSx({ padding, borderRadius: 4, boxShadow: "none" }, paperSx)}>
             <Box
               sx={{
                 width: 1,

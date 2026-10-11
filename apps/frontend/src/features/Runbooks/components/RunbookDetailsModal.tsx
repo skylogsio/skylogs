@@ -12,14 +12,13 @@ import {
   Stack,
   Typography,
   alpha,
-  useTheme
+
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
-import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
-import { useCurrentTheme } from "@/hooks";
+import { getGlassCardSx, mergeSx } from "@/components/Wrapper/topBarStyles";
 
 import { getRunbookById } from "../runbook.api";
 import type { IRunbook } from "../runbook.type";
@@ -88,9 +87,6 @@ function MetaItem({ label, value }: { label: string; value: ReactNode }) {
 }
 
 function ChipGroup({ label, items }: { label: string; items: string[] }) {
-  const theme = useTheme();
-  const { palette } = theme;
-  const { isDark } = useCurrentTheme();
 
   return (
     <Stack spacing={0.75} sx={{ alignItems: "flex-start" }}>
@@ -106,13 +102,22 @@ function ChipGroup({ label, items }: { label: string; items: string[] }) {
               key={item}
               label={item}
               size="small"
-              sx={{
-                height: 28,
-                fontWeight: 600,
-                backgroundColor: isDark ? "rgba(255, 255, 255, 0.09)" : "#F1EBE1",
-                border: `1px solid ${alpha(palette.primary.main, isDark ? 0.14 : 0.18)}`,
-                borderRadius: "10px"
-              }}
+              sx={[
+                {
+                  height: 28,
+                  fontWeight: 600,
+                  backgroundColor: "#F1EBE1",
+                  border:
+                    "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)",
+                  borderRadius: "10px"
+                },
+                (muiTheme) =>
+                  muiTheme.applyStyles("dark", {
+                    backgroundColor: "rgba(255, 255, 255, 0.09)",
+                    border:
+                      "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
+                  })
+              ]}
             />
           ))}
         </Stack>
@@ -126,9 +131,6 @@ export default function RunbookDetailsModal({
   onClose,
   runbookId
 }: RunbookDetailsModalProps) {
-  const theme = useTheme();
-  const { palette } = theme;
-  const { isDark } = useCurrentTheme();
 
   const {
     data: runbook,
@@ -147,12 +149,11 @@ export default function RunbookDetailsModal({
       open={open}
       onClose={onClose}
       maxWidth={720}
-      paperSx={{
-        ...getGlassCardSx(theme, isDark),
+      paperSx={mergeSx(getGlassCardSx(), {
         maxHeight: "90vh",
         display: "flex",
         flexDirection: "column"
-      }}
+      })}
     >
       <RunbookModalBody>
         {isError ? (
@@ -168,7 +169,7 @@ export default function RunbookDetailsModal({
             <Stack
               spacing={2}
               divider={
-                <Divider sx={{ borderColor: alpha(palette.primary.main, isDark ? 0.12 : 0.16) }} />
+                <Divider sx={{ borderColor: "color-mix(in srgb, var(--mui-palette-primary-main) 16%, transparent)" }} />
               }
             >
               <Stack spacing={1.5}>
@@ -251,7 +252,8 @@ export default function RunbookDetailsModal({
                         sx={{
                           p: 1.5,
                           borderRadius: 2,
-                          border: `1px solid ${alpha(palette.primary.main, isDark ? 0.14 : 0.18)}`
+                          border:
+                            "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)"
                         }}
                       >
                         <Typography sx={{ fontWeight: 700 }}>

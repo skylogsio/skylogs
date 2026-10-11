@@ -20,7 +20,6 @@ export default function DeleteRunbookModal({
 }: DeleteModalProps & { data: IRunbook }) {
   const { id, name, status, sourceType } = data;
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const queryClient = useQueryClient();
 
   const { mutate: deleteRunbookMutation, isPending } = useMutation({
@@ -42,7 +41,7 @@ export default function DeleteRunbookModal({
       {...props}
       onAfterDelete={deleteRunbookMutation}
       isLoading={isPending}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <Stack spacing={1.25} sx={{ width: 1 }}>
         <Stack direction="row" spacing={1}>

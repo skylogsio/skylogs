@@ -1,8 +1,8 @@
 "use client";
 
-import { Button, type ButtonProps, useTheme } from "@mui/material";
+import { Button, type ButtonProps } from "@mui/material";
 
-import { getGradientCtaSx } from "@/components/Wrapper/topBarStyles";
+import { getGradientCtaSx, mergeSx } from "@/components/Wrapper/topBarStyles";
 
 type GradientSubmitButtonProps = Omit<ButtonProps, "variant" | "size"> & {
   compact?: boolean;
@@ -14,18 +14,13 @@ export default function GradientSubmitButton({
   sx,
   ...props
 }: GradientSubmitButtonProps) {
-  const theme = useTheme();
-
   return (
     <Button
       variant="contained"
       size={compact ? "medium" : "large"}
       loadingPosition="start"
       {...props}
-      sx={{
-        ...getGradientCtaSx(theme, { compact }),
-        ...(typeof sx === "object" && sx !== null && !Array.isArray(sx) ? sx : {})
-      }}
+      sx={mergeSx(getGradientCtaSx({ compact }), sx)}
     >
       {children}
     </Button>

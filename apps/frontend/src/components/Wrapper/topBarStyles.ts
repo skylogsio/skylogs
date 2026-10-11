@@ -1,137 +1,189 @@
-import { alpha, type Theme } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material";
+import type { SystemStyleObject } from "@mui/system";
 
-export function getDashboardPillSx(theme: Theme, isDark: boolean, options?: { minWidth?: number }) {
-  const { palette } = theme;
-  const backgroundColor = isDark ? "rgba(255, 255, 255, 0.09)" : "#F1EBE1";
-  const hoverBackgroundColor = isDark ? "rgba(255, 255, 255, 0.13)" : "#E8E0D4";
+type SxItem = SystemStyleObject<Theme> | ((theme: Theme) => SystemStyleObject<Theme>);
 
-  return {
-    textTransform: "none" as const,
-    px: 1.5,
-    py: 0.75,
-    minHeight: 40,
-    borderRadius: "10px !important",
-    minWidth: options?.minWidth ?? 118,
-    justifyContent: "space-between",
-    color: palette.text.primary,
-    backgroundColor: `${backgroundColor} !important`,
-    border: `1px solid ${alpha(palette.primary.main, isDark ? 0.14 : 0.18)}`,
-    boxShadow: "none !important",
-    transition: "background-color 200ms ease, border-color 200ms ease",
-    "&:hover": {
-      backgroundColor: `${hoverBackgroundColor} !important`,
-      boxShadow: "none !important",
-      borderColor: alpha(palette.primary.main, isDark ? 0.22 : 0.28)
-    },
-    "& .MuiButton-startIcon": {
-      color: palette.primary.main,
-      marginInlineEnd: 0.75
-    },
-    "& .MuiButton-endIcon": {
-      color: palette.text.secondary,
-      marginInlineStart: 0.75
+export function mergeSx(...parts: Array<SxProps<Theme> | undefined>): SxProps<Theme> {
+  const out: SxItem[] = [];
+  for (const part of parts) {
+    if (!part) continue;
+    if (Array.isArray(part)) {
+      for (const item of part) {
+        if (typeof item === "boolean" || item == null) continue;
+        out.push(item as SxItem);
+      }
+    } else {
+      out.push(part as SxItem);
     }
-  };
-}
-
-export function getDashboardMenuPaperSx(theme: Theme, isDark: boolean) {
-  const { palette } = theme;
-
-  return {
-    mt: 1,
-    minWidth: 220,
-    borderRadius: 3,
-    border: `1px solid ${palette.divider}`,
-    backgroundColor: palette.background.paper,
-    boxShadow: `0 12px 32px ${alpha("#0E0D0C", isDark ? 0.45 : 0.12)}`
-  };
-}
-
-export function getProfileMenuPaperSx(theme: Theme, isDark: boolean) {
-  const { palette } = theme;
-
-  if (isDark) {
-    return {
-      ...getDashboardMenuPaperSx(theme, isDark),
-      backgroundColor: alpha(palette.background.paper, 0.96),
-      backdropFilter: "blur(12px)"
-    };
   }
-
-  return {
-    mt: 1,
-    minWidth: 220,
-    borderRadius: 2,
-    border: `1px solid ${alpha(palette.primary.main, 0.2)}`,
-    backgroundColor: "#F8F4ED",
-    backdropFilter: "blur(12px)",
-    boxShadow: `0 10px 28px ${alpha("#0E0D0C", 0.1)}`
-  };
+  return out;
 }
 
-export function getDashboardCaptionSx(theme: Theme) {
+function mix(varName: string, percent: number): string {
+  return `color-mix(in srgb, var(${varName}) ${percent}%, transparent)`;
+}
+
+function mixHex(hex: string, percent: number): string {
+  return `color-mix(in srgb, ${hex} ${percent}%, transparent)`;
+}
+
+const PAPER = "--mui-palette-background-paper";
+const PRIMARY_MAIN = "--mui-palette-primary-main";
+const PRIMARY_LIGHT = "--mui-palette-primary-light";
+const PRIMARY_DARK = "--mui-palette-primary-dark";
+const SECONDARY_LIGHT = "--mui-palette-secondary-light";
+const SECONDARY_MAIN = "--mui-palette-secondary-main";
+const COMMON_BLACK = "--mui-palette-common-black";
+
+export function getDashboardPillSx(options?: { minWidth?: number }): SxProps<Theme> {
+  return [
+    {
+      textTransform: "none",
+      px: 1.5,
+      py: 0.75,
+      minHeight: 40,
+      borderRadius: "10px !important",
+      minWidth: options?.minWidth ?? 118,
+      justifyContent: "space-between",
+      color: "text.primary",
+      backgroundColor: "#F1EBE1 !important",
+      border: `1px solid ${mix(PRIMARY_MAIN, 18)}`,
+      boxShadow: "none !important",
+      transition: "background-color 200ms ease, border-color 200ms ease",
+      "&:hover": {
+        backgroundColor: "#E8E0D4 !important",
+        boxShadow: "none !important",
+        borderColor: mix(PRIMARY_MAIN, 28)
+      },
+      "& .MuiButton-startIcon": {
+        color: "primary.main",
+        marginInlineEnd: 0.75
+      },
+      "& .MuiButton-endIcon": {
+        color: "text.secondary",
+        marginInlineStart: 0.75
+      }
+    },
+    (muiTheme) =>
+      muiTheme.applyStyles("dark", {
+        backgroundColor: "rgba(255, 255, 255, 0.09) !important",
+        border: `1px solid ${mix(PRIMARY_MAIN, 14)}`,
+        "&:hover": {
+          backgroundColor: "rgba(255, 255, 255, 0.13) !important",
+          borderColor: mix(PRIMARY_MAIN, 22)
+        }
+      })
+  ];
+}
+
+export function getDashboardMenuPaperSx(): SxProps<Theme> {
+  return [
+    {
+      mt: 1,
+      minWidth: 220,
+      borderRadius: 3,
+      border: "1px solid var(--mui-palette-divider)",
+      backgroundColor: "background.paper",
+      boxShadow: `0 12px 32px ${mix(COMMON_BLACK, 12)}`
+    },
+    (muiTheme) =>
+      muiTheme.applyStyles("dark", {
+        boxShadow: `0 12px 32px ${mix(COMMON_BLACK, 45)}`
+      })
+  ];
+}
+
+export function getProfileMenuPaperSx(): SxProps<Theme> {
+  return [
+    {
+      mt: 1,
+      minWidth: 220,
+      borderRadius: 2,
+      border: `1px solid ${mix(PRIMARY_MAIN, 20)}`,
+      backgroundColor: "#F8F4ED",
+      backdropFilter: "blur(12px)",
+      boxShadow: `0 10px 28px ${mix(COMMON_BLACK, 10)}`
+    },
+    (muiTheme) =>
+      muiTheme.applyStyles("dark", {
+        borderRadius: 3,
+        border: "1px solid var(--mui-palette-divider)",
+        backgroundColor: mix(PAPER, 96),
+        backdropFilter: "blur(12px)",
+        boxShadow: `0 12px 32px ${mix(COMMON_BLACK, 45)}`
+      })
+  ];
+}
+
+export function getDashboardCaptionSx(): SxProps<Theme> {
   return {
-    display: "block" as const,
-    color: theme.palette.text.secondary,
+    display: "block",
+    color: "text.secondary",
     fontSize: "0.65rem",
     letterSpacing: "0.04em",
-    textTransform: "uppercase" as const,
+    textTransform: "uppercase",
     lineHeight: 1.1
   };
 }
 
-export function getAppBackgroundSx(theme: Theme, isDark: boolean) {
-  const { palette } = theme;
-
-  return {
-    backgroundColor: palette.background.default,
-    backgroundImage: isDark
-      ? `radial-gradient(ellipse 80% 60% at 20% 10%, ${alpha(palette.primary.main, 0.16)}, transparent 55%),
-         radial-gradient(ellipse 70% 50% at 90% 80%, ${alpha("#3A2E22", 0.45)}, transparent 50%)`
-      : `radial-gradient(ellipse 80% 55% at 15% 0%, ${alpha(palette.secondary.light, 0.95)}, transparent 50%),
-         radial-gradient(ellipse 70% 50% at 100% 100%, ${alpha(palette.primary.main, 0.22)}, transparent 55%)`
-  };
+export function getAppBackgroundSx(): SxProps<Theme> {
+  return [
+    {
+      backgroundColor: "background.default",
+      backgroundImage: `radial-gradient(ellipse 80% 55% at 15% 0%, ${mix(SECONDARY_LIGHT, 95)}, transparent 50%),
+         radial-gradient(ellipse 70% 50% at 100% 100%, ${mix(PRIMARY_MAIN, 22)}, transparent 55%)`
+    },
+    (muiTheme) =>
+      muiTheme.applyStyles("dark", {
+        backgroundImage: `radial-gradient(ellipse 80% 60% at 20% 10%, ${mix(PRIMARY_MAIN, 16)}, transparent 55%),
+         radial-gradient(ellipse 70% 50% at 90% 80%, ${mixHex("#3A2E22", 45)}, transparent 50%)`
+      })
+  ];
 }
 
-export function getPrimaryGradient(theme: Theme, options?: { midStop?: number }) {
-  const { palette } = theme;
+export function getPrimaryGradient(options?: { midStop?: number }): string {
   const midStop = options?.midStop ?? 48;
 
-  return `linear-gradient(145deg, ${palette.primary.light} 0%, ${palette.primary.main} ${midStop}%, ${palette.primary.dark} 100%)`;
+  return `linear-gradient(145deg, var(${PRIMARY_LIGHT}) 0%, var(${PRIMARY_MAIN}) ${midStop}%, var(${PRIMARY_DARK}) 100%)`;
 }
 
-export function getGlassCardSx(theme: Theme, isDark: boolean) {
-  const { palette } = theme;
-
-  return {
-    backgroundColor: alpha(palette.background.paper, isDark ? 0.94 : 0.98),
-    border: `1px solid ${alpha(palette.primary.main, isDark ? 0.2 : 0.4)}`,
-    boxShadow: `0 28px 64px ${alpha("#0E0D0C", isDark ? 0.5 : 0.1)}`,
-    borderRadius: 4,
-    overflow: "hidden"
-  };
+export function getGlassCardSx(): SxProps<Theme> {
+  return [
+    {
+      backgroundColor: mix(PAPER, 98),
+      border: `1px solid ${mix(PRIMARY_MAIN, 40)}`,
+      boxShadow: `0 28px 64px ${mix(COMMON_BLACK, 10)}`,
+      borderRadius: 4,
+      overflow: "hidden"
+    },
+    (muiTheme) =>
+      muiTheme.applyStyles("dark", {
+        backgroundColor: mix(PAPER, 94),
+        border: `1px solid ${mix(PRIMARY_MAIN, 20)}`,
+        boxShadow: `0 28px 64px ${mix(COMMON_BLACK, 50)}`
+      })
+  ];
 }
 
-export function getGradientCtaSx(theme: Theme, options?: { compact?: boolean }) {
-  const { palette } = theme;
-  const gradient = `linear-gradient(135deg, ${palette.secondary.main} 0%, ${palette.primary.main} 100%)`;
+export function getGradientCtaSx(options?: { compact?: boolean }): SxProps<Theme> {
+  const gradient = `linear-gradient(135deg, var(${SECONDARY_MAIN}) 0%, var(${PRIMARY_MAIN}) 100%)`;
   const compact = options?.compact;
 
   return {
-    position: "relative" as const,
+    position: "relative",
     py: compact ? 1 : 1.5,
     px: compact ? 2 : undefined,
     minHeight: compact ? 40 : 52,
     fontWeight: 600,
     letterSpacing: "0.04em",
     fontSize: compact ? "0.8125rem" : undefined,
-    textTransform: "none" as const,
-    color: palette.primary.contrastText,
+    textTransform: "none",
+    color: "primary.contrastText",
     background: gradient,
     transition: "filter 220ms ease, opacity 220ms ease",
     overflow: "hidden",
     "&.Mui-disabled": {
-      color: palette.primary.contrastText,
+      color: "primary.contrastText",
       background: gradient,
       opacity: 0.92
     },
@@ -140,8 +192,40 @@ export function getGradientCtaSx(theme: Theme, options?: { compact?: boolean }) 
       background: gradient
     },
     "& .MuiButton-startIcon": {
-      color: palette.primary.contrastText,
+      color: "primary.contrastText",
       marginInlineEnd: 0.5
     }
   };
+}
+
+export function pillSurfaceSx(): SxProps<Theme> {
+  return [
+    {
+      backgroundColor: "#F1EBE1",
+      border: `1px solid ${mix(PRIMARY_MAIN, 18)}`
+    },
+    (muiTheme) =>
+      muiTheme.applyStyles("dark", {
+        backgroundColor: "rgba(255, 255, 255, 0.09)",
+        border: `1px solid ${mix(PRIMARY_MAIN, 14)}`
+      })
+  ];
+}
+
+export function mixPrimary(percent: number): string {
+  return mix(PRIMARY_MAIN, percent);
+}
+
+export function pillSurfaceHoverSx(): SxProps<Theme> {
+  return [
+    {
+      backgroundColor: "#E8E0D4",
+      borderColor: mix(PRIMARY_MAIN, 28)
+    },
+    (muiTheme) =>
+      muiTheme.applyStyles("dark", {
+        backgroundColor: "rgba(255, 255, 255, 0.13)",
+        borderColor: mix(PRIMARY_MAIN, 22)
+      })
+  ];
 }

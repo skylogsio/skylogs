@@ -3,9 +3,7 @@
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 
-import { alpha, Box, Stack, Typography, useTheme } from "@mui/material";
-
-import { useCurrentTheme } from "@/hooks";
+import { Box, Stack, Typography } from "@mui/material";
 
 import TopBarProfile from "./TopBarProfile";
 import TopBarZone from "./TopBarZone";
@@ -40,9 +38,6 @@ function resolvePageTitle(pathname: string) {
 
 export default function TopBar() {
   const pathname = usePathname();
-  const theme = useTheme();
-  const { palette } = theme;
-  const { isDark } = useCurrentTheme();
   const pageTitle = useMemo(() => resolvePageTitle(pathname), [pathname]);
 
   return (
@@ -75,7 +70,7 @@ export default function TopBar() {
           <Typography
             variant="caption"
             sx={{
-              color: palette.text.secondary,
+              color: "text.secondary",
               fontSize: "0.65rem",
               letterSpacing: "0.28em",
               textTransform: "uppercase",
@@ -86,16 +81,22 @@ export default function TopBar() {
           </Typography>
           <Typography
             component="h1"
-            sx={{
-              fontWeight: 700,
-              fontSize: { xs: "1.05rem", sm: "1.15rem" },
-              letterSpacing: "-0.02em",
-              color: isDark ? palette.secondary.main : palette.text.primary,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              lineHeight: 1.1
-            }}
+            sx={[
+              {
+                fontWeight: 700,
+                fontSize: { xs: "1.05rem", sm: "1.15rem" },
+                letterSpacing: "-0.02em",
+                color: "text.primary",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                lineHeight: 1.1
+              },
+              (muiTheme) =>
+                muiTheme.applyStyles("dark", {
+                  color: "var(--mui-palette-secondary-main)"
+                })
+            ]}
           >
             {pageTitle}
           </Typography>
@@ -108,11 +109,19 @@ export default function TopBar() {
       </Stack>
 
       <Box
-        sx={{
-          mt: 1,
-          height: "1px",
-          background: `linear-gradient(90deg, transparent, ${alpha(palette.primary.main, isDark ? 0.2 : 0.24)}, transparent)`
-        }}
+        sx={[
+          {
+            mt: 1,
+            height: "1px",
+            background:
+              "linear-gradient(90deg, transparent, color-mix(in srgb, var(--mui-palette-primary-main) 24%, transparent), transparent)"
+          },
+          (muiTheme) =>
+            muiTheme.applyStyles("dark", {
+              background:
+                "linear-gradient(90deg, transparent, color-mix(in srgb, var(--mui-palette-primary-main) 20%, transparent), transparent)"
+            })
+        ]}
       />
     </Box>
   );
