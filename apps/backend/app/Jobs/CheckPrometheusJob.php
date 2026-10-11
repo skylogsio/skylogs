@@ -35,6 +35,14 @@ class CheckPrometheusJob implements ShouldBeUnique, ShouldQueue
     }
 
     /**
+     * @return array<int, string>
+     */
+    public function tags(): array
+    {
+        return ['datasource-check', 'prometheus'];
+    }
+
+    /**
      * Create a new job instance.
      *
      * @return void

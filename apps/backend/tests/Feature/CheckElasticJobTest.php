@@ -4,6 +4,7 @@ use App\Enums\AlertRuleType;
 use App\Enums\Constants;
 use App\Jobs\AddChecksJob;
 use App\Jobs\CheckElasticJob;
+use App\Jobs\CheckPrometheusJob;
 use App\Models\AlertRule;
 use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
@@ -13,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use Laravel\Horizon\Tags;
 use Tests\Support\TeamTestData;
 
 describe('CheckElasticJob', function () {
@@ -134,5 +136,19 @@ describe('CheckElasticJob', function () {
         Queue::assertNotPushed(CheckElasticJob::class, function (CheckElasticJob $job) {
             return (string) $job->alert->_id === (string) $this->alertRule->_id;
         });
+    });
+
+    it('tags the check for horizon by type, alert rule, and data source', function () {
+        expect(Tags::for(new CheckElasticJob($this->alertRule)))->toBe([
+            'datasource-check',
+            'elastic',
+            'alertRule:'.$this->alertRule->_id,
+            'dataSource:'.$this->dataSource->_id,
+        ]);
+    });
+
+    it('tags the dispatcher and prometheus jobs for horizon', function () {
+        expect(Tags::for(new AddChecksJob))->toBe(['datasource-check', 'add-log-checks'])
+            ->and(Tags::for(new CheckPrometheusJob))->toBe(['datasource-check', 'prometheus']);
     });
 });

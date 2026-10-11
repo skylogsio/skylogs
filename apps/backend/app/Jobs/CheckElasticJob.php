@@ -38,6 +38,21 @@ class CheckElasticJob implements ShouldBeUnique, ShouldQueue
     }
 
     /**
+     * Replaces Horizon's automatic model tag, so the alert rule tag is listed here.
+     *
+     * @return array<int, string>
+     */
+    public function tags(): array
+    {
+        return array_values(array_filter([
+            'datasource-check',
+            'elastic',
+            'alertRule:'.$this->alert->_id,
+            empty($this->alert->dataSourceId) ? null : 'dataSource:'.$this->alert->dataSourceId,
+        ]));
+    }
+
+    /**
      * @return array<int, object>
      */
     public function middleware(): array

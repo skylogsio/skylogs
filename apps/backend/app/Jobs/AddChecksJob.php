@@ -27,6 +27,14 @@ class AddChecksJob implements ShouldBeUnique, ShouldQueue
     }
 
     /**
+     * @return array<int, string>
+     */
+    public function tags(): array
+    {
+        return ['datasource-check', 'add-log-checks'];
+    }
+
+    /**
      * @return array<int, object>
      */
     public function middleware(): array
