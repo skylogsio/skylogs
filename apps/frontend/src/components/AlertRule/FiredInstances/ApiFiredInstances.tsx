@@ -34,7 +34,7 @@ export default function ApiFiredInstances({ alertId }: { alertId: IAlertRule["id
           },
           { header: "Date", accessorKey: "updatedAt" },
           {
-            header: "Actions",
+            header: "More Info",
             cell: ({ row }) => (
               <IconButton onClick={() => setDetails(row.original)}>
                 <HiInformationCircle color={palette.primary.light} />

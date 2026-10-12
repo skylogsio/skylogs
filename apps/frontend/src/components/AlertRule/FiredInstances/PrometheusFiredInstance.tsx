@@ -47,7 +47,7 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
             accessorFn: (item) => truncateLongString(item.dataSourceAlertName)
           },
           {
-            header: "Actions",
+            header: "More Info",
             cell: ({ row }) => (
               <IconButton onClick={() => setDetails(row.original)}>
                 <HiInformationCircle color={palette.primary.light} />

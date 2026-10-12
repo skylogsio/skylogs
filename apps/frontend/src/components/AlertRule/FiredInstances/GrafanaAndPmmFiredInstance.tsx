@@ -54,7 +54,7 @@ export default function GrafanaAndPmmFiredInstance({ alertId }: { alertId: IAler
           },
           { header: "Date", accessorKey: "createdAt" },
           {
-            header: "More Details",
+            header: "More Info",
             cell: ({ row }) => (
               <IconButton onClick={() => setDetails(row.original)}>
                 <HiInformationCircle color={palette.primary.light} />
