@@ -18,6 +18,7 @@ final class HealthCheckRunner
         private AlertRuleService $alertRuleService,
         private HealthTargetRegistry $targets,
         private HealthStateMachine $stateMachine,
+        private HealthProbeSender $sender,
     ) {}
 
     public function run(): void
@@ -99,30 +100,9 @@ final class HealthCheckRunner
             $requests = [];
 
             foreach ($probes as $id => $probe) {
-                $pending = $pool->as($id)
-                    ->connectTimeout(HealthProbe::CONNECT_TIMEOUT_SECONDS)
-                    ->timeout($probe->effectiveTimeout())
-                    ->withOptions(['verify' => $probe->verifyTls])
-                    ->withHeaders($probe->headers);
-
-                if (is_string($probe->bearerToken) && $probe->bearerToken !== '') {
-                    $pending = $pending->withToken($probe->bearerToken);
-                }
-
-                if (is_string($probe->username) && $probe->username !== '') {
-                    $pending = $pending->withBasicAuth($probe->username, (string) $probe->password);
-                }
-
-                $options = [];
-
-                if ($probe->json !== null) {
-                    $pending = $pending->acceptJson();
-                    $options['json'] = $probe->json;
-                } elseif ($probe->body !== null) {
-                    $options['body'] = $probe->body;
-                }
-
-                $requests[] = $pending->send($probe->method, $probe->url, $options);
+                $requests[] = $this->sender
+                    ->pending($pool->as($id), $probe)
+                    ->send($probe->method, $probe->url, $this->sender->options($probe));
             }
 
             return $requests;

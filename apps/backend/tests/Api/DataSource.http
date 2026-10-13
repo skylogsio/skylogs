@@ -63,5 +63,12 @@ Content-Type: application/json
 Accept: application/json
 Authorization: Bearer {{authToken}}
 
+###
+GET http://localhost:3001/api/v1/alerts
+Content-Type: application/json
+Accept: application/json
+
+
+
 
 

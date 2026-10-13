@@ -4,37 +4,33 @@ namespace App\Services;
 
 use App\Enums\DataSourceType;
 use App\Models\DataSource\DataSource;
+use App\Services\Health\DataSourceProbes\DataSourceProbeFactory;
+use App\Services\Health\HealthProbeSender;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\ConnectionException;
 
 class DataSourceService
 {
+    public function __construct(
+        private DataSourceProbeFactory $probes,
+        private HealthProbeSender $sender,
+    ) {}
+
     public function isConnected(string $dataSourceId): bool
     {
-        $ds = DataSource::query()->whereId($dataSourceId)->firstOrFail();
+        $dataSource = DataSource::query()->findOrFail($dataSourceId);
 
-        try {
-            $request = Http::timeout(5);
-            switch ($ds->type) {
-                case DataSourceType::GRAFANA:
-                case DataSourceType::PROMETHEUS:
-                case DataSourceType::SENTRY:
-                case DataSourceType::PMM:
-                case DataSourceType::SPLUNK:
-                case DataSourceType::VICTORIA_LOGS:
-                case DataSourceType::ZABBIX:
-                    $response = $request->get($ds->url);
-                    break;
-                case DataSourceType::ELASTIC:
-                    $response = $request->withBasicAuth($ds->username, $ds->password)->get($ds->url.'/_search?size=0');
-                    break;
-            }
-
-            return $response->successful();
-        } catch (\Exception $e) {
+        if (! is_string($dataSource->url) || $dataSource->url === '') {
             return false;
         }
 
+        try {
+            $probe = $this->probes->for($dataSource);
+
+            return $probe->errorFor($this->sender->send($probe)) === null;
+        } catch (ConnectionException) {
+            return false;
+        }
     }
 
     public function get(?DataSourceType $dataSourceType = null): Collection
