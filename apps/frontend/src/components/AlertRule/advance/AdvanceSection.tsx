@@ -84,7 +84,7 @@ export default function AdvanceSection({ type, readOnly = false }: AdvanceSectio
             <Typography variant="h5" sx={{ fontWeight: 800, fontSize: 28 }}>
               Advance
             </Typography>
-            <Typography variant="body2" sx={{ color: palette.text.secondary, mt: 0.7, mb: 2 }}>
+            <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.7, mb: 2 }}>
               {readOnly ? "View" : "Manage and organize"} your{" "}
               {showTemplateSection && "Templates &"}{" "}
               {showNotificationSection && "Notification Rule &"} Silent Rules.
@@ -101,7 +101,7 @@ export default function AdvanceSection({ type, readOnly = false }: AdvanceSectio
                   textTransform: "none",
                   fontWeight: 600,
                   paddingX: 2.5,
-                  backgroundColor: palette.primary.main
+                  backgroundColor: "primary.main"
                 }}
               >
                 CREATE NEW ONE
@@ -118,8 +118,10 @@ export default function AdvanceSection({ type, readOnly = false }: AdvanceSectio
                       mt: 0.5,
                       minWidth: 180,
                       borderRadius: 2,
-                      border: `1px solid ${alpha(palette.divider, 0.6)}`,
-                      boxShadow: `0 8px 24px ${alpha(palette.common.black, 0.12)}`
+                      border:
+                        "1px solid color-mix(in srgb, var(--mui-palette-divider) 60%, transparent)",
+                      boxShadow:
+                        "0 8px 24px color-mix(in srgb, var(--mui-palette-common-black) 12%, transparent)"
                     }
                   }
                 }}
@@ -127,7 +129,7 @@ export default function AdvanceSection({ type, readOnly = false }: AdvanceSectio
                 {showTemplateSection && (
                   <MenuItem
                     onClick={() => handleOpenModal("template")}
-                    sx={{ color: palette.primary.main, fontWeight: 600, fontSize: 14 }}
+                    sx={{ color: "primary.main", fontWeight: 600, fontSize: 14 }}
                   >
                     Template
                   </MenuItem>

@@ -37,7 +37,7 @@ export default function ApiFiredInstances({ alertId }: { alertId: IAlertRule["id
             header: "More Info",
             cell: ({ row }) => (
               <IconButton onClick={() => setDetails(row.original)}>
-                <HiInformationCircle color={palette.primary.light} />
+                <HiInformationCircle color="var(--mui-palette-primary-light)" />
               </IconButton>
             )
           }
@@ -59,7 +59,8 @@ export default function ApiFiredInstances({ alertId }: { alertId: IAlertRule["id
                 marginTop: 2,
                 borderRadius: 2,
                 maxHeight: "60vh",
-                bgcolor: alpha(palette.secondary.light, 0.3)
+                bgcolor:
+                  "color-mix(in srgb, var(--mui-palette-secondary-light) 30%, transparent)"
               }}
             >
               <Typography sx={{ wordBreak: "break-word" }}>{details.description}</Typography>

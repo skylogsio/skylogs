@@ -48,7 +48,7 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
     <>
       <Box
         sx={{
-          backgroundColor: palette.background.paper,
+          backgroundColor: "background.paper",
           borderRadius: "0.5rem",
           padding: 2.5,
           height: 1,
@@ -56,10 +56,10 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
           flexDirection: "column",
           justifyContent: "space-between",
           border: 1,
-          borderColor: palette.divider,
+          borderColor: "divider",
           transition: "all 0.2s ease",
           "&:hover": {
-            boxShadow: `0 4px 16px ${alpha(palette.common.black, 0.08)}`,
+            boxShadow: "0 4px 16px color-mix(in srgb, var(--mui-palette-common-black) 8%, transparent)",
             transform: "translateY(-2px)"
           }
         }}
@@ -105,7 +105,7 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
               <IconButton
                 size="small"
                 onClick={(e) => setAnchorEl(e.currentTarget)}
-                sx={{ color: palette.text.secondary, mt: -0.5, ml: 0.5 }}
+                sx={{ color: "text.secondary", mt: -0.5, ml: 0.5 }}
               >
                 <HiDotsVertical size={18} />
               </IconButton>
@@ -133,7 +133,7 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
 
         <Box
           sx={{
-            backgroundColor: palette.background.default,
+            backgroundColor: "background.default",
             borderRadius: "0.4rem",
             minHeight: 88,
             maxHeight: 140,
@@ -155,8 +155,8 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
               startIcon={<HiPencil />}
               sx={{
                 flex: 1,
-                borderColor: palette.divider,
-                color: palette.text.secondary,
+                borderColor: "divider",
+                color: "text.secondary",
                 fontSize: 12,
                 paddingY: 1,
                 textTransform: "none",
@@ -171,11 +171,13 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
                 onClick={() => setDeleteModalData(item)}
                 sx={{
                   border: 1,
-                  borderColor: alpha(palette.error.main, 0.35),
+                  borderColor:
+                    "color-mix(in srgb, var(--mui-palette-error-main) 35%, transparent)",
                   color: "error.main",
                   "&:hover": {
                     borderColor: "error.main",
-                    backgroundColor: alpha(palette.error.main, 0.06)
+                    backgroundColor:
+                      "color-mix(in srgb, var(--mui-palette-error-main) 6%, transparent)"
                   }
                 }}
               >

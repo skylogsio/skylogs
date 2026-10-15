@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import { Chip, Divider, Grid, Stack, Typography, alpha, useTheme } from "@mui/material";
+import { Chip, Divider, Grid, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 
 import type { IAlertRule } from "@/@types/alertRule";
@@ -54,7 +54,6 @@ interface AlertRuleDetailsTabProps {
 }
 
 export default function AlertRuleDetailsTab({ alert }: AlertRuleDetailsTabProps) {
-  const { palette } = useTheme();
 
   const { data: endpointsList, isLoading: isLoadingEndpoints } = useQuery({
     queryKey: ["alert-rule-endpoint-list", alert.id],
@@ -151,7 +150,14 @@ export default function AlertRuleDetailsTab({ alert }: AlertRuleDetailsTabProps)
   return (
     <Stack
       spacing={2}
-      divider={<Divider sx={{ borderColor: alpha(palette.primary.main, 0.14) }} />}
+      divider={
+        <Divider
+          sx={{
+            borderColor:
+              "color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
+          }}
+        />
+      }
       sx={{ minWidth: 0 }}
     >
       <Stack spacing={1.5}>

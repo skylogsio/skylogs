@@ -29,8 +29,8 @@ export function ContentChip({ label, color, icon, wrap = false }: ContentChipPro
         fontSize: 11,
         fontWeight: 500,
         color,
-        backgroundColor: alpha(color, 0.1),
-        border: `1px solid ${alpha(color, 0.24)}`,
+        backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)`,
+        border: `1px solid color-mix(in srgb, ${color} 24%, transparent)`,
         ...(wrap && {
           height: "auto",
           maxWidth: "100%",
@@ -71,7 +71,7 @@ export function ChipSection({ title, children }: ChipSectionProps) {
       <Typography
         variant="caption"
         sx={{
-          color: palette.text.secondary,
+          color: "text.secondary",
           fontWeight: 600,
           letterSpacing: 0.3,
           textTransform: "uppercase",
@@ -98,7 +98,7 @@ function SilentRuleDetails({ item }: { item: SilentRuleItem }) {
 
   if (!hasDependencies && !hasTimeRange && !hasFilters) {
     return (
-      <Typography variant="caption" sx={{ color: palette.text.disabled, fontStyle: "italic" }}>
+      <Typography variant="caption" sx={{ color: "text.disabled", fontStyle: "italic" }}>
         No conditions configured
       </Typography>
     );
@@ -113,7 +113,11 @@ function SilentRuleDetails({ item }: { item: SilentRuleItem }) {
           ))}
           <ContentChip
             label={item.triggerState.charAt(0).toUpperCase() + item.triggerState.slice(1)}
-            color={item.triggerState === "resolved" ? palette.success.main : palette.error.main}
+            color={
+              item.triggerState === "resolved"
+                ? "var(--mui-palette-success-main)"
+                : "var(--mui-palette-error-main)"
+            }
           />
         </ChipSection>
       )}
@@ -123,14 +127,14 @@ function SilentRuleDetails({ item }: { item: SilentRuleItem }) {
           {item.startsAt !== null && (
             <ContentChip
               label={`From ${formatSilentTimestamp(item.startsAt)}`}
-              color={palette.primary.main}
+              color="var(--mui-palette-primary-main)"
               icon={<HiClock size={12} />}
             />
           )}
           {item.endsAt !== null && (
             <ContentChip
               label={`To ${formatSilentTimestamp(item.endsAt)}`}
-              color={palette.primary.main}
+              color="var(--mui-palette-primary-main)"
               icon={<HiClock size={12} />}
             />
           )}
@@ -143,7 +147,7 @@ function SilentRuleDetails({ item }: { item: SilentRuleItem }) {
             <ContentChip
               key={`${filter.key}-${filter.value}-${index}`}
               label={`${filter.key}: ${filter.value}`}
-              color={palette.secondary.dark}
+              color="var(--mui-palette-secondary-dark)"
               icon={<HiTag size={12} />}
               wrap
             />
@@ -170,7 +174,7 @@ export default function BehaviorRuleDetails({ item }: BehaviorRuleDetailsProps) 
 
       if (!hasEndpoints && !hasFilters) {
         return (
-          <Typography variant="caption" sx={{ color: palette.text.disabled, fontStyle: "italic" }}>
+          <Typography variant="caption" sx={{ color: "text.disabled", fontStyle: "italic" }}>
             No endpoints or filters configured
           </Typography>
         );
@@ -191,7 +195,7 @@ export default function BehaviorRuleDetails({ item }: BehaviorRuleDetailsProps) 
                 <ContentChip
                   key={`${filter.key}-${filter.value}-${index}`}
                   label={`${filter.key}: ${filter.value}`}
-                  color={palette.secondary.dark}
+                  color="var(--mui-palette-secondary-dark)"
                   icon={<HiTag size={12} />}
                   wrap
                 />
@@ -218,12 +222,14 @@ export default function BehaviorRuleDetails({ item }: BehaviorRuleDetailsProps) 
               {
                 p: 1,
                 borderRadius: "0.4rem",
-                backgroundColor: alpha(palette.common.black, 0.03),
-                border: `1px solid ${palette.divider}`
+                backgroundColor:
+                  "color-mix(in srgb, var(--mui-palette-common-black) 3%, transparent)",
+                border: "1px solid var(--mui-palette-divider)"
               },
               (theme) =>
                 theme.applyStyles("dark", {
-                  backgroundColor: alpha(palette.common.black, 0.18)
+                  backgroundColor:
+                    "color-mix(in srgb, var(--mui-palette-common-black) 18%, transparent)"
                 })
             ]}
           >
@@ -235,7 +241,7 @@ export default function BehaviorRuleDetails({ item }: BehaviorRuleDetailsProps) 
                 fontFamily: "monospace",
                 fontSize: 11,
                 lineHeight: 1.5,
-                color: palette.text.secondary,
+                color: "text.secondary",
                 wordBreak: "break-word",
                 whiteSpace: "pre-wrap"
               }}

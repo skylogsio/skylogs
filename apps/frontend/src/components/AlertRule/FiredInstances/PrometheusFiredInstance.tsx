@@ -50,7 +50,7 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
             header: "More Info",
             cell: ({ row }) => (
               <IconButton onClick={() => setDetails(row.original)}>
-                <HiInformationCircle color={palette.primary.light} />
+                <HiInformationCircle color="var(--mui-palette-primary-light)" />
               </IconButton>
             )
           }
@@ -95,7 +95,7 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
                 spacing={1}
                 sx={{
                   padding: 1,
-                  bgcolor: palette.background.default,
+                  bgcolor: "background.default",
                   borderRadius: 2,
                   flexWrap: "wrap",
                   width: "50%"
@@ -111,7 +111,7 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
                 spacing={1}
                 sx={{
                   padding: 1,
-                  bgcolor: palette.background.default,
+                  bgcolor: "background.default",
                   borderRadius: 2,
                   flexWrap: "wrap",
                   width: "50%"
@@ -137,7 +137,7 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
                 sx={{
                   width: "50%",
                   padding: 1,
-                  bgcolor: palette.background.default,
+                  bgcolor: "background.default",
                   borderRadius: 2,
                   flexWrap: "wrap"
                 }}
@@ -158,7 +158,7 @@ export default function PrometheusFiredInstance({ alertId }: { alertId: IAlertRu
                 sx={{
                   width: "50%",
                   padding: 1,
-                  bgcolor: palette.background.default,
+                  bgcolor: "background.default",
                   borderRadius: 2,
                   flexWrap: "wrap"
                 }}

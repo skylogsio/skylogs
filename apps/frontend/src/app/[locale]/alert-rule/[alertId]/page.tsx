@@ -4,7 +4,6 @@ import { useParams, usePathname, useRouter, useSearchParams } from "next/navigat
 import React, { useState } from "react";
 
 import {
-  alpha,
   Button,
   IconButton,
   Popover,
@@ -53,7 +52,7 @@ export default function ViewAlertRule() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const { palette, spacing } = useTheme();
+  const { spacing } = useTheme();
   const [testConfirmationAnchorEl, setTestConfirmationAnchorEl] =
     useState<HTMLButtonElement | null>(null);
   const [currentOpenModal, setCurrentOpenModal] = useState<"DELETE" | "EDIT" | null>(null);
@@ -147,8 +146,9 @@ export default function ViewAlertRule() {
                 onClick={() => setCurrentOpenModal("DELETE")}
                 aria-label="Delete"
                 sx={{
-                  color: palette.error.main,
-                  backgroundColor: alpha(palette.error.main, 0.12)
+                  color: "error.main",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--mui-palette-error-main) 12%, transparent)" 
                 }}
               >
                 <HiTrash size="1.4rem" />
@@ -159,8 +159,9 @@ export default function ViewAlertRule() {
                 onClick={() => setCurrentOpenModal("EDIT")}
                 aria-label="Edit"
                 sx={{
-                  color: palette.endpoint.telegram,
-                  backgroundColor: alpha(palette.endpoint.telegram, 0.12)
+                  color: "var(--mui-palette-endpoint-telegram)",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--mui-palette-endpoint-telegram) 12%, transparent)" 
                 }}
               >
                 <HiPencil size="1.4rem" />
@@ -175,8 +176,9 @@ export default function ViewAlertRule() {
               onClick={() => silenceAlertRuleMutation()}
               aria-label={silentLabel}
               sx={{
-                color: palette.warning.main,
-                backgroundColor: alpha(palette.warning.main, 0.14)
+                color: "warning.main",
+                backgroundColor:
+                  "color-mix(in srgb, var(--mui-palette-warning-main) 14%, transparent)" 
               }}
             >
               {data!.is_silent ? (
@@ -193,8 +195,9 @@ export default function ViewAlertRule() {
               onClick={handleTest}
               aria-label="Test"
               sx={{
-                color: palette.endpoint.flow,
-                backgroundColor: alpha(palette.endpoint.flow, 0.12)
+                color: "var(--mui-palette-endpoint-flow)",
+                backgroundColor:
+                    "color-mix(in srgb, var(--mui-palette-endpoint-flow) 12%, transparent)" 
               }}
             >
               <RiTestTubeFill size="1.4rem" />
@@ -207,10 +210,10 @@ export default function ViewAlertRule() {
               onClick={handleCopyCurlCommand}
               aria-label={curlLabel}
               sx={{
-                color: curlCopied ? palette.success.main : palette.endpoint.discord,
+                color: curlCopied ? "success.main" : "var(--mui-palette-endpoint-discord)",
                 backgroundColor: curlCopied
-                  ? alpha(palette.success.main, 0.12)
-                  : alpha(palette.endpoint.discord, 0.12),
+                  ? "color-mix(in srgb, var(--mui-palette-success-main) 12%, transparent)"
+                  : "color-mix(in srgb, var(--mui-palette-endpoint-discord) 12%, transparent)",
                 transition: "all 0.2s ease-in-out"
               }}
             >
@@ -281,7 +284,7 @@ export default function ViewAlertRule() {
           <AlertRuleTabSwitch tabs={visibleTabs} activeTab={activeTab} onChange={setCurrentTab} />
         </Stack>
         <Stack
-          sx={{ width: "100%", bgcolor: palette.background.paper, borderRadius: 3, padding: 3 }}
+          sx={{ width: "100%", bgcolor: "background.paper", borderRadius: 3, padding: 3 }}
         >
           {renderSections()}
         </Stack>

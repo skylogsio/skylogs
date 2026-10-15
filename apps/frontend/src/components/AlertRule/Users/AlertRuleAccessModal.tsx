@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { alpha, IconButton } from "@mui/material";
+import { IconButton } from "@mui/material";
 import { FaUsersCog } from "react-icons/fa";
 
 import type { IAlertRule } from "@/@types/alertRule";
@@ -23,10 +23,11 @@ export default function AlertRuleAccessModal({ alertId }: AlertRuleAccessModalPr
     <>
       <IconButton
         onClick={() => setOpen(true)}
-        sx={({ palette }) => ({
-          color: palette.primary.light,
-          backgroundColor: alpha(palette.primary.light, 0.05)
-        })}
+        sx={{
+          color: "var(--mui-palette-primary-light)",
+          backgroundColor:
+            "color-mix(in srgb, var(--mui-palette-primary-light) 5%, transparent)"
+        }}
       >
         <FaUsersCog size="1.3rem" />
       </IconButton>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Box, IconButton, Stack, Tooltip, Typography, alpha, useTheme } from "@mui/material";
+import { Box, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import { BsCheck2, BsFillClipboard2Fill } from "react-icons/bs";
 import { HiKey } from "react-icons/hi";
 
@@ -13,7 +13,6 @@ interface AlertRuleApiTokenProps {
 }
 
 export default function AlertRuleApiToken({ token }: AlertRuleApiTokenProps) {
-  const { palette } = useTheme();
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -33,7 +32,7 @@ export default function AlertRuleApiToken({ token }: AlertRuleApiTokenProps) {
         variant="subtitle1"
         sx={{
           fontWeight: "bold",
-          color: palette.text.primary
+          color: "text.primary"
         }}
       >
         API Token
@@ -44,12 +43,14 @@ export default function AlertRuleApiToken({ token }: AlertRuleApiTokenProps) {
         sx={{
           alignItems: "center",
           width: "100%",
-          bgcolor: alpha(palette.secondary.main, 0.08),
+          bgcolor:
+            "color-mix(in srgb, var(--mui-palette-secondary-main) 8%, transparent)",
           borderRadius: 2,
           paddingY: 1,
           paddingX: 1.5,
           border: 1,
-          borderColor: alpha(palette.secondary.main, 0.25)
+          borderColor:
+            "color-mix(in srgb, var(--mui-palette-secondary-main) 25%, transparent)"
         }}
       >
         <Box
@@ -58,14 +59,14 @@ export default function AlertRuleApiToken({ token }: AlertRuleApiTokenProps) {
             alignItems: "center",
             justifyContent: "center",
             lineHeight: 0,
-            color: copied ? palette.success.main : palette.text.secondary
+            color: copied ? "success.main" : "text.secondary"
           }}
         >
           <HiKey size="1.1rem" />
         </Box>
         <Typography
           variant="body2"
-          color={copied ? palette.success.main : palette.text.primary}
+          color={copied ? "success.main" : "text.primary"}
           sx={{
             flex: 1,
             minWidth: 0,
@@ -84,10 +85,12 @@ export default function AlertRuleApiToken({ token }: AlertRuleApiTokenProps) {
             onClick={handleCopy}
             aria-label={copied ? "Copied!" : "Copy API token"}
             sx={{
-              color: copied ? palette.success.main : palette.text.secondary,
+              color: copied ? "success.main" : "text.secondary",
               transition: "color 0.2s ease-in-out, background-color 0.2s ease-in-out",
               "&:hover": {
-                backgroundColor: alpha(copied ? palette.success.main : palette.text.secondary, 0.12)
+                backgroundColor: copied
+                  ? "color-mix(in srgb, var(--mui-palette-success-main) 12%, transparent)"
+                  : "color-mix(in srgb, var(--mui-palette-text-secondary) 12%, transparent)"
               }
             }}
           >

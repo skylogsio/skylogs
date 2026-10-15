@@ -160,7 +160,7 @@ export default function SentryAlertHistory({ alertId }: { alertId: IAlertRule["i
                   }}
                 >
                   <IconButton onClick={() => setDetails(row.original)}>
-                    <HiInformationCircle color={palette.primary.light} />
+                    <HiInformationCircle color="var(--mui-palette-primary-light)" />
                   </IconButton>
                 </Stack>
               )
@@ -200,11 +200,11 @@ export default function SentryAlertHistory({ alertId }: { alertId: IAlertRule["i
               sx={{
                 marginX: "auto",
                 marginTop: 2,
-                backgroundColor: palette.background.paper,
+                backgroundColor: "background.paper",
                 border: 1,
                 paddingX: 2,
-                borderColor: palette.secondary.light,
-                color: palette.secondary.dark
+                borderColor: "var(--mui-palette-secondary-light)",
+                color: "var(--mui-palette-secondary-dark)"
               }}
             >
               Load More

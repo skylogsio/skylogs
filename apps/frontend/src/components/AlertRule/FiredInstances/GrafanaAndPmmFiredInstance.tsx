@@ -57,7 +57,7 @@ export default function GrafanaAndPmmFiredInstance({ alertId }: { alertId: IAler
             header: "More Info",
             cell: ({ row }) => (
               <IconButton onClick={() => setDetails(row.original)}>
-                <HiInformationCircle color={palette.primary.light} />
+                <HiInformationCircle color="var(--mui-palette-primary-light)" />
               </IconButton>
             )
           }
@@ -103,7 +103,7 @@ export default function GrafanaAndPmmFiredInstance({ alertId }: { alertId: IAler
                 spacing={1}
                 sx={{
                   padding: 1,
-                  bgcolor: palette.background.default,
+                  bgcolor: "background.default",
                   borderRadius: 2,
                   flexWrap: "wrap",
                   width: "50%"
@@ -119,7 +119,7 @@ export default function GrafanaAndPmmFiredInstance({ alertId }: { alertId: IAler
                 spacing={1}
                 sx={{
                   padding: 1,
-                  bgcolor: palette.background.default,
+                  bgcolor: "background.default",
                   borderRadius: 2,
                   flexWrap: "wrap",
                   width: "50%"
@@ -141,7 +141,7 @@ export default function GrafanaAndPmmFiredInstance({ alertId }: { alertId: IAler
                 spacing={1}
                 sx={{
                   padding: 1,
-                  bgcolor: palette.background.default,
+                  bgcolor: "background.default",
                   borderRadius: 2
                 }}
               >
@@ -156,7 +156,7 @@ export default function GrafanaAndPmmFiredInstance({ alertId }: { alertId: IAler
                 spacing={1}
                 sx={{
                   padding: 1,
-                  bgcolor: palette.background.default,
+                  bgcolor: "background.default",
                   borderRadius: 2
                 }}
               >
@@ -179,7 +179,7 @@ export default function GrafanaAndPmmFiredInstance({ alertId }: { alertId: IAler
                 spacing={1}
                 sx={{
                   padding: 1,
-                  bgcolor: palette.background.default,
+                  bgcolor: "background.default",
                   borderRadius: 2
                 }}
               >

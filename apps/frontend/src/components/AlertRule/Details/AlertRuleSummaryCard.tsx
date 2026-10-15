@@ -1,6 +1,6 @@
 import { useRouter } from "next/navigation";
 
-import { IconButton, Stack, Typography, alpha, useTheme } from "@mui/material";
+import { IconButton, Stack, Typography } from "@mui/material";
 import { IoIosArrowBack } from "react-icons/io";
 
 import type { IAlertRule } from "@/@types/alertRule";
@@ -23,7 +23,6 @@ export default function AlertRuleSummaryCard({
 }: AlertRuleSummaryCardProps) {
   const { Icon, defaultColor } = ALERT_RULE_VARIANTS[alert.type];
   const router = useRouter();
-  const { palette } = useTheme();
 
   return (
     <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
@@ -31,10 +30,12 @@ export default function AlertRuleSummaryCard({
         onClick={() => router.back()}
         aria-label="Back"
         sx={{
-          color: palette.text.secondary,
-          backgroundColor: alpha(palette.text.secondary, 0.06),
+          color: "text.secondary",
+          backgroundColor:
+            "color-mix(in srgb, var(--mui-palette-text-secondary) 6%, transparent)",
           "&:hover": {
-            backgroundColor: alpha(palette.text.secondary, 0.12)
+            backgroundColor:
+              "color-mix(in srgb, var(--mui-palette-text-secondary) 12%, transparent)"
           }
         }}
       >

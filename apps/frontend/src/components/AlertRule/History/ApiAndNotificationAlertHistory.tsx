@@ -96,11 +96,11 @@ export default function ApiAndNotificationAlertHistory({ alertId }: { alertId: I
             sx={{
               marginX: "auto",
               marginTop: 2,
-              backgroundColor: palette.background.paper,
+              backgroundColor: "background.paper",
               border: 1,
               paddingX: 2,
-              borderColor: palette.secondary.light,
-              color: palette.secondary.dark
+              borderColor: "var(--mui-palette-secondary-light)",
+              color: "var(--mui-palette-secondary-dark)"
             }}
           >
             Load More

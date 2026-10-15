@@ -56,8 +56,9 @@ export default function PrometheusAlertsHistory({ alertId }: { alertId: IAlertRu
               <Avatar
                 variant="rounded"
                 sx={{
-                  bgcolor: ({ palette }) => alpha(palette.error.light, 0.3),
-                  color: ({ palette }) => `${palette.error.main}!important`
+                  bgcolor:
+                    "color-mix(in srgb, var(--mui-palette-error-light) 30%, transparent)",
+                  color: "var(--mui-palette-error-main) !important"
                 }}
               >
                 {numberOfFired}
@@ -74,8 +75,9 @@ export default function PrometheusAlertsHistory({ alertId }: { alertId: IAlertRu
               <Avatar
                 variant="rounded"
                 sx={{
-                  bgcolor: ({ palette }) => alpha(palette.success.light, 0.3),
-                  color: ({ palette }) => `${palette.success.main}!important`
+                  bgcolor:
+                    "color-mix(in srgb, var(--mui-palette-success-light) 30%, transparent)",
+                  color: "var(--mui-palette-success-main) !important"
                 }}
               >
                 {numberOfResolved}
@@ -113,7 +115,7 @@ export default function PrometheusAlertsHistory({ alertId }: { alertId: IAlertRu
               header: "More Details",
               cell: ({ row }) => (
                 <IconButton onClick={() => setDetails(row.original)}>
-                  <HiInformationCircle color={palette.primary.light} />
+                  <HiInformationCircle color="var(--mui-palette-primary-light)" />
                 </IconButton>
               )
             }
@@ -152,11 +154,11 @@ export default function PrometheusAlertsHistory({ alertId }: { alertId: IAlertRu
               sx={{
                 marginX: "auto",
                 marginTop: 2,
-                backgroundColor: palette.background.paper,
+                backgroundColor: "background.paper",
                 border: 1,
                 paddingX: 2,
-                borderColor: palette.secondary.light,
-                color: palette.secondary.dark
+                borderColor: "var(--mui-palette-secondary-light)",
+                color: "var(--mui-palette-secondary-dark)"
               }}
             >
               Load More

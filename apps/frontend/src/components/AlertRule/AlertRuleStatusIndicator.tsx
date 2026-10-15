@@ -1,14 +1,12 @@
 import { useMemo } from "react";
 
 import {
-  alpha,
   Chip,
   type ChipProps,
   CircularProgress,
   IconButton,
   Stack,
-  Tooltip,
-  useTheme
+  Tooltip
 } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { FaHandsHelping, FaTools } from "react-icons/fa";
@@ -33,7 +31,6 @@ export default function AlertRuleStatusIndicator({
   size = "medium",
   showAcknowledge
 }: AlertRuleStatusIndicatorProps) {
-  const { palette } = useTheme();
 
   const { mutate: resolveAlertRule, isPending: isPendingResolve } = useMutation({
     mutationFn: () => resolveFiredAlertRule(id!),
@@ -59,12 +56,12 @@ export default function AlertRuleStatusIndicator({
 
   const color: Record<Exclude<AlertRuleStatus, "unknown">, string> = useMemo(
     () => ({
-      resolved: palette.success.main,
-      critical: palette.error.main,
-      warning: palette.warning.main,
-      triggered: palette.text.secondary
+      resolved: "var(--mui-palette-success-main)",
+      critical: "var(--mui-palette-error-main)",
+      warning: "var(--mui-palette-warning-main)",
+      triggered: "var(--mui-palette-text-secondary)"
     }),
-    [palette]
+    []
   );
 
   if (!status || status === "unknown") {
@@ -74,8 +71,9 @@ export default function AlertRuleStatusIndicator({
         size={size}
         sx={{
           textTransform: "capitalize",
-          color: palette.text.secondary,
-          backgroundColor: alpha(palette.text.secondary, 0.07)
+          color: "text.secondary",
+          backgroundColor:
+            "color-mix(in srgb, var(--mui-palette-text-secondary) 7%, transparent)"
         }}
       />
     );
@@ -95,7 +93,7 @@ export default function AlertRuleStatusIndicator({
         sx={{
           textTransform: "capitalize",
           color: color[status],
-          backgroundColor: alpha(color[status], 0.07)
+          backgroundColor: `color-mix(in srgb, ${color[status]} 7%, transparent)`
         }}
       />
       {status === "critical" && id && (
@@ -107,7 +105,7 @@ export default function AlertRuleStatusIndicator({
               sx={{
                 paddingX: 1,
                 color: color[status],
-                backgroundColor: `${alpha(isPending ? palette.grey[700] : color[status], 0.07)}!important`
+                backgroundColor: `color-mix(in srgb, ${isPending ? "var(--mui-palette-grey-700)" : color[status]} 7%, transparent) !important`
               }}
               onClick={() => resolveAlertRule()}
             >
@@ -122,7 +120,7 @@ export default function AlertRuleStatusIndicator({
                 sx={{
                   paddingX: 1,
                   color: color[status],
-                  backgroundColor: `${alpha(isPending ? palette.grey[700] : color[status], 0.07)}!important`
+                  backgroundColor: `color-mix(in srgb, ${isPending ? "var(--mui-palette-grey-700)" : color[status]} 7%, transparent) !important`
                 }}
                 onClick={() => acknowledgeAlertRule()}
               >

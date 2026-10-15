@@ -146,10 +146,11 @@ export default function AlertRuleNotifyManager({ alertId }: { alertId: IAlertRul
                         disabled={isRemovingEndpoint || !canRemove}
                         aria-label="Remove endpoint"
                         onClick={() => removeEndpoint(row.original.id)}
-                        sx={({ palette }) => ({
-                          color: palette.error.light,
-                          backgroundColor: alpha(palette.error.light, 0.05)
-                        })}
+                        sx={{
+                          color: "var(--mui-palette-error-light)",
+                          backgroundColor:
+                            "color-mix(in srgb, var(--mui-palette-error-light) 5%, transparent)"
+                        }}
                       >
                         <HiTrash size="1.4rem" />
                       </IconButton>

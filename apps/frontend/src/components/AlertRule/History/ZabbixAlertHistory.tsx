@@ -61,7 +61,7 @@ export default function ZabbixAlertHistory({ alertId }: { alertId: IAlertRule["i
               header: "More Details",
               cell: ({ row }) => (
                 <IconButton onClick={() => setDetails(row.original.alert_message)}>
-                  <HiInformationCircle color={palette.primary.light} />
+                  <HiInformationCircle color="var(--mui-palette-primary-light)" />
                 </IconButton>
               )
             }
@@ -100,11 +100,11 @@ export default function ZabbixAlertHistory({ alertId }: { alertId: IAlertRule["i
               sx={{
                 marginX: "auto",
                 marginTop: 2,
-                backgroundColor: palette.background.paper,
+                backgroundColor: "background.paper",
                 border: 1,
                 paddingX: 2,
-                borderColor: palette.secondary.light,
-                color: palette.secondary.dark
+                borderColor: "var(--mui-palette-secondary-light)",
+                color: "var(--mui-palette-secondary-dark)"
               }}
             >
               Load More

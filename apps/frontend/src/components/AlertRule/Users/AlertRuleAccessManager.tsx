@@ -200,8 +200,10 @@ export default function AlertRuleAccessManager({ alertId }: AlertRuleAccessManag
                   icon={option.type === "team" ? <FaUsers size={12} /> : <FaUser size={12} />}
                   sx={{
                     "& .MuiChip-icon": {
-                      color: ({ palette }) =>
-                        option.type === "team" ? palette.primary.main : palette.success.main
+                      color:
+                        option.type === "team"
+                          ? "var(--mui-palette-primary-main)"
+                          : "var(--mui-palette-success-main)"
                     }
                   }}
                   {...tagProps}
@@ -258,11 +260,11 @@ export default function AlertRuleAccessManager({ alertId }: AlertRuleAccessManag
                     border: "none",
                     paddingLeft: 1,
                     paddingY: 2,
-                    backgroundColor: ({ palette }) =>
-                      alpha(
-                        row.original.type === "Team" ? palette.primary.main : palette.success.main,
-                        0.1
-                      )
+                    backgroundColor:
+                      row.original.type === "Team"
+                        ? "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)"
+                        : "color-mix(in srgb, var(--mui-palette-success-main) 10%, transparent)"
+
                   }}
                 />
               )
@@ -273,10 +275,11 @@ export default function AlertRuleAccessManager({ alertId }: AlertRuleAccessManag
                 <IconButton
                   disabled={isRemovingAccess}
                   onClick={() => removeAccess(row.original.id)}
-                  sx={({ palette }) => ({
-                    color: palette.error.light,
-                    backgroundColor: alpha(palette.error.light, 0.05)
-                  })}
+                  sx={{
+                    color: "var(--mui-palette-error-light)",
+                    backgroundColor:
+                      "color-mix(in srgb, var(--mui-palette-error-light) 5%, transparent)"
+                  }}
                 >
                   <HiTrash size="1.4rem" />
                 </IconButton>
