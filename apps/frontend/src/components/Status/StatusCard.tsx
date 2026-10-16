@@ -15,7 +15,7 @@ import {
   ListItemText,
   Menu
 } from "@mui/material";
-import { styled, keyframes, useTheme, alpha } from "@mui/material/styles";
+import { styled, keyframes } from "@mui/material/styles";
 import { BsThreeDots } from "react-icons/bs";
 import { HiPencil, HiTrash } from "react-icons/hi";
 import { TbCircleCheck, TbAlertTriangle, TbExclamationCircle } from "react-icons/tb";
@@ -55,6 +55,14 @@ const StateCard = styled(Card)<{ state: StateType }>(({ theme, state }) => ({
       : state === "warning"
         ? "linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%)"
         : "linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)",
+  ...theme.applyStyles("dark", {
+    background:
+      state === "resolved"
+        ? "linear-gradient(135deg, #14241a 0%, #1c3325 100%)"
+        : state === "warning"
+          ? "linear-gradient(135deg, #2b2113 0%, #3a2d17 100%)"
+          : "linear-gradient(135deg, #2c1518 0%, #3d1b1f 100%)"
+  }),
   border: `2px solid ${
     state === "resolved"
       ? theme.palette.success.main
@@ -143,7 +151,6 @@ const StatusMonitoringCards = ({
   onDelete,
   onEdit
 }: StatusMonitoringCardsProps) => {
-  const { palette } = useTheme();
   const router = useRouter();
   const [showThreeDots, setShowThreeDots] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -236,14 +243,20 @@ const StatusMonitoringCards = ({
           >
             <Typography
               variant="h6"
-              sx={{
-                mr: "auto !important",
-                fontWeight: 700,
-                fontSize: 18,
-                color: palette.grey[800],
-                lineHeight: 1.2,
-                maxWidth: 160
-              }}
+              sx={[
+                {
+                  mr: "auto !important",
+                  fontWeight: 700,
+                  fontSize: 18,
+                  color: "var(--mui-palette-grey-800)",
+                  lineHeight: 1.2,
+                  maxWidth: 160
+                },
+                (muiTheme) =>
+                  muiTheme.applyStyles("dark", {
+                    color: "var(--mui-palette-grey-100)"
+                  })
+              ]}
             >
               {info.name}
             </Typography>
@@ -282,7 +295,7 @@ const StatusMonitoringCards = ({
                 label="All Systems OK"
                 size="small"
                 sx={{
-                  backgroundColor: palette.success.main,
+                  backgroundColor: "success.main",
                   color: "white",
                   fontWeight: 600
                 }}
@@ -294,7 +307,18 @@ const StatusMonitoringCards = ({
             <Box sx={{ mb: 1.5 }}>
               <Typography
                 variant="caption"
-                sx={{ color: palette.grey[600], fontWeight: 500, mb: 0.5, display: "block" }}
+                sx={[
+                  {
+                    color: "var(--mui-palette-grey-600)",
+                    fontWeight: 500,
+                    mb: 0.5,
+                    display: "block"
+                  },
+                  (muiTheme) =>
+                    muiTheme.applyStyles("dark", {
+                      color: "var(--mui-palette-grey-300)"
+                    })
+                ]}
               >
                 Tags
               </Typography>
@@ -305,12 +329,19 @@ const StatusMonitoringCards = ({
                     label={tag}
                     size="small"
                     variant="outlined"
-                    sx={{
-                      height: 20,
-                      fontSize: 10,
-                      borderColor: palette.grey[400],
-                      color: palette.grey[600]
-                    }}
+                    sx={[
+                      {
+                        height: 20,
+                        fontSize: 10,
+                        borderColor: "var(--mui-palette-grey-400)",
+                        color: "var(--mui-palette-grey-600)"
+                      },
+                      (muiTheme) =>
+                        muiTheme.applyStyles("dark", {
+                          borderColor: "var(--mui-palette-grey-600)",
+                          color: "var(--mui-palette-grey-300)"
+                        })
+                    ]}
                   />
                 ))}
               </Box>
@@ -319,7 +350,18 @@ const StatusMonitoringCards = ({
               <Box sx={{ mb: 1.5 }}>
                 <Typography
                   variant="caption"
-                  sx={{ color: palette.grey[600], fontWeight: 500, mb: 0.5, display: "block" }}
+                  sx={[
+                  {
+                    color: "var(--mui-palette-grey-600)",
+                    fontWeight: 500,
+                    mb: 0.5,
+                    display: "block"
+                  },
+                  (muiTheme) =>
+                    muiTheme.applyStyles("dark", {
+                      color: "var(--mui-palette-grey-300)"
+                    })
+                ]}
                 >
                   Alerts Tags
                 </Typography>
@@ -334,10 +376,11 @@ const StatusMonitoringCards = ({
                       sx={{
                         height: 20,
                         fontSize: 10,
-                        borderColor: palette.error.main,
-                        color: palette.error.main,
+                        borderColor: "error.main",
+                        color: "error.main",
                         fontWeight: "bold",
-                        backgroundColor: alpha(palette.error.main, 0.1),
+                        backgroundColor:
+                          "color-mix(in srgb, var(--mui-palette-error-main) 10%, transparent)",
                         transition: "all 0.3s ease",
                         "&:hover": {
                           transform: "scale(1.15)"
@@ -350,7 +393,16 @@ const StatusMonitoringCards = ({
             )}
           </Collapse>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Typography variant="caption" sx={{ color: palette.grey[600], fontWeight: 500 }}>
+            <Typography
+              variant="caption"
+              sx={[
+                { color: "var(--mui-palette-grey-600)", fontWeight: 500 },
+                (muiTheme) =>
+                  muiTheme.applyStyles("dark", {
+                    color: "var(--mui-palette-grey-300)"
+                  })
+              ]}
+            >
               Updated {formatTimeAgo(info.updatedAt)}
             </Typography>
             <Box
@@ -360,10 +412,10 @@ const StatusMonitoringCards = ({
                 borderRadius: "50%",
                 backgroundColor:
                   info.state === "resolved"
-                    ? palette.success.main
+                    ? "var(--mui-palette-success-main)"
                     : info.state === "warning"
-                      ? palette.warning.main
-                      : palette.error.main,
+                      ? "var(--mui-palette-warning-main)"
+                      : "var(--mui-palette-error-main)",
                 animation: info.state !== "resolved" ? `${pulse} 1s infinite ease-in-out` : "none"
               }}
             />

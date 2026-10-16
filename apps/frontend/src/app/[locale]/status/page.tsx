@@ -107,7 +107,7 @@ export default function StatusPage() {
             alignItems: "flex-start",
             margin: "0 auto",
             borderRadius: 3,
-            backgroundColor: ({ palette }) => palette.background.paper
+            backgroundColor: "background.paper"
           }}
         >
           {statusCards
