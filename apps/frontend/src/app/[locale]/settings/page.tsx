@@ -9,7 +9,6 @@ import {
   Grid,
   Stack,
   Typography,
-  useTheme,
   alpha,
   Chip
 } from "@mui/material";
@@ -28,7 +27,6 @@ interface SettingOption {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { palette } = useTheme();
 
   const settingsOptions: SettingOption[] = [
     // Core Settings
@@ -130,7 +128,8 @@ export default function SettingsPage() {
             component="h1"
             sx={{
               fontWeight: 800,
-              background: `linear-gradient(135deg, ${palette.primary.main}, ${palette.secondary.main})`,
+              background:
+                "linear-gradient(135deg, var(--mui-palette-primary-main), var(--mui-palette-secondary-main))",
               backgroundClip: "text",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
@@ -249,8 +248,9 @@ export default function SettingsPage() {
                                     label="Coming Soon"
                                     size="small"
                                     sx={{
-                                      backgroundColor: alpha(palette.warning.main, 0.1),
-                                      color: palette.warning.main,
+                                      backgroundColor:
+                                        "color-mix(in srgb, var(--mui-palette-warning-main) 10%, transparent)",
+                                      color: "warning.main",
                                       fontWeight: 600,
                                       fontSize: 14
                                     }}
@@ -304,11 +304,11 @@ export default function SettingsPage() {
                                   py: 0.5,
                                   borderRadius: 4,
                                   backgroundColor: option.isAvailable
-                                    ? alpha(palette.success.main, 0.1)
-                                    : alpha(palette.grey[500], 0.1),
+                                    ? "color-mix(in srgb, var(--mui-palette-success-main) 10%, transparent)"
+                                    : "color-mix(in srgb, var(--mui-palette-grey-500) 10%, transparent)",
                                   color: option.isAvailable
-                                    ? palette.success.main
-                                    : palette.grey[600]
+                                    ? "success.main"
+                                    : "var(--mui-palette-grey-600)"
                                 }}
                               >
                                 <Box
