@@ -1,6 +1,6 @@
 import { memo } from "react";
 
-import { Box, IconButton, Stack, Typography, alpha, keyframes, useTheme } from "@mui/material";
+import { Box, IconButton, Stack, Typography, keyframes } from "@mui/material";
 import { motion } from "framer-motion";
 import { HiX } from "react-icons/hi";
 
@@ -26,7 +26,6 @@ function DebuggingBarLoading({
   onRemove: () => void;
   index?: number;
 }) {
-  const { palette } = useTheme();
 
   return (
     <Stack
@@ -88,7 +87,8 @@ function DebuggingBarLoading({
                   flex: 1,
                   height: 28,
                   borderRadius: 1,
-                  bgcolor: alpha(palette.primary.main, 0.12)
+                  bgcolor:
+                    "color-mix(in srgb, var(--mui-palette-primary-main) 12%, transparent)"
                 }}
               />
             ))}
@@ -98,7 +98,8 @@ function DebuggingBarLoading({
             sx={{
               position: "absolute",
               inset: 0,
-              background: `linear-gradient(90deg, transparent 0%, ${alpha(palette.common.white, 0.45)} 50%, transparent 100%)`,
+              background:
+                "linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--mui-palette-common-white) 45%, transparent) 50%, transparent 100%)",
               backgroundSize: "200% 100%",
               animation: `${shimmer} 1.8s linear infinite`,
               pointerEvents: "none",
@@ -113,7 +114,8 @@ function DebuggingBarLoading({
               height: 8,
               width: 108,
               borderRadius: 1,
-              bgcolor: alpha(palette.text.primary, 0.06)
+              bgcolor:
+                "color-mix(in srgb, var(--mui-palette-text-primary) 6%, transparent)"
             }}
           />
           <Typography variant="caption" color="primary" sx={{ fontWeight: 600 }}>
@@ -124,7 +126,8 @@ function DebuggingBarLoading({
               height: 8,
               width: 108,
               borderRadius: 1,
-              bgcolor: alpha(palette.text.primary, 0.06)
+              bgcolor:
+                "color-mix(in srgb, var(--mui-palette-text-primary) 6%, transparent)"
             }}
           />
         </Stack>

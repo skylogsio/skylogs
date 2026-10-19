@@ -1,9 +1,8 @@
-import { Box, Stack, Typography, alpha, useTheme } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { HiOutlineChartBar } from "react-icons/hi";
 
 export default function TimelineComparisonEmptyState() {
-  const { palette } = useTheme();
 
   return (
     <Box
@@ -16,8 +15,10 @@ export default function TimelineComparisonEmptyState() {
         overflow: "hidden",
         borderRadius: 3,
         border: "1px dashed",
-        borderColor: alpha(palette.primary.main, 0.22),
-        bgcolor: alpha(palette.primary.main, 0.03),
+        borderColor:
+          "color-mix(in srgb, var(--mui-palette-primary-main) 22%, transparent)",
+        bgcolor:
+          "color-mix(in srgb, var(--mui-palette-primary-main) 3%, transparent)",
         py: { xs: 4, sm: 5 },
         px: { xs: 2.5, sm: 4 }
       }}
@@ -27,8 +28,8 @@ export default function TimelineComparisonEmptyState() {
           position: "absolute",
           inset: 0,
           background: `
-            radial-gradient(circle at 15% 20%, ${alpha(palette.primary.main, 0.08)} 0%, transparent 42%),
-            radial-gradient(circle at 85% 75%, ${alpha(palette.info.main, 0.07)} 0%, transparent 38%)
+            radial-gradient(circle at 15% 20%, color-mix(in srgb, var(--mui-palette-primary-main) 8%, transparent) 0%, transparent 42%),
+            radial-gradient(circle at 85% 75%, color-mix(in srgb, var(--mui-palette-info-main) 7%, transparent) 0%, transparent 38%)
           `,
           pointerEvents: "none"
         }}
@@ -63,7 +64,8 @@ export default function TimelineComparisonEmptyState() {
                 position: "absolute",
                 inset: 0,
                 borderRadius: "50%",
-                border: `1px solid ${alpha(palette.primary.main, 0.35)}`
+                border:
+                  "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 35%, transparent)"
               }}
             />
           ))}
@@ -73,9 +75,9 @@ export default function TimelineComparisonEmptyState() {
             animate={{
               scale: [1, 1.04, 1],
               boxShadow: [
-                `0 0 0 0 ${alpha(palette.primary.main, 0.2)}`,
-                `0 0 0 12px ${alpha(palette.primary.main, 0)}`,
-                `0 0 0 0 ${alpha(palette.primary.main, 0)}`
+                "0 0 0 0 color-mix(in srgb, var(--mui-palette-primary-main) 20%, transparent)",
+                "0 0 0 12px color-mix(in srgb, var(--mui-palette-primary-main) 0%, transparent)",
+                "0 0 0 0 color-mix(in srgb, var(--mui-palette-primary-main) 0%, transparent)"
               ]
             }}
             transition={{
@@ -91,9 +93,11 @@ export default function TimelineComparisonEmptyState() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: `linear-gradient(145deg, ${alpha(palette.primary.main, 0.18)} 0%, ${alpha(palette.primary.light, 0.08)} 100%)`,
-              border: `1px solid ${alpha(palette.primary.main, 0.2)}`,
-              color: palette.primary.main
+              background:
+                "linear-gradient(145deg, color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent) 0%, color-mix(in srgb, var(--mui-palette-primary-light) 8%, transparent) 100%)",
+              border:
+                "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 20%, transparent)",
+              color: "primary.main"
             }}
           >
             <HiOutlineChartBar size={34} />

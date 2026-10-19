@@ -95,7 +95,9 @@ const Segment = memo(function SegmentDot({
         ...(isSelected && {
           outline: "1px solid",
           ...(isHovered && { opacity: 0.6, transform: "scale(1.1)" }),
-          outlineColor: ({ palette }) => (isDark ? palette.common.white : palette.common.black)
+          outlineColor: isDark
+            ? "var(--mui-palette-common-white)"
+            : "var(--mui-palette-common-black)"
         })
       }}
     />
