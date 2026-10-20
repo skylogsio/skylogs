@@ -1,14 +1,22 @@
 package routes
 
 import (
+	"context"
+
 	"RAFT_Service/internal/api/handler"
+	"RAFT_Service/internal/model"
 
 	"github.com/gin-gonic/gin"
 )
 
-func HomeGroupRoutes(e *gin.Engine, h *handler.Handler) {
+// HomeGroupRoutes registers application and cluster status endpoints.
+func HomeGroupRoutes(
+	e *gin.Engine,
+	h *handler.Handler,
+	getClusterStatus func(context.Context) model.ClusterObservation,
+) {
 	homeGroup := e.Group("/")
-	//homeGroup.Use(handler.SessionMiddleware())
+
 	{
 		homeGroup.POST("/set", h.HandleSet)
 		homeGroup.GET("/get", h.HandleGet)
@@ -16,6 +24,11 @@ func HomeGroupRoutes(e *gin.Engine, h *handler.Handler) {
 		homeGroup.GET("/status", h.HandleStatus)
 		homeGroup.GET("/leader", h.HandleLeader)
 		homeGroup.POST("", h.HandleDelete)
-	}
 
+		// Return an on-demand cluster observation.
+		homeGroup.GET(
+			"/cluster/status",
+			handler.ClusterStatusHandler(getClusterStatus),
+		)
+	}
 }

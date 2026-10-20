@@ -15,6 +15,7 @@ ARGS="$ARGS --raft-port=7000"
 ARGS="$ARGS --http-port=8000"
 ARGS="$ARGS --data-dir=/data"
 
+
 if [ -n "${RAFT_NOTIFY_URL:-}" ]; then
   ARGS="$ARGS --notify-url=$RAFT_NOTIFY_URL"
 fi

@@ -1,195 +1,196 @@
 package model
 
 import (
-	"fmt"
-	"net"
-	"os"
-	"path/filepath"
-	"time"
+    "context"
+    "fmt"
+    "net"
+    "os"
+    "path/filepath"
+    "time"
 
-	"github.com/hashicorp/go-hclog"
-	"github.com/hashicorp/raft"
-	raftboltdb "github.com/hashicorp/raft-boltdb"
+    "github.com/hashicorp/go-hclog"
+    "github.com/hashicorp/raft"
+    raftboltdb "github.com/hashicorp/raft-boltdb"
 )
 
+// Node represents a local Raft instance and its dependencies.
 type Node struct {
-	Config    *Config
-	raft      *raft.Raft
-	FSM       *FSM
-	Logger    hclog.Logger
-	transport *raft.NetworkTransport
+    Config        *Config
+    raft          *raft.Raft
+    FSM           *FSM
+    Logger        hclog.Logger
+    transport     *raft.NetworkTransport
+    monitorCancel context.CancelFunc
 }
 
-// IsLeader checks if this node is the leader
+// IsLeader checks whether this node is the current Raft leader.
 func (n *Node) IsLeader() bool {
-	return n.raft.State() == raft.Leader
+    return n.raft.State() == raft.Leader
 }
 
-// GetLeader returns the current leader address
+// GetLeader returns the currently known leader address and ID.
 func (n *Node) GetLeader() (string, string) {
-	addr, nodeId := n.raft.LeaderWithID()
-	return string(addr), string(nodeId)
+    addr, nodeID := n.raft.LeaderWithID()
+    return string(addr), string(nodeID)
 }
 
+// State returns the current local Raft state.
 func (n *Node) State() string {
-	return n.raft.State().String()
+    return n.raft.State().String()
 }
 
+// NodeID returns the configured node identifier.
 func (n *Node) NodeID() string {
-	return n.Config.NodeID
+    return n.Config.NodeID
 }
 
+// RemoveServer removes the local node from Raft membership when called on the leader.
 func (n *Node) RemoveServer() raft.IndexFuture {
-	return n.raft.RemoveServer(raft.ServerID(n.NodeID()), 0, 0)
+    return n.raft.RemoveServer(raft.ServerID(n.NodeID()), 0, 0)
 }
 
+// SetupRaft initializes Raft, storage, transport, and cluster alert monitoring.
 func (n *Node) SetupRaft() error {
-	// Create data directory
-	if err := os.MkdirAll(n.Config.DataDir, 0755); err != nil {
-		return fmt.Errorf("failed to create data directory: %w", err)
-	}
+    // Create data directory.
+    if err := os.MkdirAll(n.Config.DataDir, 0755); err != nil {
+        return fmt.Errorf("failed to create data directory: %w", err)
+    }
 
-	// Setup Raft configuration
-	raftConfig := raft.DefaultConfig()
-	raftConfig.LocalID = raft.ServerID(n.Config.NodeID)
-	raftConfig.Logger = n.Logger
+    // Configure Raft and its filtered logger.
+    raftConfig := raft.DefaultConfig()
+    raftConfig.LocalID = raft.ServerID(n.Config.NodeID)
 
-	// Tune timeouts for faster leader election in testing
-	raftConfig.HeartbeatTimeout = 1000 * time.Millisecond
-	raftConfig.ElectionTimeout = 1000 * time.Millisecond
-	raftConfig.CommitTimeout = 500 * time.Millisecond
-	raftConfig.LeaderLeaseTimeout = 500 * time.Millisecond
+    filteredOutput := NewRaftLogFilter(os.Stdout, n.Config.RaftLogInterval)
 
-	// Setup TCP transport
-	listenAddr := fmt.Sprintf(
-		"%s:%d",
-		n.Config.BindAddress,
-		n.Config.RaftPort,
-	)
+    raftConfig.Logger = hclog.New(&hclog.LoggerOptions{
+        Name:   "raft",
+        Level:  n.Logger.GetLevel(),
+        Output: filteredOutput,
+    })
 
-	advertiseAddr := fmt.Sprintf(
-		"%s:%d",
-		n.Config.AdvertiseAddress,
-		n.Config.RaftPort,
-	)
+    // Preserve existing Raft timing settings.
+    raftConfig.HeartbeatTimeout = 1000 * time.Millisecond
+    raftConfig.ElectionTimeout = 1000 * time.Millisecond
+    raftConfig.CommitTimeout = 500 * time.Millisecond
+    raftConfig.LeaderLeaseTimeout = 500 * time.Millisecond
 
-	advertiseTCP, err := net.ResolveTCPAddr(
-		"tcp",
-		advertiseAddr,
-	)
-	if err != nil {
-		return err
-	}
+    // Configure TCP transport.
+    listenAddr := fmt.Sprintf("%s:%d", n.Config.BindAddress, n.Config.RaftPort)
+    advertiseAddr := fmt.Sprintf("%s:%d", n.Config.AdvertiseAddress, n.Config.RaftPort)
 
-	transport, err := raft.NewTCPTransport(
-		listenAddr,
-		advertiseTCP,
-		3,
-		10*time.Second,
-		os.Stdout,
-	)
+    advertiseTCP, err := net.ResolveTCPAddr("tcp", advertiseAddr)
+    if err != nil {
+        return fmt.Errorf("resolve Raft address: %w", err)
+    }
 
-	if err != nil {
-		return fmt.Errorf("failed to create TCP transport: %w", err)
-	}
-	n.transport = transport
+    transport, err := raft.NewTCPTransport(listenAddr, advertiseTCP, 3, 10*time.Second, filteredOutput)
+    if err != nil {
+        return fmt.Errorf("create Raft transport: %w", err)
+    }
 
-	// Create log store (BoltDB)
-	logStore, err := raftboltdb.NewBoltStore(filepath.Join(n.Config.DataDir, "raft-log.db"))
-	if err != nil {
-		return fmt.Errorf("failed to create log store: %w", err)
-	}
+    n.transport = transport
 
-	// Create stable store (BoltDB)
-	stableStore, err := raftboltdb.NewBoltStore(filepath.Join(n.Config.DataDir, "raft-stable.db"))
-	if err != nil {
-		return fmt.Errorf("failed to create stable store: %w", err)
-	}
+    // Initialize persistent Raft stores.
+    logStore, err := raftboltdb.NewBoltStore(filepath.Join(n.Config.DataDir, "raft-log.db"))
+    if err != nil {
+        return fmt.Errorf("create Raft log store: %w", err)
+    }
 
-	// Create snapshot store
-	snapshotStore, err := raft.NewFileSnapshotStore(n.Config.DataDir, 2, os.Stdout)
-	if err != nil {
-		return fmt.Errorf("failed to create snapshot store: %w", err)
-	}
+    stableStore, err := raftboltdb.NewBoltStore(filepath.Join(n.Config.DataDir, "raft-stable.db"))
+    if err != nil {
+        return fmt.Errorf("create Raft stable store: %w", err)
+    }
 
-	// Create Raft instance
-	r, err := raft.NewRaft(raftConfig, n.FSM, logStore, stableStore, snapshotStore, transport)
-	if err != nil {
-		return fmt.Errorf("failed to create raft: %w", err)
-	}
-	n.raft = r
+    snapshotStore, err := raft.NewFileSnapshotStore(n.Config.DataDir, 2, os.Stdout)
+    if err != nil {
+        return fmt.Errorf("create Raft snapshot store: %w", err)
+    }
 
-	// Time of new leader winning!
-	go func() {
-		for isLeader := range n.raft.LeaderCh() {
-			if isLeader {
-				fmt.Printf(
-					"Node %s became leader at %s\n",
-					n.Config.NodeID,
-					time.Now().Format("2006-01-02 15:04:05.000"),
-				)
-			}
-		}
-	}()
+    // Initialize Raft.
+    r, err := raft.NewRaft(raftConfig, n.FSM, logStore, stableStore, snapshotStore, transport)
+    if err != nil {
+        return fmt.Errorf("initialize Raft: %w", err)
+    }
 
-	// Bootstrap cluster if requested
-	if n.Config.Bootstrap {
-		configuration := raft.Configuration{
-			Servers: []raft.Server{
-				{
-					ID:      raft.ServerID(n.Config.NodeID),
-					Address: transport.LocalAddr(),
-				},
-			},
-		}
-		f := r.BootstrapCluster(configuration)
-		if err := f.Error(); err != nil {
-			return fmt.Errorf("failed to bootstrap cluster: %w", err)
-		}
-		n.Logger.Info("cluster bootstrapped", "node_id", n.Config.NodeID)
-	}
+    n.raft = r
 
-	return nil
+    // Observe local leadership changes.
+    go func() {
+        for isLeader := range n.raft.LeaderCh() {
+            if isLeader {
+                n.Logger.Info("node became leader", "node_id", n.Config.NodeID, "time", time.Now().Format("2006-01-02 15:04:05.000"))
+            }
+        }
+    }()
+
+    // Bootstrap a new cluster when requested.
+    if n.Config.Bootstrap {
+        configuration := raft.Configuration{
+            Servers: []raft.Server{
+                {
+                    ID:      raft.ServerID(n.Config.NodeID),
+                    Address: transport.LocalAddr(),
+                },
+            },
+        }
+
+        if err := r.BootstrapCluster(configuration).Error(); err != nil {
+            return fmt.Errorf("bootstrap Raft cluster: %w", err)
+        }
+
+        n.Logger.Info("cluster bootstrapped", "node_id", n.Config.NodeID)
+    }
+
+    // Start alert monitoring when both external endpoints are configured.
+    if n.Config.ClusterAlertFireURL != "" && n.Config.ClusterAlertResolveURL != "" {
+        ctx, cancel := context.WithCancel(context.Background())
+        n.monitorCancel = cancel
+        go n.watchClusterChanges(ctx)
+    }
+
+    return nil
 }
 
-// Join adds a new node to the cluster
+// Join adds a voting node to the Raft cluster.
 func (n *Node) Join(nodeID, addr string) error {
-	if !n.IsLeader() {
-		return fmt.Errorf("not the leader")
-	}
+    if !n.IsLeader() {
+        return fmt.Errorf("not the leader")
+    }
 
-	n.Logger.Info("received join request", "node_id", nodeID, "addr", addr)
+    n.Logger.Info("received join request", "node_id", nodeID, "addr", addr)
 
-	f := n.raft.AddVoter(raft.ServerID(nodeID), raft.ServerAddress(addr), 0, 0)
-	if err := f.Error(); err != nil {
-		return err
-	}
+    f := n.raft.AddVoter(raft.ServerID(nodeID), raft.ServerAddress(addr), 0, 0)
+    if err := f.Error(); err != nil {
+        return err
+    }
 
-	n.Logger.Info("node joined successfully", "node_id", nodeID)
-	return nil
+    n.Logger.Info("node joined successfully", "node_id", nodeID)
+    return nil
 }
 
-// Shutdown shuts down the Raft node
+// Shutdown stops cluster monitoring and the local Raft instance.
 func (n *Node) Shutdown() error {
-	if n.raft != nil {
-		f := n.raft.Shutdown()
-		if err := f.Error(); err != nil {
-			return err
-		}
-	}
-	return nil
+    if n.monitorCancel != nil {
+        n.monitorCancel()
+    }
+
+    if n.raft != nil {
+        if err := n.raft.Shutdown().Error(); err != nil {
+            return err
+        }
+    }
+
+    return nil
 }
 
-// Apply applies a command to the Raft cluster
+// Apply submits a command to the Raft cluster.
 func (n *Node) Apply(cmd []byte) error {
-	if !n.IsLeader() {
-		return fmt.Errorf("not the leader")
-	}
+    if !n.IsLeader() {
+        return fmt.Errorf("not the leader")
+    }
 
-	f := n.raft.Apply(cmd, 10*time.Second)
-	if err := f.Error(); err != nil {
-		return err
-	}
-
-	return nil
+    if err := n.raft.Apply(cmd, 10*time.Second).Error(); err != nil {
+        return err
+    }
+    return nil
 }

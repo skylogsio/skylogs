@@ -47,12 +47,7 @@ func (application *App) Run() error {
 		syscall.SIGTERM,
 	)
 	<-signalChannel
-	//Removing Server from cluster
-	f := application.Service.RemoveServer()
-	err := f.Error()
-	if err != nil {
-		return err
-	}
+
 	//Server Shutdown
 	return application.Shutdown()
 }

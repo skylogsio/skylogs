@@ -1,29 +1,31 @@
 package app
 
 import (
+	"os"
+	"strconv"
+
 	"RAFT_Service/internal/api/handler"
 	"RAFT_Service/internal/api/routes"
 	"RAFT_Service/internal/model"
 	"RAFT_Service/internal/service"
-	"os"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
 
+// App holds application configuration, services, and HTTP routing.
 type App struct {
-	Config *model.Config
-
+	Config  *model.Config
 	Service *service.NodeService
-
-	Router *gin.Engine
+	Router  *gin.Engine
 }
 
+// New initializes the application and its Raft-backed services.
 func New() (*App, error) {
-	//create config -> then create node -> create node service -> return as app
+	// Load configuration.
 	config := model.ParseConfig()
-	//Check for data existence or new cluster creation
+
+	// Check for existing Raft data.
 	if hasExistingData(config.DataDir) {
 		log.Info().
 			Str("data_dir", config.DataDir).
@@ -33,37 +35,39 @@ func New() (*App, error) {
 		config.Bootstrap = false
 	}
 
-	// Create and start node
+	// Create and start the Raft node.
 	node, err := service.NewNode(config)
 	if err != nil {
 		return nil, err
 	}
-	// create service
+
+	// Create application service and handlers.
 	nodeService := service.NewNodeService(node)
-	// create API handler
 	h := handler.NewHandler(nodeService)
-	// create router and bind addresses
-	// router := gin.Default()       This will show logs of all requests!
+
+	// Create Gin router.
 	router := gin.New()
+
 	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
 		SkipPaths: []string{
 			"/leader",
 			"/health",
 		},
 	}))
+
 	router.Use(gin.Recovery())
-	routes.HomeGroupRoutes(router, h)
+
+	// Register existing routes and the new cluster status endpoint.
+	routes.HomeGroupRoutes(router, h, node.ClusterStatus)
 
 	return &App{
-
-		Config: config,
-
+		Config:  config,
 		Service: nodeService,
-
-		Router: router,
+		Router:  router,
 	}, nil
 }
 
+// hasExistingData checks whether a Raft data directory contains files.
 func hasExistingData(dir string) bool {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
