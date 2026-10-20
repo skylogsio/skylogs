@@ -2,6 +2,36 @@
 
 set -e
 
+# One image, three roles. The role comes from the container command, then
+# DEPLOY_TYPE, and defaults to web. Anything else is run as given.
+role="${1:-${DEPLOY_TYPE:-web}}"
+
+case "$role" in
+    horizon)
+        cd /opt/skylogs-api
+        echo "Starting Horizon..."
+        exec php artisan horizon
+        ;;
+    crontab)
+        cd /opt/skylogs-api
+        # cron starts schedule:run with an empty environment, so this
+        # container's environment has to be baked into the config cache.
+        echo "Caching config for the scheduler..."
+        php artisan config:cache
+        echo "Starting cron..."
+        exec cron -f
+        ;;
+    web)
+        ;;
+    *)
+        if [ "$#" -eq 0 ]; then
+            echo "Unknown DEPLOY_TYPE: $role (expected web, horizon or crontab)" >&2
+            exit 1
+        fi
+        exec "$@"
+        ;;
+esac
+
 cp -R /opt/skylogs-api/. /var/www/html/
 
 if [ ! -f /var/www/html/.env ]; then

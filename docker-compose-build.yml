@@ -23,7 +23,7 @@
 
 x-back-env: &back-env
   environment:
-    - APP_ENV=local
+    - APP_ENV=production
     - APP_DEBUG=true
     - APP_URL=http://localhost:8000
     - FRONTEND_URL=http://localhost:8080
@@ -111,16 +111,30 @@ services:
     networks:
       - skylogs_net
 
+  # Same image as back. Horizon and the scheduler run from the code baked into
+  # the image, so they need no shared volume; back being healthy means
+  # migrations have run.
   horizon:
-    build:
-      context: apps/backend
-      dockerfile: HorizonDockerfile
+    build: apps/backend
     #    container_name: skylogs_horizon
+    command: horizon
     restart: unless-stopped
-    working_dir: /var/www/html
-    volumes:
-      # Populated by back's entrypoint; starts only after back is healthy.
-      - app_data:/var/www/html
+    depends_on:
+      back:
+        condition: service_healthy
+      mongo:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - skylogs_net
+    <<: *back-env
+
+  crontab:
+    build: apps/backend
+    #    container_name: skylogs_crontab
+    command: crontab
+    restart: unless-stopped
     depends_on:
       back:
         condition: service_healthy

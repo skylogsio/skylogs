@@ -228,6 +228,10 @@ def horizon_ctr(node: str) -> str:
     return f"skylogs_horizon-{node[-1]}"
 
 
+def crontab_ctr(node: str) -> str:
+    return f"skylogs_crontab-{node[-1]}"
+
+
 def wait_config(ctx: Ctx, getter, pred, desc: str) -> float:
     """Wait for followers to receive config via Horizon-scheduled SyncHaConfigJob.
 
@@ -747,11 +751,15 @@ def step_horizon_health(ctx: Ctx) -> None:
             if "inactive" in status.lower() or "not" in status.lower():
                 raise RuntimeError(f"Horizon not active on {ctr}: {status}")
 
-        # cron must be present for schedule:run (dispatches SyncHa* jobs onto ha queue)
-        cron = docker_out("exec", ctr, "crontab", "-l")
+        # cron runs in its own container and dispatches SyncHa* jobs onto the ha queue
+        cron_ctr = crontab_ctr(node)
+        cron_state = docker_out("inspect", "-f", "{{.State.Running}} {{.State.Status}}", cron_ctr).strip()
+        if not cron_state.startswith("true"):
+            raise RuntimeError(f"{cron_ctr} not running: {cron_state}")
+        cron = docker_out("exec", cron_ctr, "crontab", "-l")
         if "schedule:run" not in cron:
-            raise RuntimeError(f"{ctr} missing schedule:run cron:\n{cron}")
-        print(f"  {ctr} cron has schedule:run")
+            raise RuntimeError(f"{cron_ctr} missing schedule:run cron:\n{cron}")
+        print(f"  {cron_ctr} cron has schedule:run")
 
 
 def step_ha_http_contracts(ctx: Ctx) -> None:

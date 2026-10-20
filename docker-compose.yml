@@ -88,8 +88,7 @@ services:
     container_name: skylogs_horizon
     image: skylogsio/skylogs-api
     restart: unless-stopped
-    entrypoint: >
-      sh -c "php artisan horizon"
+    command: horizon
     depends_on:
       - mongodb
       - redis
@@ -100,9 +99,7 @@ services:
   crontab:
     container_name: skylogs_crontab
     image: skylogsio/skylogs-api
-    entrypoint: >
-      sh -c "crond -f -l 8 &&
-            tail -f /var/log/cron.log"
+    command: crontab
     restart: unless-stopped
     depends_on:
       - mongodb

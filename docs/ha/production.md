@@ -71,7 +71,7 @@ They share `alertRules`; config sync deliberately excludes Raft-owned fields so 
 | Backend + nginx | Per node. Raft `RAFT_NOTIFY_URL` must hit **this node's** nginx, never a VIP. |
 | MongoDB | Independent instance (or dedicated DB) **per node**. |
 | Redis | Independent instance **per node** (cache + queues). |
-| Horizon | Must process queue `ha` (`supervisor-ha` in `config/horizon.php`). Scheduler cron runs from the Horizon image entrypoint. |
+| Horizon | Must process queue `ha` (`supervisor-ha` in `config/horizon.php`). Scheduler cron runs in its own `crontab` container from the same backend image. |
 | Network | Stable Raft advertise addresses reachable peer-to-peer (fixed IPs or stable DNS). |
 | Raft data volume | Persistent `/data` **per node**. Losing all volumes = new cluster. |
 | Shared app storage | Not required for HA data paths. |
@@ -180,7 +180,7 @@ Notify is best-effort: Raft commit succeeds even if the app is down; reconcile r
 ### 5.1 Prerequisites
 
 1. Three (or odd-N) hosts/VMs/K8s nodes with Docker (or equivalent) and a shared L2/L3 path for Raft TCP `7000`.
-2. Built images: backend (API + Horizon), Raft (`apps/raft`), nginx, MongoDB, Redis.
+2. Built images: backend (one image for the API, Horizon and the `crontab` scheduler), Raft (`apps/raft`), nginx, MongoDB, Redis.
 3. Persistent volumes for: MongoDB data, Redis (optional), **Raft `/data`**, and app storage if your packaging requires it.
 4. A strong shared `HA_NODE_SECRET` / `RAFT_NOTIFY_SECRET` (same on all nodes). Rotate by updating all nodes together.
 5. Firewall: allow Raft `7000` and (as needed) Raft HTTP `8000` **between nodes**; allow HA peer HTTP between node backends; do **not** expose `/api/ha/*` to the public internet.
@@ -200,7 +200,7 @@ Notify is best-effort: Raft commit succeeds even if the app is down; reconcile r
 5. **Start node 3** the same way.
 6. Confirm all three answer `/status` and agree on `leader`.
 7. After the first successful membership, set `RAFT_START_MODE` empty (or leave compose as-is knowing data dir wins) for restarts.
-8. Verify Horizon is up and processing `ha`; verify scheduler/cron is running on each Horizon container.
+8. Verify Horizon is up and processing `ha`; verify the `crontab` (scheduler) container is running on each node.
 9. On followers, confirm config sync within ~30–60s (logs: `HA config sync applied a new snapshot`).
 
 Local lab equivalent:
@@ -475,7 +475,7 @@ Size Mongo/Redis/Horizon like a single-node Skylogs install **per node**. Raft s
 - [ ] Independent MongoDB per node
 - [ ] Independent Redis per node
 - [ ] Horizon running with `supervisor-ha` / queue `ha`
-- [ ] Scheduler/cron active on each node (Horizon image)
+- [ ] `crontab` (scheduler) container running on each node
 - [ ] Raft TCP 7000 open between peers
 - [ ] Stable `RAFT_ADV_ADDR` values
 
