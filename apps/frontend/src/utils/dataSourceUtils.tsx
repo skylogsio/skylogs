@@ -45,12 +45,7 @@ export const DATA_SOURCE_VARIANTS: Record<
     defaultColor: orange[500],
     defaultSize: "1.2rem"
   },
-  metabase: {
-    label: "Metabase",
-    Icon: SiMetabase,
-    defaultColor: blue[600],
-    defaultSize: "1.2rem"
-  },
+
   elastic: {
     label: "Elastic",
     Icon: ElasticIcon as IconType,
@@ -63,12 +58,7 @@ export const DATA_SOURCE_VARIANTS: Record<
     defaultColor: "",
     defaultSize: "1.2rem"
   },
-  splunk: {
-    label: "Splunk",
-    Icon: SplunkIcon as IconType,
-    defaultColor: "",
-    defaultSize: "1.2rem"
-  },
+
   pmm: {
     label: "Percona PMM",
     Icon: PerconaIcon as IconType,
@@ -79,6 +69,18 @@ export const DATA_SOURCE_VARIANTS: Record<
     label: "Victoria Logs",
     Icon: SiVictoriametrics,
     defaultColor: lightBlue[600],
+    defaultSize: "1.2rem"
+  },
+  splunk: {
+    label: "Splunk",
+    Icon: SplunkIcon as IconType,
+    defaultColor: "",
+    defaultSize: "1.2rem"
+  },
+  metabase: {
+    label: "Metabase",
+    Icon: SiMetabase,
+    defaultColor: blue[600],
     defaultSize: "1.2rem"
   }
 };

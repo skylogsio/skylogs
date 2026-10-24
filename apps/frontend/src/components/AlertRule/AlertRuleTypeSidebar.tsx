@@ -128,7 +128,7 @@ export default function AlertRuleTypeSidebar({
                 whiteSpace: "nowrap"
               }}
             >
-              {isDisabled ? `(Disabled) ${value.label}` : value.label}
+              {isDisabled ? `${value.label} (Disabled)` : value.label}
             </Typography>
           </motion.button>
         );
