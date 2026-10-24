@@ -15,7 +15,6 @@ export type DataSourceType =
   | "elastic"
   | "zabbix"
   | "splunk"
-  | "victoriametrics"
   | "victoria_logs"
   | "pmm";
 
@@ -67,12 +66,6 @@ export const DATA_SOURCE_VARIANTS: Record<
   splunk: {
     label: "Splunk",
     Icon: SplunkIcon as IconType,
-    defaultColor: "",
-    defaultSize: "1.2rem"
-  },
-  victoriametrics: {
-    label: "Victoria Metrics",
-    Icon: SiVictoriametrics,
     defaultColor: "",
     defaultSize: "1.2rem"
   },

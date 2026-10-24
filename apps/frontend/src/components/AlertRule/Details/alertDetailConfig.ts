@@ -21,7 +21,6 @@ const SCHEMA_BY_TYPE: Record<AlertRuleType, DetailSchema> = {
   pmm: generalAlertRuleSchema,
   grafana: generalAlertRuleSchema,
   metabase: generalAlertRuleSchema,
-  victoriametrics: generalAlertRuleSchema,
   sentry: sentryAlertRuleSchema,
   zabbix: zabbixAlertRuleSchema,
   splunk: splunkAlertRuleSchema,
