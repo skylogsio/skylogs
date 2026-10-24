@@ -132,7 +132,7 @@ export default function ZabbixAlertHistory({ alertId }: { alertId: IAlertRule["i
               width: "100%",
               padding: 2,
               borderRadius: 2,
-              backgroundColor: ({ palette }) => palette.grey[200]
+              backgroundColor: "background.default"
             }}
           >
             <Typography variant="subtitle2" component="pre">

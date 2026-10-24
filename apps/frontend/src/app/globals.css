@@ -11,11 +11,13 @@ body {
 
 html.light {
   background-color: #f3eee6;
+  color: #1c1917;
   color-scheme: light;
 }
 
 html.dark {
   background-color: #121110;
+  color: #ede6dc;
   color-scheme: dark;
 }
 

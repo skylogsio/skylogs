@@ -55,43 +55,61 @@ export function persistMode(mode: string | null): void {
 }
 
 export function createThemeStorageManager(): StorageManager {
-  return ({ key }) => ({
-    get(defaultValue) {
-      return getStoredMode() ?? readCookie(key) ?? defaultValue;
-    },
-    set(value) {
-      persistMode(value);
-    },
-    subscribe(handler) {
-      if (typeof window === "undefined") return () => {};
-
-      let current = getStoredMode() ?? readCookie(key);
-
-      const handleMediaChange = () => {
-        const stored = getStoredMode() ?? readCookie(key);
-        if (stored === "system" || stored === undefined) {
-          persistMode(stored ?? "system");
+  // MUI queries three keys through this manager: the mode key ("mui-mode")
+  // and the per-scheme keys ("mui-color-scheme-light" /
+  // "mui-color-scheme-dark"). Only the mode key carries the user's
+  // light/dark/system preference — answering scheme queries with the stored
+  // mode poisons MUI's lightColorScheme/darkColorScheme state, so the <html>
+  // class stops updating until the next reload.
+  return ({ key }) => {
+    const isModeKey = key === MUI_MODE_KEY;
+    return {
+      get(defaultValue) {
+        if (!isModeKey) {
+          return readCookie(key) ?? defaultValue;
         }
-      };
-
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-      mediaQuery.addEventListener("change", handleMediaChange);
-
-      const handleStorage = (event: StorageEvent) => {
-        if (event.key !== MUI_MODE_KEY && event.key !== key) return;
-        const next = event.newValue;
-        if (next !== current) {
-          current = next ?? undefined;
-          persistMode(next);
-          handler(next);
+        return getStoredMode() ?? readCookie(key) ?? defaultValue;
+      },
+      set(value) {
+        if (!isModeKey) {
+          return;
         }
-      };
-      window.addEventListener("storage", handleStorage);
+        persistMode(value);
+      },
+      subscribe(handler) {
+        if (typeof window === "undefined") return () => {};
 
-      return () => {
-        mediaQuery.removeEventListener("change", handleMediaChange);
-        window.removeEventListener("storage", handleStorage);
-      };
-    }
-  });
+        let current = isModeKey ? (getStoredMode() ?? readCookie(key)) : readCookie(key);
+
+        const handleMediaChange = () => {
+          if (!isModeKey) return;
+          const stored = getStoredMode() ?? readCookie(key);
+          if (stored === "system" || stored === undefined) {
+            persistMode(stored ?? "system");
+          }
+        };
+
+        const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        mediaQuery.addEventListener("change", handleMediaChange);
+
+        const handleStorage = (event: StorageEvent) => {
+          if (event.key !== key) return;
+          const next = event.newValue;
+          if (next !== current) {
+            current = next ?? undefined;
+            if (isModeKey) {
+              persistMode(next);
+            }
+            handler(next);
+          }
+        };
+        window.addEventListener("storage", handleStorage);
+
+        return () => {
+          mediaQuery.removeEventListener("change", handleMediaChange);
+          window.removeEventListener("storage", handleStorage);
+        };
+      }
+    };
+  };
 }

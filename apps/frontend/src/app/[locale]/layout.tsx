@@ -53,12 +53,7 @@ export default async function RootLayout({
   const resolvedClass = initialMode === "light" || initialMode === "dark" ? initialMode : undefined;
   const isDark = initialMode === "dark";
   const paintStyle =
-    resolvedClass === undefined
-      ? undefined
-      : {
-          backgroundColor: isDark ? "#121110" : "#F3EEE6",
-          colorScheme: isDark ? "dark" : "light"
-        };
+    resolvedClass === undefined ? undefined : { colorScheme: isDark ? "dark" : "light" };
   const sidebarCollapsed = cookieStore.get("skylogs-sidebar-collapsed")?.value === "true";
 
   return (
@@ -66,7 +61,6 @@ export default async function RootLayout({
       <body
         className={dir === "ltr" ? inter.className : vazir.className}
         suppressHydrationWarning
-        style={resolvedClass === undefined ? undefined : { backgroundColor: isDark ? "#121110" : "#F3EEE6" }}
       >
         <InitColorSchemeScript attribute="class" defaultMode={initialMode} />
         <AppRouterCacheProvider>
