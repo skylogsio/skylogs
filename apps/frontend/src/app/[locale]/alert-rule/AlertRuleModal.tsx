@@ -1,16 +1,6 @@
 import { useEffect, useState } from "react";
 
-import {
-  backdropClasses,
-  Box,
-  Button,
-  buttonClasses,
-  ButtonGroup,
-  Fade,
-  Modal,
-  Paper,
-  useTheme
-} from "@mui/material";
+import { backdropClasses, Box, Fade, Modal, Paper } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 
 import type { IAlertRule } from "@/@types/alertRule";
@@ -25,6 +15,7 @@ import SplunkAlertRuleForm from "@/components/AlertRule/Forms/SplunkForm";
 import VictoriaLogsAlertRuleForm from "@/components/AlertRule/Forms/VictoriaLogsForm";
 import ZabbixAlertRuleForm from "@/components/AlertRule/Forms/ZabbixForm";
 import type { ModalContainerProps } from "@/components/Modal/types";
+import AlertRuleTypeSidebar from "@/components/AlertRule/AlertRuleTypeSidebar";
 import { ALERT_RULE_VARIANTS, type AlertRuleType } from "@/utils/alertRuleUtils";
 
 type AlertRuleModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
@@ -33,7 +24,6 @@ type AlertRuleModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
 };
 
 export default function AlertRuleModal({ open, onClose, onSubmit, data }: AlertRuleModalProps) {
-  const { palette } = useTheme();
   const [selectedAlertRuleType, setSelectedAlertRuleType] = useState<AlertRuleType>(
     Object.keys(ALERT_RULE_VARIANTS)[0] as AlertRuleType
   );
@@ -115,50 +105,6 @@ export default function AlertRuleModal({ open, onClose, onSubmit, data }: AlertR
     }
   }
 
-  function renderAlertRuleSideBar() {
-    return Object.entries(ALERT_RULE_VARIANTS).map(
-      ([key, value]) =>
-        key !== "health" && (
-          <Button
-            startIcon={<value.Icon size={value.defaultSize} color={value.defaultColor} />}
-            key={key}
-            onClick={() => setSelectedAlertRuleType(key as AlertRuleType)}
-            sx={{
-              paddingX: 3,
-              paddingY: 1.7,
-              justifyContent: "flex-start",
-              textTransform: "capitalize",
-              borderColor: `${palette.divider} !important`,
-              color: key === selectedAlertRuleType ? palette.primary.main : palette.secondary.dark,
-              fontSize: "1rem",
-              [`& .${buttonClasses.icon}`]: {
-                width: 24,
-                height: 24,
-                marginRight: 2,
-                "& svg": {
-                  width: "inherit",
-                  height: "inherit"
-                }
-              },
-              "&::before": {
-                content: "''",
-                display: key === selectedAlertRuleType ? "initial" : "none",
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "10px",
-                height: "100%",
-                transform: "translateX(-1rem)",
-                backgroundColor: palette.primary.main
-              }
-            }}
-          >
-            {value.label}
-          </Button>
-        )
-    );
-  }
-
   useEffect(() => {
     if (data !== "NEW") {
       setSelectedAlertRuleType((data as { type: AlertRuleType }).type);
@@ -182,26 +128,31 @@ export default function AlertRuleModal({ open, onClose, onSubmit, data }: AlertR
           sx={{
             width: "100%",
             maxWidth: data === "NEW" ? "1000px" : "800px",
-            maxHeight: "90vh",
+            height: "90vh",
             position: "absolute",
             top: "50%",
             left: "50%",
             transform: "translate(-50%,-50%)"
           }}
         >
-          <Paper sx={{ borderRadius: 4, boxShadow: "none", overflow: "hidden", display: "flex" }}>
+          <Paper
+            sx={{
+              height: "100%",
+              borderRadius: 4,
+              boxShadow: "none",
+              overflow: "hidden",
+              display: "flex"
+            }}
+          >
             {data === "NEW" && (
-              <ButtonGroup
-                variant="text"
-                orientation="vertical"
-                sx={{ paddingX: "1rem", paddingY: 1, borderRight: `1px solid ${palette.divider}` }}
-              >
-                {renderAlertRuleSideBar()}
-              </ButtonGroup>
+              <AlertRuleTypeSidebar
+                selectedType={selectedAlertRuleType}
+                onSelect={setSelectedAlertRuleType}
+              />
             )}
             <Box
               sx={{
-                maxHeight: "90vh",
+                height: "100%",
                 overflow: "auto",
                 flex: 1
               }}
