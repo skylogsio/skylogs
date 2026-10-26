@@ -29,7 +29,7 @@ import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGenera
 import ExtraField from "@/components/AlertRule/Forms/ExtraField";
 import type { ModalContainerProps } from "@/components/Modal/types";
 import ToggleButtonGroup from "@/components/ToggleButtonGroup";
-import { type DataSourceType } from "@/utils/dataSourceUtils";
+import { type DataSourceType } from "@/features/DataSource/dataSource.utils";
 import { capitalizeFirstLetter } from "@/utils/general";
 
 const QUERY_TYPE = ["dynamic", "textQuery"] as const;

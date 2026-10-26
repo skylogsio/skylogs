@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { IAlertRule } from "@/@types/alertRule";
 import { getAlertRuleAccessList, getAlertRuleEndpointsList } from "@/api/alertRule";
 import { getAlertRuleDataSourcesByAlertType } from "@/api/alertRule";
-import type { DataSourceType } from "@/utils/dataSourceUtils";
+import type { DataSourceType } from "@/features/DataSource/dataSource.utils";
 
 import { DETAIL_FIELD_LABELS, getDetailSections } from "./alertDetailConfig";
 import { DetailEmpty, DetailFieldValue } from "./DetailFieldValue";

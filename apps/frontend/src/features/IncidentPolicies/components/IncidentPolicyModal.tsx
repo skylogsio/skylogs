@@ -38,7 +38,7 @@ import { getAllAlertRules } from "@/features/Debugging/debugging.api";
 import { INCIDENT_SEVERITIES } from "@/features/Incidents/incident.type";
 import { getPublishedRunbooks } from "@/features/Runbooks/runbook.api";
 import { useCurrentTheme } from "@/hooks";
-import { DATA_SOURCE_VARIANTS, type DataSourceType } from "@/utils/dataSourceUtils";
+import { DATA_SOURCE_VARIANTS, type DataSourceType } from "@/features/DataSource/dataSource.utils";
 
 import {
   createIncidentPolicy,

@@ -2,10 +2,10 @@ import { Stack, Typography } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 
-import type { IDataSource } from "@/@types/dataSource";
-import { deleteDataSource } from "@/api/dataSource";
+import type { IDataSource } from "../dataSource.type";
+import { deleteDataSource } from "../dataSource.api";
 import ConnectionStatus from "@/components/ConnectionStatus";
-import DataSourceType from "@/components/DataSource/DataSourceType";
+import DataSourceType from "./DataSourceType";
 import DeleteModalContainer from "@/components/DeleteModal/DeleteModalContainer";
 import type { DeleteModalProps } from "@/components/DeleteModal/DeleteModalTypes";
 

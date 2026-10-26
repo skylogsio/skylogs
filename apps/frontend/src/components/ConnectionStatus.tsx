@@ -2,9 +2,9 @@ import { alpha, Chip, ChipProps, CircularProgress, useTheme } from "@mui/materia
 import { useQuery } from "@tanstack/react-query";
 
 import type { ICluster } from "@/@types/cluster";
-import type { IDataSource } from "@/@types/dataSource";
+import type { IDataSource } from "@/features/DataSource/dataSource.type";
 import { getClusterStatus } from "@/api/cluster";
-import { getDataSourceStatus } from "@/api/dataSource";
+import { getDataSourceStatus } from "@/features/DataSource/dataSource.api";
 
 interface ConnectionStatusProps extends Pick<ChipProps, "size"> {
   dataSourceId?: IDataSource["id"];

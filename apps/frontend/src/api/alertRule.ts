@@ -17,7 +17,7 @@ import type { ITeam } from "@/@types/team";
 import type { IUser } from "@/@types/user";
 import axios from "@/lib/axios";
 import { toErrorResponse } from "@/lib/serverResponse";
-import { DataSourceType } from "@/utils/dataSourceUtils";
+import { DataSourceType } from "@/features/DataSource/dataSource.utils";
 
 const ALERT_RULE_URL = "alert-rule";
 const ALERT_RULE_NOTIFY_URL = "alert-rule-notify";
