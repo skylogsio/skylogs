@@ -5255,6 +5255,51 @@
                 ]
             }
         },
+        "/api/v1/ha/cluster/status": {
+            "get": {
+                "tags": [
+                    "HA"
+                ],
+                "summary": "Get HA Raft cluster status",
+                "description": "Proxies the local Raft sidecar `GET /cluster/status` response (peers, known leader, local state).",
+                "operationId": "getHaClusterStatus",
+                "responses": {
+                    "200": {
+                        "description": "Raft cluster status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HaClusterStatus"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "503": {
+                        "description": "Raft sidecar unavailable",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/incident": {
             "get": {
                 "tags": [
@@ -12401,6 +12446,57 @@
                 },
                 "type": "object"
             },
+            "HaClusterStatus": {
+                "properties": {
+                    "reporter_id": {
+                        "type": "string",
+                        "example": "node2"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "local_state": {
+                        "type": "string",
+                        "example": "Leader"
+                    },
+                    "known_leader_id": {
+                        "type": "string",
+                        "example": "node2"
+                    },
+                    "known_leader_address": {
+                        "type": "string",
+                        "example": "172.28.7.12:7000"
+                    },
+                    "peers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/HaClusterPeer"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "HaClusterPeer": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "example": "node1"
+                    },
+                    "address": {
+                        "type": "string",
+                        "example": "172.28.7.11:7000"
+                    },
+                    "suffrage": {
+                        "type": "string",
+                        "example": "Voter"
+                    },
+                    "tcp_reachable": {
+                        "type": "boolean"
+                    }
+                },
+                "type": "object"
+            },
             "Incident": {
                 "properties": {
                     "id": {
@@ -14769,6 +14865,10 @@
         {
             "name": "Endpoints",
             "description": "Manage notification endpoints (SMS, Email, Telegram, Bale, Teams, etc.)"
+        },
+        {
+            "name": "HA",
+            "description": "High availability cluster status from the local Raft sidecar. Requires authentication."
         },
         {
             "name": "Incidents",

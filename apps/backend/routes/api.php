@@ -22,6 +22,7 @@ use App\Http\Controllers\V1\Config\SmsController;
 use App\Http\Controllers\V1\Config\TelegramController;
 use App\Http\Controllers\V1\DataSourceController;
 use App\Http\Controllers\V1\EndpointController;
+use App\Http\Controllers\V1\Ha\ClusterStatusController;
 use App\Http\Controllers\V1\Incident\ActionItemController;
 use App\Http\Controllers\V1\Incident\DocumentController;
 use App\Http\Controllers\V1\Incident\PostMortemController;
@@ -102,6 +103,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/pmm-alert/{token}', 'PmmWebhook')->name('webhook.pmm');
 
     });
+
+    Route::middleware('auth')->get('ha/cluster/status', [ClusterStatusController::class, 'show'])
+        ->name('ha.clusterStatus');
 
     Route::middleware(['clusterAgentValidate', 'auth', 'clusterProxy'])->group(function () {
 

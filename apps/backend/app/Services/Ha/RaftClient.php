@@ -14,7 +14,7 @@ use Throwable;
 /**
  * Thin client for the Raft sidecar running next to this node.
  *
- * Endpoints: /status, /leader, /set, /get. Failures become
+ * Endpoints: /status, /cluster/status, /leader, /set, /get. Failures become
  * RaftUnavailableException so callers never handle HTTP errors.
  *
  * Stored values are raw JSON text: writes send objects, reads decode.
@@ -45,6 +45,24 @@ class RaftClient
             'leaderRaftAddress' => $leaderRaftAddress === '' ? null : $leaderRaftAddress,
             'state' => isset($payload['state']) ? (string) $payload['state'] : null,
         ];
+    }
+
+    /**
+     * Full cluster membership view from GET /cluster/status.
+     *
+     * Returned as the sidecar's JSON body (peer reachability, known leader, …).
+     *
+     * @return array<string, mixed>
+     *
+     * @throws RaftUnavailableException
+     */
+    public function clusterStatus(): array
+    {
+        return $this->send(
+            '/cluster/status',
+            (float) config('ha.raft.timeout.cluster_status'),
+            fn (PendingRequest $request): Response => $request->get('/cluster/status'),
+        );
     }
 
     /**
