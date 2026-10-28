@@ -44,7 +44,7 @@ class DataSourceService
 
         $dataSources = cache()
             ->tags($tagsArray)
-            ->rememberForever($keyName, function () use ($dataSourceType) {
+            ->remember($keyName, (int) config('cache.ttl'), function () use ($dataSourceType) {
                 $dataSource = DataSource::query();
                 if ($dataSourceType) {
                     $dataSource = $dataSource->where('type', $dataSourceType);

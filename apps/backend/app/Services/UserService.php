@@ -9,7 +9,7 @@ class UserService
 {
     public function admin(): User
     {
-        return cache()->tags(['user', 'admin'])->rememberForever('user:admin', function () {
+        return cache()->tags(['user', 'admin'])->remember('user:admin', (int) config('cache.ttl'), function () {
             return User::where('username', 'admin')->first();
         });
     }

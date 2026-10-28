@@ -1029,7 +1029,7 @@ class AlertRuleService
             }
         }
 
-        return Cache::tags($tagsArray)->rememberForever($keyName, fn () => $this->getAlertsDB($type));
+        return Cache::tags($tagsArray)->remember($keyName, (int) config('cache.ttl'), fn () => $this->getAlertsDB($type));
 
     }
 

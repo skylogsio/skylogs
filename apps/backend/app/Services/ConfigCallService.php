@@ -8,7 +8,7 @@ class ConfigCallService
 {
     public function getDefault(): ?ConfigCall
     {
-        return cache()->tags(['config', 'call'])->rememberForever('config:call:default', function () {
+        return cache()->tags(['config', 'call'])->remember('config:call:default', (int) config('cache.ttl'), function () {
             return ConfigCall::query()->where('isDefault', true)->first();
         });
     }
