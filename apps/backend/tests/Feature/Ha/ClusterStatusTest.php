@@ -63,6 +63,7 @@ function haClusterStatusRequest(?User $user = null): TestResponse
 
 beforeEach(function () {
     config([
+        'ha.enabled' => true,
         'ha.raft.url' => 'http://raft.test:8000',
         'ha.raft.connect_timeout' => 0.5,
         'ha.raft.timeout' => [
@@ -93,9 +94,27 @@ describe('GET /api/v1/ha/cluster/status', function () {
 
         haClusterStatusRequest(haClusterStatusUser())
             ->assertOk()
-            ->assertExactJson($payload);
+            ->assertExactJson([
+                'enabled' => true,
+                'cluster' => $payload,
+            ]);
 
         Http::assertSent(fn ($request) => $request->url() === 'http://raft.test:8000/cluster/status');
+    });
+
+    it('reports that high availability is disabled and does not call raft', function () {
+        config(['ha.enabled' => false]);
+
+        Http::fake();
+
+        haClusterStatusRequest(haClusterStatusUser())
+            ->assertOk()
+            ->assertExactJson([
+                'enabled' => false,
+                'cluster' => null,
+            ]);
+
+        Http::assertNothingSent();
     });
 
     it('returns 503 when the raft sidecar is unreachable', function () {

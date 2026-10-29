@@ -14,11 +14,24 @@ class ClusterStatusController extends Controller
 
     /**
      * Proxies the local Raft sidecar's GET /cluster/status for the frontend.
+     *
+     * A single-node install leaves HA_ENABLED false, so there is no sidecar to
+     * call. That is a configured state, not an outage.
      */
     public function show(): JsonResponse
     {
+        if (! config('ha.enabled')) {
+            return response()->json([
+                'enabled' => false,
+                'cluster' => null,
+            ]);
+        }
+
         try {
-            return response()->json($this->raft->clusterStatus());
+            return response()->json([
+                'enabled' => true,
+                'cluster' => $this->raft->clusterStatus(),
+            ]);
         } catch (RaftUnavailableException $exception) {
             return response()->json(
                 ['message' => $exception->getMessage()],

@@ -6,7 +6,7 @@ use OpenApi\Attributes as OA;
 
 #[OA\Tag(
     name: 'HA',
-    description: 'High availability cluster status from the local Raft sidecar. Requires authentication.'
+    description: 'High availability cluster status from the local Raft sidecar. When HA_ENABLED is false the endpoint reports that high availability is disabled and does not call Raft. Requires authentication.'
 )]
 class HaClusterStatusDocs
 {
@@ -14,14 +14,14 @@ class HaClusterStatusDocs
         path: '/api/v1/ha/cluster/status',
         operationId: 'getHaClusterStatus',
         summary: 'Get HA Raft cluster status',
-        description: 'Proxies the local Raft sidecar `GET /cluster/status` response (peers, known leader, local state).',
+        description: 'Returns `enabled` and `cluster`. When HA is enabled, `cluster` is the local Raft sidecar `GET /cluster/status` body (peers, known leader, local state). When `HA_ENABLED` is false, `cluster` is null and Raft is not called.',
         security: [['bearerAuth' => []]],
         tags: ['HA'],
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Raft cluster status',
-                content: new OA\JsonContent(ref: '#/components/schemas/HaClusterStatus')
+                description: 'Cluster status. `cluster` is null when high availability is disabled.',
+                content: new OA\JsonContent(ref: '#/components/schemas/HaClusterStatusResponse')
             ),
             new OA\Response(response: 401, description: 'Unauthenticated'),
             new OA\Response(
@@ -50,6 +50,19 @@ class HaClusterStatusDocs
             property: 'peers',
             type: 'array',
             items: new OA\Items(ref: '#/components/schemas/HaClusterPeer')
+        ),
+    ]
+)]
+#[OA\Schema(
+    schema: 'HaClusterStatusResponse',
+    required: ['enabled', 'cluster'],
+    properties: [
+        new OA\Property(property: 'enabled', type: 'boolean', example: true),
+        new OA\Property(
+            property: 'cluster',
+            ref: '#/components/schemas/HaClusterStatus',
+            description: 'Raft cluster status. Null when high availability is disabled.',
+            nullable: true
         ),
     ]
 )]

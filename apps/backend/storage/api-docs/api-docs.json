@@ -5261,15 +5261,15 @@
                     "HA"
                 ],
                 "summary": "Get HA Raft cluster status",
-                "description": "Proxies the local Raft sidecar `GET /cluster/status` response (peers, known leader, local state).",
+                "description": "Returns `enabled` and `cluster`. When HA is enabled, `cluster` is the local Raft sidecar `GET /cluster/status` body (peers, known leader, local state). When `HA_ENABLED` is false, `cluster` is null and Raft is not called.",
                 "operationId": "getHaClusterStatus",
                 "responses": {
                     "200": {
-                        "description": "Raft cluster status",
+                        "description": "Cluster status. `cluster` is null when high availability is disabled.",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/HaClusterStatus"
+                                    "$ref": "#/components/schemas/HaClusterStatusResponse"
                                 }
                             }
                         }
@@ -12477,6 +12477,28 @@
                 },
                 "type": "object"
             },
+            "HaClusterStatusResponse": {
+                "required": [
+                    "enabled",
+                    "cluster"
+                ],
+                "properties": {
+                    "enabled": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "cluster": {
+                        "description": "Raft cluster status. Null when high availability is disabled.",
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/HaClusterStatus"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "HaClusterPeer": {
                 "properties": {
                     "id": {
@@ -14868,7 +14890,7 @@
         },
         {
             "name": "HA",
-            "description": "High availability cluster status from the local Raft sidecar. Requires authentication."
+            "description": "High availability cluster status from the local Raft sidecar. When HA_ENABLED is false the endpoint reports that high availability is disabled and does not call Raft. Requires authentication."
         },
         {
             "name": "Incidents",
