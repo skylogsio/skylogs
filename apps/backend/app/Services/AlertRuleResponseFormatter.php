@@ -49,17 +49,49 @@ class AlertRuleResponseFormatter
         'extraField',
         'dataSourceAlertName',
         'queryType',
-        'acknowledgedBy',
         'ownerName',
         'countEndpoints',
         'count_endpoints',
     ];
+
+    /**
+     * User id => name, loaded once per index page or show document.
+     *
+     * @var array<string, string>
+     */
+    private array $acknowledgeNames = [];
 
     public function __construct(
         protected AlertRuleService $alertRuleService,
         protected EndpointService $endpointService,
         protected AlertRuleBehaviorRuleService $behaviorRuleService,
     ) {}
+
+    /**
+     * @param  iterable<int, AlertRule>  $alerts
+     */
+    public function preloadAcknowledgeUsers(iterable $alerts): void
+    {
+        $ids = [];
+
+        foreach ($alerts as $alert) {
+            if (! empty($alert->acknowledgedBy)) {
+                $ids[] = (string) $alert->acknowledgedBy;
+            }
+        }
+
+        $ids = array_values(array_unique($ids));
+
+        if ($ids === []) {
+            return;
+        }
+
+        $this->acknowledgeNames = User::query()
+            ->whereIn('_id', $ids)
+            ->get()
+            ->mapWithKeys(fn (User $user): array => [(string) $user->id => (string) $user->name])
+            ->all();
+    }
 
     public function enrichForList(AlertRule $alert, User $user): void
     {
@@ -130,6 +162,19 @@ class AlertRuleResponseFormatter
         $isWatched = $alert->isWatched($user);
         $alert->isWatched = $isWatched;
         $alert->is_watched = $isWatched;
+
+        $this->applyAcknowledgement($alert);
+    }
+
+    private function applyAcknowledgement(AlertRule $alert): void
+    {
+        $isAcknowledged = $alert->isAcknowledged();
+        $acknowledgedBy = $isAcknowledged ? (string) $alert->acknowledgedBy : null;
+
+        $alert->isAcknowledged = $isAcknowledged;
+        $alert->acknowledgedBy = $acknowledgedBy;
+        $alert->acknowledgedByName = $acknowledgedBy === null ? null : ($this->acknowledgeNames[$acknowledgedBy] ?? null);
+        $alert->acknowledgedAt = $isAcknowledged ? $alert->acknowledgedAt : null;
     }
 
     /**

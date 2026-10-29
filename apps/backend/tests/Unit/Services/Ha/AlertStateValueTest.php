@@ -18,7 +18,7 @@ function haStateValuePayload(array $overrides = []): array
         'state' => AlertRule::CRITICAL,
         'firedAt' => 1785000000,
         'resolvedAt' => null,
-        'rule' => ['state' => AlertRule::CRITICAL, 'fireCount' => 3, 'notifyAt' => 1785000000, 'acknowledgedBy' => null],
+        'rule' => ['state' => AlertRule::CRITICAL, 'fireCount' => 3, 'notifyAt' => 1785000000, 'acknowledgedBy' => null, 'acknowledgedAt' => null],
         'extra' => ['annotations' => ['summary' => 'down'], 'dataSourceId' => 'ds-1'],
         ...$overrides,
     ];
@@ -54,7 +54,31 @@ describe('AlertStateValue', function () {
         expect($value->ruleState())->toBe(AlertRule::CRITICAL)
             ->and($value->fireCount())->toBe(3)
             ->and($value->notifyAt())->toBe(1785000000)
-            ->and($value->acknowledgedBy())->toBeNull();
+            ->and($value->acknowledgedBy())->toBeNull()
+            ->and($value->acknowledgedAt())->toBeNull();
+    });
+
+    it('reads who acknowledged and when from the leader aggregate', function () {
+        $value = haStateValue([
+            'rule' => [
+                'state' => AlertRule::CRITICAL,
+                'fireCount' => 1,
+                'notifyAt' => null,
+                'acknowledgedBy' => '6512ab000000000000000002',
+                'acknowledgedAt' => 1785001234,
+            ],
+        ]);
+
+        expect($value->acknowledgedBy())->toBe('6512ab000000000000000002')
+            ->and($value->acknowledgedAt())->toBe(1785001234);
+    });
+
+    it('treats a missing acknowledge time as unset', function () {
+        $value = haStateValue([
+            'rule' => ['state' => AlertRule::CRITICAL, 'acknowledgedBy' => '6512ab000000000000000002'],
+        ]);
+
+        expect($value->acknowledgedAt())->toBeNull();
     });
 
     it('reports the resolve timestamp as the moment the slot changed', function () {

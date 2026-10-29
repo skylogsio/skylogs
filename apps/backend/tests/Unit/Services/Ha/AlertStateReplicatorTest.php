@@ -208,6 +208,7 @@ describe('AlertStateReplicator prometheus', function () {
                 'fireCount' => 3,
                 'notifyAt' => 1785000000,
                 'acknowledgedBy' => null,
+                'acknowledgedAt' => null,
             ])
             ->and($publish['value']['extra']['annotations'])->toBe(['summary' => 'down']);
     });

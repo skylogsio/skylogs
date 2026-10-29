@@ -45,6 +45,7 @@ class AlertRule extends BaseModel implements Messageable
         'checkType' => HealthAlertType::class,
         'isPrivate' => 'boolean',
         'autoCreated' => 'boolean',
+        'acknowledgedAt' => 'datetime',
     ];
 
     public const DYNAMIC_QUERY_TYPE = 'dynamic';
@@ -154,6 +155,7 @@ class AlertRule extends BaseModel implements Messageable
 
         if ($alertState == AlertRule::CRITICAL || $alertState == AlertRule::WARNING) {
             $this->acknowledgedBy = $user->id;
+            $this->acknowledgedAt = now();
             $this->save();
         }
     }
@@ -162,6 +164,7 @@ class AlertRule extends BaseModel implements Messageable
     {
         if (! empty($this->acknowledgedBy)) {
             $this->acknowledgedBy = null;
+            $this->acknowledgedAt = null;
             $this->save();
         }
     }

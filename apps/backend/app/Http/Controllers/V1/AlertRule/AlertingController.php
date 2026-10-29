@@ -105,6 +105,8 @@ class AlertingController extends Controller
             ['path' => $request->url()]
         );
 
+        $this->alertRuleResponseFormatter->preloadAcknowledgeUsers($paginatedData);
+
         foreach ($paginatedData as &$alert) {
             /** @var AlertRule $alert */
             $this->alertRuleResponseFormatter->enrichForList($alert, $currentUser);
@@ -374,6 +376,7 @@ class AlertingController extends Controller
             abort(403);
         }
 
+        $this->alertRuleResponseFormatter->preloadAcknowledgeUsers([$alert]);
         $this->alertRuleResponseFormatter->enrichForShow($alert, $currentUser);
 
         return response()->json($alert);

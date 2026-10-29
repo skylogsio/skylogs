@@ -29,7 +29,7 @@ class AlertStateReplicator
      *
      * @var array<int, string>
      */
-    private const RULE_ATTRIBUTES = ['state', 'fireCount', 'notifyAt', 'acknowledgedBy'];
+    private const RULE_ATTRIBUTES = ['state', 'fireCount', 'notifyAt', 'acknowledgedBy', 'acknowledgedAt'];
 
     private const PUBLISH_MEMO_LIMIT = 500;
 

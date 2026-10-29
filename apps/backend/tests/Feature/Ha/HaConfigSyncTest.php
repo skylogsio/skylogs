@@ -186,7 +186,7 @@ describe('HaConfigSyncService snapshot contents', function () {
 
         $document = haSnapshotRule(haLiveSnapshot(), (string) $alertRule->_id);
 
-        expect(array_intersect(array_keys($document), ['state', 'fireCount', 'notifyAt', 'acknowledgedBy']))
+        expect(array_intersect(array_keys($document), ['state', 'fireCount', 'notifyAt', 'acknowledgedBy', 'acknowledgedAt']))
             ->toBe([]);
     });
 
