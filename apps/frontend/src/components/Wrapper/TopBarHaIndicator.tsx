@@ -22,8 +22,6 @@ export default function TopBarHaIndicator() {
     refetchInterval: 30_000
   });
 
-  console.log("High - av", data);
-
   const cluster = data?.cluster ?? null;
   const isEnabled = Boolean(data?.enabled && cluster);
 
