@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { Box, Stack, Typography } from "@mui/material";
 
+import TopBarHaIndicator from "./TopBarHaIndicator";
 import TopBarProfile from "./TopBarProfile";
 import TopBarZone from "./TopBarZone";
 
@@ -103,6 +104,7 @@ export default function TopBar() {
         </Stack>
 
         <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", flexShrink: 0 }}>
+          <TopBarHaIndicator />
           <TopBarZone />
           <TopBarProfile />
         </Stack>
