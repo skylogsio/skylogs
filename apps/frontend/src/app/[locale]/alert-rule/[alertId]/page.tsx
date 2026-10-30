@@ -22,6 +22,7 @@ import type { IAlertRule } from "@/@types/alertRule";
 import { getAlertRuleById, silenceAlertRule, testAlertRule } from "@/api/alertRule";
 import AlertRuleModal from "@/app/[locale]/alert-rule/AlertRuleModal";
 import DeleteAlertRuleModal from "@/app/[locale]/alert-rule/DeleteAlertRuleModal";
+import { actionButtonSx } from "@/components/ActionColumn";
 import AdvanceSection from "@/components/AlertRule/advance/AdvanceSection";
 import AlertRuleApiToken from "@/components/AlertRule/Details/AlertRuleApiToken";
 import AlertRuleDetailsTab from "@/components/AlertRule/Details/AlertRuleDetailsTab";
@@ -138,33 +139,25 @@ export default function ViewAlertRule() {
     const silentLabel = data!.is_silent ? "Unsilent" : "Silent";
     const curlLabel = curlCopied ? "Copied!" : "Copy Curl";
     return (
-      <Stack direction="row-reverse" spacing={1} sx={{ flexWrap: "wrap", rowGap: 1 }}>
+      <Stack direction="row-reverse" spacing={0.75} sx={{ flexWrap: "wrap", rowGap: 1 }}>
         {data!.hasActionAccess && (
           <>
             <Tooltip title="Delete" placement="bottom" arrow>
               <IconButton
                 onClick={() => setCurrentOpenModal("DELETE")}
                 aria-label="Delete"
-                sx={{
-                  color: "error.main",
-                  backgroundColor:
-                    "color-mix(in srgb, var(--mui-palette-error-main) 12%, transparent)" 
-                }}
+                sx={actionButtonSx("error.main")}
               >
-                <HiTrash size="1.4rem" />
+                <HiTrash size="1.2rem" />
               </IconButton>
             </Tooltip>
             <Tooltip title="Edit" placement="bottom" arrow>
               <IconButton
                 onClick={() => setCurrentOpenModal("EDIT")}
                 aria-label="Edit"
-                sx={{
-                  color: "var(--mui-palette-endpoint-telegram)",
-                  backgroundColor:
-                    "color-mix(in srgb, var(--mui-palette-endpoint-telegram) 12%, transparent)" 
-                }}
+                sx={actionButtonSx("primary.main")}
               >
-                <HiPencil size="1.4rem" />
+                <HiPencil size="1.15rem" />
               </IconButton>
             </Tooltip>
           </>
@@ -175,16 +168,12 @@ export default function ViewAlertRule() {
               disabled={isSilencing}
               onClick={() => silenceAlertRuleMutation()}
               aria-label={silentLabel}
-              sx={{
-                color: "warning.main",
-                backgroundColor:
-                  "color-mix(in srgb, var(--mui-palette-warning-main) 14%, transparent)" 
-              }}
+              sx={actionButtonSx(data!.is_silent ? "text.secondary" : "warning.main")}
             >
               {data!.is_silent ? (
-                <IoNotificationsOff size="1.4rem" />
+                <IoNotificationsOff size="1.2rem" />
               ) : (
-                <IoNotifications size="1.4rem" />
+                <IoNotifications size="1.2rem" />
               )}
             </IconButton>
           </span>
@@ -194,13 +183,11 @@ export default function ViewAlertRule() {
             <IconButton
               onClick={handleTest}
               aria-label="Test"
-              sx={{
-                color: "var(--mui-palette-endpoint-flow)",
-                backgroundColor:
-                    "color-mix(in srgb, var(--mui-palette-endpoint-flow) 12%, transparent)" 
-              }}
+              sx={actionButtonSx("#7C3AED", (theme) =>
+                theme.applyStyles("dark", { color: "#A78BFA" })
+              )}
             >
-              <RiTestTubeFill size="1.4rem" />
+              <RiTestTubeFill size="1.15rem" />
             </IconButton>
           </span>
         </Tooltip>
@@ -209,15 +196,9 @@ export default function ViewAlertRule() {
             <IconButton
               onClick={handleCopyCurlCommand}
               aria-label={curlLabel}
-              sx={{
-                color: curlCopied ? "success.main" : "var(--mui-palette-endpoint-discord)",
-                backgroundColor: curlCopied
-                  ? "color-mix(in srgb, var(--mui-palette-success-main) 12%, transparent)"
-                  : "color-mix(in srgb, var(--mui-palette-endpoint-discord) 12%, transparent)",
-                transition: "all 0.2s ease-in-out"
-              }}
+              sx={actionButtonSx(curlCopied ? "success.main" : "info.main")}
             >
-              {curlCopied ? <BsCheck2 size="1.4rem" /> : <BsTerminalFill size="1.4rem" />}
+              {curlCopied ? <BsCheck2 size="1.15rem" /> : <BsTerminalFill size="1.1rem" />}
             </IconButton>
           </Tooltip>
         )}

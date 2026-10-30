@@ -10,7 +10,7 @@ import { RiTestTubeFill } from "react-icons/ri";
 
 import type { IAlertRule } from "@/@types/alertRule";
 import { pinAlertRule, silenceAlertRule, testAlertRule } from "@/api/alertRule";
-import ActionColumn, { ActionColumnProps } from "@/components/ActionColumn";
+import ActionColumn, { actionButtonSx, ActionColumnProps } from "@/components/ActionColumn";
 import AlertRuleAccessModal from "@/components/AlertRule/Users/AlertRuleAccessModal";
 
 interface AlertRuleActionColumnProps
@@ -115,41 +115,64 @@ export default function AlertRuleActionColumn({
     <>
       <Stack
         direction="row"
-        spacing={1}
+        spacing={0.75}
         sx={{
-          justifyContent: "center"
+          justifyContent: "center",
+          alignItems: "center"
         }}
+        onClick={(event) => event.stopPropagation()}
       >
-        <IconButton
-          onClick={handleTest}
-          sx={({ palette }) => ({
-            color: palette.primary.light,
-            backgroundColor: alpha(palette.primary.light, 0.05)
-          })}
-        >
-          <RiTestTubeFill size="1.4rem" />
-        </IconButton>
+        <Tooltip title="Test alert rule" placement="bottom" arrow>
+          <IconButton
+            onClick={(event) => {
+              event.stopPropagation();
+              handleTest(event);
+            }}
+            aria-label="Test alert rule"
+            sx={actionButtonSx("#7C3AED", (theme) =>
+              theme.applyStyles("dark", { color: "#A78BFA" })
+            )}
+          >
+            <RiTestTubeFill size="1.15rem" />
+          </IconButton>
+        </Tooltip>
 
-        <IconButton
-          onClick={() => silenceAlertRuleMutation()}
-          disabled={isSilencing}
-          sx={({ palette }) => ({
-            color: palette.warning.main,
-            backgroundColor: alpha(palette.warning.main, 0.05)
-          })}
+        <Tooltip
+          title={isSilentStatus ? "Unsilence alert rule" : "Silence alert rule"}
+          placement="bottom"
+          arrow
         >
-          {isSilentStatus ? (
-            <IoNotificationsOff size="1.4rem" />
-          ) : (
-            <IoNotifications size="1.4rem" />
-          )}
-        </IconButton>
-        <IconButton
-          sx={{ backgroundColor: ({ palette }) => alpha(palette.secondary.light, 0.2) }}
-          onClick={handleShowMorePopoverOpen}
-        >
-          <HiDotsHorizontal size="1.3rem" />
-        </IconButton>
+          <span>
+            <IconButton
+              onClick={(event) => {
+                event.stopPropagation();
+                silenceAlertRuleMutation();
+              }}
+              disabled={isSilencing}
+              aria-label={isSilentStatus ? "Unsilence alert rule" : "Silence alert rule"}
+              sx={actionButtonSx(isSilentStatus ? "text.secondary" : "warning.main")}
+            >
+              {isSilentStatus ? (
+                <IoNotificationsOff size="1.2rem" />
+              ) : (
+                <IoNotifications size="1.2rem" />
+              )}
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title="More actions" placement="bottom" arrow>
+          <IconButton
+            onClick={(event) => {
+              event.stopPropagation();
+              handleShowMorePopoverOpen(event);
+            }}
+            aria-label="More actions"
+            sx={actionButtonSx("text.secondary")}
+          >
+            <HiDotsHorizontal size="1.2rem" />
+          </IconButton>
+        </Tooltip>
       </Stack>
       <Popover
         id={showMorePopoverId}
@@ -164,38 +187,73 @@ export default function AlertRuleActionColumn({
           vertical: "top",
           horizontal: "center"
         }}
+        slotProps={{
+          paper: {
+            sx: (theme) => ({
+              mt: 0.5,
+              p: 1,
+              borderRadius: "12px",
+              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.12)",
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+              backgroundColor: theme.palette.background.paper,
+              ...theme.applyStyles("dark", {
+                boxShadow: "0 12px 32px rgba(0, 0, 0, 0.45)",
+                border: `1px solid ${alpha(theme.palette.divider, 0.6)}`
+              })
+            })
+          }
+        }}
       >
         <Stack
           direction="row"
+          spacing={0.75}
           sx={{
-            padding: 1,
-            gap: 1,
+            alignItems: "center",
             flexWrap: "wrap",
-            maxWidth: 300
+            maxWidth: 320
           }}
+          onClick={(event) => event.stopPropagation()}
         >
           {hasActionAccess && <ActionColumn onEdit={onEdit} onDelete={onDelete} />}
           <AlertRuleAccessModal alertId={rowId} />
-          <IconButton
-            sx={{ backgroundColor: ({ palette }) => alpha(palette.secondary.light, 0.2) }}
-            onClick={() => pinAlertRuleMutation()}
-            disabled={isPinning}
+          <Tooltip
+            title={isPinnedStatus ? "Unpin alert rule" : "Pin alert rule"}
+            placement="bottom"
+            arrow
           >
-            {isPinnedStatus ? <FaThumbtackSlash size="1.3rem" /> : <FaThumbtack size="1.3rem" />}
-          </IconButton>
-          {(type === "api" || type === "notification") && apiToken && (
-            <Tooltip title={curlCopied ? "Copied!" : "Copy curl command"}>
+            <span>
               <IconButton
-                onClick={handleCopyCurl}
-                sx={({ palette }) => ({
-                  color: curlCopied ? palette.success.main : palette.info.main,
-                  backgroundColor: curlCopied
-                    ? alpha(palette.success.main, 0.1)
-                    : alpha(palette.info.main, 0.05),
-                  transition: "all 0.2s ease-in-out"
-                })}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  pinAlertRuleMutation();
+                }}
+                disabled={isPinning}
+                aria-label={isPinnedStatus ? "Unpin alert rule" : "Pin alert rule"}
+                sx={actionButtonSx(isPinnedStatus ? "primary.main" : "text.secondary")}
               >
-                {curlCopied ? <BsCheck2 size="1.3rem" /> : <BsTerminalFill size="1.3rem" />}
+                {isPinnedStatus ? (
+                  <FaThumbtackSlash size="1.1rem" />
+                ) : (
+                  <FaThumbtack size="1.1rem" />
+                )}
+              </IconButton>
+            </span>
+          </Tooltip>
+          {(type === "api" || type === "notification") && apiToken && (
+            <Tooltip
+              title={curlCopied ? "Copied!" : "Copy curl command"}
+              placement="bottom"
+              arrow
+            >
+              <IconButton
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleCopyCurl();
+                }}
+                aria-label={curlCopied ? "Copied" : "Copy curl command"}
+                sx={actionButtonSx(curlCopied ? "success.main" : "info.main")}
+              >
+                {curlCopied ? <BsCheck2 size="1.15rem" /> : <BsTerminalFill size="1.1rem" />}
               </IconButton>
             </Tooltip>
           )}
@@ -213,6 +271,21 @@ export default function AlertRuleActionColumn({
         transformOrigin={{
           vertical: "top",
           horizontal: "center"
+        }}
+        slotProps={{
+          paper: {
+            sx: (theme) => ({
+              mt: 0.5,
+              borderRadius: "12px",
+              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.12)",
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+              backgroundColor: theme.palette.background.paper,
+              ...theme.applyStyles("dark", {
+                boxShadow: "0 12px 32px rgba(0, 0, 0, 0.45)",
+                border: `1px solid ${alpha(theme.palette.divider, 0.6)}`
+              })
+            })
+          }
         }}
       >
         <Stack
