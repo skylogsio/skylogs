@@ -105,7 +105,7 @@ class CheckVictoriaLogsJob implements ShouldBeUnique, ShouldQueue
 
                 $check->save();
 
-                VictoriaLogsHistory::create([
+                $history = VictoriaLogsHistory::create([
                     'alertRuleId' => $this->alert->_id,
                     'alertRuleName' => $this->alert->name,
                     'dataSourceId' => $this->alert->dataSourceId,
@@ -116,7 +116,7 @@ class CheckVictoriaLogsJob implements ShouldBeUnique, ShouldQueue
                     'state' => VictoriaLogsCheck::FIRE,
                 ]);
 
-                app(SendNotifyService::class)->createNotify(SendNotifyJob::VICTORIA_LOGS_CHECK, $check, $this->alert->_id);
+                app(SendNotifyService::class)->createNotify(SendNotifyJob::VICTORIA_LOGS_CHECK, $check, $this->alert->_id, $history);
             } elseif ($check->currentCountDocument !== $countDocuments) {
                 $check->currentCountDocument = $countDocuments;
                 $check->save();
@@ -134,7 +134,7 @@ class CheckVictoriaLogsJob implements ShouldBeUnique, ShouldQueue
 
                 $check->save();
 
-                VictoriaLogsHistory::create([
+                $history = VictoriaLogsHistory::create([
                     'alertRuleId' => $this->alert->_id,
                     'alertRuleName' => $this->alert->name,
                     'dataSourceId' => $this->alert->dataSourceId,
@@ -145,7 +145,7 @@ class CheckVictoriaLogsJob implements ShouldBeUnique, ShouldQueue
                     'state' => VictoriaLogsCheck::RESOLVED,
                 ]);
 
-                app(SendNotifyService::class)->createNotify(SendNotifyJob::VICTORIA_LOGS_CHECK, $check, $this->alert->_id);
+                app(SendNotifyService::class)->createNotify(SendNotifyJob::VICTORIA_LOGS_CHECK, $check, $this->alert->_id, $history);
 
             }
         }

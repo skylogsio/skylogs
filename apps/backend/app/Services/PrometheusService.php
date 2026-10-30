@@ -272,14 +272,14 @@ class PrometheusService
             if ($alertRule->state == AlertRule::RESOlVED) {
                 $alertRule->removeAcknowledge();
             }
-            $check->createHistory();
+            $history = $check->createHistory();
 
             //            $updatedAlertsArray->isNotEmpty() ? AlertRule::
             //            \Bus::chain([
             //                new SendNotifyJob(SendNotifyJob::PROMETHEUS_FIRE, $check),
             //                new RefreshPrometheusCheckJob,
             //            ])->dispatch();
-            app(SendNotifyService::class)->createNotify(SendNotifyJob::PROMETHEUS_FIRE, $check, $alertRule->_id);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::PROMETHEUS_FIRE, $check, $alertRule->_id, $history);
 
         }
 

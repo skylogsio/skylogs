@@ -10,6 +10,7 @@ use App\Http\Controllers\V1\AlertRule\AlertingController;
 use App\Http\Controllers\V1\AlertRule\BehaviorRuleController;
 use App\Http\Controllers\V1\AlertRule\CreateDataController;
 use App\Http\Controllers\V1\AlertRule\GroupActionController;
+use App\Http\Controllers\V1\AlertRule\HistoryFailureController;
 use App\Http\Controllers\V1\AlertRule\NotifyController;
 use App\Http\Controllers\V1\AlertRule\PrometheusController;
 use App\Http\Controllers\V1\AlertRule\TagsController;
@@ -318,6 +319,8 @@ Route::prefix('v1')->group(function () {
                 Route::get('/types', 'GetTypes');
                 Route::get('/status', 'AlertStatus');
                 Route::get('/history/{id}', 'History');
+                Route::get('/history/{id}/failures/{historyId}', [HistoryFailureController::class, 'index'])
+                    ->where(['id' => '[0-9a-fA-F]{24}', 'historyId' => '[0-9a-fA-F]{24}']);
                 Route::get('/history/{id}/export', 'ExportHistory')->where('id', '[0-9a-fA-F]{24}');
                 Route::get('/triggered/{id}', 'FiredAlerts');
                 Route::get('/filter-endpoints', [EndpointController::class, 'SelectableEndpoints']);

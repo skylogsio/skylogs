@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Enums\NotificationDeliveryStatus;
 use App\Enums\NotificationDeliveryTrigger;
 use App\Models\NotificationDelivery;
+use App\Services\Notification\HistoryDeliveryCounter;
 use App\Services\Notification\NotificationDeliveryService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -39,13 +40,17 @@ class SendNotificationDeliveryJob implements ShouldQueue
 
     public function failed(?Throwable $exception): void
     {
-        NotificationDelivery::query()
-            ->where('_id', $this->deliveryId)
-            ->where('status', '!=', NotificationDeliveryStatus::SENT->value)
-            ->update([
-                'status' => NotificationDeliveryStatus::FAILED->value,
-                'lastError' => $exception?->getMessage(),
-                'nextRetryAt' => null,
-            ]);
+        $delivery = NotificationDelivery::query()->where('_id', $this->deliveryId)->first();
+
+        if ($delivery === null || $delivery->status === NotificationDeliveryStatus::SENT) {
+            return;
+        }
+
+        $delivery->status = NotificationDeliveryStatus::FAILED;
+        $delivery->lastError = $exception?->getMessage();
+        $delivery->nextRetryAt = null;
+        $delivery->save();
+
+        app(HistoryDeliveryCounter::class)->sync($delivery);
     }
 }

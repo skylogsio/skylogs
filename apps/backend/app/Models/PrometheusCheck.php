@@ -33,7 +33,7 @@ class PrometheusCheck extends BaseModel implements Messageable
         return $this->belongsTo(DataSource::class, 'dataSourceId', '_id');
     }
 
-    public function createHistory()
+    public function createHistory(): PrometheusHistory
     {
 
         $countResolve = 0;
@@ -46,7 +46,8 @@ class PrometheusCheck extends BaseModel implements Messageable
                 $countFire++;
             }
         }
-        PrometheusHistory::create(
+
+        return PrometheusHistory::create(
             [
                 'alertRuleId' => $this->alertRuleId,
                 'alerts' => $this->alerts,

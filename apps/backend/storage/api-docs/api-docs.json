@@ -1005,7 +1005,7 @@
                     "AlertRule"
                 ],
                 "summary": "Get history for an alert rule",
-                "description": "Returns paginated state-change history. Shape depends on alert type (API instances, Prometheus/Grafana checks, Elastic/VictoriaLogs checks, etc.). Requires read access (manage or readonly for organization-visible public alerts).",
+                "description": "Returns paginated state-change history. Shape depends on alert type (API instances, Prometheus/Grafana checks, Elastic/VictoriaLogs checks, etc.). A row created with notifications includes `deliveryCounts` (`sent` and `failed` only). Requires read access (manage or readonly for organization-visible public alerts).",
                 "operationId": "getAlertHistory",
                 "parameters": [
                     {
@@ -1075,6 +1075,89 @@
                     },
                     "404": {
                         "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/alert-rule/history/{id}/failures/{historyId}": {
+            "get": {
+                "tags": [
+                    "AlertRule"
+                ],
+                "summary": "List endpoints that failed for one history row",
+                "description": "Returns the failed endpoints for one history row: endpoint id, name, type, and the short error. Successful endpoints, message bodies, provider responses, and attempt logs are omitted. An empty list means nothing failed. Requires the same read access as alert history.",
+                "operationId": "getAlertHistoryFailures",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Alert rule id",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    },
+                    {
+                        "name": "historyId",
+                        "in": "path",
+                        "description": "History row id",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[0-9a-fA-F]{24}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Failed endpoint summaries",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "endpointId": {
+                                                        "type": "string"
+                                                    },
+                                                    "endpointName": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "endpointType": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "lastError": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Alert rule or history row not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
                     }
                 },
                 "security": [
@@ -11759,6 +11842,26 @@
                     "showAcknowledgeBtn": {
                         "type": "boolean"
                     },
+                    "isAcknowledged": {
+                        "description": "True when the alert has been acknowledged and has not resolved since",
+                        "type": "boolean"
+                    },
+                    "acknowledgedBy": {
+                        "description": "Id of the user who acknowledged the alert. Null when it is not acknowledged",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "acknowledgedByName": {
+                        "description": "Name of the user who acknowledged the alert. Null when it is not acknowledged",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "acknowledgedAt": {
+                        "description": "When the alert was acknowledged. Null when it is not acknowledged, or when it was acknowledged before this time was stored",
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
                     "accessLevel": {
                         "$ref": "#/components/schemas/AlertRuleAccessLevel"
                     },
@@ -12488,13 +12591,13 @@
                         "example": true
                     },
                     "cluster": {
-                        "description": "Raft cluster status. Null when high availability is disabled.",
                         "oneOf": [
                             {
                                 "$ref": "#/components/schemas/HaClusterStatus"
                             }
                         ],
-                        "nullable": true
+                        "nullable": true,
+                        "description": "Raft cluster status. Null when high availability is disabled."
                     }
                 },
                 "type": "object"

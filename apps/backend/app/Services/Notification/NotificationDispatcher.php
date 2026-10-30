@@ -22,7 +22,7 @@ class NotificationDispatcher
      * their own steps and dispatch those endpoints individually.
      *
      * @param  iterable<DeliveryTarget>  $targets
-     * @param  array{source: string, notifyId?: string|null, sourceId?: string|null, flowEndpointId?: string|null, flowStepIndex?: int|null}  $context
+     * @param  array{source: string, notifyId?: string|null, sourceId?: string|null, flowEndpointId?: string|null, flowStepIndex?: int|null, historyId?: string|null, historyAlias?: string|null}  $context
      * @return Collection<int, NotificationDelivery>
      */
     public function dispatch(iterable $targets, array $context): Collection
@@ -56,6 +56,9 @@ class NotificationDispatcher
                 'nextRetryAt' => null,
                 'lastError' => null,
                 'attemptLog' => [],
+                'historyId' => $context['historyId'] ?? null,
+                'historyAlias' => $context['historyAlias'] ?? null,
+                'countedStatus' => null,
             ]);
 
             SendNotificationDeliveryJob::dispatch((string) $delivery->id);

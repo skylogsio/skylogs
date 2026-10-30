@@ -34,11 +34,11 @@ class ApiService
             $alert->touch();
             $alert->save();
 
-            app(SendNotifyService::class)->createNotify(SendNotifyJob::API_FIRE, $alert, $alertRule->_id);
-
-            $this->refreshStatus($alert->alertRule);
             $apiHistory = $alert->createHistory();
             $alert->createStatusHistory($apiHistory);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::API_FIRE, $alert, $alertRule->_id, $apiHistory);
+
+            $this->refreshStatus($alert->alertRule);
 
             return [
                 'status' => true,
@@ -60,10 +60,10 @@ class ApiService
 
             $model->save();
 
-            app(SendNotifyService::class)->createNotify(SendNotifyJob::API_FIRE, $model, $alertRule->_id);
-            $this->refreshStatus($model->alertRule);
             $apiHistory = $model->createHistory();
             $model->createStatusHistory($apiHistory);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::API_FIRE, $model, $alertRule->_id, $apiHistory);
+            $this->refreshStatus($model->alertRule);
 
             return [
                 'status' => true,
@@ -92,11 +92,11 @@ class ApiService
                 $alert->touch();
 
                 $alert->save();
-                app(SendNotifyService::class)->createNotify(SendNotifyJob::API_RESOLVE, $alert, $alert->alertRule->_id);
-
-                $this->refreshStatus($alert->alertRule);
                 $apiHistory = $alert->createHistory();
                 $alert->createStatusHistory($apiHistory);
+                app(SendNotifyService::class)->createNotify(SendNotifyJob::API_RESOLVE, $alert, $alert->alertRule->_id, $apiHistory);
+
+                $this->refreshStatus($alert->alertRule);
 
                 return [
                     'status' => true,
@@ -181,9 +181,8 @@ class ApiService
         $alert->touch();
         $alert->save();
 
-        app(SendNotifyService::class)->createNotify(SendNotifyJob::API_NOTIFICATION, $alert, $alertRule->_id);
-
-        $alert->createHistory();
+        $history = $alert->createHistory();
+        app(SendNotifyService::class)->createNotify(SendNotifyJob::API_NOTIFICATION, $alert, $alertRule->_id, $history);
 
         return [
             'status' => true,

@@ -533,7 +533,7 @@ class AlertingDoc
         path: '/api/v1/alert-rule/history/{id}',
         operationId: 'getAlertHistory',
         summary: 'Get history for an alert rule',
-        description: 'Returns paginated state-change history. Shape depends on alert type (API instances, Prometheus/Grafana checks, Elastic/VictoriaLogs checks, etc.). Requires read access (manage or readonly for organization-visible public alerts).',
+        description: 'Returns paginated state-change history. Shape depends on alert type (API instances, Prometheus/Grafana checks, Elastic/VictoriaLogs checks, etc.). A row created with notifications includes `deliveryCounts` (`sent` and `failed` only). Requires read access (manage or readonly for organization-visible public alerts).',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [
@@ -559,6 +559,49 @@ class AlertingDoc
         ]
     )]
     public function history() {}
+
+    // ----------------------------
+    // GET /api/v1/alert-rule/history/{id}/failures/{historyId}
+    // ----------------------------
+    #[OA\Get(
+        path: '/api/v1/alert-rule/history/{id}/failures/{historyId}',
+        operationId: 'getAlertHistoryFailures',
+        summary: 'List endpoints that failed for one history row',
+        description: 'Returns the failed endpoints for one history row: endpoint id, name, type, and the short error. Successful endpoints, message bodies, provider responses, and attempt logs are omitted. An empty list means nothing failed. Requires the same read access as alert history.',
+        security: [['bearerAuth' => []]],
+        tags: ['AlertRule'],
+        parameters: [
+            new OA\Parameter(name: 'id', description: 'Alert rule id', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+            new OA\Parameter(name: 'historyId', description: 'History row id', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Failed endpoint summaries',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(property: 'endpointId', type: 'string'),
+                                    new OA\Property(property: 'endpointName', type: 'string', nullable: true),
+                                    new OA\Property(property: 'endpointType', type: 'string', nullable: true),
+                                    new OA\Property(property: 'lastError', type: 'string', nullable: true),
+                                ],
+                                type: 'object'
+                            )
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Alert rule or history row not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
+    public function historyFailures() {}
 
     // ----------------------------
     // GET /api/v1/alert-rule/history/{id}/export

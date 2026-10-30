@@ -1123,6 +1123,7 @@ class AlertRuleService
     public function resolveAlertManually($alert)
     {
         $sendResolve = false;
+        $history = null;
 
         switch ($alert->type) {
             case AlertRuleType::API:
@@ -1147,7 +1148,7 @@ class AlertRuleService
                     $alert->state = AlertRule::RESOlVED;
                     $alert->save();
 
-                    SentryWebhookAlert::create([
+                    $history = SentryWebhookAlert::create([
                         'alertRuleName' => $alert->name,
                         'dataSourceAlertName' => $alert->dataSourceAlertName,
                         'alertRuleId' => $alert->_id,
@@ -1175,7 +1176,7 @@ class AlertRuleService
                 if ($prometheusAlert && $prometheusAlert->state == PrometheusCheck::FIRE) {
                     $prometheusAlert->state = PrometheusCheck::RESOLVED;
                     $prometheusAlert->save();
-                    $prometheusAlert->createHistory();
+                    $history = $prometheusAlert->createHistory();
                     $sendResolve = true;
                 }
                 break;
@@ -1185,7 +1186,7 @@ class AlertRuleService
                     $check->state = ElasticCheck::RESOLVED;
                     $check->save();
 
-                    ElasticHistory::create([
+                    $history = ElasticHistory::create([
                         'alertRuleId' => $alert->_id,
                         'alertRuleName' => $alert->name,
                         'dataSourceId' => $alert->dataSourceId,
@@ -1209,7 +1210,7 @@ class AlertRuleService
                     $check->state = VictoriaLogsCheck::RESOLVED;
                     $check->save();
 
-                    VictoriaLogsHistory::create([
+                    $history = VictoriaLogsHistory::create([
                         'alertRuleId' => $alert->_id,
                         'alertRuleName' => $alert->name,
                         'dataSourceId' => $alert->dataSourceId,
@@ -1246,7 +1247,7 @@ class AlertRuleService
         }
         $alert->removeAcknowledge();
         if ($sendResolve) {
-            app(SendNotifyService::class)->createNotify(SendNotifyJob::RESOLVED_MANUALLY, $alert, $alert->_id);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::RESOLVED_MANUALLY, $alert, $alert->_id, $history);
         }
 
     }

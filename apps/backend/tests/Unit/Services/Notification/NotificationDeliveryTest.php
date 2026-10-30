@@ -6,17 +6,21 @@ use App\Enums\NotificationDeliveryTrigger;
 use App\Jobs\SendNotificationDeliveryJob;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertRule;
+use App\Models\ApiAlertHistory;
 use App\Models\Endpoint;
 use App\Models\NotificationDelivery;
 use App\Models\Notify;
+use App\Models\SentryWebhookAlert;
 use App\Services\Ha\HaReplicationContext;
 use App\Services\Notification\DeliveryTarget;
 use App\Services\Notification\NotificationDeliveryService;
 use App\Services\Notification\NotificationDispatcher;
+use App\Services\SendNotifyService;
 use App\Support\NotifyMessagePayload;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+use MongoDB\BSON\ObjectId;
 
 function deliveryTestEndpoint(array $attributes = []): Endpoint
 {
@@ -41,6 +45,32 @@ function runDeliveryJob(string $deliveryId, NotificationDeliveryTrigger $trigger
     (new SendNotificationDeliveryJob($deliveryId, $trigger))->handle(app(NotificationDeliveryService::class));
 
     return NotificationDelivery::query()->where('_id', $deliveryId)->firstOrFail();
+}
+
+function deliveryTestHistory(): ApiAlertHistory
+{
+    $history = ApiAlertHistory::create([
+        'alertRuleId' => (string) new ObjectId,
+        'state' => ApiAlertHistory::FIRE,
+        'deliveryCounts' => ['sent' => 0, 'failed' => 0],
+    ]);
+
+    test()->historyIds = [...test()->historyIds, $history->id];
+
+    return $history;
+}
+
+/**
+ * @return array{sent: int, failed: int}
+ */
+function historyDeliveryCounts(ApiAlertHistory $history): array
+{
+    $counts = $history->fresh()->deliveryCounts;
+
+    return [
+        'sent' => (int) ($counts['sent'] ?? 0),
+        'failed' => (int) ($counts['failed'] ?? 0),
+    ];
 }
 
 function dispatchToEndpoints(array $endpoints, string $body = 'CPU high', array $context = []): Collection
@@ -68,6 +98,8 @@ describe('notification delivery', function () {
         $this->deliveryIds = [];
         $this->notifyIds = [];
         $this->alertRuleIds = [];
+        $this->historyIds = [];
+        $this->sentryIds = [];
     });
 
     afterEach(function () {
@@ -75,6 +107,8 @@ describe('notification delivery', function () {
         Endpoint::withoutEvents(fn () => Endpoint::query()->whereIn('_id', $this->endpointIds)->delete());
         Notify::query()->whereIn('_id', $this->notifyIds)->delete();
         AlertRule::withoutEvents(fn () => AlertRule::query()->whereIn('_id', $this->alertRuleIds)->delete());
+        ApiAlertHistory::query()->whereIn('_id', $this->historyIds)->delete();
+        SentryWebhookAlert::query()->whereIn('_id', $this->sentryIds)->delete();
     });
 
     it('records one pending delivery per endpoint with the message snapshot and queues it', function () {
@@ -253,5 +287,120 @@ describe('notification delivery', function () {
         expect($delivery->status)->toBe(NotificationDeliveryStatus::SENT)
             ->and($delivery->attempts)->toBe(2)
             ->and($delivery->attemptLog[1]['trigger'])->toBe('manual');
+    });
+
+    it('counts sent and failed endpoints on the linked history row', function () {
+        Queue::fake();
+        Http::fake([
+            'api.telegram.org/*' => Http::sequence()
+                ->push(['ok' => true, 'result' => ['message_id' => 1]])
+                ->push(['ok' => false, 'description' => 'Bad Request: chat not found'], 400),
+        ]);
+
+        $history = deliveryTestHistory();
+        $deliveries = dispatchToEndpoints([
+            deliveryTestEndpoint(['name' => 'On-call Telegram']),
+            deliveryTestEndpoint(['name' => 'Ops email']),
+        ], context: [
+            'historyId' => (string) $history->id,
+            'historyAlias' => 'apiAlertHistories',
+        ]);
+
+        runDeliveryJob($deliveries[0]->id);
+        runDeliveryJob($deliveries[1]->id);
+
+        expect(historyDeliveryCounts($history))->toBe(['sent' => 1, 'failed' => 1]);
+    });
+
+    it('does not count a repeated failure twice and moves the count when a retry succeeds', function () {
+        Queue::fake();
+        Http::fake(['api.telegram.org/*' => Http::sequence()
+            ->push(['ok' => false, 'description' => 'Too Many Requests'], 429)
+            ->push(['ok' => false, 'description' => 'Too Many Requests'], 429)
+            ->push(['ok' => true, 'result' => ['message_id' => 9]]),
+        ]);
+
+        $history = deliveryTestHistory();
+        $delivery = dispatchToEndpoints([deliveryTestEndpoint()], context: [
+            'historyId' => (string) $history->id,
+            'historyAlias' => 'apiAlertHistories',
+        ])->first();
+
+        runDeliveryJob($delivery->id);
+
+        expect(historyDeliveryCounts($history))->toBe(['sent' => 0, 'failed' => 1]);
+
+        runDeliveryJob($delivery->id);
+
+        expect(historyDeliveryCounts($history))->toBe(['sent' => 0, 'failed' => 1]);
+
+        Queue::fake();
+        $delivery = app(NotificationDeliveryService::class)->retry($delivery->fresh());
+
+        expect($delivery->status)->toBe(NotificationDeliveryStatus::PENDING)
+            ->and(historyDeliveryCounts($history))->toBe(['sent' => 0, 'failed' => 0]);
+
+        $delivery = runDeliveryJob($delivery->id, NotificationDeliveryTrigger::MANUAL);
+
+        expect($delivery->status)->toBe(NotificationDeliveryStatus::SENT)
+            ->and(historyDeliveryCounts($history))->toBe(['sent' => 1, 'failed' => 0]);
+    });
+
+    it('does not write history counts when the delivery has no history link', function () {
+        Queue::fake();
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true, 'result' => ['message_id' => 1]])]);
+
+        $history = deliveryTestHistory();
+        $delivery = runDeliveryJob(dispatchToEndpoints([deliveryTestEndpoint()])->first()->id);
+
+        expect($delivery->countedStatus)->toBeNull()
+            ->and(historyDeliveryCounts($history))->toBe(['sent' => 0, 'failed' => 0]);
+    });
+
+    it('leaves counts unchanged when a delivery is skipped', function () {
+        Queue::fake();
+
+        $history = deliveryTestHistory();
+        $alertRule = AlertRule::withoutEvents(fn () => AlertRule::create([
+            'name' => 'Ack Rule '.uniqid(),
+            'acknowledgedBy' => 'someone',
+        ]));
+        $this->alertRuleIds[] = $alertRule->id;
+
+        $notify = Notify::create(['type' => SendNotifyJob::API_FIRE, 'alertRuleId' => $alertRule->id]);
+        $this->notifyIds[] = $notify->id;
+
+        $delivery = dispatchToEndpoints([deliveryTestEndpoint()], context: [
+            'notifyId' => $notify->id,
+            'historyId' => (string) $history->id,
+            'historyAlias' => 'apiAlertHistories',
+        ])->first();
+
+        $delivery = runDeliveryJob($delivery->id);
+
+        expect($delivery->status)->toBe(NotificationDeliveryStatus::SKIPPED)
+            ->and(historyDeliveryCounts($history))->toBe(['sent' => 0, 'failed' => 0]);
+    });
+
+    it('links a webhook document as its own history row', function () {
+        Queue::fake();
+
+        $webhook = SentryWebhookAlert::create([
+            'alertRuleName' => 'Sentry link',
+            'alertRuleId' => (string) new ObjectId,
+            'action' => 'created',
+            'message' => 'boom',
+        ]);
+        $this->sentryIds[] = $webhook->id;
+
+        $notify = app(SendNotifyService::class)->createNotify(SendNotifyJob::SENTRY_WEBHOOK, $webhook, $webhook->alertRuleId);
+        $this->notifyIds[] = $notify->id;
+
+        $counts = $webhook->fresh()->deliveryCounts;
+
+        expect((string) $notify->historyId)->toBe((string) $webhook->id)
+            ->and($notify->historyAlias)->toBe('sentryWebhookAlerts')
+            ->and((int) $counts['sent'])->toBe(0)
+            ->and((int) $counts['failed'])->toBe(0);
     });
 });

@@ -23,7 +23,10 @@ class NotificationDeliveryService
         SendNotifyJob::INCIDENT_POLICY_PAGE,
     ];
 
-    public function __construct(private readonly ChannelRegistry $channels) {}
+    public function __construct(
+        private readonly ChannelRegistry $channels,
+        private readonly HistoryDeliveryCounter $deliveryCounts,
+    ) {}
 
     /**
      * Makes one attempt and records it. Sent and skipped deliveries are left
@@ -44,6 +47,7 @@ class NotificationDeliveryService
             $delivery->lastError = $skipReason;
             $delivery->nextRetryAt = null;
             $delivery->save();
+            $this->deliveryCounts->sync($delivery);
 
             return $delivery;
         }
@@ -69,6 +73,7 @@ class NotificationDeliveryService
         $delivery->status = NotificationDeliveryStatus::PENDING;
         $delivery->nextRetryAt = null;
         $delivery->save();
+        $this->deliveryCounts->sync($delivery);
 
         SendNotificationDeliveryJob::dispatch((string) $delivery->id, NotificationDeliveryTrigger::MANUAL);
 
@@ -137,6 +142,7 @@ class NotificationDeliveryService
             ? now()->addSeconds($this->backoffSeconds($attempt))
             : null;
         $delivery->save();
+        $this->deliveryCounts->sync($delivery);
     }
 
     private function skipReason(NotificationDelivery $delivery): ?string

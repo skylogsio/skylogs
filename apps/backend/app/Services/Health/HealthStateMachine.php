@@ -70,7 +70,7 @@ final class HealthStateMachine
             $rule->removeAcknowledge();
         }
 
-        HealthHistory::query()->create([
+        $history = HealthHistory::query()->create([
             'alertRuleId' => $rule->_id,
             'alertRuleName' => $rule->name,
             'checkType' => $rule->checkType,
@@ -80,6 +80,6 @@ final class HealthStateMachine
             'counter' => $state === HealthCheck::DOWN ? $check->counter : 0,
         ]);
 
-        app(SendNotifyService::class)->createNotify(SendNotifyJob::HEALTH_CHECK, $check, $rule->_id);
+        app(SendNotifyService::class)->createNotify(SendNotifyJob::HEALTH_CHECK, $check, $rule->_id, $history);
     }
 }

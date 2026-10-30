@@ -12,14 +12,17 @@ use App\Models\NotificationDelivery;
 use App\Models\Notify;
 use App\Services\Ha\HaReplicationContext;
 use App\Services\Notification\DeliveryTarget;
+use App\Services\Notification\HistoryDeliveryCounter;
 use App\Services\Notification\NotificationDispatcher;
 use App\Support\NotifyMessagePayload;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 class SendNotifyService
 {
     public function __construct(
         private readonly NotificationDispatcher $dispatcher,
+        private readonly HistoryDeliveryCounter $deliveryCounts,
     ) {}
 
     /**
@@ -28,7 +31,7 @@ class SendNotifyService
      * alert reaches the same on-call phone. Guarded here rather than at the
      * fourteen call sites so a new caller cannot forget.
      */
-    public function createNotify($type, $alert, $alertRuleId = 0)
+    public function createNotify($type, $alert, $alertRuleId = 0, ?Model $history = null): ?Notify
     {
         if (HaReplicationContext::isApplying()) {
             return null;
@@ -62,6 +65,12 @@ class SendNotifyService
         $notify->messages = $messages;
 
         $notify->status = Notify::STATUS_CREATED;
+
+        $linkedHistory = $this->deliveryCounts->resolve($history, $alert);
+
+        if ($linkedHistory !== null) {
+            $this->deliveryCounts->attach($notify, $linkedHistory);
+        }
 
         $notify->save();
         SendNotifyJob::dispatch($notify);
@@ -158,11 +167,11 @@ class SendNotifyService
             NotifyFlowEndpointJob::dispatch($notify, $flow->id);
         }
 
-        $this->dispatcher->dispatch($this->buildTargets($notify, $endpoints), [
+        $this->dispatcher->dispatch($this->buildTargets($notify, $endpoints), $this->deliveryContext($notify, [
             'source' => NotificationDelivery::SOURCE_ALERT,
             'notifyId' => (string) $notify->id,
             'sourceId' => (string) $notify->alertRuleId,
-        ]);
+        ]));
     }
 
     public function SendFlowEndpointsNotify(Notify $notify, $mainEndpointId, $stepEndpointIds, ?int $stepIndex = null)
@@ -173,13 +182,13 @@ class SendNotifyService
             ->whereNotIn('userId', $silentUserIds)
             ->get();
 
-        $deliveries = $this->dispatcher->dispatch($this->buildTargets($notify, $endpoints), [
+        $deliveries = $this->dispatcher->dispatch($this->buildTargets($notify, $endpoints), $this->deliveryContext($notify, [
             'source' => NotificationDelivery::SOURCE_FLOW,
             'notifyId' => (string) $notify->id,
             'sourceId' => (string) $notify->alertRuleId,
             'flowEndpointId' => (string) $mainEndpointId,
             'flowStepIndex' => $stepIndex,
-        ]);
+        ]));
 
         $resultFlows = $notify->resultFlows ?? [];
         if (empty($resultFlows[$mainEndpointId])) {
@@ -239,6 +248,19 @@ class SendNotifyService
         return $targets;
     }
 
+    /**
+     * @param  array<string, mixed>  $context
+     * @return array<string, mixed>
+     */
+    private function deliveryContext(Notify $notify, array $context): array
+    {
+        return [
+            ...$context,
+            'historyId' => $notify->historyId,
+            'historyAlias' => $notify->historyAlias,
+        ];
+    }
+
     private function usesFixedSystemMessage(Notify $notify): bool
     {
         return in_array($notify->type, [
@@ -262,11 +284,11 @@ class SendNotifyService
             NotifyFlowEndpointJob::dispatch($notify, $flow->id);
         }
 
-        $this->dispatcher->dispatch($this->buildTargets($notify, $endpoints), [
+        $this->dispatcher->dispatch($this->buildTargets($notify, $endpoints), $this->deliveryContext($notify, [
             'source' => NotificationDelivery::SOURCE_INCIDENT_POLICY,
             'notifyId' => (string) $notify->id,
             'sourceId' => $notify->incidentId === null ? null : (string) $notify->incidentId,
-        ]);
+        ]));
 
         $notify->save();
     }
