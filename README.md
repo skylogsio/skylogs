@@ -90,18 +90,27 @@ Together, these two layers form a simple mental model: **HA inside the zone, fed
 ## Quick start
 
 **Prerequisites:** Docker and Docker Compose.
+
 ### docker compose latest release
+
 ```bash
 git clone https://github.com/skylogsio/skylogs.git
 cd skylogs
-docker compose up -d 
+docker compose up -d
 ```
+
+Open http://localhost:3000 and sign in as `admin` / `123456`. The API is on http://localhost.
+
 ### docker compose build current branch
+
 ```bash
 git clone https://github.com/skylogsio/skylogs.git
 cd skylogs
-docker compose up -d --build
+docker compose -f docker-compose-build.yml up -d --build
 ```
+
+The UI and the default account are the same as the prebuilt stack.
+
 ### deploy on kubernetes
 ```bash
 helm repo add skylogs https://skylogsio.github.io/helm-charts/
@@ -112,9 +121,7 @@ helm install skylogs skylogs/skylogs \
 ```
 Chart source and configuration reference: https://github.com/skylogsio/helm-charts
 
-Then open `http://localhost:PORT` and log in with the default credentials.
-<!-- TODO: fill in the real port, default credentials, and the 2–3 steps to fire a first test alert.
-     Target: a stranger goes from clone to receiving a test notification in under 10 minutes. -->
+Copy `.env.example` to `.env` before a shared or production deploy and replace `APP_KEY`, `JWT_SECRET`, and `NEXTAUTH_SECRET`. Local `docker compose up -d` boots without that file.
 
 Full instructions, production deployment (including multi-zone and HA setup), and integration guides are in the documentation — see the links at the end of this page.
 

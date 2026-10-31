@@ -44,6 +44,11 @@ chown -R www-data:www-data \
 
 cd /var/www/html
 
+if [ -z "${APP_KEY:-}" ]; then
+    echo "Generating application key..."
+    php artisan key:generate --force --no-interaction
+fi
+
 echo "Clearing caches..."
 php artisan optimize:clear
 

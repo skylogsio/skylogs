@@ -38,9 +38,11 @@ return [
             'database' => env('DB_DATABASE', 'homestead'),
             'username' => env('DB_USERNAME', ''),
             'password' => env('DB_PASSWORD', ''),
-            'options' => [
-                //                'appname' => 'homestead',
-            ],
+            'options' => array_filter([
+                'database' => env('DB_USERNAME')
+                    ? env('DB_AUTHENTICATION_DATABASE', 'admin')
+                    : null,
+            ]),
         ],
         'sqlite' => [
             'driver' => 'sqlite',
