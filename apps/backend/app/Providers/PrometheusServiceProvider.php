@@ -2,6 +2,11 @@
 
 namespace App\Providers;
 
+use App\Collectors\Prometheus\AlertRulesCollector;
+use App\Collectors\Prometheus\HaStatusCollector;
+use App\Collectors\Prometheus\HealthChecksCollector;
+use App\Collectors\Prometheus\IncidentsCollector;
+use App\Collectors\Prometheus\NotificationDeliveriesCollector;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Prometheus\Collectors\Horizon\CurrentMasterSupervisorCollector;
 use Spatie\Prometheus\Collectors\Horizon\CurrentProcessesPerQueueCollector;
@@ -19,28 +24,31 @@ use Spatie\Prometheus\Facades\Prometheus;
 
 class PrometheusServiceProvider extends ServiceProvider
 {
-    public function register()
+    public function register(): void
     {
-        /*
-         * Here you can register all the exporters that you
-         * want to export to prometheus
-         */
-        Prometheus::addGauge('My gauge')
-            ->value(function () {
-                return 123.45;
-            });
-
-        /*
-         * Uncomment this line if you want to export
-         * all Horizon metrics to prometheus
-         */
+        $this->registerSkylogsCollectors();
         $this->registerHorizonCollectors();
+        $this->registerQueueCollectors([
+            'default',
+            'httpRequests',
+            'logChecks',
+            'sendNotifies',
+            'clean',
+            'ha',
+        ]);
+    }
 
-        /*
-         * Uncomment this line if you want to export queue metrics to Prometheus.
-         * You need to pass an array of queues to monitor.
-         */
-        $this->registerQueueCollectors(['default', 'httpRequests', 'sendNotifies', 'clean']);
+    public function registerSkylogsCollectors(): self
+    {
+        Prometheus::registerCollectorClasses([
+            AlertRulesCollector::class,
+            IncidentsCollector::class,
+            NotificationDeliveriesCollector::class,
+            HealthChecksCollector::class,
+            HaStatusCollector::class,
+        ]);
+
+        return $this;
     }
 
     public function registerHorizonCollectors(): self
