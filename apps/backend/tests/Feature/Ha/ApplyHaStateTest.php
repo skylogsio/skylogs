@@ -59,6 +59,7 @@ function haValue(AlertRule $alertRule, string $type, string $instanceId, string 
             'fireCount' => $state === AlertRule::RESOlVED ? 0 : 1,
             'notifyAt' => 1785000000,
             'acknowledgedBy' => null,
+            'acknowledgedAt' => null,
         ],
         'extra' => [],
         ...$overrides,
@@ -230,6 +231,33 @@ describe('POST /api/ha/apply prometheus', function () {
             ->and($check->alerts[0]['labels'])->toBe($entry['labels'])
             ->and(PrometheusHistory::where('alertRuleId', $alertRule->_id)->count())->toBe(1)
             ->and(AlertRule::find($alertRule->_id)->state)->toBe(AlertRule::CRITICAL);
+    });
+
+    it('writes who acknowledged the alert and when', function () {
+        $alertRule = haAlertRuleOfType(AlertRuleType::PROMETHEUS);
+        $entry = haPrometheusEntry('10.0.0.5:9100');
+        $instanceId = AlertStateKey::prometheusInstanceId($entry['labels']);
+        $acknowledgedAt = 1785001234;
+
+        haApply(
+            'alert:'.$alertRule->_id.':prometheus:'.$instanceId,
+            haValue($alertRule, 'prometheus', $instanceId, AlertRule::CRITICAL, 1, [
+                'instance' => ['labels' => $entry['labels']],
+                'extra' => ['entry' => $entry],
+                'rule' => [
+                    'state' => AlertRule::CRITICAL,
+                    'fireCount' => 1,
+                    'notifyAt' => 1785000000,
+                    'acknowledgedBy' => (string) $this->owner->id,
+                    'acknowledgedAt' => $acknowledgedAt,
+                ],
+            ]),
+        )->assertOk()->assertJson(['applied' => true]);
+
+        $alertRule->refresh();
+
+        expect((string) $alertRule->acknowledgedBy)->toBe((string) $this->owner->id)
+            ->and($alertRule->acknowledgedAt?->getTimestamp())->toBe($acknowledgedAt);
     });
 
     it('keeps one entry per instance rather than appending duplicates', function () {

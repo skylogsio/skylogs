@@ -6,6 +6,8 @@ use App\Enums\DataSourceType;
 use App\Models\AlertRulePrometheus;
 use App\Models\DataSource\DataSource;
 use App\Models\PrometheusInstance;
+use App\Services\DataSource\DataSourceAvailability;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -234,15 +236,41 @@ class PrometheusInstanceService
         $prometheusAll = $this->dataSourceService->get(DataSourceType::PROMETHEUS);
         $alerts = [];
         $failedDataSourceIds = [];
+        $availability = app(DataSourceAvailability::class);
 
         if ($prometheusAll->isEmpty()) {
             return ['alerts' => [], 'failedDataSourceIds' => []];
         }
 
-        $responses = Http::pool(function (Pool $pool) use ($prometheusAll) {
+        $reachable = $prometheusAll->reject(function ($pro) use ($availability, &$failedDataSourceIds) {
+            $id = (string) $pro->id;
+
+            if (! $availability->isCoolingDown($id)) {
+                return false;
+            }
+
+            $failedDataSourceIds[] = $id;
+
+            return true;
+        });
+
+        if ($reachable->isEmpty()) {
+            return [
+                'alerts' => [],
+                'failedDataSourceIds' => array_values(array_unique($failedDataSourceIds)),
+            ];
+        }
+
+        $connectTimeout = (int) config('datasource_checks.connect_timeout', 2);
+        $timeout = (int) config('datasource_checks.timeout', 5);
+
+        $responses = Http::pool(function (Pool $pool) use ($reachable, $connectTimeout, $timeout) {
             $result = [];
-            foreach ($prometheusAll as $pro) {
-                $request = $pool->as($pro->id)->acceptJson();
+            foreach ($reachable as $pro) {
+                $request = $pool->as($pro->id)
+                    ->acceptJson()
+                    ->connectTimeout($connectTimeout)
+                    ->timeout($timeout);
                 if (! empty($pro->username) && ! empty($pro->password)) {
                     $request = $request->withBasicAuth($pro->username, $pro->password);
                 }
@@ -253,6 +281,13 @@ class PrometheusInstanceService
         });
 
         foreach ($responses as $id => $response) {
+            if ($response instanceof ConnectionException) {
+                $availability->coolDown((string) $id);
+                $failedDataSourceIds[] = $id;
+
+                continue;
+            }
+
             if (! ($response instanceof Response && $response->ok())) {
                 $failedDataSourceIds[] = $id;
 

@@ -5,6 +5,7 @@ namespace App\Services\Ha;
 use App\Enums\AlertRuleType;
 use App\Models\AlertRule;
 use App\Services\Ha\Writers\StateWriterFactory;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use Throwable;
@@ -143,6 +144,9 @@ class HaStateApplier
         $alertRule->fireCount = $value->fireCount();
         $alertRule->notifyAt = $value->notifyAt();
         $alertRule->acknowledgedBy = $value->acknowledgedBy();
+        $alertRule->acknowledgedAt = $value->acknowledgedAt() === null
+            ? null
+            : Carbon::createFromTimestamp($value->acknowledgedAt());
         $alertRule->save();
     }
 

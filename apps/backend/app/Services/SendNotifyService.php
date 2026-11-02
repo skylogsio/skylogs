@@ -4,33 +4,34 @@ namespace App\Services;
 
 use App\Enums\EndpointType;
 use App\Enums\FlowEndpointStepType;
-use App\Helpers\Bale;
-use App\Helpers\Call;
-use App\Helpers\Discord;
-use App\Helpers\Email;
-use App\Helpers\MatterMost;
-use App\Helpers\SMS;
-use App\Helpers\Teams;
-use App\Helpers\Telegram;
-use App\Interfaces\Messageable;
 use App\Jobs\NotifyFlowEndpointJob;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
+use App\Models\NotificationDelivery;
 use App\Models\Notify;
 use App\Services\Ha\HaReplicationContext;
+use App\Services\Notification\DeliveryTarget;
+use App\Services\Notification\HistoryDeliveryCounter;
+use App\Services\Notification\NotificationDispatcher;
 use App\Support\NotifyMessagePayload;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 class SendNotifyService
 {
+    public function __construct(
+        private readonly NotificationDispatcher $dispatcher,
+        private readonly HistoryDeliveryCounter $deliveryCounts,
+    ) {}
+
     /**
      * A follower applying the leader's state must never notify: the leader has
      * already paged whoever needed paging, and a second message for the same
      * alert reaches the same on-call phone. Guarded here rather than at the
      * fourteen call sites so a new caller cannot forget.
      */
-    public function createNotify($type, $alert, $alertRuleId = 0)
+    public function createNotify($type, $alert, $alertRuleId = 0, ?Model $history = null): ?Notify
     {
         if (HaReplicationContext::isApplying()) {
             return null;
@@ -65,6 +66,12 @@ class SendNotifyService
 
         $notify->status = Notify::STATUS_CREATED;
 
+        $linkedHistory = $this->deliveryCounts->resolve($history, $alert);
+
+        if ($linkedHistory !== null) {
+            $this->deliveryCounts->attach($notify, $linkedHistory);
+        }
+
         $notify->save();
         SendNotifyJob::dispatch($notify);
 
@@ -73,6 +80,11 @@ class SendNotifyService
 
     public function SendMessage(Notify $notify, $isTest = false, $isAcknowledged = false)
     {
+        if ($notify->type === SendNotifyJob::INCIDENT_POLICY_PAGE) {
+            $this->sendToNotifyEndpoints($notify);
+
+            return;
+        }
 
         if (empty($notify->alertRule) || ! ($notify->alertRule instanceof AlertRule)) {
             return;
@@ -124,9 +136,9 @@ class SendNotifyService
         $endpoints = $endpointsQuery->get();
 
         $flows = $endpoints->where('type', EndpointType::FLOW->value);
+        $flowsToStart = collect();
 
         if (! $isAcknowledged && $flows->isNotEmpty()) {
-
             $resultFlows = $notify->resultFlows ?? [];
 
             if ($notify->alertRule->state == AlertRule::CRITICAL) {
@@ -134,7 +146,7 @@ class SendNotifyService
                     $runningAlertIds = $flow->runningAlertIds ?? [];
                     if (! in_array($flow->id, $runningAlertIds)) {
                         $flow->push('runningAlertIds', $notify->alertRuleId, true);
-                        NotifyFlowEndpointJob::dispatch($notify, $flow->id);
+                        $flowsToStart->push($flow);
                     } else {
                         $resultFlows[$flow->id] = 'Flow is already running';
                     }
@@ -146,68 +158,46 @@ class SendNotifyService
             $notify->resultFlows = $resultFlows;
         }
 
-        $notify->resultSms = $this->trySendChannel(fn () => $this->sendSmsAlerts($endpoints->where('type', EndpointType::SMS->value), $notify));
-        $notify->resultCall = $this->trySendChannel(fn () => $this->sendCallAlerts($endpoints->where('type', EndpointType::CALL->value), $notify));
-        $notify->resultTeams = $this->trySendChannel(fn () => $this->sendTeamsAlerts($endpoints->where('type', EndpointType::TEAMS->value), $notify));
-        $notify->resultDiscords = $this->trySendChannel(fn () => $this->sendDiscordAlerts($endpoints->where('type', EndpointType::DISCORD->value), $notify));
-        $notify->resultMatterMost = $this->trySendChannel(fn () => $this->sendMatterMostAlerts($endpoints->where('type', EndpointType::MATTER_MOST->value), $notify));
-        $notify->resultTelegram = $this->trySendChannel(fn () => $this->sendTelegramAlerts($endpoints->where('type', EndpointType::TELEGRAM->value), $notify));
-        $notify->resultBale = $this->trySendChannel(fn () => $this->sendBaleAlerts($endpoints->where('type', EndpointType::BALE->value), $notify));
-        $notify->resultEmail = $this->trySendChannel(fn () => $this->sendEmailAlerts($endpoints->where('type', EndpointType::EMAIL->value), $notify));
-
+        // Persist before the flow job runs. A sync worker (and a fast queue
+        // worker) appends delivery ids to resultFlows, and a later save of
+        // this in-memory copy would wipe them.
         $notify->save();
+
+        foreach ($flowsToStart as $flow) {
+            NotifyFlowEndpointJob::dispatch($notify, $flow->id);
+        }
+
+        $this->dispatcher->dispatch($this->buildTargets($notify, $endpoints), $this->deliveryContext($notify, [
+            'source' => NotificationDelivery::SOURCE_ALERT,
+            'notifyId' => (string) $notify->id,
+            'sourceId' => (string) $notify->alertRuleId,
+        ]));
     }
 
-    public function SendFlowEndpointsNotify(Notify $notify, $mainEndpointId, $stepEndpointIds)
+    public function SendFlowEndpointsNotify(Notify $notify, $mainEndpointId, $stepEndpointIds, ?int $stepIndex = null)
     {
-
         $silentUserIds = $notify->alertRule->silentUserIds ?? [];
 
-        $endpointsQuery = Endpoint::whereIn('_id', $stepEndpointIds);
+        $endpoints = Endpoint::whereIn('_id', $stepEndpointIds)
+            ->whereNotIn('userId', $silentUserIds)
+            ->get();
 
-        $endpointsQuery = $endpointsQuery->whereNotIn('userId', $silentUserIds);
-
-        $endpoints = $endpointsQuery->get();
-
-        $resultStep = [];
-
-        if (($smsResult = $this->trySendChannel(fn () => $this->sendSmsAlerts($endpoints->where('type', EndpointType::SMS->value), $notify))) !== null) {
-            $resultStep['resultSms'] = $smsResult;
-        }
-
-        if (($callResult = $this->trySendChannel(fn () => $this->sendCallAlerts($endpoints->where('type', EndpointType::CALL->value), $notify))) !== null) {
-            $resultStep['resultCall'] = $callResult;
-        }
-
-        if (($teamsResult = $this->trySendChannel(fn () => $this->sendTeamsAlerts($endpoints->where('type', EndpointType::TEAMS->value), $notify))) !== null) {
-            $resultStep['resultTeams'] = $teamsResult;
-        }
-
-        if (($discordResult = $this->trySendChannel(fn () => $this->sendDiscordAlerts($endpoints->where('type', EndpointType::DISCORD->value), $notify))) !== null) {
-            $resultStep['resultDiscords'] = $discordResult;
-        }
-
-        if (($matterMostResult = $this->trySendChannel(fn () => $this->sendMatterMostAlerts($endpoints->where('type', EndpointType::MATTER_MOST->value), $notify))) !== null) {
-            $resultStep['resultMatterMost'] = $matterMostResult;
-        }
-
-        if (($telegramResult = $this->trySendChannel(fn () => $this->sendTelegramAlerts($endpoints->where('type', EndpointType::TELEGRAM->value), $notify))) !== null) {
-            $resultStep['resultTelegram'] = $telegramResult;
-        }
-
-        if (($baleResult = $this->trySendChannel(fn () => $this->sendBaleAlerts($endpoints->where('type', EndpointType::BALE->value), $notify))) !== null) {
-            $resultStep['resultBale'] = $baleResult;
-        }
-
-        if (($emailResult = $this->trySendChannel(fn () => $this->sendEmailAlerts($endpoints->where('type', EndpointType::EMAIL->value), $notify))) !== null) {
-            $resultStep['resultEmail'] = $emailResult;
-        }
+        $deliveries = $this->dispatcher->dispatch($this->buildTargets($notify, $endpoints), $this->deliveryContext($notify, [
+            'source' => NotificationDelivery::SOURCE_FLOW,
+            'notifyId' => (string) $notify->id,
+            'sourceId' => (string) $notify->alertRuleId,
+            'flowEndpointId' => (string) $mainEndpointId,
+            'flowStepIndex' => $stepIndex,
+        ]));
 
         $resultFlows = $notify->resultFlows ?? [];
         if (empty($resultFlows[$mainEndpointId])) {
             $resultFlows[$mainEndpointId] = [];
         }
-        $resultFlows[$mainEndpointId][] = $resultStep;
+        $resultFlows[$mainEndpointId][] = [
+            'stepIndex' => $stepIndex,
+            'deliveryIds' => $deliveries->map(fn (NotificationDelivery $delivery): string => (string) $delivery->id)->all(),
+        ];
 
         $notify->resultFlows = $resultFlows;
 
@@ -215,153 +205,60 @@ class SendNotifyService
     }
 
     /**
+     * Pairs every endpoint with the message it gets. Endpoints covered by a
+     * template behavior rule get that template rendered (once per template);
+     * the rest, and every fixed system message, get the stored notify message.
+     *
      * @param  Collection<int, Endpoint>  $endpoints
+     * @return list<DeliveryTarget>
      */
-    private function sendSmsAlerts(Collection $endpoints, Notify $notify): mixed
-    {
-        return $this->sendChannelAlerts(
-            $endpoints,
-            $notify,
-            fn (Collection $group, Messageable $messageable) => SMS::sendAlert($group->pluck('value'), $messageable),
-        );
-    }
-
-    /**
-     * @param  Collection<int, Endpoint>  $endpoints
-     */
-    private function sendCallAlerts(Collection $endpoints, Notify $notify): mixed
-    {
-        return $this->sendChannelAlerts(
-            $endpoints,
-            $notify,
-            fn (Collection $group, Messageable $messageable) => Call::sendAlert($group->pluck('value'), $messageable),
-        );
-    }
-
-    /**
-     * @param  Collection<int, Endpoint>  $endpoints
-     */
-    private function sendTeamsAlerts(Collection $endpoints, Notify $notify): mixed
-    {
-        return $this->sendChannelAlerts(
-            $endpoints,
-            $notify,
-            fn (Collection $group, Messageable $messageable) => Teams::sendMessageAlert($group->pluck('value'), $messageable),
-        );
-    }
-
-    /**
-     * @param  Collection<int, Endpoint>  $endpoints
-     */
-    private function sendDiscordAlerts(Collection $endpoints, Notify $notify): mixed
-    {
-        return $this->sendChannelAlerts(
-            $endpoints,
-            $notify,
-            fn (Collection $group, Messageable $messageable) => Discord::sendMessageAlert($group->pluck('value'), $messageable),
-        );
-    }
-
-    /**
-     * @param  Collection<int, Endpoint>  $endpoints
-     */
-    private function sendMatterMostAlerts(Collection $endpoints, Notify $notify): mixed
-    {
-        return $this->sendChannelAlerts(
-            $endpoints,
-            $notify,
-            fn (Collection $group, Messageable $messageable) => MatterMost::sendMessageAlert($group->pluck('value'), $messageable),
-        );
-    }
-
-    /**
-     * @param  Collection<int, Endpoint>  $endpoints
-     */
-    private function sendTelegramAlerts(Collection $endpoints, Notify $notify): mixed
-    {
-        return $this->sendChannelAlerts(
-            $endpoints,
-            $notify,
-            fn (Collection $group, Messageable $messageable) => Telegram::sendMessageAlert($group->values()->all(), $messageable),
-        );
-    }
-
-    /**
-     * @param  Collection<int, Endpoint>  $endpoints
-     */
-    private function sendBaleAlerts(Collection $endpoints, Notify $notify): mixed
-    {
-        return $this->sendChannelAlerts(
-            $endpoints,
-            $notify,
-            fn (Collection $group, Messageable $messageable) => Bale::sendMessageAlert($group->values()->all(), $messageable),
-        );
-    }
-
-    /**
-     * @param  Collection<int, Endpoint>  $endpoints
-     */
-    private function sendEmailAlerts(Collection $endpoints, Notify $notify): mixed
-    {
-        return $this->sendChannelAlerts(
-            $endpoints,
-            $notify,
-            fn (Collection $group, Messageable $messageable) => Email::sendMessageAlert($group->pluck('value')->toArray(), $messageable),
-        );
-    }
-
-    /**
-     * @param  callable(): mixed  $sender
-     */
-    private function trySendChannel(callable $sender): mixed
-    {
-        try {
-            return $sender();
-        } catch (\Throwable $throwable) {
-            return $throwable->getMessage();
-        }
-    }
-
-    /**
-     * @param  Collection<int, Endpoint>  $endpoints
-     * @param  callable(Collection<int, Endpoint>, Messageable): mixed  $sender
-     */
-    private function sendChannelAlerts(Collection $endpoints, Notify $notify, callable $sender): mixed
+    private function buildTargets(Notify $notify, Collection $endpoints): array
     {
         if ($endpoints->isEmpty()) {
-            return null;
+            return [];
         }
 
-        if ($this->usesFixedSystemMessage($notify)) {
-            return $sender($endpoints, $notify);
+        $stored = $notify->messagePayload();
+
+        if ($this->usesFixedSystemMessage($notify) || ! ($notify->alertRule instanceof AlertRule)) {
+            return $endpoints
+                ->map(fn (Endpoint $endpoint): DeliveryTarget => new DeliveryTarget($endpoint, $stored))
+                ->values()
+                ->all();
         }
 
         $endpointTemplates = app(AlertRuleBehaviorRuleService::class)
             ->resolveEndpointTemplates($notify->alertRule);
 
-        $results = [];
+        $targets = [];
 
         $endpoints
-            ->groupBy(fn (Endpoint $endpoint) => $endpointTemplates[(string) ($endpoint->id ?? $endpoint->_id)] ?? '')
-            ->each(function (Collection $group, string $template) use ($notify, $sender, &$results) {
-                $messageable = $this->messageableForTemplate($notify, $template);
-                $results[] = $sender($group, $messageable);
+            ->groupBy(fn (Endpoint $endpoint): string => $endpointTemplates[(string) $endpoint->id] ?? '')
+            ->each(function (Collection $group, int|string $template) use ($notify, $stored, &$targets) {
+                $template = (string) $template;
+                $message = $template === ''
+                    ? $stored
+                    : NotifyMessageComposer::composeFromSingleTemplate($notify->alertRule, $notify, $template);
+
+                foreach ($group as $endpoint) {
+                    $targets[] = new DeliveryTarget($endpoint, $message, templateApplied: $template !== '');
+                }
             });
 
-        if ($results === []) {
-            return null;
-        }
-
-        return count($results) === 1 ? $results[0] : $results;
+        return $targets;
     }
 
-    private function messageableForTemplate(Notify $notify, string $template): Messageable
+    /**
+     * @param  array<string, mixed>  $context
+     * @return array<string, mixed>
+     */
+    private function deliveryContext(Notify $notify, array $context): array
     {
-        if ($template === '' || ! ($notify->alertRule instanceof AlertRule) || $this->usesFixedSystemMessage($notify)) {
-            return $notify;
-        }
-
-        return NotifyMessageComposer::composeFromSingleTemplate($notify->alertRule, $notify, $template);
+        return [
+            ...$context,
+            'historyId' => $notify->historyId,
+            'historyAlias' => $notify->historyAlias,
+        ];
     }
 
     private function usesFixedSystemMessage(Notify $notify): bool
@@ -369,7 +266,31 @@ class SendNotifyService
         return in_array($notify->type, [
             SendNotifyJob::ALERT_RULE_TEST,
             SendNotifyJob::ALERT_RULE_ACKNOWLEDGED,
+            SendNotifyJob::INCIDENT_POLICY_PAGE,
         ], true);
+    }
+
+    private function sendToNotifyEndpoints(Notify $notify): void
+    {
+        $endpointIds = array_values(array_filter(array_map('strval', $notify->endpointIds ?? [])));
+
+        if ($endpointIds === []) {
+            return;
+        }
+
+        $endpoints = Endpoint::query()->whereIn('_id', $endpointIds)->get();
+
+        foreach ($endpoints->where('type', EndpointType::FLOW->value) as $flow) {
+            NotifyFlowEndpointJob::dispatch($notify, $flow->id);
+        }
+
+        $this->dispatcher->dispatch($this->buildTargets($notify, $endpoints), $this->deliveryContext($notify, [
+            'source' => NotificationDelivery::SOURCE_INCIDENT_POLICY,
+            'notifyId' => (string) $notify->id,
+            'sourceId' => $notify->incidentId === null ? null : (string) $notify->incidentId,
+        ]));
+
+        $notify->save();
     }
 
     public function processStep(Notify $notify, $endpointId, int $currentStepIndex = 0)
@@ -463,7 +384,7 @@ class SendNotifyService
             $subEndpointIds = $step['endpointIds'] ?? [];
             if (! empty($subEndpointIds)) {
 
-                $this->SendFlowEndpointsNotify($notify, $endpoint->id, $subEndpointIds);
+                $this->SendFlowEndpointsNotify($notify, $endpoint->id, $subEndpointIds, $currentStepIndex);
 
                 NotifyFlowEndpointJob::dispatch($notify, $endpoint->_id, $currentStepIndex + 1);
             }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\EndpointType;
 use App\Interfaces\Messageable;
 use App\Support\NotifyMessagePayload;
 
@@ -20,48 +21,16 @@ class NotifyMessagesAdapter implements Messageable
         $this->payload = NotifyMessagePayload::fromStored($messages);
     }
 
-    public function defaultMessage(): mixed
+    public function defaultMessage(): string
     {
         return $this->payload->defaultMessage();
     }
 
-    public function telegram(): mixed
+    /**
+     * @return array<string, mixed>|string|null
+     */
+    public function messageFor(EndpointType $type): array|string|null
     {
-        return $this->payload->telegram();
-    }
-
-    public function baleMessage(): mixed
-    {
-        return $this->payload->baleMessage();
-    }
-
-    public function matterMostMessage(): mixed
-    {
-        return $this->payload->matterMostMessage();
-    }
-
-    public function teamsMessage(): mixed
-    {
-        return $this->payload->teamsMessage();
-    }
-
-    public function smsMessage(): mixed
-    {
-        return $this->payload->smsMessage();
-    }
-
-    public function discordMessage(): mixed
-    {
-        return $this->payload->discordMessage();
-    }
-
-    public function callMessage(): mixed
-    {
-        return $this->payload->callMessage();
-    }
-
-    public function emailMessage(): mixed
-    {
-        return $this->payload->emailMessage();
+        return $this->payload->messageFor($type);
     }
 }

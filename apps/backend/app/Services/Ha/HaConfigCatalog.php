@@ -42,7 +42,7 @@ final class HaConfigCatalog
      *
      * @var array<int, string>
      */
-    public const RAFT_OWNED_ALERT_RULE_FIELDS = ['state', 'fireCount', 'notifyAt', 'acknowledgedBy'];
+    public const RAFT_OWNED_ALERT_RULE_FIELDS = ['state', 'fireCount', 'notifyAt', 'acknowledgedBy', 'acknowledgedAt'];
 
     /**
      * Identity and timestamps: a change confined to these is never a

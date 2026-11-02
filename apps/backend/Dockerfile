@@ -1,12 +1,21 @@
-FROM php:8.4-fpm-alpine
-# Set tehran timezone
-RUN rm -rf /etc/localtime && ln -s /usr/share/zoneinfo/Asia/Tehran /etc/localtime
+FROM php:8.4-fpm-bookworm
 
-#RUN apk update -y
-# Install usable applications
-RUN apk add --no-cache busybox-extras iputils traceroute mtr curl tmux htop redis git dcron unzip 
+# Debian cron, not Alpine's crond or dcron: those refuse to start schedule:run
+# while the previous sub-minute run is still finishing, so every other minute
+# is skipped.
+ENV TZ=Asia/Tehran
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        cron \
+        curl \
+        git \
+        netcat-openbsd \
+        tzdata \
+        unzip \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
+    && echo $TZ > /etc/timezone \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install php extensions
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /root
 RUN chmod +x /root/install-php-extensions && /root/install-php-extensions curl \
                            fileinfo \
@@ -25,24 +34,21 @@ RUN chmod +x /root/install-php-extensions && /root/install-php-extensions curl \
                            mongodb \
                            sockets \
                            xml \
-                           zip
-RUN rm /root/install-php-extensions
+                           zip \
+    && rm /root/install-php-extensions
 
-# Install composer
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
-RUN rm -rf /tmp/* /var/cache/apk/*
 
-USER root
-COPY . /opt/skylogs-api
 WORKDIR /opt/skylogs-api
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --no-scripts \
-    && composer dump-autoload --optimize --no-interaction
-RUN chmod -R 777 /opt/skylogs-api/storage /opt/skylogs-api/bootstrap
-COPY ./crontab /etc/cron.d/horizon-cron
-RUN chmod 0644 /etc/cron.d/horizon-cron && crontab /etc/cron.d/horizon-cron
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-autoloader --no-interaction --no-progress --no-scripts
 
+COPY . .
+RUN composer dump-autoload --optimize --no-interaction \
+    && chmod -R 777 storage bootstrap/cache \
+    && crontab crontab
 
 EXPOSE 9000
-CMD ["/bin/sh", "/opt/skylogs-api/docker-entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "/opt/skylogs-api/docker-entrypoint.sh"]

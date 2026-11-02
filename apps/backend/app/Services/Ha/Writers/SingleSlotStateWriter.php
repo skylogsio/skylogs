@@ -22,10 +22,8 @@ abstract class SingleSlotStateWriter implements StateWriter
 
     /**
      * Falls back to the rule's own state when the check is missing, rather than
-     * assuming resolved. AlertRuleObserver drops a health check every time its
-     * rule is updated, so for that type the rule is often the only surviving
-     * record of where the slot stood, and assuming resolved would swallow the
-     * resolve transition and leave a gap in the follower's timeline.
+     * assuming resolved. A missing check must not be treated as resolved, or a
+     * follower would swallow a firing state and leave a gap in its timeline.
      */
     public function localState(AlertRule $alertRule, AlertStateValue $value): string
     {

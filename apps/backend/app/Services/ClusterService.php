@@ -2,25 +2,22 @@
 
 namespace App\Services;
 
-use App\Enums\AlertRuleType;
 use App\Enums\ClusterType;
 use App\Enums\EndpointType;
-use App\Enums\HealthAlertType;
-use App\Models\AlertRule;
 use App\Models\Auth\Permission;
 use App\Models\Auth\Role;
-use App\Models\Config\ConfigSkylogs;
 use App\Models\Endpoint;
 use App\Models\SkylogsInstance;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\Notification\ChannelRegistry;
 use MongoDB\BSON\ObjectId;
 
 class ClusterService
 {
     private ClusterType $clusterType;
 
-    public function __construct()
+    public function __construct(private readonly ChannelRegistry $channels)
     {
         $this->clusterType = app(ConfigSkylogsService::class)->getClusterType();
     }
@@ -38,44 +35,6 @@ class ClusterService
     public function clusterById($id): ?SkylogsInstance
     {
         return SkylogsInstance::where('id', $id)->first();
-    }
-
-    public function refreshHealthMain(ConfigSkylogs $model)
-    {
-        $alert = AlertRule::where('type', AlertRuleType::HEALTH)
-            ->where('checkType', HealthAlertType::SOURCE_CLUSTER)
-            ->first();
-        if ($model->type == ClusterType::MAIN) {
-            if ($alert) {
-                $alert->delete();
-            }
-        } else {
-            if ($alert) {
-                $alert->url = $model->sourceUrl;
-                $alert->sourceToken = $model->sourceToken;
-                $alert->save();
-            } else {
-                app(AlertRuleService::class)->createHealthCluster($model);
-            }
-
-        }
-    }
-
-    public function refreshHealthAgent(SkylogsInstance $model)
-    {
-        $alert = AlertRule::where('type', AlertRuleType::HEALTH)
-            ->where('checkType', HealthAlertType::AGENT_CLUSTER)
-            ->where('skylogsInstanceId', $model->id)
-            ->first();
-
-        if ($alert) {
-            $alert->url = $model->url;
-            $alert->agentToken = $model->token;
-            $alert->save();
-        } else {
-            app(AlertRuleService::class)->createHealthCluster($model);
-        }
-
     }
 
     public function getSyncData()
@@ -148,15 +107,10 @@ class ClusterService
 
                 if ($endpoint['type'] == EndpointType::FLOW->value) {
                     $endpointModel->steps = $endpoint['steps'];
-                } elseif ($endpoint['type'] == EndpointType::TELEGRAM->value) {
-                    $endpointModel->chatId = $endpoint['chatId'] ?? '';
-                    $endpointModel->threadId = $endpoint['threadId'] ?? '';
-                    $endpointModel->botToken = $endpoint['botToken'] ?? '';
-                } elseif ($endpoint['type'] == EndpointType::BALE->value) {
-                    $endpointModel->chatId = $endpoint['chatId'] ?? '';
-                    $endpointModel->botToken = $endpoint['botToken'] ?? '';
-                } else {
-                    $endpointModel->value = $endpoint['value'];
+                } elseif ($this->channels->has($endpoint['type'])) {
+                    foreach ($this->channels->for($endpoint['type'])->storedFields() as $field) {
+                        $endpointModel->{$field} = $endpoint[$field] ?? '';
+                    }
                 }
                 if ($exists && ! $endpointModel->isDirty()) {
                     continue;

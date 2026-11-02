@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\AlertRuleAccessLevel;
 use App\Enums\AlertRuleType;
+use App\Enums\Constants as UserRole;
 use App\Enums\HealthAlertType;
 use App\Exports\AlertHistoryExport;
 use App\Helpers\Constants;
@@ -12,7 +13,7 @@ use App\Jobs\SendNotifyJob;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
 use App\Models\ApiAlertHistory;
-use App\Models\Config\ConfigSkylogs;
+use App\Models\Auth\Role;
 use App\Models\DataSource\DataSource;
 use App\Models\ElasticCheck;
 use App\Models\ElasticHistory;
@@ -25,7 +26,6 @@ use App\Models\MetabaseWebhookAlert;
 use App\Models\PrometheusCheck;
 use App\Models\PrometheusHistory;
 use App\Models\SentryWebhookAlert;
-use App\Models\SkylogsInstance;
 use App\Models\User;
 use App\Models\VictoriaLogsCheck;
 use App\Models\VictoriaLogsHistory;
@@ -33,12 +33,15 @@ use App\Models\ZabbixCheck;
 use App\Models\ZabbixWebhookAlert;
 use App\Services\AlertStatus\AlertStatusEventSourceFactory;
 use App\Services\AlertStatus\AlertStatusTimelineBuilder;
+use App\Services\Ha\HaReplicationContext;
 use Cache;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Excel as ExcelFormat;
 use Maatwebsite\Excel\Facades\Excel;
@@ -262,6 +265,14 @@ class AlertRuleService
                 $match['silentUserIds'] = ['$in' => [$user->id]];
             } else {
                 $match['silentUserIds'] = ['$nin' => [$user->id]];
+            }
+        }
+
+        if ($request->has('watchStatus')) {
+            if ($request->watchStatus == 'watched') {
+                $match['watchUserIds'] = ['$in' => [$user->id]];
+            } else {
+                $match['watchUserIds'] = ['$nin' => [$user->id]];
             }
         }
 
@@ -752,42 +763,174 @@ class AlertRuleService
         );
     }
 
-    public function createHealthDataSource(DataSource $dataSource) {}
-
-    public function createHealthCluster(SkylogsInstance|ConfigSkylogs $instance)
+    public function createHealthDataSource(DataSource $dataSource, bool $backfill = false): ?AlertRule
     {
-        if ($instance instanceof ConfigSkylogs) {
-            $alert = AlertRule::create([
-                'name' => 'Main Cluster',
-                'type' => AlertRuleType::HEALTH,
-                'userId' => app(UserService::class)->admin()->id,
-                'url' => $instance->sourceUrl,
-                'checkType' => HealthAlertType::SOURCE_CLUSTER,
-                'threshold' => 5,
-                'sourceToken' => $instance->sourceToken,
-            ]);
-        } else {
-            $alert = AlertRule::create([
-                'name' => 'Health Cluster '.$instance->name,
-                'type' => AlertRuleType::HEALTH,
-                'userId' => \Auth::id(),
-                'skylogsInstanceId' => $instance->id,
-                'url' => $instance->url,
-                'checkType' => HealthAlertType::AGENT_CLUSTER,
-                'threshold' => 5,
-                'agentToken' => $instance->token,
-            ]);
+        if (HaReplicationContext::isApplying()) {
+            return null;
         }
 
-        return $alert;
+        if ($this->datasourceHealthRules($dataSource)->isNotEmpty()) {
+            return null;
+        }
 
+        $userId = $backfill
+            ? $this->backfillHealthRuleUserId($dataSource)
+            : $this->creatingHealthRuleUserId($dataSource);
+
+        if (empty($userId)) {
+            Log::warning('Skipped automatic datasource health rule because no user id could be resolved.', [
+                'dataSourceId' => (string) $dataSource->_id,
+            ]);
+
+            return null;
+        }
+
+        $rule = AlertRule::query()->create([
+            'name' => $this->datasourceHealthRuleName((string) $dataSource->name),
+            'type' => AlertRuleType::HEALTH,
+            'description' => '',
+            'showAcknowledgeBtn' => false,
+            'isPrivate' => false,
+            'userId' => $userId,
+            'endpointIds' => [],
+            'userIds' => [],
+            'teamIds' => [],
+            'checkType' => HealthAlertType::DATASOURCE,
+            'threshold' => 3,
+            'intervalSeconds' => 30,
+            'target' => [
+                'dataSourceId' => (string) $dataSource->_id,
+            ],
+            'autoCreated' => true,
+        ]);
+
+        $this->flushCache();
+
+        return $rule;
     }
 
-    public function deleteHealthCluster(SkylogsInstance $instance)
+    /**
+     * @return array{created: int, skipped: int, unresolved: int}
+     */
+    public function backfillHealthDataSources(): array
     {
-        AlertRule::where('skylogsInstanceId', $instance->id)->delete();
-        HealthCheck::where('skylogsInstanceId', $instance->id)->delete();
+        $created = 0;
+        $skipped = 0;
+        $unresolved = 0;
+
+        foreach (DataSource::query()->orderBy('_id')->cursor() as $dataSource) {
+            if ($this->datasourceHealthRules($dataSource)->isNotEmpty()) {
+                $skipped++;
+
+                continue;
+            }
+
+            $rule = $this->createHealthDataSource($dataSource, backfill: true);
+
+            if ($rule === null) {
+                $unresolved++;
+
+                continue;
+            }
+
+            $created++;
+        }
+
+        return [
+            'created' => $created,
+            'skipped' => $skipped,
+            'unresolved' => $unresolved,
+        ];
+    }
+
+    public function deleteHealthDataSource(DataSource $dataSource): void
+    {
+        if (HaReplicationContext::isApplying()) {
+            return;
+        }
+
+        $rules = $this->datasourceHealthRules($dataSource)
+            ->filter(fn (AlertRule $rule): bool => (bool) $rule->autoCreated);
+
+        if ($rules->isEmpty()) {
+            return;
+        }
+
+        foreach ($rules as $rule) {
+            $this->delete($rule);
+        }
+
         $this->flushCache();
+    }
+
+    /**
+     * @return Collection<int, AlertRule>
+     */
+    private function datasourceHealthRules(DataSource $dataSource): Collection
+    {
+        return AlertRule::query()
+            ->where('type', AlertRuleType::HEALTH)
+            ->where('checkType', HealthAlertType::DATASOURCE)
+            ->where('target.dataSourceId', (string) $dataSource->_id)
+            ->get();
+    }
+
+    private function creatingHealthRuleUserId(DataSource $dataSource): mixed
+    {
+        $authenticated = Auth::id();
+
+        if (! empty($authenticated)) {
+            return $authenticated;
+        }
+
+        return $this->backfillHealthRuleUserId($dataSource);
+    }
+
+    private function backfillHealthRuleUserId(DataSource $dataSource): mixed
+    {
+        if (! empty($dataSource->userId)) {
+            return $dataSource->userId;
+        }
+
+        return $this->firstAdminUserId();
+    }
+
+    private function firstAdminUserId(): mixed
+    {
+        $roleIds = Role::query()
+            ->where('guard_name', 'api')
+            ->whereIn('name', [UserRole::ROLE_OWNER->value, UserRole::ROLE_MANAGER->value])
+            ->get()
+            ->map(fn (Role $role): string => (string) $role->id)
+            ->all();
+
+        if ($roleIds === []) {
+            return null;
+        }
+
+        $admin = User::query()
+            ->whereIn('role_id', $roleIds)
+            ->orderBy('createdAt')
+            ->orderBy('_id')
+            ->first();
+
+        return $admin?->id;
+    }
+
+    private function datasourceHealthRuleName(string $dataSourceName): string
+    {
+        $base = 'Health: '.$dataSourceName;
+        $name = $base;
+
+        for ($suffix = 2; $suffix <= 100; $suffix++) {
+            if (! AlertRule::query()->where('name', $name)->exists()) {
+                return $name;
+            }
+
+            $name = $base.' ('.$suffix.')';
+        }
+
+        return $base.' '.Str::lower(Str::random(4));
     }
 
     public function hasAdminAccessAlert(User $user, AlertRule $alert): bool
@@ -860,7 +1003,7 @@ class AlertRuleService
 
     public function userOwnsAlert(User $user, AlertRule $alert): bool
     {
-        return $user->id == $alert->userId || $user->_id == $alert->userId;
+        return $user->id == $alert->userId;
     }
 
     public function userIsListedOnAlert(User $user, AlertRule $alert): bool
@@ -886,7 +1029,7 @@ class AlertRuleService
             }
         }
 
-        return Cache::tags($tagsArray)->rememberForever($keyName, fn () => $this->getAlertsDB($type));
+        return Cache::tags($tagsArray)->remember($keyName, (int) config('cache.ttl'), fn () => $this->getAlertsDB($type));
 
     }
 
@@ -925,14 +1068,6 @@ class AlertRuleService
         }
     }
 
-    public function update(AlertRule $alertRule)
-    {
-        switch ($alertRule->type) {
-            case AlertRuleType::HEALTH:
-                HealthCheck::where('alertRuleId', $alertRule->id)->delete();
-        }
-    }
-
     public function delete(AlertRule $alertRule)
     {
         $alertRuleId = $alertRule->_id;
@@ -955,6 +1090,10 @@ class AlertRuleService
             case AlertRuleType::GRAFANA:
             case AlertRuleType::PMM:
                 GrafanaCheck::where('alertRuleId', $alertRuleId)->delete();
+                break;
+            case AlertRuleType::HEALTH:
+                HealthCheck::where('alertRuleId', $alertRuleId)->delete();
+                HealthHistory::where('alertRuleId', $alertRuleId)->delete();
                 break;
         }
 
@@ -984,6 +1123,7 @@ class AlertRuleService
     public function resolveAlertManually($alert)
     {
         $sendResolve = false;
+        $history = null;
 
         switch ($alert->type) {
             case AlertRuleType::API:
@@ -1008,7 +1148,7 @@ class AlertRuleService
                     $alert->state = AlertRule::RESOlVED;
                     $alert->save();
 
-                    SentryWebhookAlert::create([
+                    $history = SentryWebhookAlert::create([
                         'alertRuleName' => $alert->name,
                         'dataSourceAlertName' => $alert->dataSourceAlertName,
                         'alertRuleId' => $alert->_id,
@@ -1036,7 +1176,7 @@ class AlertRuleService
                 if ($prometheusAlert && $prometheusAlert->state == PrometheusCheck::FIRE) {
                     $prometheusAlert->state = PrometheusCheck::RESOLVED;
                     $prometheusAlert->save();
-                    $prometheusAlert->createHistory();
+                    $history = $prometheusAlert->createHistory();
                     $sendResolve = true;
                 }
                 break;
@@ -1046,7 +1186,7 @@ class AlertRuleService
                     $check->state = ElasticCheck::RESOLVED;
                     $check->save();
 
-                    ElasticHistory::create([
+                    $history = ElasticHistory::create([
                         'alertRuleId' => $alert->_id,
                         'alertRuleName' => $alert->name,
                         'dataSourceId' => $alert->dataSourceId,
@@ -1070,7 +1210,7 @@ class AlertRuleService
                     $check->state = VictoriaLogsCheck::RESOLVED;
                     $check->save();
 
-                    VictoriaLogsHistory::create([
+                    $history = VictoriaLogsHistory::create([
                         'alertRuleId' => $alert->_id,
                         'alertRuleName' => $alert->name,
                         'dataSourceId' => $alert->dataSourceId,
@@ -1107,7 +1247,7 @@ class AlertRuleService
         }
         $alert->removeAcknowledge();
         if ($sendResolve) {
-            app(SendNotifyService::class)->createNotify(SendNotifyJob::RESOLVED_MANUALLY, $alert, $alert->_id);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::RESOLVED_MANUALLY, $alert, $alert->_id, $history);
         }
 
     }

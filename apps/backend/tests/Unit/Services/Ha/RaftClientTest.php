@@ -9,7 +9,7 @@ describe('RaftClient', function () {
         config([
             'ha.raft.url' => 'http://raft.test:8000/',
             'ha.raft.connect_timeout' => 0.5,
-            'ha.raft.timeout' => ['status' => 1, 'leader' => 1, 'set' => 3, 'get' => 3],
+            'ha.raft.timeout' => ['status' => 1, 'cluster_status' => 1, 'leader' => 1, 'set' => 3, 'get' => 3],
             'ha.raft.retry_attempts' => 2,
             'ha.raft.retry_sleep_milliseconds' => 0,
         ]);
@@ -31,6 +31,24 @@ describe('RaftClient', function () {
             'leaderRaftAddress' => '192.168.56.11:7000',
             'state' => 'Follower',
         ]);
+    });
+
+    it('returns the raw cluster status payload from /cluster/status', function () {
+        $payload = [
+            'reporter_id' => 'node2',
+            'local_state' => 'Leader',
+            'known_leader_id' => 'node2',
+            'peers' => [
+                ['id' => 'node1', 'tcp_reachable' => true],
+                ['id' => 'node2', 'tcp_reachable' => true],
+            ],
+        ];
+
+        Http::fake([
+            'raft.test:8000/cluster/status' => Http::response($payload),
+        ]);
+
+        expect(app(RaftClient::class)->clusterStatus())->toBe($payload);
     });
 
     it('reads the cluster leader from /leader', function () {

@@ -111,7 +111,7 @@ class BehaviorRuleController extends Controller
         }
 
         if (! empty($validated['endpointIds'])) {
-            $this->assertSelectableEndpoints($alertRule, $validated['endpointIds']);
+            $this->assertSelectableEndpoints($validated['endpointIds']);
         }
 
         if (! empty($validated['dependsOnAlertRuleIds'])) {
@@ -171,7 +171,7 @@ class BehaviorRuleController extends Controller
         }
 
         if (! empty($validated['endpointIds'])) {
-            $this->assertSelectableEndpoints($alertRule, $validated['endpointIds']);
+            $this->assertSelectableEndpoints($validated['endpointIds']);
         }
 
         if (! empty($validated['dependsOnAlertRuleIds'])) {
@@ -224,14 +224,12 @@ class BehaviorRuleController extends Controller
     /**
      * @param  list<string>  $endpointIds
      */
-    private function assertSelectableEndpoints(AlertRule $alertRule, array $endpointIds): void
+    private function assertSelectableEndpoints(array $endpointIds): void
     {
-        $selectableEndpointIds = $this->endpointService
-            ->selectableUserEndpoint(Auth::user(), $alertRule)
-            ->pluck('id');
+        $assignableEndpointIds = $this->endpointService->assignableEndpointIds(Auth::user(), $endpointIds);
 
         foreach ($endpointIds as $endpointId) {
-            if (! $selectableEndpointIds->contains($endpointId)) {
+            if (! in_array((string) $endpointId, $assignableEndpointIds, true)) {
                 abort(403);
             }
         }

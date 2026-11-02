@@ -16,16 +16,18 @@ return [
     /*
      * Only these IP's will be allowed to visit the above urls.
      * All IP's are allowed when empty.
+     * Comma-separated list via PROMETHEUS_ALLOWED_IPS.
      */
-    'allowed_ips' => [
-        // '1.2.3.4',
-    ],
+    'allowed_ips' => array_values(array_filter(array_map(
+        static fn (string $ip): string => trim($ip),
+        explode(',', (string) env('PROMETHEUS_ALLOWED_IPS', '')),
+    ))),
 
     /*
      * This is the default namespace that will be
      * used by all metrics
      */
-    'default_namespace' => 'app',
+    'default_namespace' => 'skylogs',
 
     /*
      * The middleware that will be applied to the urls above

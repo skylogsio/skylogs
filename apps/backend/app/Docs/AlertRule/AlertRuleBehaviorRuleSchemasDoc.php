@@ -108,6 +108,27 @@ Data Source: {{dataSourceName}}
 {{date}}
 ```
 
+**API and Notification** support instance-based placeholders:
+
+| Placeholder | Description |
+|-------------|-------------|
+| `{{name}}` | Alert rule name |
+| `{{state}}` / `{{state_line}}` | Instance state value (`critical`, `resolved`, `notification`) / formatted state line |
+| `{{instance}}` / `{{instance_line}}` | Instance value / `Instance: ...` line (omitted when empty) |
+| `{{description}}` / `{{description_line}}` | Description value / `Description: ...` line (omitted when empty) |
+| `{{summary}}` / `{{summary_line}}` | Summary value / `Summary: ...` line (omitted when empty) |
+| `{{job}}` | Optional job field from the API payload |
+| `{{date}}` | Jalali datetime line (`Date: Y/m/d H:i:s`) |
+| `{{fireCount}}` | Number of firing instances |
+| `{{alert.instance}}` | Alias for `{{instance}}` |
+
+**Default API / Notification template:**
+```
+{{name}}
+{{state_line}}
+{{instance_line}}{{description_line}}{{date}}
+```
+
 Other alert types fall back to generic `{{name}}`, `{{state}}`, and dotted `{{alert.*}}` paths.
 DESC,
     required: ['id', 'name', 'type', 'endpointIds', 'endpoints', 'template'],
@@ -231,7 +252,7 @@ DESC,
         new OA\Property(property: 'endpointIds', type: 'array', minItems: 1, items: new OA\Items(type: 'string')),
         new OA\Property(
             property: 'template',
-            description: 'Message template. See `AlertRuleBehaviorRuleTemplate` for Prometheus/Grafana/PMM placeholder syntax.',
+            description: 'Message template. See `AlertRuleBehaviorRuleTemplate` for Prometheus/Grafana/PMM/API/Notification placeholder syntax.',
             type: 'string',
             minLength: 1,
             example: "{{name}}\n\n{{state_line}}\n{{alert_items labels=\"pod\" annotations=\"summary\"}}",

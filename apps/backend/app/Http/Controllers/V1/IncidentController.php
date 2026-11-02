@@ -91,7 +91,7 @@ class IncidentController extends Controller
     public function show(string $id): IncidentResource
     {
         $incident = Incident::query()
-            ->with(['createdByUser', 'postMortem'])
+            ->with(['createdByUser', 'postMortem', 'commanderUser'])
             ->where('_id', $id)
             ->firstOrFail();
         $user = auth()->user();

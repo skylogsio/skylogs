@@ -36,6 +36,7 @@ class AlertingDoc
             new OA\Parameter(name: 'types', description: 'Comma-separated alert types', in: 'query', schema: new OA\Schema(type: 'string'), example: 'api,prometheus,elastic'),
             new OA\Parameter(name: 'tags', description: 'Comma-separated tags (all must match)', in: 'query', schema: new OA\Schema(type: 'string'), example: 'production,critical'),
             new OA\Parameter(name: 'silentStatus', description: 'Filter by silence state for the current user', in: 'query', schema: new OA\Schema(type: 'string', enum: ['silent', 'active'])),
+            new OA\Parameter(name: 'watchStatus', description: 'Filter by watch-list state for the current user', in: 'query', schema: new OA\Schema(type: 'string', enum: ['watched', 'unwatched'])),
             new OA\Parameter(name: 'endpointId', description: 'Filter by linked endpoint id', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'status', description: 'Filter by alert `state` field', in: 'query', schema: new OA\Schema(ref: '#/components/schemas/AlertRuleState')),
         ],
@@ -274,6 +275,69 @@ class AlertingDoc
     public function pin() {}
 
     // ----------------------------
+    // POST /api/v1/alert-rule/watch/{id}
+    // ----------------------------
+    #[OA\Post(
+        path: '/api/v1/alert-rule/watch/{id}',
+        operationId: 'toggleWatchAlertRule',
+        summary: 'Toggle watch list membership for the current user',
+        description: 'Requires read access (assigned/manage or organization-visible). Adds the alert to the caller\'s watch list, or removes it if it is already watched.',
+        security: [['bearerAuth' => []]],
+        tags: ['AlertRule'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Watch toggled',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'status', type: 'boolean', example: true),
+                        new OA\Property(property: 'isWatched', type: 'boolean'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Not Found'),
+        ]
+    )]
+    public function watchToggle() {}
+
+    // ----------------------------
+    // GET /api/v1/alert-rule/watch-list
+    // ----------------------------
+    #[OA\Get(
+        path: '/api/v1/alert-rule/watch-list',
+        operationId: 'getAlertRuleWatchList',
+        summary: 'List the current user\'s watched alert rules with states',
+        description: 'Returns paginated alert rules on the caller\'s watch list. Each item includes the current `statusLabel` and `statusCount`. Alerts the user can no longer access are omitted.',
+        security: [['bearerAuth' => []]],
+        tags: ['AlertRule'],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer', default: 1)),
+            new OA\Parameter(name: 'perPage', in: 'query', schema: new OA\Schema(type: 'integer', default: 25)),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Paginated watch list',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'current_page', type: 'integer'),
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleWatchListItem')),
+                        new OA\Property(property: 'last_page', type: 'integer'),
+                        new OA\Property(property: 'per_page', type: 'integer'),
+                        new OA\Property(property: 'total', type: 'integer'),
+                    ]
+                )
+            ),
+            new OA\Response(response: 401, description: 'Unauthorized'),
+        ]
+    )]
+    public function watchList() {}
+
+    // ----------------------------
     // POST /api/v1/alert-rule/acknowledge/{id}
     // ----------------------------
     #[OA\Post(
@@ -469,7 +533,7 @@ class AlertingDoc
         path: '/api/v1/alert-rule/history/{id}',
         operationId: 'getAlertHistory',
         summary: 'Get history for an alert rule',
-        description: 'Returns paginated state-change history. Shape depends on alert type (API instances, Prometheus/Grafana checks, Elastic/VictoriaLogs checks, etc.). Requires read access (manage or readonly for organization-visible public alerts).',
+        description: 'Returns paginated state-change history. Shape depends on alert type (API instances, Prometheus/Grafana checks, Elastic/VictoriaLogs checks, etc.). A row created with notifications includes `deliveryCounts` (`sent` and `failed` only). Requires read access (manage or readonly for organization-visible public alerts).',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [
@@ -495,6 +559,49 @@ class AlertingDoc
         ]
     )]
     public function history() {}
+
+    // ----------------------------
+    // GET /api/v1/alert-rule/history/{id}/failures/{historyId}
+    // ----------------------------
+    #[OA\Get(
+        path: '/api/v1/alert-rule/history/{id}/failures/{historyId}',
+        operationId: 'getAlertHistoryFailures',
+        summary: 'List endpoints that failed for one history row',
+        description: 'Returns the failed endpoints for one history row: endpoint id, name, type, and the short error. Successful endpoints, message bodies, provider responses, and attempt logs are omitted. An empty list means nothing failed. Requires the same read access as alert history.',
+        security: [['bearerAuth' => []]],
+        tags: ['AlertRule'],
+        parameters: [
+            new OA\Parameter(name: 'id', description: 'Alert rule id', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+            new OA\Parameter(name: 'historyId', description: 'History row id', in: 'path', required: true, schema: new OA\Schema(type: 'string', pattern: '^[0-9a-fA-F]{24}$')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Failed endpoint summaries',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(
+                                properties: [
+                                    new OA\Property(property: 'endpointId', type: 'string'),
+                                    new OA\Property(property: 'endpointName', type: 'string', nullable: true),
+                                    new OA\Property(property: 'endpointType', type: 'string', nullable: true),
+                                    new OA\Property(property: 'lastError', type: 'string', nullable: true),
+                                ],
+                                type: 'object'
+                            )
+                        ),
+                    ]
+                )
+            ),
+            new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 404, description: 'Alert rule or history row not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
+    public function historyFailures() {}
 
     // ----------------------------
     // GET /api/v1/alert-rule/history/{id}/export
@@ -735,6 +842,59 @@ class AlertingDoc
         ]
     )]
     public function groupUnsilent() {}
+
+    #[OA\Post(
+        path: '/api/v1/alert-rule/group-action/watch',
+        operationId: 'groupWatchAlertRules',
+        summary: 'Add filtered alert rules to the current user\'s watch list',
+        description: 'Uses the same query filters as the alert rule list endpoint.',
+        security: [['bearerAuth' => []]],
+        tags: ['AlertRule'],
+        parameters: [
+            new OA\Parameter(name: 'alertname', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'userId', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'types', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'tags', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'silentStatus', in: 'query', schema: new OA\Schema(type: 'string', enum: ['silent', 'active'])),
+            new OA\Parameter(name: 'watchStatus', in: 'query', schema: new OA\Schema(type: 'string', enum: ['watched', 'unwatched'])),
+            new OA\Parameter(name: 'endpointId', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'status', description: 'Filter by alert state', in: 'query', schema: new OA\Schema(ref: '#/components/schemas/AlertRuleState')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Rules added to the watch list',
+                content: new OA\JsonContent(ref: '#/components/schemas/StatusResponse')
+            ),
+        ]
+    )]
+    public function groupWatch() {}
+
+    #[OA\Post(
+        path: '/api/v1/alert-rule/group-action/unwatch',
+        operationId: 'groupUnwatchAlertRules',
+        summary: 'Remove filtered alert rules from the current user\'s watch list',
+        security: [['bearerAuth' => []]],
+        tags: ['AlertRule'],
+        parameters: [
+            new OA\Parameter(name: 'alertname', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'userId', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'types', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'tags', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'silentStatus', in: 'query', schema: new OA\Schema(type: 'string', enum: ['silent', 'active'])),
+            new OA\Parameter(name: 'watchStatus', in: 'query', schema: new OA\Schema(type: 'string', enum: ['watched', 'unwatched'])),
+            new OA\Parameter(name: 'endpointId', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'status', description: 'Filter by alert state', in: 'query', schema: new OA\Schema(ref: '#/components/schemas/AlertRuleState')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Rules removed from the watch list',
+                content: new OA\JsonContent(ref: '#/components/schemas/StatusResponse')
+            ),
+        ]
+    )]
+    public function groupUnwatch() {}
 
     #[OA\Post(
         path: '/api/v1/alert-rule/group-action/delete',
@@ -1256,6 +1416,10 @@ class AlertRuleAccessLevelSchema {}
         new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'teamIds', description: 'Present only for `manage` access', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'showAcknowledgeBtn', type: 'boolean'),
+        new OA\Property(property: 'isAcknowledged', description: 'True when the alert has been acknowledged and has not resolved since', type: 'boolean'),
+        new OA\Property(property: 'acknowledgedBy', description: 'Id of the user who acknowledged the alert. Null when it is not acknowledged', type: 'string', nullable: true),
+        new OA\Property(property: 'acknowledgedByName', description: 'Name of the user who acknowledged the alert. Null when it is not acknowledged', type: 'string', nullable: true),
+        new OA\Property(property: 'acknowledgedAt', description: 'When the alert was acknowledged. Null when it is not acknowledged, or when it was acknowledged before this time was stored', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'accessLevel', ref: '#/components/schemas/AlertRuleAccessLevel'),
         new OA\Property(property: 'isPrivate', description: 'When true, the rule is hidden from organization-wide readonly access', type: 'boolean'),
         new OA\Property(property: 'hasActionAccess', description: 'True when the caller can perform admin actions (acknowledge resolve UI, etc.) — typically the owner/admin with manage access', type: 'boolean'),
@@ -1268,12 +1432,31 @@ class AlertRuleAccessLevelSchema {}
         new OA\Property(property: 'isSilentByBehavior', description: 'Read-only: true when a silent behavior rule currently suppresses notifications', type: 'boolean'),
         new OA\Property(property: 'is_silent_by_behavior', type: 'boolean'),
         new OA\Property(property: 'isPinned', type: 'boolean'),
+        new OA\Property(property: 'isWatched', description: 'True when the current user has this alert on their watch list', type: 'boolean'),
+        new OA\Property(property: 'is_watched', type: 'boolean'),
         new OA\Property(property: 'countEndpoints', description: 'Present only for `manage` access', type: 'integer'),
         new OA\Property(property: 'count_endpoints', type: 'integer'),
         new OA\Property(property: 'extraField', description: 'Present only for `manage` access', type: 'array', items: new OA\Items(ref: '#/components/schemas/AlertRuleExtraField')),
     ]
 )]
 class AlertRuleListItemSchema {}
+
+#[OA\Schema(
+    schema: 'AlertRuleWatchListItem',
+    description: 'An alert rule on the current user\'s watch list, including its current state.',
+    properties: [
+        new OA\Property(property: 'id', type: 'string'),
+        new OA\Property(property: 'name', type: 'string'),
+        new OA\Property(property: 'type', type: 'string'),
+        new OA\Property(property: 'description', type: 'string'),
+        new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'state', ref: '#/components/schemas/AlertRuleState', nullable: true),
+        new OA\Property(property: 'statusLabel', ref: '#/components/schemas/AlertRuleState'),
+        new OA\Property(property: 'statusCount', type: 'integer'),
+        new OA\Property(property: 'isWatched', type: 'boolean', example: true),
+    ]
+)]
+class AlertRuleWatchListItemSchema {}
 
 #[OA\Schema(
     schema: 'AlertStatusSegment',

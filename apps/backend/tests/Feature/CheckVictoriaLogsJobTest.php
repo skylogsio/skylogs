@@ -9,17 +9,18 @@ use App\Models\VictoriaLogsCheck;
 use App\Models\VictoriaLogsHistory;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
+use Laravel\Horizon\Tags;
 use Tests\Support\TeamTestData;
 
 describe('CheckVictoriaLogsJob', function () {
     beforeEach(function () {
         $this->owner = TeamTestData::createUser(Constants::ROLE_OWNER);
-        $this->dataSource = DataSource::create([
+        $this->dataSource = DataSource::withoutEvents(fn () => DataSource::create([
             'name' => 'Victoria Logs Test Source',
             'type' => 'victoria_logs',
             'url' => 'https://victoria.example.com',
             'userId' => $this->owner->id,
-        ]);
+        ]));
 
         $this->alertRule = AlertRule::create([
             'name' => 'Victoria Logs Job Test',
@@ -93,5 +94,14 @@ describe('CheckVictoriaLogsJob', function () {
         expect((int) $check->state)->toBe(VictoriaLogsCheck::FIRE)
             ->and($latestHistory)->not->toBeNull()
             ->and((int) $latestHistory->state)->toBe(VictoriaLogsHistory::FIRE);
+    });
+
+    it('tags the check for horizon by type, alert rule, and data source', function () {
+        expect(Tags::for(new CheckVictoriaLogsJob($this->alertRule)))->toBe([
+            'datasource-check',
+            'victoria-logs',
+            'alertRule:'.$this->alertRule->_id,
+            'dataSource:'.$this->dataSource->_id,
+        ]);
     });
 });

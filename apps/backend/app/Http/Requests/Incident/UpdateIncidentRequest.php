@@ -39,6 +39,7 @@ class UpdateIncidentRequest extends FormRequest
             'alertRuleIds' => ['nullable', 'array'],
             'alertRuleIds.*' => ['string'],
             'severity' => ['required', Rule::enum(IncidentSeverity::class)],
+            'commanderId' => ['nullable', 'string', 'size:24'],
             ...$this->nestedDocumentationRules(),
         ];
     }

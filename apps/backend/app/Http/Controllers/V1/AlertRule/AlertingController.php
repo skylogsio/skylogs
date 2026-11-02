@@ -11,10 +11,12 @@ use App\Jobs\SendNotifyJob;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
 use App\Models\ElasticCheck;
+use App\Models\HealthCheck;
 use App\Models\VictoriaLogsCheck;
 use App\Services\AlertRuleResponseFormatter;
 use App\Services\AlertRuleService;
 use App\Services\EndpointService;
+use App\Services\Health\HealthRuleInput;
 use App\Services\SendNotifyService;
 use App\Services\UserService;
 use App\Services\ZabbixService;
@@ -22,6 +24,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Str;
 
 class AlertingController extends Controller
@@ -55,6 +58,12 @@ class AlertingController extends Controller
                     '$in' => [
                         $currentUser->_id,
                         ['$ifNull' => ['$pinUserIds', []]],
+                    ],
+                ],
+                'isWatched' => [
+                    '$in' => [
+                        $currentUser->_id,
+                        ['$ifNull' => ['$watchUserIds', []]],
                     ],
                 ],
             ],
@@ -95,6 +104,8 @@ class AlertingController extends Controller
             $page,
             ['path' => $request->url()]
         );
+
+        $this->alertRuleResponseFormatter->preloadAcknowledgeUsers($paginatedData);
 
         foreach ($paginatedData as &$alert) {
             /** @var AlertRule $alert */
@@ -314,15 +325,28 @@ class AlertingController extends Controller
                         'countDocument' => ((int) $request->countDocument),
                     ]);
                     break;
+                case AlertRuleType::HEALTH:
+                    try {
+                        $health = HealthRuleInput::validate($request);
+                    } catch (ValidationException $exception) {
+                        return ['status' => false, 'message' => collect($exception->errors())->flatten()->first() ?? 'Error'];
+                    }
+
+                    $alert = AlertRule::create([
+                        ...$commonFields,
+                        'checkType' => $health->checkType,
+                        'threshold' => $health->threshold,
+                        'intervalSeconds' => $health->intervalSeconds,
+                        'target' => $health->target,
+                    ]);
+                    break;
             }
             $alert->tags = collect($request->tags ?? [])->map(fn ($item) => trim($item))->unique()->toArray();
 
             $alert->save();
 
-            if ($request->has('endpointIds') && ! empty($request->endpointIds)) {
-                foreach ($request->endpointIds as $end) {
-                    $alert->push('endpointIds', $end, true);
-                }
+            foreach ($this->endpointService->assignableEndpointIds(auth()->user(), $request->array('endpointIds')) as $endpointId) {
+                $alert->push('endpointIds', $endpointId, true);
             }
 
             if ($request->has('userIds') && ! empty($request->userIds)) {
@@ -352,6 +376,7 @@ class AlertingController extends Controller
             abort(403);
         }
 
+        $this->alertRuleResponseFormatter->preloadAcknowledgeUsers([$alert]);
         $this->alertRuleResponseFormatter->enrichForShow($alert, $currentUser);
 
         return response()->json($alert);
@@ -359,12 +384,12 @@ class AlertingController extends Controller
 
     public function StoreUpdate(Request $request, $id)
     {
-        $model = AlertRule::where('_id', $id);
-        if (! auth()->user()->isAdmin()) {
-            $model = $model->where('userId', auth()->id());
-        }
-        $model = $model->firstOrFail();
+        $model = AlertRule::where('_id', $id)->firstOrFail();
         $currentUser = auth()->user();
+
+        if (! $this->alertRuleService->hasAdminAccessAlert($currentUser, $model)) {
+            abort(403);
+        }
 
         if ($request->has('isPrivate') && $this->alertRuleService->hasAdminAccessAlert($currentUser, $model)) {
             $model->isPrivate = $request->boolean('isPrivate');
@@ -460,6 +485,26 @@ class AlertingController extends Controller
                 VictoriaLogsCheck::where('alertRuleId', $model->_id)->delete();
                 break;
 
+            case AlertRuleType::HEALTH:
+                try {
+                    $health = HealthRuleInput::validate($request);
+                } catch (ValidationException $exception) {
+                    return ['status' => false, 'message' => collect($exception->errors())->flatten()->first() ?? 'Error'];
+                }
+
+                $resetsCheck = $health->resetsCheck($model);
+                $model->name = $request->name;
+                $model->checkType = $health->checkType;
+                $model->threshold = $health->threshold;
+                $model->intervalSeconds = $health->intervalSeconds;
+                $model->target = $health->target;
+                $model->save();
+
+                if ($resetsCheck) {
+                    HealthCheck::query()->where('alertRuleId', $model->_id)->delete();
+                }
+                break;
+
             case AlertRuleType::NOTIFICATION:
                 AlertInstance::where('alertRuleId', $model->id)->update(['alertRuleName' => $request->name]);
                 $model->name = $request->name;
@@ -479,20 +524,8 @@ class AlertingController extends Controller
                 break;
         }
 
-        $alertEndpoints = collect($model->endpointIds);
-        $endpointsIds = collect($request->array('endpointIds'));
-        $selectableEndpoints = $this->endpointService->selectableUserEndpoint(auth()->user());
-
-        foreach ($alertEndpoints as $end) {
-            if ($selectableEndpoints->contains($end)) {
-                if ($endpointsIds->doesntContain($end)) {
-                    $model->pull('endpointIds', $end);
-                }
-            }
-        }
-
-        foreach ($endpointsIds as $endpointId) {
-            $model->push('endpointIds', $endpointId, true);
+        if ($request->exists('endpointIds')) {
+            $this->endpointService->syncAlertEndpoints($currentUser, $model, $request->array('endpointIds'));
         }
 
         $alertUserIds = collect($model->userIds);

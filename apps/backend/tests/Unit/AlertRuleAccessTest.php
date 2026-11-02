@@ -7,6 +7,7 @@ use App\Models\Team;
 use App\Models\User;
 use App\Services\AlertRuleService;
 use App\Services\EndpointService;
+use App\Services\Notification\ChannelRegistry;
 use App\Services\TeamService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -247,7 +248,7 @@ describe('EndpointService alert access', function () {
         $teamService->shouldReceive('userTeams')->andReturn(collect([$team]));
 
         $alertRuleService = new AlertRuleService($teamService);
-        $endpointService = new EndpointService($teamService, $alertRuleService);
+        $endpointService = new EndpointService($teamService, $alertRuleService, app(ChannelRegistry::class));
 
         $member = makeAccessTestUser('member-id');
         $alert = makeAccessTestAlert([
@@ -258,9 +259,9 @@ describe('EndpointService alert access', function () {
         $userEndpoints = collect([(object) ['id' => 'member-endpoint-1']]);
 
         $cacheRepository = Mockery::mock();
-        $cacheRepository->shouldReceive('rememberForever')
+        $cacheRepository->shouldReceive('remember')
             ->once()
-            ->with('endpoint:user:member-id', Mockery::type('Closure'))
+            ->with('endpoint:global:member-id', (int) config('cache.ttl'), Mockery::type('Closure'))
             ->andReturn($userEndpoints);
 
         Cache::shouldReceive('tags')
@@ -278,7 +279,7 @@ describe('EndpointService alert access', function () {
         $teamService->shouldReceive('userTeams')->andReturn(collect());
 
         $alertRuleService = new AlertRuleService($teamService);
-        $endpointService = new EndpointService($teamService, $alertRuleService);
+        $endpointService = new EndpointService($teamService, $alertRuleService, app(ChannelRegistry::class));
 
         $member = makeAccessTestUser('member-id');
         $alert = makeAccessTestAlert([
@@ -289,9 +290,9 @@ describe('EndpointService alert access', function () {
         $userEndpoints = collect([(object) ['id' => 'member-endpoint-1']]);
 
         $cacheRepository = Mockery::mock();
-        $cacheRepository->shouldReceive('rememberForever')
+        $cacheRepository->shouldReceive('remember')
             ->once()
-            ->with('endpoint:user:member-id', Mockery::type('Closure'))
+            ->with('endpoint:global:member-id', (int) config('cache.ttl'), Mockery::type('Closure'))
             ->andReturn($userEndpoints);
 
         Cache::shouldReceive('tags')
@@ -305,7 +306,7 @@ describe('EndpointService alert access', function () {
     it('uses global selectable endpoints for alert owners', function () {
         $teamService = Mockery::mock(TeamService::class);
         $alertRuleService = new AlertRuleService($teamService);
-        $endpointService = Mockery::mock(EndpointService::class, [$teamService, $alertRuleService])
+        $endpointService = Mockery::mock(EndpointService::class, [$teamService, $alertRuleService, app(ChannelRegistry::class)])
             ->makePartial()
             ->shouldAllowMockingProtectedMethods();
 
@@ -342,7 +343,7 @@ describe('EndpointService alert access', function () {
         $teamService->shouldReceive('userTeams')->andReturn(collect());
 
         $alertRuleService = new AlertRuleService($teamService);
-        $endpointService = new EndpointService($teamService, $alertRuleService);
+        $endpointService = new EndpointService($teamService, $alertRuleService, app(ChannelRegistry::class));
 
         $stranger = makeAccessTestUser('stranger-id');
         $alert = makeAccessTestAlert(['userId' => 'owner-id']);

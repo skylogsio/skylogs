@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Interfaces\Messageable;
 use App\Models\AlertRule;
 use App\Services\AlertMessage\AlertMessageTemplateRenderer;
+use App\Services\Notification\ChannelRegistry;
 use App\Support\NotifyMessagePayload;
 
 class NotifyMessageComposer
@@ -19,23 +20,24 @@ class NotifyMessageComposer
         return NotifyMessagePayload::fromMessageable($alert);
     }
 
+    /**
+     * The rendered template replaces the text on every channel. Chat content
+     * (an array with a message key, e.g. the Acknowledge button) keeps its
+     * metadata; plain channel text is dropped so the template wins.
+     */
     public static function composeFromSingleTemplate(AlertRule $alertRule, Messageable $alert, string $template): NotifyMessagePayload
     {
         $body = AlertMessageTemplateRenderer::make()->render($alertRule, $alert, $template);
 
         $overrides = [];
-        $telegramBase = $alert->telegram();
 
-        if (is_array($telegramBase)) {
-            $telegramBase['message'] = $body;
-            $overrides['telegram'] = $telegramBase;
-        }
+        foreach (app(ChannelRegistry::class)->types() as $type) {
+            $content = $alert->messageFor($type);
 
-        $baleBase = $alert->baleMessage();
-
-        if (is_array($baleBase)) {
-            $baleBase['message'] = $body;
-            $overrides['bale'] = $baleBase;
+            if (is_array($content) && array_key_exists('message', $content)) {
+                $content['message'] = $body;
+                $overrides[$type->value] = $content;
+            }
         }
 
         return NotifyMessagePayload::fromBody($body, $overrides);

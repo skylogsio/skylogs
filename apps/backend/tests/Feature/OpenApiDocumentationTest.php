@@ -14,6 +14,7 @@ function openApiExcludedRoutePatterns(): array
         'api/cluster/sync-data',
         'api/ha/apply',
         'api/ha/config-sync',
+        'api/ha/history-sync',
         'api/documentation',
         'api/docs',
         'api/oauth2-callback',

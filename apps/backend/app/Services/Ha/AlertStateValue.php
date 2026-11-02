@@ -96,6 +96,15 @@ final class AlertStateValue
         return $acknowledgedBy === null ? null : (string) $acknowledgedBy;
     }
 
+    public function acknowledgedAt(): ?int
+    {
+        if (! isset($this->rule['acknowledgedAt']) || $this->rule['acknowledgedAt'] === null) {
+            return null;
+        }
+
+        return (int) $this->rule['acknowledgedAt'];
+    }
+
     public function extra(string $field, mixed $default = null): mixed
     {
         return $this->extra[$field] ?? $default;

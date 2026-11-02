@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Interfaces\NotificationChannel;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
 use App\Models\BaseModel;
@@ -16,7 +17,17 @@ use App\Observers\Ha\HaCheckObserver;
 use App\Observers\Ha\HaConfigObserver;
 use App\Services\Ha\AlertStateReplicator;
 use App\Services\Ha\HaConfigCatalog;
+use App\Services\Notification\ChannelRegistry;
+use App\Services\Notification\Channels\BaleChannel;
+use App\Services\Notification\Channels\CallChannel;
+use App\Services\Notification\Channels\DiscordChannel;
+use App\Services\Notification\Channels\EmailChannel;
+use App\Services\Notification\Channels\MatterMostChannel;
+use App\Services\Notification\Channels\SmsChannel;
+use App\Services\Notification\Channels\TeamsChannel;
+use App\Services\Notification\Channels\TelegramChannel;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -39,12 +50,35 @@ class AppServiceProvider extends ServiceProvider
     ];
 
     /**
+     * One class per endpoint type. Adding a channel means adding an
+     * EndpointType case and its class here.
+     *
+     * @var array<int, class-string<NotificationChannel>>
+     */
+    private const NOTIFICATION_CHANNELS = [
+        TelegramChannel::class,
+        BaleChannel::class,
+        SmsChannel::class,
+        CallChannel::class,
+        EmailChannel::class,
+        TeamsChannel::class,
+        DiscordChannel::class,
+        MatterMostChannel::class,
+    ];
+
+    /**
      * Register any application services.
      */
     public function register(): void
     {
         // Shared so that the per key publish memo spans a whole request or worker.
         $this->app->singleton(AlertStateReplicator::class);
+
+        $this->app->tag(self::NOTIFICATION_CHANNELS, 'notification.channels');
+        $this->app->singleton(
+            ChannelRegistry::class,
+            fn (Application $app): ChannelRegistry => new ChannelRegistry($app->tagged('notification.channels')),
+        );
     }
 
     /**

@@ -20,6 +20,7 @@ describe('HaHistoryCatalog membership', function () {
         'sentryWebhookAlerts',
         'metabaseWebhookAlerts',
         'notifies',
+        'notificationDeliveries',
     ]);
 
     it('leaves status history out because each node derives it locally', function () {

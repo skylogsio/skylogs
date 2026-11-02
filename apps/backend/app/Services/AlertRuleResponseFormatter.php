@@ -30,6 +30,7 @@ class AlertRuleResponseFormatter
         'userId',
         'silentUserIds',
         'pinUserIds',
+        'watchUserIds',
         'url',
         'hosts',
         'actions',
@@ -43,21 +44,54 @@ class AlertRuleResponseFormatter
         'enableAutoResolve',
         'autoResolveMinutes',
         'checkType',
+        'target',
         'skylogsInstanceId',
         'extraField',
         'dataSourceAlertName',
         'queryType',
-        'acknowledgedBy',
         'ownerName',
         'countEndpoints',
         'count_endpoints',
     ];
+
+    /**
+     * User id => name, loaded once per index page or show document.
+     *
+     * @var array<string, string>
+     */
+    private array $acknowledgeNames = [];
 
     public function __construct(
         protected AlertRuleService $alertRuleService,
         protected EndpointService $endpointService,
         protected AlertRuleBehaviorRuleService $behaviorRuleService,
     ) {}
+
+    /**
+     * @param  iterable<int, AlertRule>  $alerts
+     */
+    public function preloadAcknowledgeUsers(iterable $alerts): void
+    {
+        $ids = [];
+
+        foreach ($alerts as $alert) {
+            if (! empty($alert->acknowledgedBy)) {
+                $ids[] = (string) $alert->acknowledgedBy;
+            }
+        }
+
+        $ids = array_values(array_unique($ids));
+
+        if ($ids === []) {
+            return;
+        }
+
+        $this->acknowledgeNames = User::query()
+            ->whereIn('_id', $ids)
+            ->get()
+            ->mapWithKeys(fn (User $user): array => [(string) $user->id => (string) $user->name])
+            ->all();
+    }
 
     public function enrichForList(AlertRule $alert, User $user): void
     {
@@ -70,7 +104,7 @@ class AlertRuleResponseFormatter
         } else {
             $alert->teamIds = $alert->teamIds ?? [];
             $alert->extraField = $this->formatExtraField($alert->extraField ?? []);
-            $alert->countEndpoints = $this->endpointService->countUserEndpointAlert($user, $alert);
+            $alert->countEndpoints = $this->endpointService->countAlertEndpoints($alert);
             $alert->count_endpoints = $alert->countEndpoints;
         }
 
@@ -94,7 +128,7 @@ class AlertRuleResponseFormatter
             $alert->teamIds = $alert->teamIds ?? [];
             $alert->extraField = $this->formatExtraField($alert->extraField ?? []);
             $alert->ownerName = $alert->user->name;
-            $alert->countEndpoints = $this->endpointService->countUserEndpointAlert($user, $alert);
+            $alert->countEndpoints = $this->endpointService->countAlertEndpoints($alert);
             $alert->count_endpoints = $alert->countEndpoints;
             $alert->rules = $this->behaviorRuleService->formatRulesForApi($alert->rules ?? []);
         } else {
@@ -124,6 +158,23 @@ class AlertRuleResponseFormatter
         $alert->isSilent = $isSilent;
         $alert->is_silent = $isSilent;
         $alert->isSilentByBehavior = $this->behaviorRuleService->resolveIsSilent($alert);
+
+        $isWatched = $alert->isWatched($user);
+        $alert->isWatched = $isWatched;
+        $alert->is_watched = $isWatched;
+
+        $this->applyAcknowledgement($alert);
+    }
+
+    private function applyAcknowledgement(AlertRule $alert): void
+    {
+        $isAcknowledged = $alert->isAcknowledged();
+        $acknowledgedBy = $isAcknowledged ? (string) $alert->acknowledgedBy : null;
+
+        $alert->isAcknowledged = $isAcknowledged;
+        $alert->acknowledgedBy = $acknowledgedBy;
+        $alert->acknowledgedByName = $acknowledgedBy === null ? null : ($this->acknowledgeNames[$acknowledgedBy] ?? null);
+        $alert->acknowledgedAt = $isAcknowledged ? $alert->acknowledgedAt : null;
     }
 
     /**

@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\EndpointType;
 use App\Interfaces\Messageable;
 use App\Support\NotifyMessagePayload;
 use MongoDB\Laravel\Relations\BelongsTo;
+use MongoDB\Laravel\Relations\HasMany;
 
 class Notify extends BaseModel implements Messageable
 {
@@ -31,52 +33,25 @@ class Notify extends BaseModel implements Messageable
         return $this->belongsTo(AlertRule::class, 'alertRuleId', '_id');
     }
 
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(NotificationDelivery::class, 'notifyId');
+    }
+
     public function defaultMessage(): string
     {
         return $this->messagePayload()->defaultMessage();
     }
 
-    public function telegram(): mixed
+    /**
+     * @return array<string, mixed>|string|null
+     */
+    public function messageFor(EndpointType $type): array|string|null
     {
-        return $this->messagePayload()->telegram();
+        return $this->messagePayload()->messageFor($type);
     }
 
-    public function baleMessage(): mixed
-    {
-        return $this->messagePayload()->baleMessage();
-    }
-
-    public function matterMostMessage(): mixed
-    {
-        return $this->messagePayload()->matterMostMessage();
-    }
-
-    public function teamsMessage(): mixed
-    {
-        return $this->messagePayload()->teamsMessage();
-    }
-
-    public function emailMessage(): mixed
-    {
-        return $this->messagePayload()->emailMessage();
-    }
-
-    public function smsMessage(): mixed
-    {
-        return $this->messagePayload()->smsMessage();
-    }
-
-    public function discordMessage(): mixed
-    {
-        return $this->messagePayload()->discordMessage();
-    }
-
-    public function callMessage(): mixed
-    {
-        return $this->messagePayload()->callMessage();
-    }
-
-    protected function messagePayload(): NotifyMessagePayload
+    public function messagePayload(): NotifyMessagePayload
     {
         return NotifyMessagePayload::fromStored(is_array($this->messages) ? $this->messages : []);
     }

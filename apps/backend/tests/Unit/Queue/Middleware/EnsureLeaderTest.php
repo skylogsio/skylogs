@@ -3,11 +3,10 @@
 use App\Jobs\AddChecksJob;
 use App\Jobs\AutoResolveApiAlertsJob;
 use App\Jobs\CheckElasticJob;
-use App\Jobs\CheckHealthJob;
 use App\Jobs\CheckPrometheusJob;
 use App\Jobs\CheckVictoriaLogsJob;
 use App\Jobs\GrafanaWebhookJob;
-use App\Jobs\IntervalJob;
+use App\Jobs\RunHealthChecksJob;
 use App\Jobs\SyncCluster;
 use App\Queue\Middleware\EnsureLeader;
 use App\Services\Ha\HaLeaderService;
@@ -69,10 +68,9 @@ describe('EnsureLeader', function () {
             new AddChecksJob,
             new AutoResolveApiAlertsJob,
             new SyncCluster,
-            new IntervalJob,
             new CheckElasticJob(null),
             new CheckVictoriaLogsJob(null),
-            new CheckHealthJob(null),
+            new RunHealthChecksJob,
             new GrafanaWebhookJob(null, []),
         ];
 

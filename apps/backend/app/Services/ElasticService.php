@@ -3,26 +3,40 @@
 namespace App\Services;
 
 use App\Models\ElasticCheck;
-use Carbon\Carbon;
+use App\Services\DataSource\DataSourceAvailability;
+use Illuminate\Http\Client\ConnectionException;
 
 class ElasticService
 {
+    public const TIME_FIELD = 'timestamp';
+
     public static function countDocuments(ElasticCheck $elasticCheck): ?int
     {
         $dataSource = $elasticCheck->alertRule->dataSource;
+        $dataSourceId = (string) ($elasticCheck->alertRule->dataSourceId ?? '');
+        $availability = app(DataSourceAvailability::class);
+
+        if ($availability->isCoolingDown($dataSourceId)) {
+            return null;
+        }
 
         try {
-            $nowCarbon = Carbon::now('UTC');
-            $nowString = $nowCarbon->format("Y-m-d\TH:i:s");
-            $agoString = $nowCarbon->copy()->subMinutes($elasticCheck->minutes)->format("Y-m-d\TH:i:s");
+            $minutes = (int) $elasticCheck->minutes;
 
             $response = \Http::acceptJson()
                 ->withBasicAuth($dataSource->username, $dataSource->password)
+                ->connectTimeout((int) config('datasource_checks.connect_timeout', 2))
+                ->timeout((int) config('datasource_checks.timeout', 5))
                 ->post($dataSource->url."/{$elasticCheck->dataviewTitle}/_count", [
                     'query' => [
-                        'query_string' => [
-                            'query' => "timestamp:[$agoString TO $nowString] {$elasticCheck->queryString}",
-                            'default_operator' => 'AND',
+                        'bool' => [
+                            'filter' => [
+                                ['range' => [self::TIME_FIELD => ['gte' => "now-{$minutes}m", 'lte' => 'now']]],
+                                ['query_string' => [
+                                    'query' => $elasticCheck->queryString,
+                                    'default_operator' => 'AND',
+                                ]],
+                            ],
                         ],
                     ],
                 ]);
@@ -35,7 +49,11 @@ class ElasticService
 
             return (int) ($body['count'] ?? 0);
 
-        } catch (\Exception $exception) {
+        } catch (ConnectionException) {
+            $availability->coolDown($dataSourceId);
+
+            return null;
+        } catch (\Exception) {
             return null;
         }
     }

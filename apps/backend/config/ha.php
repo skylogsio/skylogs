@@ -113,6 +113,7 @@ return [
         */
         'timeout' => [
             'status' => (float) env('RAFT_STATUS_TIMEOUT', 1),
+            'cluster_status' => (float) env('RAFT_CLUSTER_STATUS_TIMEOUT', 1),
             'leader' => (float) env('RAFT_LEADER_TIMEOUT', 1),
             'set' => (float) env('RAFT_SET_TIMEOUT', 3),
             'get' => (float) env('RAFT_GET_TIMEOUT', 3),

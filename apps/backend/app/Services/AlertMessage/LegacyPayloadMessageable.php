@@ -2,7 +2,7 @@
 
 namespace App\Services\AlertMessage;
 
-use App\Concerns\ProvidesDefaultChannelMessages;
+use App\Concerns\ProvidesChannelMessages;
 use App\Interfaces\Messageable;
 
 /**
@@ -10,7 +10,7 @@ use App\Interfaces\Messageable;
  */
 final class LegacyPayloadMessageable implements Messageable
 {
-    use ProvidesDefaultChannelMessages;
+    use ProvidesChannelMessages;
 
     /**
      * @param  array<string, mixed>  $payload

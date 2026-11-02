@@ -18,9 +18,4 @@ class SkylogsInstance extends BaseModel
     {
         return \Str::startsWith($this->url, 'http') ? $this->url : 'http://'.$this->url;
     }
-
-    public function getHealthUrl()
-    {
-        return $this->getBaseUrl().'/api/health';
-    }
 }

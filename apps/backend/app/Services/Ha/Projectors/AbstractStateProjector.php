@@ -63,6 +63,9 @@ abstract class AbstractStateProjector implements StateProjector
             'fireCount' => (int) ($alertRule->fireCount ?? 0),
             'notifyAt' => $alertRule->notifyAt === null ? null : (int) $alertRule->notifyAt,
             'acknowledgedBy' => $alertRule->acknowledgedBy === null ? null : (string) $alertRule->acknowledgedBy,
+            'acknowledgedAt' => $alertRule->acknowledgedAt instanceof DateTimeInterface
+                ? $alertRule->acknowledgedAt->getTimestamp()
+                : null,
         ];
     }
 

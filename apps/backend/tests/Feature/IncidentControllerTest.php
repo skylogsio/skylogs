@@ -322,7 +322,8 @@ describe('Incident status transitions', function () {
                 'teamId' => $this->team->id,
             ])
             ->assertSuccessful()
-            ->assertJsonPath('data.status', 'investigating');
+            ->assertJsonPath('data.status', 'investigating')
+            ->assertJsonPath('data.remaining.unacknowledgedTeamIds', [$secondTeam->id]);
 
         $response = $this->actingAs($secondMember, 'api')
             ->postJson("/api/v1/incident/{$incident->id}/acknowledge", [

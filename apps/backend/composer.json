@@ -6,7 +6,7 @@
     "keywords": ["laravel", "framework","skylogs","prometheus","zabbix","sentry","elastic","grafana","alerting"],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
         "darkaonline/l5-swagger": "^10.1.0",
         "firebase/php-jwt": "^7.0",
         "guzzlehttp/guzzle": "^7.2",

@@ -8,6 +8,7 @@ use App\Models\ElasticHistory;
 use App\Models\GrafanaWebhookAlert;
 use App\Models\HealthHistory;
 use App\Models\MetabaseWebhookAlert;
+use App\Models\NotificationDelivery;
 use App\Models\Notify;
 use App\Models\PrometheusHistory;
 use App\Models\SentryWebhookAlert;
@@ -53,6 +54,7 @@ final class HaHistoryCatalog
             'sentryWebhookAlerts' => SentryWebhookAlert::class,
             'metabaseWebhookAlerts' => MetabaseWebhookAlert::class,
             'notifies' => Notify::class,
+            'notificationDeliveries' => NotificationDelivery::class,
         ];
     }
 

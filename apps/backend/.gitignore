@@ -27,7 +27,7 @@ test*.json
 test.http
 *.swp
 tests/Api/http-client.private.env.json
-
+devFiles
 
 supervisord.log
 supervisord.pid

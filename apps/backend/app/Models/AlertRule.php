@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Concerns\ProvidesDefaultChannelMessages;
+use App\Concerns\ProvidesChannelMessages;
 use App\Enums\AlertRuleType;
 use App\Enums\HealthAlertType;
 use App\Interfaces\Messageable;
@@ -14,7 +14,7 @@ use MongoDB\Laravel\Relations\BelongsTo;
 #[ObservedBy(AlertRuleObserver::class)]
 class AlertRule extends BaseModel implements Messageable
 {
-    use ProvidesDefaultChannelMessages;
+    use ProvidesChannelMessages;
 
     public const UNKNOWN = 'unknown';
 
@@ -26,10 +26,26 @@ class AlertRule extends BaseModel implements Messageable
 
     public const RESOlVED = 'resolved';
 
+    /**
+     * @var list<string>
+     */
+    public const FIRING_STATES = [
+        self::CRITICAL,
+        self::WARNING,
+        self::TRIGGERED,
+    ];
+
+    public static function isFiringState(mixed $state): bool
+    {
+        return in_array(strtolower((string) $state), self::FIRING_STATES, true);
+    }
+
     protected $casts = [
         'type' => AlertRuleType::class,
         'checkType' => HealthAlertType::class,
         'isPrivate' => 'boolean',
+        'autoCreated' => 'boolean',
+        'acknowledgedAt' => 'datetime',
     ];
 
     public const DYNAMIC_QUERY_TYPE = 'dynamic';
@@ -62,6 +78,11 @@ class AlertRule extends BaseModel implements Messageable
     public function prometheusCheck()
     {
         return $this->hasOne(PrometheusCheck::class, 'alertRuleId', '_id');
+    }
+
+    public function healthCheck()
+    {
+        return $this->hasOne(HealthCheck::class, 'alertRuleId', '_id');
     }
 
     public function grafanaWebhook()
@@ -134,6 +155,7 @@ class AlertRule extends BaseModel implements Messageable
 
         if ($alertState == AlertRule::CRITICAL || $alertState == AlertRule::WARNING) {
             $this->acknowledgedBy = $user->id;
+            $this->acknowledgedAt = now();
             $this->save();
         }
     }
@@ -142,6 +164,7 @@ class AlertRule extends BaseModel implements Messageable
     {
         if (! empty($this->acknowledgedBy)) {
             $this->acknowledgedBy = null;
+            $this->acknowledgedAt = null;
             $this->save();
         }
     }
@@ -177,6 +200,37 @@ class AlertRule extends BaseModel implements Messageable
     public function unSilent()
     {
         $this->pull('silentUserIds', \Auth::user()->_id);
+        $this->save();
+    }
+
+    public function isWatched(?User $user = null): bool
+    {
+        $user ??= \Auth::user();
+        $watchUserIds = $this->watchUserIds ?? [];
+
+        if ($user === null || $watchUserIds === []) {
+            return false;
+        }
+
+        $watchUserIds = array_map('strval', $watchUserIds);
+
+        return in_array((string) $user->_id, $watchUserIds, true)
+            || in_array((string) $user->id, $watchUserIds, true);
+    }
+
+    public function watch(?User $user = null): void
+    {
+        $user ??= \Auth::user();
+
+        $this->push('watchUserIds', $user->_id, true);
+        $this->save();
+    }
+
+    public function unWatch(?User $user = null): void
+    {
+        $user ??= \Auth::user();
+
+        $this->pull('watchUserIds', $user->_id);
         $this->save();
     }
 
@@ -259,7 +313,7 @@ class AlertRule extends BaseModel implements Messageable
     ];
 
     // ########### ONLY FOR MANUALLY RESOLVE
-    public function defaultMessage()
+    public function defaultMessage(): string
     {
         $text = $this->name;
         $text .= ' resolved manually.';

@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use App\Concerns\ProvidesDefaultChannelMessages;
+use App\Concerns\ProvidesChannelMessages;
 use App\Helpers\Constants;
 use App\Interfaces\Messageable;
 use Morilog\Jalali\Jalalian;
 
 class MetabaseWebhookAlert extends BaseModel implements Messageable
 {
-    use ProvidesDefaultChannelMessages;
+    use ProvidesChannelMessages;
 
     public $timestamps = true;
 

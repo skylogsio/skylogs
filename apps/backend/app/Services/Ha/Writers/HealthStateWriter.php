@@ -29,7 +29,7 @@ final class HealthStateWriter extends SingleSlotStateWriter
             'alertRuleId' => $alertRule->getKey(),
             'alertRuleName' => $alertRule->alertname,
             'checkType' => $alertRule->checkType,
-            'url' => $alertRule->url,
+            'url' => $check['url'] ?? $alertRule->url,
             'threshold' => $alertRule->threshold,
             'state' => $isDown ? HealthCheck::DOWN : HealthCheck::UP,
             'counter' => $isDown ? ($check['counter'] ?? 0) : 0,

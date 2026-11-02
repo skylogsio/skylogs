@@ -7,7 +7,6 @@ use App\Enums\IncidentSeverity;
 use App\Http\Requests\Concerns\ValidatesMongoReferences;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
-use App\Models\OnCallPlan;
 use App\Models\Profile\ProfileService;
 use App\Models\Team;
 use App\Models\User;
@@ -78,7 +77,7 @@ abstract class IncidentPolicyDefinitionRequest extends FormRequest
             'rules.*.notifyEndpointIds' => ['nullable', 'array'],
             'rules.*.notifyEndpointIds.*' => ['required', 'string', 'size:24'],
             'rules.*.escalation' => ['nullable', 'array'],
-            'rules.*.escalation.onCallPlanId' => ['nullable', 'string', 'size:24'],
+            'rules.*.escalation.onCallPlanId' => ['prohibited'],
             'rules.*.escalation.useLayers' => ['nullable', 'boolean'],
             'rules.*.communication' => ['nullable', 'array'],
             'rules.*.communication.stakeholderUpdateEveryMinutes' => ['nullable', 'integer', 'min:1', 'max:1440'],
@@ -178,13 +177,6 @@ abstract class IncidentPolicyDefinitionRequest extends FormRequest
                 Endpoint::class,
                 'Endpoint',
                 $rule['notifyEndpointIds'] ?? null,
-            );
-            $this->assertReferencesExist(
-                $validator,
-                "rules.{$severity}.escalation.onCallPlanId",
-                OnCallPlan::class,
-                'On-call plan',
-                $rule['escalation']['onCallPlanId'] ?? null,
             );
         }
     }

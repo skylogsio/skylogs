@@ -4,35 +4,36 @@ namespace App\Http\Middleware;
 
 use App\Models\User;
 use Closure;
-use Hash;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpFoundation\Response;
 
 class HorizonBasicAuthMiddleware
 {
     /**
-     * Handle an incoming request.
+     * Authenticate the Horizon dashboard via HTTP basic auth against the admin user.
+     *
+     * The authenticated user is set on the default guard so the `viewHorizon` gate can resolve it.
      *
      * @param  Closure(Request): (Response)  $next
      */
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
-        $authenticationHasPassed = false;
+        $username = $request->getUser();
+        $password = $request->getPassword();
 
-        if ($request->header('PHP_AUTH_USER', null) && $request->header('PHP_AUTH_PW', null)) {
-            $username = $request->header('PHP_AUTH_USER');
-            $password = $request->header('PHP_AUTH_PW');
+        $admin = null;
 
-            $usernameDB = 'admin';
-            $passDB = User::where('username', $username)->first()->password;
-            if ($username === $usernameDB && Hash::check($password, $passDB)) {
-                $authenticationHasPassed = true;
-            }
+        if ($username === 'admin' && filled($password)) {
+            $admin = User::query()->where('username', $username)->first();
         }
 
-        if ($authenticationHasPassed === false) {
+        if ($admin === null || ! Hash::check($password, $admin->password)) {
             return response()->make('Invalid credentials.', 401, ['WWW-Authenticate' => 'Basic']);
         }
+
+        Auth::setUser($admin);
 
         return $next($request);
     }
