@@ -1,13 +1,13 @@
 "use client";
 import { useRef, useState } from "react";
 
-import type { IDataSource } from "@/@types/dataSource";
+import type { IDataSource } from "@/features/DataSource/dataSource.type";
 import type { CreateUpdateModal } from "@/@types/global";
-import DataSourceModal from "@/app/[locale]/data-source/DataSourceModal";
-import DeleteDataSourceModal from "@/app/[locale]/data-source/DeleteDataSourceModal";
+import DataSourceModal from "@/features/DataSource/components/DataSourceModal";
+import DeleteDataSourceModal from "@/features/DataSource/components/DeleteDataSourceModal";
 import ActionColumn from "@/components/ActionColumn";
 import ConnectionStatus from "@/components/ConnectionStatus";
-import DataSourceType from "@/components/DataSource/DataSourceType";
+import DataSourceType from "@/features/DataSource/components/DataSourceType";
 import Table from "@/components/Table/SmartTable";
 import { type TableComponentRef } from "@/components/Table/types";
 

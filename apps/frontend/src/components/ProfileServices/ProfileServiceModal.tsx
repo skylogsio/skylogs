@@ -179,10 +179,10 @@ export default function ProfileServiceModal({
             variant="filled"
             error={!!errors.ownerId}
             helperText={errors.ownerId?.message as string}
-            value={watch("ownerId")}
+            value={watch("ownerId") ?? ""}
             {...register("ownerId")}
           >
-            {allUsers?.map((user) => (
+            {(allUsers ?? []).map((user) => (
               <MenuItem key={user.id} value={user.id}>
                 {user.name}
               </MenuItem>

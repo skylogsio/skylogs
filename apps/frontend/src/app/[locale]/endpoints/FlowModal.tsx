@@ -5,9 +5,6 @@ import {
   alpha,
   Box,
   Button,
-  Checkbox,
-  Chip,
-  FormControlLabel,
   Grid,
   IconButton,
   MenuItem,
@@ -17,6 +14,7 @@ import {
 } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { Chip } from "@mui/material";
 import { AiFillClockCircle, AiFillApi } from "react-icons/ai";
 import { MdDelete } from "react-icons/md";
 import { toast } from "react-toastify";
@@ -29,6 +27,10 @@ import { getAllEndpoints } from "@/api/flow";
 import AccessUsersAndTeams from "@/components/AccessUsersAndTeams";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
+import GradientSubmitButton from "@/components/GradientSubmitButton";
+import { getGlassCardSx, mergeSx } from "@/components/Wrapper/topBarStyles";
+import {  } from "@/hooks";
+import { useScopedI18n } from "@/locales/client";
 
 const TIME_UNITS = [
   { value: "s", label: "Seconds" },
@@ -51,7 +53,6 @@ const flowStepSchema = z.discriminatedUnion("type", [
 const createFlowSchema = z.object({
   name: z.string().trim().min(1, "This field is Required."),
   steps: z.array(flowStepSchema).min(1, "At least one step is required"),
-  isPublic: z.boolean(),
   accessTeamIds: z.array(z.string()),
   accessUserIds: z.array(z.string())
 });
@@ -64,8 +65,7 @@ type FlowModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {
 
 const emptyFormValues: FlowFormType = {
   name: "",
-  steps: [{ type: "wait" as const, duration: 0, timeUnit: "s" as const }],
-  isPublic: false,
+  steps: [{ type: "wait" as const, duration: "" as unknown as number, timeUnit: "s" as const }],
   accessTeamIds: [],
   accessUserIds: []
 };
@@ -78,14 +78,16 @@ function getFormValues(data: CreateUpdateModal<IFlow>): FlowFormType {
   return {
     name: data.name,
     steps: (data.steps.length > 0 ? data.steps : emptyFormValues.steps) as FlowFormType["steps"],
-    isPublic: data.isPublic ?? false,
     accessTeamIds: data.accessTeamIds ?? [],
     accessUserIds: data.accessUserIds ?? []
   };
 }
 
 export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalProps) {
-  const { palette } = useTheme();
+  const theme = useTheme();
+  const { palette } = theme;
+  const t = useScopedI18n("endpoints");
+
   const {
     register,
     handleSubmit,
@@ -119,7 +121,11 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
       };
       return createEndpoint(payload);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      if (!response.status) {
+        toast.error(response.message);
+        return;
+      }
       toast.success("Endpoint Flow Created Successfully.");
       onSubmit();
       onClose?.();
@@ -134,7 +140,11 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
       };
       return updateEndpoint(id, payload);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      if (!response.status) {
+        toast.error(response.message);
+        return;
+      }
       toast.success("Endpoint Flow Updated Successfully.");
       onSubmit();
       onClose?.();
@@ -150,7 +160,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
   }
 
   function addWaitStep() {
-    append({ type: "wait" as const, duration: 0, timeUnit: "s" as const });
+    append({ type: "wait" as const, duration: "" as unknown as number, timeUnit: "s" as const });
   }
 
   function addEndpointStep() {
@@ -197,16 +207,19 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
 
   return (
     <ModalContainer
-      title={data === "NEW" ? "Create New Flow" : "Update Flow"}
+      title={data === "NEW" ? t("modal.createTitle") : t("modal.updateTitle")}
       open={open}
       onClose={onClose}
       disableEscapeKeyDown
       maxWidth="md"
+      paperSx={mergeSx(getGlassCardSx(), {
+        maxWidth: "md"
+      })}
     >
       <Box component="form" onSubmit={handleSubmit(handleSubmitForm)} sx={{ width: 1, mt: 2 }}>
         <TextField
           fullWidth
-          label="Name"
+          label={t("modal.field.name")}
           variant="filled"
           error={!!errors.name}
           helperText={errors.name?.message}
@@ -218,11 +231,11 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
           sx={{
             my: 2,
             p: 2,
-            maxHeight: "50vh",
+            maxHeight: "35vh",
             overflow: "auto",
-            border: 1,
-            borderColor: palette.grey[200],
-            borderRadius: 2
+            border:
+              "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)",
+            borderRadius: 1
           }}
         >
           {fields.map((field, index) => (
@@ -255,7 +268,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
                               bottom: "100%",
                               width: "1px",
                               height: "75%",
-                              backgroundColor: palette.grey[300]
+                              backgroundColor: palette.warning.main
                             }
                           }
                         : {})
@@ -305,7 +318,7 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
                               bottom: "100%",
                               width: "1px",
                               height: "75%",
-                              backgroundColor: palette.grey[300]
+                              backgroundColor: palette.primary.main
                             }
                           }
                         : {})
@@ -344,11 +357,26 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
                 </>
               )}
               <IconButton
-                sx={{
-                  backgroundColor: palette.grey[100],
-                  transition: "all 200ms ease",
-                  "&:hover": { backgroundColor: palette.grey[200] }
-                }}
+                sx={[
+                  {
+                    backgroundColor:
+                      "color-mix(in srgb, var(--mui-palette-primary-main) 8%, transparent)",
+                    transition: "all 200ms ease",
+                    "&:hover": {
+                      backgroundColor:
+                        "color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
+                    }
+                  },
+                  (muiTheme) =>
+                    muiTheme.applyStyles("dark", {
+                      backgroundColor:
+                        "color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)",
+                      "&:hover": {
+                        backgroundColor:
+                          "color-mix(in srgb, var(--mui-palette-primary-main) 28%, transparent)"
+                      }
+                    })
+                ]}
                 onClick={() => remove(index)}
               >
                 <MdDelete />
@@ -362,36 +390,64 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
             variant="outlined"
             onClick={addWaitStep}
             startIcon={<AiFillClockCircle size={18} />}
-            sx={{
-              color: palette.warning.main,
-              backgroundColor: alpha(palette.warning.main, 0.1),
-              border: "none",
-              "&:hover": {
-                borderColor: palette.warning.main,
-                backgroundColor: "rgba(255, 152, 0, 0.04)"
-              }
-            }}
+            sx={[
+              {
+                color: "warning.main",
+                backgroundColor:
+                  "color-mix(in srgb, var(--mui-palette-warning-main) 10%, transparent)",
+                border:
+                  "1px solid color-mix(in srgb, var(--mui-palette-warning-main) 36%, transparent)",
+                "&:hover": {
+                  borderColor: "warning.main",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--mui-palette-warning-main) 14%, transparent)"
+                }
+              },
+              (muiTheme) =>
+                muiTheme.applyStyles("dark", {
+                  border:
+                    "1px solid color-mix(in srgb, var(--mui-palette-warning-main) 24%, transparent)",
+                  "&:hover": {
+                    backgroundColor:
+                      "color-mix(in srgb, var(--mui-palette-warning-main) 18%, transparent)"
+                  }
+                })
+            ]}
           >
-            ADD WAIT
+            {t("modal.addWait")}
           </Button>
           <Button
             variant="outlined"
             onClick={addEndpointStep}
-            startIcon={<AiFillApi size={18} color={palette.primary.main} />}
-            sx={{
-              color: palette.primary.main,
-              backgroundColor: alpha(palette.primary.main, 0.1),
-              border: "none",
-              "&:hover": {
-                borderColor: palette.primary.main,
-                backgroundColor: "rgba(33, 150, 243, 0.04)"
-              }
-            }}
+            startIcon={<AiFillApi size={18} color="var(--mui-palette-primary-main)" />}
+            sx={[
+              {
+                color: "primary.main",
+                backgroundColor:
+                  "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
+                border:
+                  "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 36%, transparent)",
+                "&:hover": {
+                  borderColor: "primary.main",
+                  backgroundColor:
+                    "color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
+                }
+              },
+              (muiTheme) =>
+                muiTheme.applyStyles("dark", {
+                  border:
+                    "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 24%, transparent)",
+                  "&:hover": {
+                    backgroundColor:
+                      "color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)"
+                  }
+                })
+            ]}
           >
-            ADD ENDPOINTS
+            {t("modal.addEndpoint")}
           </Button>
         </Box>
-        <Grid size={12}>
+        <Grid size={12} sx={{ mb: 3 }}>
           <AccessUsersAndTeams
             selectedTeamIds={watch("accessTeamIds")}
             selectedUserIds={watch("accessUserIds")}
@@ -399,25 +455,13 @@ export default function FlowModal({ open, onClose, data, onSubmit }: FlowModalPr
             onUserIdsChange={(userIds) => setValue("accessUserIds", userIds)}
           />
         </Grid>
-        <FormControlLabel
-          sx={{ mb: 3 }}
-          label="Is Public"
-          control={
-            <Checkbox
-              checked={watch("isPublic")}
-              onChange={(_, checked) => setValue("isPublic", checked)}
-            />
-          }
-        />
-        <Button
+        <GradientSubmitButton
           disabled={isCreating || isUpdating}
           type="submit"
-          variant="contained"
-          size="large"
           fullWidth
         >
-          {data === "NEW" ? "Create" : "Update"}
-        </Button>
+          {data === "NEW" ? t("modal.submit.create") : t("modal.submit.update")}
+        </GradientSubmitButton>
       </Box>
     </ModalContainer>
   );

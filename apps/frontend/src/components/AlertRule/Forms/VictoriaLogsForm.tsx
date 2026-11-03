@@ -21,7 +21,7 @@ import type { ModalContainerProps } from "@/components/Modal/types";
 
 const CONDITION_TYPES = ["greaterOrEqual", "lessOrEqual"] as const;
 
-const victoriaLogsSchema = z.object({
+export const victoriaLogsSchema = z.object({
   name: z.string().trim().min(1, "This field is Required."),
   type: z.literal("victoria_logs"),
   endpointIds: z.array(z.string()),
@@ -170,6 +170,7 @@ export default function VictoriaLogsAlertRuleForm({
         <AlertRuleGeneralFields<VictoriaLogsFormType>
           methods={{ control, getValues, setValue, watch }}
           errors={errors}
+          alertId={data && data !== "NEW" ? data.id : undefined}
         >
           <Grid size={12}>
             <Autocomplete

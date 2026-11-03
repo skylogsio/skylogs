@@ -2,15 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 
-import {
-  Box,
-  Collapse,
-  IconButton,
-  InputAdornment,
-  TextField,
-  alpha,
-  useTheme
-} from "@mui/material";
+import { Box, Collapse, IconButton, InputAdornment, TextField } from "@mui/material";
 import { HiOutlineSearch, HiOutlineX } from "react-icons/hi";
 
 import { useScopedI18n } from "@/locales/client";
@@ -22,7 +14,6 @@ interface SearchControlProps {
 }
 
 export default function SearchControl({ title, value = "", onSearch }: SearchControlProps) {
-  const { palette } = useTheme();
   const t = useScopedI18n("table");
 
   const [isOpen, setIsOpen] = useState(Boolean(value));
@@ -94,13 +85,13 @@ export default function SearchControl({ title, value = "", onSearch }: SearchCon
     height: 33,
     borderRadius: 2,
     border: "1px solid",
-    borderColor: alpha(palette.text.primary, 0.12),
-    bgcolor: palette.background.paper,
-    color: palette.text.secondary,
+    borderColor: "color-mix(in srgb, var(--mui-palette-text-primary) 12%, transparent)",
+    bgcolor: "var(--mui-palette-background-paper)",
+    color: "text.secondary",
     "&:hover": {
-      bgcolor: alpha(palette.primary.main, 0.06),
-      borderColor: alpha(palette.primary.main, 0.3),
-      color: palette.primary.main
+      bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 6%, transparent)",
+      borderColor: "color-mix(in srgb, var(--mui-palette-primary-main) 30%, transparent)",
+      color: "primary.main"
     }
   } as const;
 
@@ -130,14 +121,15 @@ export default function SearchControl({ title, value = "", onSearch }: SearchCon
               height: 33,
               borderRadius: 2,
               px: 1.2,
-              bgcolor: palette.background.paper,
+              bgcolor: "var(--mui-palette-background-paper)",
               fontSize: 12.5,
               transition: "box-shadow 0.2s ease, border-color 0.2s ease",
               "&:hover": {
-                bgcolor: palette.background.paper
+                bgcolor: "var(--mui-palette-background-paper)"
               },
               "&.Mui-focused": {
-                boxShadow: `0 0 0 3px ${alpha(palette.primary.main, 0.12)}`
+                boxShadow:
+                  "0 0 0 3px color-mix(in srgb, var(--mui-palette-primary-main) 12%, transparent)"
               }
             },
             "& .MuiInputBase-input": {
@@ -147,10 +139,10 @@ export default function SearchControl({ title, value = "", onSearch }: SearchCon
               margin: 0
             },
             "& .MuiOutlinedInput-notchedOutline": {
-              borderColor: alpha(palette.text.primary, 0.12)
+              borderColor: "color-mix(in srgb, var(--mui-palette-text-primary) 12%, transparent)"
             },
             "&:hover .MuiOutlinedInput-notchedOutline": {
-              borderColor: alpha(palette.primary.main, 0.35)
+              borderColor: "color-mix(in srgb, var(--mui-palette-primary-main) 35%, transparent)"
             }
           }}
           slotProps={{

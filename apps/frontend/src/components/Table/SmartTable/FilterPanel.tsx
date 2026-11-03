@@ -34,28 +34,37 @@ export default function FilterPanel({
   return (
     <Collapse in={open} timeout={220}>
       <Box
-        sx={{
-          mt: 1.5,
-          borderRadius: 3,
-          border: `1px solid ${alpha(palette.text.primary, 0.08)}`,
-          bgcolor: palette.background.paper,
-          overflow: "hidden",
-          boxShadow: `0 8px 24px ${alpha(palette.common.black, palette.mode === "dark" ? 0.28 : 0.06)}`
-        }}
+        sx={[
+          {
+            mt: 1.5,
+            borderRadius: 3,
+            border: `1px solid ${alpha(palette.text.primary, 0.08)}`,
+            bgcolor: palette.background.paper,
+            overflow: "hidden",
+            boxShadow: `0 8px 24px ${alpha(palette.common.black, 0.06)}`
+          },
+          (theme) =>
+            theme.applyStyles("dark", {
+              boxShadow: `0 8px 24px ${alpha(palette.common.black, 0.28)}`
+            })
+        ]}
       >
         <Stack
           direction="row"
           spacing={1.5}
-          sx={{
-            alignItems: "center",
-            px: 2,
-            py: 1.5,
-            bgcolor:
-              palette.mode === "dark"
-                ? alpha(palette.common.white, 0.03)
-                : alpha(palette.primary.main, 0.03),
-            borderBottom: `1px solid ${alpha(palette.text.primary, 0.06)}`
-          }}
+          sx={[
+            {
+              alignItems: "center",
+              px: 2,
+              py: 1.5,
+              bgcolor: alpha(palette.primary.main, 0.03),
+              borderBottom: `1px solid ${alpha(palette.text.primary, 0.06)}`
+            },
+            (theme) =>
+              theme.applyStyles("dark", {
+                bgcolor: alpha(palette.common.white, 0.03)
+              })
+          ]}
         >
           <Box
             sx={{
@@ -99,16 +108,19 @@ export default function FilterPanel({
         <Stack
           direction="row"
           spacing={1}
-          sx={{
-            px: 2,
-            py: 1.5,
-            alignItems: "center",
-            justifyContent: "space-between",
-            bgcolor:
-              palette.mode === "dark"
-                ? alpha(palette.common.white, 0.02)
-                : alpha(palette.grey[500], 0.04)
-          }}
+          sx={[
+            {
+              px: 2,
+              py: 1.5,
+              alignItems: "center",
+              justifyContent: "space-between",
+              bgcolor: alpha(palette.grey[500], 0.04)
+            },
+            (theme) =>
+              theme.applyStyles("dark", {
+                bgcolor: alpha(palette.common.white, 0.02)
+              })
+          ]}
         >
           <Box>
             {hasActiveFilters && (

@@ -18,7 +18,6 @@ export default function DeleteUserModal({
 }: DeleteModalProps & { data: IUser }) {
   const { id, name, username, roles } = data;
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
 
   const { mutate: deleteUserMutation, isPending } = useMutation({
     mutationFn: () => deleteUser(id),
@@ -33,7 +32,7 @@ export default function DeleteUserModal({
       {...props}
       onAfterDelete={deleteUserMutation}
       isLoading={isPending}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <Stack spacing={1.25} sx={{ width: 1 }}>
         <Stack direction="row" spacing={1}>

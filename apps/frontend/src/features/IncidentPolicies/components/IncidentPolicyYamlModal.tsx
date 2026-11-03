@@ -21,10 +21,7 @@ import type { ModalContainerProps } from "@/components/Modal/types";
 import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
 import { useCurrentTheme } from "@/hooks";
 
-import {
-  importIncidentPolicyYaml,
-  validateIncidentPolicyYaml
-} from "../incident-policy.api";
+import { importIncidentPolicyYaml, validateIncidentPolicyYaml } from "../incident-policy.api";
 import type { IIncidentPolicyYamlResult } from "../incident-policy.type";
 
 import IncidentPolicyModalBody from "./IncidentPolicyModalBody";
@@ -49,7 +46,6 @@ export default function IncidentPolicyYamlModal({
   onSubmit
 }: IncidentPolicyYamlModalProps) {
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -149,7 +145,7 @@ export default function IncidentPolicyYamlModal({
       onClose={handleClose}
       disableEscapeKeyDown
       maxWidth={720}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <IncidentPolicyModalBody>
         <Stack spacing={2}>
@@ -190,9 +186,7 @@ export default function IncidentPolicyYamlModal({
             )}
           </Stack>
           <FormControlLabel
-            control={
-              <Checkbox checked={dryRun} onChange={(_, checked) => setDryRun(checked)} />
-            }
+            control={<Checkbox checked={dryRun} onChange={(_, checked) => setDryRun(checked)} />}
             label="Dry run (do not write)"
           />
 

@@ -52,7 +52,6 @@ export default function ChangePasswordModal({
   });
   const theme = useTheme();
   const { palette } = theme;
-  const { isDark } = useCurrentTheme();
   const [showPassword, setShowPassword] = useState(false);
 
   const { mutate: changePasswordMutation, isPending: isUpdating } = useMutation({
@@ -77,7 +76,7 @@ export default function ChangePasswordModal({
       open={open}
       onClose={onClose}
       disableEscapeKeyDown
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <UserModalBody>
         <Grid

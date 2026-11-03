@@ -7,7 +7,6 @@ import { toast } from "react-toastify";
 import DeleteModalContainer from "@/components/DeleteModal/DeleteModalContainer";
 import type { DeleteModalProps } from "@/components/DeleteModal/DeleteModalTypes";
 import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
-import { useCurrentTheme } from "@/hooks";
 
 import { deleteRunbook } from "../runbook.api";
 import type { IRunbook } from "../runbook.type";
@@ -20,7 +19,6 @@ export default function DeleteRunbookModal({
 }: DeleteModalProps & { data: IRunbook }) {
   const { id, name, status, sourceType } = data;
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const queryClient = useQueryClient();
 
   const { mutate: deleteRunbookMutation, isPending } = useMutation({
@@ -42,7 +40,7 @@ export default function DeleteRunbookModal({
       {...props}
       onAfterDelete={deleteRunbookMutation}
       isLoading={isPending}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <Stack spacing={1.25} sx={{ width: 1 }}>
         <Stack direction="row" spacing={1}>

@@ -7,7 +7,6 @@ import {
   Typography,
   Stack,
   Button,
-  useTheme,
   Alert,
   Tooltip,
   Chip,
@@ -38,7 +37,6 @@ import type { AlertRuleOption } from "@/features/Debugging/debugging.type";
 import { useDebuggingData } from "@/features/Debugging/hooks/useDebuggingData";
 
 function AnalysisPageContent() {
-  const { palette } = useTheme();
   const { start, end, isTimeRangeInvalid, timeRangeError, zoomLevel, canZoomOut, zoomOut } =
     useDebuggingTimeRange();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -113,7 +111,7 @@ function AnalysisPageContent() {
             </Typography>
             <HiOutlineInformationCircle
               size={20}
-              style={{ color: palette.text.disabled, cursor: "pointer" }}
+              style={{ color: "var(--mui-palette-text-disabled)", cursor: "pointer" }}
             />
           </Stack>
           <Typography variant="body2" sx={{ mt: 0.5, color: "text.secondary" }}>
@@ -173,16 +171,16 @@ function AnalysisPageContent() {
             {isTimeRangeInvalid ? (
               <Tooltip title={timeRangeError} arrow placement="top">
                 <Box sx={{ display: "flex", alignItems: "center", ml: 1.25 }}>
-                  <HiOutlineExclamationCircle size={20} style={{ color: palette.error.main }} />
+                  <HiOutlineExclamationCircle size={20} style={{ color: "var(--mui-palette-error-main)" }} />
                 </Box>
               </Tooltip>
             ) : (
-              <HiCalendar size={20} style={{ color: palette.text.disabled, marginLeft: 10 }} />
+              <HiCalendar size={20} style={{ color: "var(--mui-palette-text-disabled)", marginLeft: 10 }} />
             )}
           </Stack>
         </Stack>
       </Box>
-      <Box sx={{ width: "100%", backgroundColor: palette.background.paper, p: 2, borderRadius: 4 }}>
+      <Box sx={{ width: "100%", backgroundColor: "background.paper", p: 2, borderRadius: 4 }}>
         <Stack
           direction="row"
           spacing={2}
@@ -220,25 +218,28 @@ function AnalysisPageContent() {
                       fontSize: 11,
                       minWidth: 18,
                       height: 18,
-                      boxShadow: ({ palette }) => `0 0 0 2px ${palette.background.paper}`
+                      boxShadow: "0 0 0 2px var(--mui-palette-background-paper)"
                     }
                   }}
                 >
                   <IconButton
                     onClick={zoomOut}
                     aria-label="Zoom out"
-                    sx={({ palette }) => ({
-                      color: palette.primary.main,
-                      backgroundColor: alpha(palette.primary.main, 0.08),
+                    sx={{
+                      color: "primary.main",
+                      backgroundColor:
+                        "color-mix(in srgb, var(--mui-palette-primary-main) 8%, transparent)",
                       border: "1px solid",
-                      borderColor: alpha(palette.primary.main, 0.24),
+                      borderColor:
+                        "color-mix(in srgb, var(--mui-palette-primary-main) 24%, transparent)",
                       transition: "all 150ms ease",
                       "&:hover": {
-                        backgroundColor: alpha(palette.primary.main, 0.16),
-                        borderColor: palette.primary.main,
+                        backgroundColor:
+                          "color-mix(in srgb, var(--mui-palette-primary-main) 16%, transparent)",
+                        borderColor: "primary.main",
                         transform: "scale(1.05)"
                       }
-                    })}
+                    }}
                   >
                     <HiOutlineZoomOut size={20} />
                   </IconButton>

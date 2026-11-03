@@ -18,17 +18,14 @@ import { IoGlobeOutline } from "react-icons/io5";
 import { ICluster } from "@/@types/cluster";
 import { getAllClusters } from "@/api/cluster";
 import { useZone } from "@/context/ZoneContext";
-import { useCurrentTheme } from "@/hooks";
-
 import DashboardPillButton from "./DashboardPillButton";
-import { getProfileMenuPaperSx } from "./topBarStyles";
+import { getProfileMenuPaperSx, mergeSx } from "./topBarStyles";
 
 const MAIN_ZONE = { name: "Main", type: "agent", url: "", id: "" } as ICluster;
 
 export default function TopBarZone() {
   const theme = useTheme();
   const { palette } = theme;
-  const { isDark } = useCurrentTheme();
   const { selectedZone, setSelectedZone } = useZone();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -70,7 +67,7 @@ export default function TopBarZone() {
         onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{ paper: { sx: { ...getProfileMenuPaperSx(theme, isDark), minWidth: 240 } } }}
+        slotProps={{ paper: { sx: mergeSx(getProfileMenuPaperSx(), { minWidth: 240 }) } }}
       >
         <Typography
           variant="caption"

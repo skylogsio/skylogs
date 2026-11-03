@@ -2,10 +2,9 @@
 
 import { type ReactNode } from "react";
 
-import { Box, Button, Typography, useTheme } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { IoChevronDown } from "react-icons/io5";
 
-import { useCurrentTheme } from "@/hooks";
 
 import { getDashboardCaptionSx, getDashboardPillSx } from "./topBarStyles";
 
@@ -33,9 +32,7 @@ export default function DashboardPillButton({
   startIcon,
   profileLayout = false
 }: DashboardPillButtonProps) {
-  const theme = useTheme();
-  const { isDark } = useCurrentTheme();
-
+  
   return (
     <Button
       onClick={onClick}
@@ -59,7 +56,7 @@ export default function DashboardPillButton({
           <IoChevronDown size={14} />
         </Box>
       }
-      sx={getDashboardPillSx(theme, isDark, { minWidth })}
+      sx={getDashboardPillSx({ minWidth })}
     >
       <Box sx={{ textAlign: "start", lineHeight: 1.15, minWidth: 0 }}>
         {profileLayout ? (
@@ -83,7 +80,7 @@ export default function DashboardPillButton({
               variant="caption"
               sx={{
                 display: "block",
-                color: theme.palette.text.secondary,
+                color: "text.secondary",
                 fontSize: "0.65rem",
                 letterSpacing: "0.02em",
                 textTransform: "capitalize",
@@ -98,7 +95,7 @@ export default function DashboardPillButton({
           </>
         ) : (
           <>
-            <Typography component="span" variant="caption" sx={getDashboardCaptionSx(theme)}>
+            <Typography component="span" variant="caption" sx={getDashboardCaptionSx()}>
               {label}
             </Typography>
             <Typography

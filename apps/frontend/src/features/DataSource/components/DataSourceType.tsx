@@ -1,6 +1,6 @@
 import { Stack, Typography, type TypographyProps } from "@mui/material";
 
-import { DATA_SOURCE_VARIANTS, type DataSourceType } from "@/utils/dataSourceUtils";
+import { DATA_SOURCE_VARIANTS, type DataSourceType } from "../dataSource.utils";
 
 interface IDataSourceTypeProps {
   type: DataSourceType;

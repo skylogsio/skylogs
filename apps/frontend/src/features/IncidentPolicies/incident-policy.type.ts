@@ -1,5 +1,5 @@
 import type { IncidentSeverity } from "@/features/Incidents/incident.type";
-import type { DataSourceType } from "@/utils/dataSourceUtils";
+import type { DataSourceType } from "@/features/DataSource/dataSource.utils";
 
 export const INCIDENT_POLICY_SOURCES = ["api", "yaml"] as const;
 export type IncidentPolicySource = (typeof INCIDENT_POLICY_SOURCES)[number];

@@ -58,7 +58,7 @@ export default function SentryAlertHistoryDetail({ onClose, data }: SentryAlertH
           spacing={1}
           sx={{
             padding: 1,
-            bgcolor: palette.background.default,
+            bgcolor: "background.default",
             borderRadius: 2,
             mb: 2
           }}
@@ -80,7 +80,7 @@ export default function SentryAlertHistoryDetail({ onClose, data }: SentryAlertH
           spacing={1}
           sx={{
             padding: 1,
-            bgcolor: palette.background.default,
+            bgcolor: "background.default",
             borderRadius: 2,
             mb: 2
           }}
@@ -102,7 +102,7 @@ export default function SentryAlertHistoryDetail({ onClose, data }: SentryAlertH
           spacing={1}
           sx={{
             padding: 1,
-            bgcolor: palette.background.default,
+            bgcolor: "background.default",
             borderRadius: 2,
             mb: 2
           }}
@@ -132,7 +132,7 @@ export default function SentryAlertHistoryDetail({ onClose, data }: SentryAlertH
           spacing={1}
           sx={{
             padding: 1,
-            bgcolor: palette.background.default,
+            bgcolor: "background.default",
             borderRadius: 2,
             "& .w-json-view-container": { backgroundColor: "transparent !important" }
           }}

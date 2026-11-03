@@ -75,7 +75,7 @@ export default function HistoryDetailsModal({ alerts, status, onClose }: History
                 spacing={1}
                 sx={{
                   padding: 1,
-                  bgcolor: palette.background.default,
+                  bgcolor: "background.default",
                   borderRadius: 2,
                   flexWrap: "wrap",
                   width: "50%"
@@ -91,7 +91,7 @@ export default function HistoryDetailsModal({ alerts, status, onClose }: History
                 spacing={1}
                 sx={{
                   padding: 1,
-                  bgcolor: palette.background.default,
+                  bgcolor: "background.default",
                   borderRadius: 2,
                   flexWrap: "wrap",
                   width: "50%"
@@ -117,7 +117,7 @@ export default function HistoryDetailsModal({ alerts, status, onClose }: History
                 sx={{
                   width: "50%",
                   padding: 1,
-                  bgcolor: palette.background.default,
+                  bgcolor: "background.default",
                   borderRadius: 2,
                   flexWrap: "wrap"
                 }}
@@ -138,7 +138,7 @@ export default function HistoryDetailsModal({ alerts, status, onClose }: History
                 sx={{
                   width: "50%",
                   padding: 1,
-                  bgcolor: palette.background.default,
+                  bgcolor: "background.default",
                   borderRadius: 2,
                   flexWrap: "wrap"
                 }}

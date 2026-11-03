@@ -64,7 +64,6 @@ export default function EditUserModal({
     mode: "onSubmit"
   });
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const { hasRole } = useRole();
 
   const { mutate: updateUserMutation, isPending: isUpdating } = useMutation({
@@ -90,7 +89,7 @@ export default function EditUserModal({
       open={open}
       onClose={onClose}
       disableEscapeKeyDown
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <UserModalBody>
         <Grid

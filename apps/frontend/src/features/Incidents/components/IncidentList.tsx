@@ -27,7 +27,6 @@ import ResolveIncidentModal from "./ResolveIncidentModal";
 export default function IncidentList() {
   const tableRef = useRef<TableComponentRef>(null);
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const [modalData, setModalData] = useState<CreateUpdateModal<IIncident>>(null);
   const [detailsIncidentId, setDetailsIncidentId] = useState<string | null>(null);
   const [deleteModalData, setDeleteModalData] = useState<IIncident | null>(null);
@@ -50,7 +49,7 @@ export default function IncidentList() {
         url="incident"
         searchKey="title"
         defaultPageSize={10}
-        tablePaperSx={getGlassCardSx(theme, isDark)}
+        tablePaperSx={getGlassCardSx()}
         onCreate={() => setModalData("NEW")}
         onRowClick={(row) => setDetailsIncidentId(row.id)}
         filterComponent={({ onChange }) => <IncidentFilter onChange={onChange} />}

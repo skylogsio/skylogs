@@ -18,7 +18,6 @@ export default function DeleteIncidentPolicyModal({
   ...props
 }: DeleteModalProps & { data: IIncidentPolicy }) {
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const queryClient = useQueryClient();
 
   const { mutate, isPending } = useMutation({
@@ -39,7 +38,7 @@ export default function DeleteIncidentPolicyModal({
       {...props}
       onAfterDelete={mutate}
       isLoading={isPending}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <Stack spacing={1.25} sx={{ width: 1 }}>
         <Stack direction="row" spacing={1}>

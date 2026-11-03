@@ -1,4 +1,4 @@
-import { blue, grey, orange, red, lightBlue } from "@mui/material/colors";
+import { blue, grey, orange, red } from "@mui/material/colors";
 import { type IconType } from "react-icons";
 import { SiGrafana, SiMetabase, SiPrometheus, SiSentry, SiVictoriametrics } from "react-icons/si";
 
@@ -15,7 +15,6 @@ export type DataSourceType =
   | "elastic"
   | "zabbix"
   | "splunk"
-  | "victoriametrics"
   | "victoria_logs"
   | "pmm";
 
@@ -46,12 +45,6 @@ export const DATA_SOURCE_VARIANTS: Record<
     defaultColor: orange[500],
     defaultSize: "1.2rem"
   },
-  metabase: {
-    label: "Metabase",
-    Icon: SiMetabase,
-    defaultColor: blue[600],
-    defaultSize: "1.2rem"
-  },
   elastic: {
     label: "Elastic",
     Icon: ElasticIcon as IconType,
@@ -64,18 +57,7 @@ export const DATA_SOURCE_VARIANTS: Record<
     defaultColor: "",
     defaultSize: "1.2rem"
   },
-  splunk: {
-    label: "Splunk",
-    Icon: SplunkIcon as IconType,
-    defaultColor: "",
-    defaultSize: "1.2rem"
-  },
-  victoriametrics: {
-    label: "Victoria Metrics",
-    Icon: SiVictoriametrics,
-    defaultColor: "",
-    defaultSize: "1.2rem"
-  },
+
   pmm: {
     label: "Percona PMM",
     Icon: PerconaIcon as IconType,
@@ -85,7 +67,19 @@ export const DATA_SOURCE_VARIANTS: Record<
   victoria_logs: {
     label: "Victoria Logs",
     Icon: SiVictoriametrics,
-    defaultColor: lightBlue[600],
+    defaultColor: blue[800],
+    defaultSize: "1.2rem"
+  },
+  splunk: {
+    label: "Splunk",
+    Icon: SplunkIcon as IconType,
+    defaultColor: "",
+    defaultSize: "1.2rem"
+  },
+  metabase: {
+    label: "Metabase",
+    Icon: SiMetabase,
+    defaultColor: blue[600],
     defaultSize: "1.2rem"
   }
 };

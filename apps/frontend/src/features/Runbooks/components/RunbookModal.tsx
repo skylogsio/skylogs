@@ -201,7 +201,6 @@ function toWritePayload(values: RunbookFormType): IRunbookWriteRequest {
 
 export default function RunbookModal({ open, onClose, data, onSubmit }: RunbookModalProps) {
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const queryClient = useQueryClient();
   const isCreate = data === "NEW";
   const runbookId = data && data !== "NEW" ? data.id : null;
@@ -299,7 +298,7 @@ export default function RunbookModal({ open, onClose, data, onSubmit }: RunbookM
       onClose={onClose}
       disableEscapeKeyDown
       maxWidth={820}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <RunbookModalBody>
         {isRunbookError ? (
