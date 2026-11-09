@@ -10,11 +10,20 @@ final class PrometheusAlertMessageBuilder
 {
     use RendersAlertMessageTemplate;
 
-    public const DEFAULT_TEMPLATE = <<<'TXT'
+    public const FULL_TEMPLATE = <<<'TXT'
 {{name}}
 
 {{state_line}}
 {{alert_items labels="*" annotations="*"}}
+{{date}}
+TXT;
+
+    public const DEFAULT_TEMPLATE = <<<'TXT'
+{{name}}
+
+{{state_line}}
+{{alert_items labels="*" annotations="*" changed_only="true"}}
+{{other_firing_line}}
 {{date}}
 TXT;
 
@@ -37,6 +46,10 @@ TXT;
 
         foreach ($payload['alerts'] ?? [] as $alert) {
             if (! is_array($alert)) {
+                continue;
+            }
+
+            if ($config['changedOnly'] && array_key_exists('skylogsChanged', $alert) && $alert['skylogsChanged'] === false) {
                 continue;
             }
 

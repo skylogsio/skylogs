@@ -3,6 +3,59 @@
 use App\Models\PrometheusCheck;
 use App\Services\PrometheusService;
 
+describe('PrometheusService::buildUpdatedAlertsWithChangeFlags', function () {
+    it('tags newly fired alerts as changed and unchanged common alerts as not changed', function () {
+        $updated = PrometheusService::buildUpdatedAlertsWithChangeFlags(
+            collect([
+                [
+                    'labels' => ['alertname' => 'StillFiring'],
+                    'annotations' => [],
+                ],
+            ]),
+            collect([
+                [
+                    'labels' => ['alertname' => 'HighCPU'],
+                    'annotations' => [],
+                ],
+            ]),
+            collect(),
+        );
+
+        $byName = $updated->keyBy(fn (array $alert) => $alert['labels']['alertname']);
+
+        expect($byName['StillFiring']['skylogsChanged'])->toBeFalse()
+            ->and($byName['StillFiring']['skylogsStatus'])->toBe(PrometheusCheck::FIRE)
+            ->and($byName['HighCPU']['skylogsChanged'])->toBeTrue()
+            ->and($byName['HighCPU']['skylogsStatus'])->toBe(PrometheusCheck::FIRE);
+    });
+
+    it('tags resolved alerts as changed', function () {
+        $updated = PrometheusService::buildUpdatedAlertsWithChangeFlags(
+            collect([
+                [
+                    'labels' => ['alertname' => 'StillFiring'],
+                    'annotations' => [],
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                ],
+            ]),
+            collect(),
+            collect([
+                [
+                    'labels' => ['alertname' => 'DiskFull'],
+                    'annotations' => [],
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                ],
+            ]),
+        );
+
+        $byName = $updated->keyBy(fn (array $alert) => $alert['labels']['alertname']);
+
+        expect($byName['StillFiring']['skylogsChanged'])->toBeFalse()
+            ->and($byName['DiskFull']['skylogsChanged'])->toBeTrue()
+            ->and($byName['DiskFull']['skylogsStatus'])->toBe(PrometheusCheck::RESOLVED);
+    });
+});
+
 describe('PrometheusService::mergeFetchedPrometheusAlertsPreservingUnreachableSources', function () {
     it('returns fetched alerts unchanged when no datasource failed', function () {
         $fetched = [

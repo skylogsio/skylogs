@@ -7,6 +7,7 @@ use App\Helpers\Utilities;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertRule;
 use App\Models\PrometheusCheck;
+use Illuminate\Support\Collection;
 
 class PrometheusService
 {
@@ -225,22 +226,11 @@ class PrometheusService
                 }
             }
 
-            //            $updatedAlertsArray = $commonAlertsArray->clone();
-
-            foreach ($commonAlertsArray as $commonAlert) {
-                $commonAlert['skylogsStatus'] = empty($commonAlert['skylogsStatus']) ? PrometheusCheck::FIRE : $commonAlert['skylogsStatus'];
-                $updatedAlertsArray->add($commonAlert);
-            }
-
-            foreach ($newFiredAlertsArray as $newFiredAlert) {
-                $newFiredAlert['skylogsStatus'] = PrometheusCheck::FIRE;
-                $updatedAlertsArray->add($newFiredAlert);
-            }
-
-            foreach ($resolvedAlertsArray as $resolvedAlert) {
-                $resolvedAlert['skylogsStatus'] = PrometheusCheck::RESOLVED;
-                $updatedAlertsArray->add($resolvedAlert);
-            }
+            $updatedAlertsArray = self::buildUpdatedAlertsWithChangeFlags(
+                $commonAlertsArray,
+                $newFiredAlertsArray,
+                $resolvedAlertsArray,
+            );
 
             $firedAlerts = $updatedAlertsArray->filter(function ($alert) {
                 return empty($alert['skylogsStatus']) || $alert['skylogsStatus'] == PrometheusCheck::FIRE;
@@ -306,5 +296,39 @@ class PrometheusService
             $check->alerts = $onlyFiredAlerts->toArray();
             $check->save();
         }
+    }
+
+    /**
+     * Tag alerts for message templates: newly fired and resolved are changed;
+     * still-firing unchanged alerts are not.
+     *
+     * @param  Collection<int, array<string, mixed>>  $commonAlerts
+     * @param  Collection<int, array<string, mixed>>  $newFiredAlerts
+     * @param  Collection<int, array<string, mixed>>  $resolvedAlerts
+     * @return Collection<int, array<string, mixed>>
+     */
+    public static function buildUpdatedAlertsWithChangeFlags($commonAlerts, $newFiredAlerts, $resolvedAlerts)
+    {
+        $updatedAlerts = collect();
+
+        foreach ($commonAlerts as $commonAlert) {
+            $commonAlert['skylogsStatus'] = empty($commonAlert['skylogsStatus']) ? PrometheusCheck::FIRE : $commonAlert['skylogsStatus'];
+            $commonAlert['skylogsChanged'] = false;
+            $updatedAlerts->add($commonAlert);
+        }
+
+        foreach ($newFiredAlerts as $newFiredAlert) {
+            $newFiredAlert['skylogsStatus'] = PrometheusCheck::FIRE;
+            $newFiredAlert['skylogsChanged'] = true;
+            $updatedAlerts->add($newFiredAlert);
+        }
+
+        foreach ($resolvedAlerts as $resolvedAlert) {
+            $resolvedAlert['skylogsStatus'] = PrometheusCheck::RESOLVED;
+            $resolvedAlert['skylogsChanged'] = true;
+            $updatedAlerts->add($resolvedAlert);
+        }
+
+        return $updatedAlerts;
     }
 }
