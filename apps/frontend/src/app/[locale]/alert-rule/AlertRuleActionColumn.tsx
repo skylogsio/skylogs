@@ -93,6 +93,7 @@ export default function AlertRuleActionColumn({
     onSuccess: (data) => {
       if (data.status) {
         setIsSilentStatus((prev) => !prev);
+        refreshData?.();
       }
     }
   });
