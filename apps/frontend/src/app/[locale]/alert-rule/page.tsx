@@ -3,13 +3,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 
-import { Box, Stack } from "@mui/material";
+import { Box, Skeleton, Stack } from "@mui/material";
 import { grey } from "@mui/material/colors";
 import { BsFillPinFill } from "react-icons/bs";
 
 import type { IAlertRule } from "@/@types/alertRule";
 import type { CreateUpdateModal } from "@/@types/global";
 import AlertRuleAccessBadge from "@/components/AlertRule/AlertRuleAccessBadge";
+import AlertRuleState from "@/components/AlertRule/AlertRuleState";
 import AlertRuleStatusIndicator from "@/components/AlertRule/AlertRuleStatusIndicator";
 import AlertRuleType from "@/components/AlertRule/AlertRuleType";
 import GroupActionModal from "@/components/AlertRule/GroupActionModal";
@@ -89,14 +90,54 @@ export default function AlertRule() {
         columns={[
           {
             header: "Name",
-            meta: { align: "left" },
+            meta: {
+              align: "left",
+              width: "35%",
+              minWidth: 280,
+              skeleton: (
+                <Stack
+                  spacing={0.75}
+                  sx={{
+                    width: "100%",
+                    maxWidth: 280,
+                    alignItems: "flex-start",
+                    justifyContent: "center"
+                  }}
+                >
+                  <Skeleton variant="text" width="65%" height={20} animation="wave" />
+                  <Stack direction="row" spacing={0.75} sx={{ width: "100%" }}>
+                    <Skeleton
+                      variant="rounded"
+                      width={48}
+                      height={18}
+                      animation="wave"
+                      sx={{ borderRadius: "6px" }}
+                    />
+                    <Skeleton
+                      variant="rounded"
+                      width={64}
+                      height={18}
+                      animation="wave"
+                      sx={{ borderRadius: "6px" }}
+                    />
+                    <Skeleton
+                      variant="rounded"
+                      width={42}
+                      height={18}
+                      animation="wave"
+                      sx={{ borderRadius: "6px" }}
+                    />
+                  </Stack>
+                </Stack>
+              )
+            },
             cell: ({ row }) => (
               <Stack
                 spacing={0.5}
                 sx={{
                   alignItems: "flex-start",
                   justifyContent: "center",
-                  minWidth: 0,
+                  minWidth: 280,
                   maxWidth: "100%",
                   width: "100%"
                 }}
@@ -158,8 +199,15 @@ export default function AlertRule() {
               )
           },
           {
-            header: "Status",
-            cell: ({ row }) => <AlertRuleStatusIndicator status={row.original.status_label} />
+            header: "State",
+            meta: { align: "left" },
+            cell: ({ row }) => (
+              <AlertRuleState
+                isSilent={row.original.isSilent}
+                status={row.original.statusLabel}
+                acknowledgedByName={row.original.acknowledgedByName}
+              />
+            )
           },
           {
             id: "action",
@@ -168,7 +216,41 @@ export default function AlertRule() {
                 Action
               </Box>
             ),
-            meta: { align: "right" },
+            meta: {
+              align: "right",
+              skeleton: (
+                <Stack
+                  direction="row"
+                  spacing={0.75}
+                  sx={{
+                    justifyContent: "flex-end",
+                    alignItems: "center"
+                  }}
+                >
+                  <Skeleton
+                    variant="rounded"
+                    width={36}
+                    height={36}
+                    animation="wave"
+                    sx={{ borderRadius: "10px" }}
+                  />
+                  <Skeleton
+                    variant="rounded"
+                    width={36}
+                    height={36}
+                    animation="wave"
+                    sx={{ borderRadius: "10px" }}
+                  />
+                  <Skeleton
+                    variant="rounded"
+                    width={36}
+                    height={36}
+                    animation="wave"
+                    sx={{ borderRadius: "10px" }}
+                  />
+                </Stack>
+              )
+            },
             cell: ({ row }) =>
               row.original.accessLevel === "readonly" ? (
                 "-"
