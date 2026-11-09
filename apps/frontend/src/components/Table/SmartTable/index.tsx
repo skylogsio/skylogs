@@ -298,6 +298,7 @@ function SmartTableInner<T>(
 
   const columnCount = tableColumns.length;
   const hasRows = Boolean(data?.data?.length);
+  const leafHeaders = table.getHeaderGroups()[0]?.headers ?? [];
 
   return (
     <Box
@@ -390,6 +391,9 @@ function SmartTableInner<T>(
                 >
                   {headerGroup.headers.map((header) => {
                     const align = header.column.columnDef.meta?.align ?? "center";
+                    const width =
+                      header.id === "select" ? 52 : (header.column.columnDef.meta?.width ?? "auto");
+                    const minWidth = header.column.columnDef.meta?.minWidth;
                     return (
                       <TableCell
                         key={header.id}
@@ -397,7 +401,8 @@ function SmartTableInner<T>(
                         sx={({ typography }) => ({
                           ...typography.body2,
                           fontWeight: 700,
-                          width: header.id === "select" ? 52 : "auto",
+                          width,
+                          minWidth,
                           py: 1.75,
                           textTransform: "capitalize",
                           borderBottomColor: alpha(palette.text.primary, 0.08),
@@ -417,28 +422,62 @@ function SmartTableInner<T>(
               {!data || isPending ? (
                 Array.from({ length: pageSize }).map((_, index) => (
                   <TableRow key={index}>
-                    {Array.from({ length: columnCount }).map((_, cellIndex) => (
-                      <TableCell
-                        key={cellIndex}
-                        sx={{
-                          width: cellIndex === 0 ? 40 : "auto",
-                          borderBottomColor: alpha(palette.text.primary, 0.06),
-                          py: 1.5
-                        }}
-                      >
-                        <Skeleton
-                          variant="rounded"
-                          width={cellIndex === 0 ? 20 : "72%"}
-                          height={18}
-                          animation="wave"
+                    {leafHeaders.map((header) => {
+                      const isSelect = header.id === "select";
+                      const align = header.column.columnDef.meta?.align ?? "center";
+                      const width =
+                        header.id === "select"
+                          ? 52
+                          : (header.column.columnDef.meta?.width ?? "auto");
+                      const minWidth = header.column.columnDef.meta?.minWidth;
+                      const customSkeleton = header.column.columnDef.meta?.skeleton;
+
+                      return (
+                        <TableCell
+                          key={header.id}
+                          align={align}
                           sx={{
-                            mx: "auto",
-                            bgcolor: alpha(palette.text.primary, 0.06),
-                            borderRadius: 1
+                            width,
+                            minWidth,
+                            borderBottomColor: alpha(palette.text.primary, 0.06),
+                            py: 1.5
                           }}
-                        />
-                      </TableCell>
-                    ))}
+                        >
+                          {customSkeleton ? (
+                            typeof customSkeleton === "function" ? (
+                              customSkeleton()
+                            ) : (
+                              customSkeleton
+                            )
+                          ) : isSelect ? (
+                            <Skeleton
+                              variant="rounded"
+                              width={20}
+                              height={18}
+                              animation="wave"
+                              sx={{
+                                mx: "auto",
+                                bgcolor: alpha(palette.text.primary, 0.06),
+                                borderRadius: 1
+                              }}
+                            />
+                          ) : (
+                            <Skeleton
+                              variant="rounded"
+                              width="72%"
+                              height={18}
+                              animation="wave"
+                              sx={{
+                                ml: align === "right" ? "auto" : align === "left" ? 0 : "auto",
+                                mr: align === "left" ? "auto" : align === "right" ? 0 : "auto",
+                                bgcolor: alpha(palette.text.primary, 0.06),
+                                borderRadius: 1
+                              }}
+                            />
+                          )}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))
               ) : hasRows ? (
@@ -468,8 +507,18 @@ function SmartTableInner<T>(
                     >
                       {row.getVisibleCells().map((cell) => {
                         const align = cell.column.columnDef.meta?.align ?? "center";
+                        const width = cell.column.columnDef.meta?.width;
+                        const minWidth = cell.column.columnDef.meta?.minWidth;
                         return (
-                          <TableCell key={cell.id} align={align} sx={{ py: 1.5 }}>
+                          <TableCell
+                            key={cell.id}
+                            align={align}
+                            sx={{
+                              py: 1.5,
+                              width,
+                              minWidth
+                            }}
+                          >
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </TableCell>
                         );
