@@ -39,6 +39,7 @@ class AlertingDoc
             new OA\Parameter(name: 'watchStatus', description: 'Filter by watch-list state for the current user', in: 'query', schema: new OA\Schema(type: 'string', enum: ['watched', 'unwatched'])),
             new OA\Parameter(name: 'endpointId', description: 'Filter by linked endpoint id', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'status', description: 'Filter by alert `state` field', in: 'query', schema: new OA\Schema(ref: '#/components/schemas/AlertRuleState')),
+            new OA\Parameter(name: 'acknowledged', description: 'When `true`, only return alert rules whose `acknowledgedBy` is set', in: 'query', schema: new OA\Schema(type: 'boolean')),
         ],
         responses: [
             new OA\Response(

@@ -283,6 +283,10 @@ class AlertRuleService
         if ($request->filled('status')) {
             $match['state'] = $request->status;
         }
+
+        if ($request->boolean('acknowledged')) {
+            $match['acknowledgedBy'] = ['$ne' => null, '$exists' => true];
+        }
     }
 
     public function getAllHistory(Request $request)
