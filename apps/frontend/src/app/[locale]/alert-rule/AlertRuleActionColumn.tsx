@@ -1,15 +1,31 @@
 import { useEffect, useState } from "react";
 
-import { alpha, Button, IconButton, Popover, Stack, Tooltip, Typography } from "@mui/material";
+import {
+  alpha,
+  Button,
+  CircularProgress,
+  IconButton,
+  Popover,
+  Stack,
+  Tooltip,
+  Typography
+} from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { BsCheck2, BsTerminalFill } from "react-icons/bs";
 import { FaThumbtack, FaThumbtackSlash } from "react-icons/fa6";
 import { HiDotsHorizontal } from "react-icons/hi";
 import { IoNotifications, IoNotificationsOff } from "react-icons/io5";
 import { RiTestTubeFill } from "react-icons/ri";
+import { toast } from "react-toastify";
 
-import type { IAlertRule } from "@/@types/alertRule";
-import { pinAlertRule, silenceAlertRule, testAlertRule } from "@/api/alertRule";
+import type { AlertRuleStatus, IAlertRule } from "@/@types/alertRule";
+import {
+  acknowledgeFiredAlertRule,
+  pinAlertRule,
+  resolveFiredAlertRule,
+  silenceAlertRule,
+  testAlertRule
+} from "@/api/alertRule";
 import ActionColumn, { actionButtonSx, ActionColumnProps } from "@/components/ActionColumn";
 import AlertRuleAccessModal from "@/components/AlertRule/Users/AlertRuleAccessModal";
 
@@ -22,6 +38,9 @@ interface AlertRuleActionColumnProps
   type: IAlertRule["type"];
   apiToken?: string;
   refreshData?: () => void;
+  status?: AlertRuleStatus;
+  acknowledgedBy?: string | null;
+  showAcknowledge?: boolean;
 }
 
 async function copyCurlCommand(apiToken: string, type: "api" | "notification") {
@@ -40,7 +59,10 @@ export default function AlertRuleActionColumn({
   onEdit,
   onDelete,
   refreshData,
-  hasActionAccess
+  hasActionAccess,
+  status,
+  acknowledgedBy,
+  showAcknowledge
 }: AlertRuleActionColumnProps) {
   const [testConfirmationAnchorEl, setTestConfirmationAnchorEl] =
     useState<HTMLButtonElement | null>(null);
@@ -93,6 +115,29 @@ export default function AlertRuleActionColumn({
     }
   });
 
+  const { mutate: resolveAlertRuleMutation, isPending: isResolving } = useMutation({
+    mutationFn: () => resolveFiredAlertRule(rowId),
+    onSuccess: (data) => {
+      if (data.status) {
+        refreshData?.();
+        toast.success("Alert Rule Resolved Successfully.");
+      }
+    }
+  });
+
+  const { mutate: acknowledgeAlertRuleMutation, isPending: isAcknowledging } = useMutation({
+    mutationFn: () => acknowledgeFiredAlertRule(rowId),
+    onSuccess: (data) => {
+      if (data.status) {
+        refreshData?.();
+        toast.success("Alert Rule Acknowledged Successfully.");
+      }
+    }
+  });
+
+  const isPendingAction = isResolving || isAcknowledging;
+  const canAcknowledge = showAcknowledge ?? !acknowledgedBy;
+
   const handleShowMorePopoverOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
     setShowMoreAnchorEl(event.currentTarget);
   };
@@ -117,11 +162,59 @@ export default function AlertRuleActionColumn({
         direction="row"
         spacing={0.75}
         sx={{
-          justifyContent: "center",
+          justifyContent: "flex-end",
           alignItems: "center"
         }}
         onClick={(event) => event.stopPropagation()}
       >
+        {status === "critical" && (
+          <>
+            {type === "api" && (
+              <Tooltip title="Resolve" placement="bottom" arrow>
+                <span>
+                  <IconButton
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      resolveAlertRuleMutation();
+                    }}
+                    disabled={isPendingAction}
+                    aria-label="Resolve"
+                    sx={actionButtonSx("#22C55E", (theme) => ({
+                      fontSize: "0.75rem",
+                      letterSpacing: "0.02em",
+                      ...theme.applyStyles("dark", { color: "#4ADE80" })
+                    }))}
+                  >
+                    {isResolving ? <CircularProgress size={16} color="inherit" /> : "Res"}
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
+
+            {canAcknowledge && (
+              <Tooltip title="Acknowledge" placement="bottom" arrow>
+                <span>
+                  <IconButton
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      acknowledgeAlertRuleMutation();
+                    }}
+                    disabled={isPendingAction}
+                    aria-label="Acknowledge"
+                    sx={actionButtonSx("#3B82F6", (theme) => ({
+                      fontSize: "0.75rem",
+                      letterSpacing: "0.02em",
+                      ...theme.applyStyles("dark", { color: "#60A5FA" })
+                    }))}
+                  >
+                    {isAcknowledging ? <CircularProgress size={16} color="inherit" /> : "Ack"}
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
+          </>
+        )}
+
         <Tooltip title="Test alert rule" placement="bottom" arrow>
           <IconButton
             onClick={(event) => {
@@ -152,7 +245,9 @@ export default function AlertRuleActionColumn({
               aria-label={isSilentStatus ? "Unsilence alert rule" : "Silence alert rule"}
               sx={actionButtonSx(isSilentStatus ? "text.secondary" : "warning.main")}
             >
-              {isSilentStatus ? (
+              {isSilencing ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : isSilentStatus ? (
                 <IoNotificationsOff size="1.2rem" />
               ) : (
                 <IoNotifications size="1.2rem" />
@@ -240,11 +335,7 @@ export default function AlertRuleActionColumn({
             </span>
           </Tooltip>
           {(type === "api" || type === "notification") && apiToken && (
-            <Tooltip
-              title={curlCopied ? "Copied!" : "Copy curl command"}
-              placement="bottom"
-              arrow
-            >
+            <Tooltip title={curlCopied ? "Copied!" : "Copy curl command"} placement="bottom" arrow>
               <IconButton
                 onClick={(event) => {
                   event.stopPropagation();

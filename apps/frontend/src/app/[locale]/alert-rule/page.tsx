@@ -159,19 +159,16 @@ export default function AlertRule() {
           },
           {
             header: "Status",
-            cell: ({ row }) => (
-              <AlertRuleStatusIndicator
-                id={row.original.accessLevel === "readonly" ? undefined : row.original.id}
-                status={row.original.status_label}
-                onAfterResolve={handleRefreshData}
-                showAcknowledge={
-                  row.original.accessLevel !== "readonly" && !row.original.acknowledgedBy
-                }
-              />
-            )
+            cell: ({ row }) => <AlertRuleStatusIndicator status={row.original.status_label} />
           },
           {
-            header: "Action",
+            id: "action",
+            header: () => (
+              <Box component="span" sx={{ display: "inline-block", pr: 4.9 }}>
+                Action
+              </Box>
+            ),
+            meta: { align: "right" },
             cell: ({ row }) =>
               row.original.accessLevel === "readonly" ? (
                 "-"
@@ -184,6 +181,8 @@ export default function AlertRule() {
                   type={row.original.type}
                   apiToken={row.original.apiToken}
                   rowId={row.original.id}
+                  status={row.original.status_label}
+                  acknowledgedBy={row.original.acknowledgedBy}
                   onEdit={() => setModalData(row.original)}
                   onDelete={() => setDeleteModalData(row.original)}
                 />
