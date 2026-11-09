@@ -37,6 +37,7 @@ export interface SmartTableToolbarSlots {
 
 export interface SmartTableProps<T> {
   title?: string;
+  titleExtra?: ReactNode;
   url: string;
   columns: ColumnDef<T>[];
   hasCheckbox?: boolean;

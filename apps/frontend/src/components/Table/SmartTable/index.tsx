@@ -58,6 +58,7 @@ import {
 function SmartTableInner<T>(
   {
     title,
+    titleExtra,
     url,
     columns,
     hasCheckbox,
@@ -312,6 +313,7 @@ function SmartTableInner<T>(
     >
       <TableToolbar
         title={title}
+        titleExtra={titleExtra}
         searchValue={searchValue}
         onSearch={handleSearch}
         hideSearch={hideSearch}

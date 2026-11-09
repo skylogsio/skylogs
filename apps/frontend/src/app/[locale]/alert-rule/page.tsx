@@ -20,6 +20,7 @@ import Table, { type TableComponentRef } from "@/components/Table/SmartTable";
 import AlertRuleActionColumn from "./AlertRuleActionColumn";
 import AlertRuleFilter from "./AlertRuleFilter";
 import AlertRuleModal from "./AlertRuleModal";
+import AlertRuleQuickFilter from "./AlertRuleQuickFilter";
 import DeleteAlertRuleModal from "./DeleteAlertRuleModal";
 import ShowAllAlertsToggle from "./ShowAllAlertsToggle";
 import TagsCell from "./TagsCell";
@@ -52,6 +53,7 @@ export default function AlertRule() {
       <Table<IAlertRule>
         ref={tableRef}
         title="Alert Rule"
+        titleExtra={<AlertRuleQuickFilter />}
         url="alert-rule"
         searchKey="alertname"
         defaultPageSize={10}
