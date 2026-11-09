@@ -55,7 +55,7 @@ export default function MuiProvider({
               success: { light: "#7BEA85", main: "#13C82B", dark: "#0E8F1F" },
               warning: { light: "#FABF7A", main: "#F28D22", dark: "#B86419" },
               error: { light: "#FF7D76", main: "#E64940", dark: "#A8322C" },
-              info: { light: "#D4B896", main: "#C4A07A", dark: "#9A7548" },
+              info: { light: "#93C5FD", main: "#3B82F6", dark: "#1D4ED8" },
               background: { default: "#F3EEE6", paper: "#FFFCF7" },
               divider: "#E4D9C8",
               text: {
@@ -89,7 +89,7 @@ export default function MuiProvider({
               success: { light: "#0E8F1F", main: "#13C82B", dark: "#7BEA85" },
               warning: { light: "#B86419", main: "#F28D22", dark: "#FABF7A" },
               error: { light: "#A8322C", main: "#E64940", dark: "#FF7D76" },
-              info: { light: "#E0C9A8", main: "#C8A882", dark: "#A8845C" },
+              info: { light: "#1D4ED8", main: "#3B82F6", dark: "#93C5FD" },
               background: { default: "#121110", paper: "#1E1B18" },
               divider: "#2E2A26",
               text: {
