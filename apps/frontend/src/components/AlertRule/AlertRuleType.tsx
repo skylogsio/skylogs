@@ -1,4 +1,4 @@
-import { Stack, Typography, type TypographyProps } from "@mui/material";
+import { Stack, type SxProps, type Theme, Typography, type TypographyProps } from "@mui/material";
 
 import { ALERT_RULE_VARIANTS, type AlertRuleType } from "@/utils/alertRuleUtils";
 
@@ -7,18 +7,22 @@ interface IAlertRuleTypeProps {
   typographyProps?: TypographyProps;
   iconSize?: string | number;
   iconColor?: string;
+  justifyContent?: "center" | "flex-start" | "flex-end";
+  sx?: SxProps<Theme>;
 }
 
 export default function AlertRuleType({
   type,
   typographyProps,
   iconColor,
-  iconSize
+  iconSize,
+  justifyContent = "center",
+  sx: extraSx
 }: IAlertRuleTypeProps) {
   const alertRuleType = ALERT_RULE_VARIANTS[type];
   const { sx, ...props } = typographyProps ?? { sx: {} };
 
-  if (!alertRuleType) return;
+  if (!alertRuleType) return null;
 
   return (
     <Stack
@@ -26,7 +30,8 @@ export default function AlertRuleType({
       spacing={1}
       sx={{
         alignItems: "center",
-        justifyContent: "center"
+        justifyContent,
+        ...extraSx
       }}
     >
       <alertRuleType.Icon

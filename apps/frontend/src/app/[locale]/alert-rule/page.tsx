@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 
-import { Box } from "@mui/material";
+import { Box, Stack } from "@mui/material";
 import { grey } from "@mui/material/colors";
 import { BsFillPinFill } from "react-icons/bs";
 
@@ -67,35 +67,82 @@ export default function AlertRule() {
           "filter",
           "create"
         ]}
+        getRowSx={(row) => ({
+          ...(row.status_label === "critical"
+            ? {
+                backgroundColor:
+                  "color-mix(in srgb, var(--mui-palette-error-main) 4%, transparent)",
+                "&:hover": {
+                  backgroundColor:
+                    "color-mix(in srgb, var(--mui-palette-error-main) 7%, transparent)"
+                }
+              }
+            : {}),
+          "& td:first-of-type": {
+            borderLeft: "4px solid",
+            borderLeftColor:
+              row.status_label === "critical"
+                ? "color-mix(in srgb, var(--mui-palette-error-main) 60%, transparent)"
+                : "transparent"
+          }
+        })}
         columns={[
-          { header: "Row", accessorFn: (_, index) => ++index },
           {
             header: "Name",
+            meta: { align: "left" },
             cell: ({ row }) => (
-              <Box
-                component={Link}
-                href={`${pathname}/${row.original.id}`}
+              <Stack
+                spacing={0.5}
                 sx={{
-                  alignItems: "center",
+                  alignItems: "flex-start",
                   justifyContent: "center",
-                  color: ({ palette }) => palette.text.primary,
-                  textDecoration: "none"
+                  minWidth: 0,
+                  maxWidth: "100%",
+                  width: "100%"
                 }}
               >
-                {row.original.isPinned && (
-                  <BsFillPinFill
-                    color={grey[500]}
-                    style={{ transform: "rotate(-30deg)", marginRight: "0.4rem" }}
-                    size={16}
-                  />
-                )}
-                {row.original.name} <AlertRuleAccessBadge accessLevel={row.original.accessLevel} />
-              </Box>
+                <Box
+                  component={Link}
+                  href={`${pathname}/${row.original.id}`}
+                  sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "flex-start",
+                    maxWidth: "100%",
+                    minWidth: 0,
+                    color: ({ palette }) => palette.text.primary,
+                    textDecoration: "none"
+                  }}
+                >
+                  {row.original.isPinned && (
+                    <BsFillPinFill
+                      color={grey[500]}
+                      style={{ transform: "rotate(-30deg)", marginRight: "0.4rem", flexShrink: 0 }}
+                      size={16}
+                    />
+                  )}
+                  <Box
+                    component="span"
+                    sx={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    {row.original.name}
+                  </Box>
+                  <AlertRuleAccessBadge accessLevel={row.original.accessLevel} />
+                </Box>
+                <TagsCell tags={row.original.tags} justifyContent="flex-start" />
+              </Stack>
             )
           },
           {
             header: "Type",
-            cell: ({ row }) => <AlertRuleType type={row.original.type} />
+            meta: { align: "left" },
+            cell: ({ row }) => (
+              <AlertRuleType type={row.original.type} justifyContent="flex-start" />
+            )
           },
           {
             header: "Notify",
@@ -122,10 +169,6 @@ export default function AlertRule() {
                 }
               />
             )
-          },
-          {
-            header: "Tags",
-            cell: ({ row }) => <TagsCell tags={row.original.tags} />
           },
           {
             header: "Action",
