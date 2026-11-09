@@ -60,4 +60,5 @@ export interface SmartTableProps<T> {
   hideSearch?: boolean;
   excludeFilterKeys?: string[];
   tablePaperSx?: SxProps<Theme>;
+  getRowSx?: (row: T) => SxProps<Theme> | undefined;
 }

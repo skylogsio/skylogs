@@ -39,6 +39,7 @@ import {
 } from "@tanstack/react-table";
 
 import { fetchTableData } from "@/components/Table/SmartTable/fetchTableData";
+import { mergeSx } from "@/components/Wrapper/topBarStyles";
 import { useCurrentDirection } from "@/hooks";
 import { useScopedI18n } from "@/locales/client";
 
@@ -79,7 +80,8 @@ function SmartTableInner<T>(
     forceShowFilter = false,
     hideSearch = false,
     excludeFilterKeys = [],
-    tablePaperSx
+    tablePaperSx,
+    getRowSx
   }: SmartTableProps<T>,
   ref: React.Ref<TableComponentRef>
 ) {
@@ -386,25 +388,28 @@ function SmartTableInner<T>(
                       })
                   ]}
                 >
-                  {headerGroup.headers.map((header) => (
-                    <TableCell
-                      key={header.id}
-                      align="center"
-                      sx={({ typography }) => ({
-                        ...typography.body2,
-                        fontWeight: 700,
-                        width: header.id === "select" ? 52 : "auto",
-                        py: 1.75,
-                        textTransform: "capitalize",
-                        borderBottomColor: alpha(palette.text.primary, 0.08),
-                        color: palette.text.secondary,
-                        letterSpacing: "0.02em",
-                        fontSize: 13.5
-                      })}
-                    >
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableCell>
-                  ))}
+                  {headerGroup.headers.map((header) => {
+                    const align = header.column.columnDef.meta?.align ?? "center";
+                    return (
+                      <TableCell
+                        key={header.id}
+                        align={align}
+                        sx={({ typography }) => ({
+                          ...typography.body2,
+                          fontWeight: 700,
+                          width: header.id === "select" ? 52 : "auto",
+                          py: 1.75,
+                          textTransform: "capitalize",
+                          borderBottomColor: alpha(palette.text.primary, 0.08),
+                          color: palette.text.secondary,
+                          letterSpacing: "0.02em",
+                          fontSize: 13.5
+                        })}
+                      >
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))}
             </TableHead>
@@ -437,32 +442,41 @@ function SmartTableInner<T>(
                   </TableRow>
                 ))
               ) : hasRows ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    hover
-                    sx={{
-                      cursor: onRowClick ? "pointer" : "default",
-                      transition: "background-color 160ms ease",
-                      backgroundColor: row.getIsSelected()
-                        ? alpha(palette.primary.main, 0.06)
-                        : "transparent",
-                      "&:hover": {
-                        backgroundColor: alpha(palette.primary.main, 0.05)
-                      },
-                      "& td": {
-                        borderBottomColor: alpha(palette.text.primary, 0.06)
-                      }
-                    }}
-                    onClick={() => handleRowClick(row)}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} align="center" sx={{ py: 1.5 }}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
+                table.getRowModel().rows.map((row) => {
+                  const extraRowSx = getRowSx ? getRowSx(row.original) : undefined;
+                  return (
+                    <TableRow
+                      key={row.id}
+                      hover
+                      sx={mergeSx(
+                        {
+                          cursor: onRowClick ? "pointer" : "default",
+                          transition: "background-color 160ms ease",
+                          backgroundColor: row.getIsSelected()
+                            ? alpha(palette.primary.main, 0.06)
+                            : "transparent",
+                          "&:hover": {
+                            backgroundColor: alpha(palette.primary.main, 0.05)
+                          },
+                          "& td": {
+                            borderBottomColor: alpha(palette.text.primary, 0.06)
+                          }
+                        },
+                        extraRowSx
+                      )}
+                      onClick={() => handleRowClick(row)}
+                    >
+                      {row.getVisibleCells().map((cell) => {
+                        const align = cell.column.columnDef.meta?.align ?? "center";
+                        return (
+                          <TableCell key={cell.id} align={align} sx={{ py: 1.5 }}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={columnCount} align="center" sx={{ py: 8, border: 0 }}>
