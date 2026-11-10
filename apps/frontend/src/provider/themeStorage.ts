@@ -40,16 +40,14 @@ export function persistMode(mode: string | null): void {
   if (mode === null) {
     try {
       window.localStorage.removeItem(MUI_MODE_KEY);
-    } catch {
-    }
+    } catch {}
     Cookies.remove(MUI_MODE_KEY, { path: "/" });
     Cookies.remove(THEME_KEY, { path: "/" });
     return;
   }
   try {
     window.localStorage.setItem(MUI_MODE_KEY, mode);
-  } catch {
-  }
+  } catch {}
   Cookies.set(MUI_MODE_KEY, mode, COOKIE_OPTIONS);
   Cookies.set(THEME_KEY, resolveTheme(mode), COOKIE_OPTIONS);
 }

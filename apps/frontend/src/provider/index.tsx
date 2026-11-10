@@ -15,7 +15,11 @@ export default function Provider({
   locale,
   sidebarCollapsed = false,
   initialMode = "system"
-}: PropsWithChildren<{ locale: string; sidebarCollapsed?: boolean; initialMode?: ThemeInitialMode }>) {
+}: PropsWithChildren<{
+  locale: string;
+  sidebarCollapsed?: boolean;
+  initialMode?: ThemeInitialMode;
+}>) {
   return (
     <I18nProviderClient locale={locale}>
       <NextAuthProvider>

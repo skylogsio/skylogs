@@ -7,8 +7,10 @@ import { toErrorResponse } from "@/lib/serverResponse";
 
 const ENDPOINT_URL = "endpoint";
 
-/** Endpoint validation failures come back as `{ status: false, errors }` without a message. */
-function withErrorMessage<T>(payload: ServerResponse<T>, fallbackMessage: string): ServerResponse<T> {
+function withErrorMessage<T>(
+  payload: ServerResponse<T>,
+  fallbackMessage: string
+): ServerResponse<T> {
   if (payload.status === false && !payload.message) {
     const firstFieldError = Object.values(payload.errors ?? {})[0]?.[0];
     return { ...payload, message: firstFieldError ?? fallbackMessage };

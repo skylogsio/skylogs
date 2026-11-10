@@ -28,4 +28,3 @@ export function createPulseAnimation(color: string, duration = "2s") {
   const kf = createPulseKeyframes(color);
   return `${kf} ${duration} infinite ease-in-out`;
 }
-
