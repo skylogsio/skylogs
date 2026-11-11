@@ -51,7 +51,8 @@ class SkylogsInstanceDocs
     #[OA\Get(
         path: '/api/v1/skylogs-instance/status/{id}',
         operationId: 'getSkylogsInstanceConnectionStatus',
-        summary: 'Check if instance is connected',
+        summary: 'Check instance connection and Raft cluster status',
+        description: 'Returns `isConnected` from a request to the instance URL. When that succeeds, `enabled` and `cluster` are copied from the instance `GET /api/v1/ha/cluster/status` (peers, known leader, local state). When the instance is unreachable, or that status call fails, `enabled` and `cluster` are null.',
         security: [['bearerAuth' => []]],
         tags: ['SkylogsInstance'],
         parameters: [
@@ -60,10 +61,17 @@ class SkylogsInstanceDocs
         responses: [
             new OA\Response(
                 response: 200,
-                description: 'Connection status',
+                description: 'Connection status and, when the instance is reachable, its Raft cluster status',
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'isConnected', type: 'boolean'),
+                        new OA\Property(property: 'enabled', type: 'boolean', nullable: true),
+                        new OA\Property(
+                            property: 'cluster',
+                            ref: '#/components/schemas/HaClusterStatus',
+                            description: 'Raft cluster status from the instance. Null when high availability is disabled or the status call failed.',
+                            nullable: true
+                        ),
                     ]
                 )
             ),
