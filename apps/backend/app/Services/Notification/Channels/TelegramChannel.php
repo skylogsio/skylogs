@@ -86,6 +86,7 @@ class TelegramChannel extends ChatBotChannel
         }
 
         return $this->profileChain->run(
+            $this->type(),
             $chain,
             fn (ConfigTelegram $config): DeliveryResult => $this->post($this->client($config), $endpoint, $message),
         );

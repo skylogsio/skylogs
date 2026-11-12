@@ -7,6 +7,7 @@ use App\Collectors\Prometheus\HaStatusCollector;
 use App\Collectors\Prometheus\HealthChecksCollector;
 use App\Collectors\Prometheus\IncidentsCollector;
 use App\Collectors\Prometheus\NotificationDeliveriesCollector;
+use App\Collectors\Prometheus\NotificationProfilesCollector;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Prometheus\Collectors\Horizon\CurrentMasterSupervisorCollector;
 use Spatie\Prometheus\Collectors\Horizon\CurrentProcessesPerQueueCollector;
@@ -44,6 +45,7 @@ class PrometheusServiceProvider extends ServiceProvider
             AlertRulesCollector::class,
             IncidentsCollector::class,
             NotificationDeliveriesCollector::class,
+            NotificationProfilesCollector::class,
             HealthChecksCollector::class,
             HaStatusCollector::class,
         ]);

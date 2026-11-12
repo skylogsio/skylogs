@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\EndpointType;
 use App\Enums\NotificationDeliveryStatus;
 use App\Models\Config\ConfigTelegram;
 use App\Models\Endpoint;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Http;
 
 function telegramChannel(ConfigTelegram ...$configs): TelegramChannel
 {
+    allowNotificationMetrics();
+
     $configService = Mockery::mock(ConfigTelegramService::class);
     $configService->shouldReceive('chain')->andReturn(collect($configs));
     app()->instance(ConfigTelegramService::class, $configService);
@@ -128,6 +131,10 @@ describe('TelegramChannel', function () {
     });
 
     it('sends directly when the chain is empty', function () {
+        expectProfileMetrics(EndpointType::TELEGRAM, [
+            ['profileId' => null, 'priority' => null, 'provider' => 'direct', 'outcome' => 'sent'],
+        ], 'sent_first');
+
         Http::fake([
             'api.telegram.org/*' => Http::response(['ok' => true, 'result' => ['message_id' => 3]]),
         ]);

@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Http;
 
 function smsChannel(ConfigSms ...$configs): SmsChannel
 {
+    allowNotificationMetrics();
+
     $service = Mockery::mock(ConfigSmsService::class);
     $service->shouldReceive('chain')->andReturn(collect($configs));
     app()->instance(ConfigSmsService::class, $service);
@@ -27,6 +29,8 @@ function smsChannel(ConfigSms ...$configs): SmsChannel
  */
 function callChannel(array $configs = [], array $smsConfigs = []): CallChannel
 {
+    allowNotificationMetrics();
+
     $service = Mockery::mock(ConfigCallService::class);
     $service->shouldReceive('chain')->andReturn(collect($configs));
     app()->instance(ConfigCallService::class, $service);
@@ -151,6 +155,11 @@ describe('SmsChannel', function () {
     });
 
     it('uses the next account when the first one fails for an account reason', function () {
+        expectProfileMetrics(EndpointType::SMS, [
+            ['profileId' => null, 'priority' => 1, 'provider' => 'kaveNegar', 'outcome' => 'failed_over'],
+            ['profileId' => null, 'priority' => 2, 'provider' => 'kaveNegar', 'outcome' => 'sent'],
+        ], 'sent_after_failover');
+
         Http::fake([
             'api.kavenegar.com/v1/dead-token/*' => Http::response(['return' => ['status' => 418, 'message' => 'credit']], 418),
             'api.kavenegar.com/v1/live-token/*' => Http::response(kaveNegarAccepted(99)),
@@ -175,6 +184,10 @@ describe('SmsChannel', function () {
     });
 
     it('stops the chain when the receptor is rejected', function () {
+        expectProfileMetrics(EndpointType::SMS, [
+            ['profileId' => null, 'priority' => 1, 'provider' => 'kaveNegar', 'outcome' => 'failed'],
+        ], 'failed_rejected');
+
         Http::fake([
             'api.kavenegar.com/*' => Http::response(['return' => ['status' => 411, 'message' => 'receptor']], 411),
         ]);
@@ -195,6 +208,11 @@ describe('SmsChannel', function () {
     });
 
     it('keeps a server error retryable after every profile fails', function () {
+        expectProfileMetrics(EndpointType::SMS, [
+            ['profileId' => null, 'priority' => 1, 'provider' => 'kaveNegar', 'outcome' => 'failed_over'],
+            ['profileId' => null, 'priority' => 2, 'provider' => 'kaveNegar', 'outcome' => 'failed'],
+        ], 'failed_exhausted');
+
         Http::fake(['api.kavenegar.com/*' => Http::response('Bad Gateway', 502)]);
 
         $result = smsChannel(

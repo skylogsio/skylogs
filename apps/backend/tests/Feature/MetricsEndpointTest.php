@@ -10,6 +10,7 @@ use App\Models\AlertRule;
 use App\Models\HealthCheck;
 use App\Models\Incident;
 use App\Models\NotificationDelivery;
+use App\Services\Notification\NotificationMetricsRecorder;
 use Laravel\Horizon\Contracts\JobRepository;
 use Laravel\Horizon\Contracts\MasterSupervisorRepository;
 use Laravel\Horizon\Contracts\MetricsRepository;
@@ -46,9 +47,15 @@ describe('GET /metrics', function () {
         $this->healthIds = [];
         /** @var list<Incident> */
         $this->incidents = [];
+        $this->metricsNodeId = null;
     });
 
     afterEach(function () {
+        if (is_string($this->metricsNodeId)) {
+            config(['ha.node_id' => $this->metricsNodeId]);
+            app(NotificationMetricsRecorder::class)->forget();
+        }
+
         NotificationDelivery::query()->whereIn('_id', $this->deliveryIds)->delete();
         HealthCheck::query()->whereIn('_id', $this->healthIds)->delete();
         AlertRule::query()->whereIn('_id', $this->alertIds)->delete();
@@ -117,5 +124,29 @@ describe('GET /metrics', function () {
             ->toContain('skylogs_raft_up')
             ->not->toContain('My gauge')
             ->not->toContain('my_gauge');
+    });
+
+    it('exports notification profile counters after a recorded attempt', function () {
+        $this->metricsNodeId = 'metrics-endpoint-'.uniqid();
+        config(['ha.node_id' => $this->metricsNodeId]);
+
+        $recorder = app(NotificationMetricsRecorder::class);
+        $recorder->recordAttempt(EndpointType::SMS, 'profile-1', 1, 'kaveNegar', 'sent', 0.4);
+        $recorder->recordChainRun(EndpointType::SMS, 'sent_first');
+
+        $response = $this->get('/metrics');
+
+        $response->assertSuccessful();
+
+        expect($response->getContent())
+            ->toContain('skylogs_notification_profile_attempts_total')
+            ->toContain('skylogs_notification_profile_request_duration_seconds_sum')
+            ->toContain('skylogs_notification_profile_request_duration_seconds_count')
+            ->toContain('skylogs_notification_chain_runs_total')
+            ->toContain('node_id="'.$this->metricsNodeId.'"')
+            ->toContain('endpoint_type="sms"')
+            ->toContain('profile_id="profile-1"')
+            ->toContain('outcome="sent"')
+            ->toContain('outcome="sent_first"');
     });
 });

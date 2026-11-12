@@ -65,6 +65,7 @@ class CallChannel extends AbstractChannel
         }
 
         return $this->profileChain->run(
+            $this->type(),
             $chain,
             fn (ConfigCall $config): DeliveryResult => $this->sendWith($config, $receptor, $message),
         );
@@ -95,6 +96,7 @@ class CallChannel extends AbstractChannel
         ]);
 
         return $this->profileChain->run(
+            $this->type(),
             [$config],
             fn (ConfigCall $config): DeliveryResult => $this->sendWith($config, $receptor, $message),
         );

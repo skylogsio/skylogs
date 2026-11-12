@@ -60,6 +60,7 @@ class SmsChannel extends AbstractChannel
         }
 
         return $this->profileChain->run(
+            $this->type(),
             $chain,
             fn (ConfigSms $config): DeliveryResult => $this->sendWith($config, $receptor, $message),
         );
@@ -94,6 +95,7 @@ class SmsChannel extends AbstractChannel
         ]);
 
         return $this->profileChain->run(
+            $this->type(),
             [$config],
             fn (ConfigSms $config): DeliveryResult => $this->sendWith($config, $receptor, $message),
         );
