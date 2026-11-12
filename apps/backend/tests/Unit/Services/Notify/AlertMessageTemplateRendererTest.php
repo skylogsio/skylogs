@@ -8,6 +8,7 @@ use App\Models\GrafanaWebhookAlert;
 use App\Models\Notify;
 use App\Models\PrometheusCheck;
 use App\Services\AlertMessage\AlertMessageTemplateRenderer;
+use App\Services\AlertMessage\PrometheusAlertMessageBuilder;
 use App\Services\NotifyMessageComposer;
 use Carbon\Carbon;
 use Morilog\Jalali\Jalalian;
@@ -183,7 +184,7 @@ describe('AlertMessageTemplateRenderer', function () {
         expect($body)->toBe('CPU Alert fired: HighCPU on api-1');
     });
 
-    it('renders prometheus default template matching legacy structure', function () {
+    it('renders prometheus default template with changed alerts only', function () {
         $rule = AlertRuleFactory::unsaved([
             'name' => 'CPU Alert',
             'type' => AlertRuleType::PROMETHEUS,
@@ -202,7 +203,157 @@ describe('AlertMessageTemplateRenderer', function () {
             ->toContain("summary : CPU is high\n")
             ->toContain("description : Pod api-1 CPU above 90%\n")
             ->toContain("************\n\n")
+            ->not->toContain('other alert')
             ->toMatch('/date: \d{4}\/\d{2}\/\d{2}$/');
+    });
+
+    it('renders prometheus full template with all alerts', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'CPU Alert',
+            'type' => AlertRuleType::PROMETHEUS,
+        ]);
+
+        $payload = [
+            'state' => PrometheusCheck::FIRE,
+            'alerts' => [
+                [
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                    'skylogsChanged' => false,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => ['alertname' => 'StillFiring', 'pod' => 'api-0'],
+                    'annotations' => ['summary' => 'unchanged'],
+                ],
+                [
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                    'skylogsChanged' => true,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => ['alertname' => 'HighCPU', 'pod' => 'api-1'],
+                    'annotations' => ['summary' => 'CPU is high'],
+                ],
+            ],
+        ];
+
+        $body = AlertMessageTemplateRenderer::make()->renderFromPayload(
+            $rule,
+            $payload,
+            PrometheusAlertMessageBuilder::FULL_TEMPLATE,
+        );
+
+        expect($body)
+            ->toContain('StillFiring')
+            ->toContain('HighCPU')
+            ->not->toContain('other alert');
+    });
+
+    it('filters unchanged alerts and appends other firing footer', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'CPU Alert',
+            'type' => AlertRuleType::PROMETHEUS,
+        ]);
+
+        $payload = [
+            'state' => PrometheusCheck::FIRE,
+            'alerts' => [
+                [
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                    'skylogsChanged' => false,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => [
+                        'alertname' => 'StillFiring',
+                        'pod' => 'api-0',
+                    ],
+                    'annotations' => [
+                        'summary' => 'still up',
+                    ],
+                ],
+                [
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                    'skylogsChanged' => false,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => [
+                        'alertname' => 'AlsoStillFiring',
+                        'pod' => 'api-2',
+                    ],
+                    'annotations' => [
+                        'summary' => 'also still up',
+                    ],
+                ],
+                [
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                    'skylogsChanged' => true,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => [
+                        'alertname' => 'HighCPU',
+                        'pod' => 'api-1',
+                    ],
+                    'annotations' => [
+                        'summary' => 'CPU is high',
+                    ],
+                ],
+                [
+                    'skylogsStatus' => PrometheusCheck::RESOLVED,
+                    'skylogsChanged' => true,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => [
+                        'alertname' => 'DiskFull',
+                        'pod' => 'api-3',
+                    ],
+                    'annotations' => [
+                        'summary' => 'disk recovered',
+                    ],
+                ],
+            ],
+        ];
+
+        $body = AlertMessageTemplateRenderer::make()->renderDefault($rule, $payload);
+
+        expect($body)
+            ->toContain('HighCPU')
+            ->toContain('DiskFull')
+            ->not->toContain('StillFiring')
+            ->not->toContain('AlsoStillFiring')
+            ->toContain('2 other alerts still firing.')
+            ->not->toContain('{{other_firing_count}}');
+
+        expect(
+            AlertMessageTemplateRenderer::make()->renderFromPayload(
+                $rule,
+                $payload,
+                '{{other_firing_count}}',
+            )
+        )->toBe('2');
+    });
+
+    it('uses singular other firing footer for one unchanged alert', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'CPU Alert',
+            'type' => AlertRuleType::PROMETHEUS,
+        ]);
+
+        $body = AlertMessageTemplateRenderer::make()->renderDefault($rule, [
+            'state' => PrometheusCheck::FIRE,
+            'alerts' => [
+                [
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                    'skylogsChanged' => false,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => ['alertname' => 'StillFiring', 'pod' => 'api-0'],
+                    'annotations' => ['summary' => 'unchanged'],
+                ],
+                [
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                    'skylogsChanged' => true,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => ['alertname' => 'HighCPU', 'pod' => 'api-1'],
+                    'annotations' => ['summary' => 'CPU is high'],
+                ],
+            ],
+        ]);
+
+        expect($body)
+            ->toContain('1 other alert still firing.')
+            ->not->toContain('StillFiring')
+            ->toContain('HighCPU');
     });
 
     it('renders grafana default template matching legacy structure', function () {

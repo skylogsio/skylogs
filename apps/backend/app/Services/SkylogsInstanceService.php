@@ -27,6 +27,70 @@ class SkylogsInstanceService
 
     }
 
+    /**
+     * Connection liveness plus that instance's Raft membership.
+     *
+     * Membership comes from the instance's own `GET /api/v1/ha/cluster/status`.
+     * A failed status call leaves the instance connected and the cluster unknown.
+     *
+     * @return array{isConnected: bool, enabled: bool|null, cluster: array<string, mixed>|null}
+     */
+    public function connectionStatus(string $instanceId, ?string $bearerToken): array
+    {
+        if (! $this->isConnected($instanceId)) {
+            return $this->withoutCluster(false);
+        }
+
+        $instance = SkylogsInstance::query()->whereId($instanceId)->firstOrFail();
+
+        try {
+            $pendingRequest = Http::timeout(5)->acceptJson();
+
+            if (is_string($bearerToken) && $bearerToken !== '') {
+                $pendingRequest = $pendingRequest->withToken($bearerToken);
+            }
+
+            $response = $pendingRequest->get($this->clusterStatusUrl($instance));
+        } catch (\Exception $e) {
+            return $this->withoutCluster(true);
+        }
+
+        if (! $response->successful()) {
+            return $this->withoutCluster(true);
+        }
+
+        $payload = $response->json();
+
+        if (! is_array($payload)) {
+            return $this->withoutCluster(true);
+        }
+
+        $cluster = $payload['cluster'] ?? null;
+
+        return [
+            'isConnected' => true,
+            'enabled' => array_key_exists('enabled', $payload) ? (bool) $payload['enabled'] : null,
+            'cluster' => is_array($cluster) ? $cluster : null,
+        ];
+    }
+
+    private function clusterStatusUrl(SkylogsInstance $instance): string
+    {
+        return rtrim($instance->getBaseUrl(), '/').'/api/v1/ha/cluster/status';
+    }
+
+    /**
+     * @return array{isConnected: bool, enabled: null, cluster: null}
+     */
+    private function withoutCluster(bool $isConnected): array
+    {
+        return [
+            'isConnected' => $isConnected,
+            'enabled' => null,
+            'cluster' => null,
+        ];
+    }
+
     public static function CheckWorkers(): bool
     {
         try {

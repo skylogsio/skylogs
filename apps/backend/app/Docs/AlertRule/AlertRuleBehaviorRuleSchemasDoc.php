@@ -87,8 +87,21 @@ Uses a custom template string for messages sent to the listed endpoints.
 | `{{annotations:summary,description}}` | Annotation block (include) |
 | `{{alert_items labels="pod" annotations="summary"}}` | Per-alert section |
 | `{{alert_items labels="*" exclude_labels="job"}}` | Per-alert section with exclusions |
+| `{{alert_items labels="*" annotations="*" changed_only="true"}}` | Per-alert section for newly fired/resolved alerts only (Prometheus) |
+| `{{other_firing_count}}` | Count of still-firing alerts that did not change (Prometheus) |
+| `{{other_firing_line}}` | Footer line for other still-firing alerts, omitted when zero (Prometheus) |
 
-**Default Prometheus template:**
+**Default Prometheus template** (changed alerts only):
+```
+{{name}}
+
+{{state_line}}
+{{alert_items labels="*" annotations="*" changed_only="true"}}
+{{other_firing_line}}
+{{date}}
+```
+
+**Full Prometheus template** (all alerts; paste into a template behavior rule to restore the previous default):
 ```
 {{name}}
 

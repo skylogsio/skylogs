@@ -116,10 +116,10 @@ class SkylogsInstanceController extends Controller
         }
     }
 
-    public function IsConnected($id)
+    public function IsConnected(Request $request, $id)
     {
-        $isConnected = app(SkylogsInstanceService::class)->isConnected($id);
+        $status = app(SkylogsInstanceService::class)->connectionStatus((string) $id, $request->bearerToken());
 
-        return response()->json(['isConnected' => $isConnected]);
+        return response()->json($status);
     }
 }

@@ -54,6 +54,7 @@ trait RendersAlertMessageTemplate
         bool $capitalizedDate = false,
     ): string {
         $firstAlert = AlertMessageFormatting::firstFiringAlert($payload, $type);
+        $otherFiringCount = AlertMessageFormatting::otherFiringCount($payload, $type);
         $replacements = [
             'name' => (string) ($rule->name ?? ''),
             'state' => AlertMessageFormatting::stateValue($rule, $payload, $type),
@@ -64,6 +65,8 @@ trait RendersAlertMessageTemplate
             'severity_line' => $firstAlert !== null
                 ? AlertMessageFormatting::severityLine($firstAlert, $type)
                 : '',
+            'other_firing_count' => (string) $otherFiringCount,
+            'other_firing_line' => AlertMessageFormatting::otherFiringLine($otherFiringCount),
         ];
 
         $template = (string) preg_replace_callback(
@@ -106,13 +109,14 @@ trait RendersAlertMessageTemplate
     }
 
     /**
-     * @return array{labels: LabelFilter, annotations: LabelFilter, showDataSource: bool}
+     * @return array{labels: LabelFilter, annotations: LabelFilter, showDataSource: bool, changedOnly: bool}
      */
     protected function parseAlertItemsAttributes(string $attributes): array
     {
         $labels = new LabelFilter;
         $annotations = new LabelFilter;
         $showDataSource = true;
+        $changedOnly = false;
 
         if (preg_match('/labels="([^"]*)"/', $attributes, $matches)) {
             $labels = LabelFilter::fromDirective($matches[1]);
@@ -134,10 +138,15 @@ trait RendersAlertMessageTemplate
             $showDataSource = $matches[1] === 'true';
         }
 
+        if (preg_match('/changed_only="(true|false)"/', $attributes, $matches)) {
+            $changedOnly = $matches[1] === 'true';
+        }
+
         return [
             'labels' => $labels,
             'annotations' => $annotations,
             'showDataSource' => $showDataSource,
+            'changedOnly' => $changedOnly,
         ];
     }
 

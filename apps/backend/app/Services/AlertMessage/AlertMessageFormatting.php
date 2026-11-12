@@ -126,6 +126,45 @@ final class AlertMessageFormatting
         };
     }
 
+    /**
+     * Count still-firing alerts that did not change status in this notify cycle.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public static function otherFiringCount(array $payload, AlertRuleType $type): int
+    {
+        $count = 0;
+
+        foreach ($payload['alerts'] ?? [] as $alert) {
+            if (! is_array($alert)) {
+                continue;
+            }
+
+            if (! self::isFiringAlert($alert, $type)) {
+                continue;
+            }
+
+            if (($alert['skylogsChanged'] ?? null) === false) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    public static function otherFiringLine(int $count): string
+    {
+        if ($count <= 0) {
+            return '';
+        }
+
+        if ($count === 1) {
+            return "1 other alert still firing.\n";
+        }
+
+        return $count." other alerts still firing.\n";
+    }
+
     private static function prometheusStateLine(array $payload): string
     {
         $line = match ((int) ($payload['state'] ?? 0)) {

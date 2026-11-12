@@ -237,6 +237,40 @@ describe('AlertRuleService access', function () {
                 ['userIds' => 'other-user-id'],
             ]);
     });
+
+    it('filters to acknowledged alerts when acknowledged is true', function () {
+        $service = makeAlertRuleServiceWithTeams(collect());
+        $admin = makeAccessTestUser('admin-id', isAdmin: true);
+
+        $this->actingAs($admin);
+
+        $match = [];
+        $service->getMatchFilterArray(
+            Request::create('/', 'GET', ['acknowledged' => true]),
+            $match
+        );
+
+        expect($match['acknowledgedBy'])->toBe(['$ne' => null, '$exists' => true]);
+    });
+
+    it('does not filter by acknowledgement when acknowledged is false or omitted', function () {
+        $service = makeAlertRuleServiceWithTeams(collect());
+        $admin = makeAccessTestUser('admin-id', isAdmin: true);
+
+        $this->actingAs($admin);
+
+        $omitted = [];
+        $service->getMatchFilterArray(Request::create('/'), $omitted);
+
+        $falseMatch = [];
+        $service->getMatchFilterArray(
+            Request::create('/', 'GET', ['acknowledged' => false]),
+            $falseMatch
+        );
+
+        expect($omitted)->not->toHaveKey('acknowledgedBy')
+            ->and($falseMatch)->not->toHaveKey('acknowledgedBy');
+    });
 });
 
 describe('EndpointService alert access', function () {
