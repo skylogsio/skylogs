@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import localfont from "next/font/local";
+import localFont from 'next/font/local';
 import { cookies } from "next/headers";
 import { type PropsWithChildren } from "react";
 
@@ -16,14 +15,14 @@ import { isThemeInitialMode, type ThemeInitialMode } from "@/provider/themeStora
 import "react-toastify/dist/ReactToastify.css";
 import "../globals.css";
 
-const inter = Inter({
-  weight: ["300", "400", "700"],
-  style: ["normal"],
-  subsets: ["latin"],
-  display: "swap"
+const inter = localFont({
+  src: '../../../public/static/fonts/Inter-Variable.woff2',
+  weight: '100 900',
+  style: 'normal',
+  display: 'swap',
 });
 
-const vazir = localfont({
+const vazir = localFont({
   src: [
     { path: "../../../public/static/fonts/Vazir-Bold-FD.woff2", style: "normal", weight: "700" },
     { path: "../../../public/static/fonts/Vazir-FD.woff2", style: "normal", weight: "400" },
@@ -57,14 +56,11 @@ export default async function RootLayout({
   const sidebarCollapsed = cookieStore.get("skylogs-sidebar-collapsed")?.value === "true";
 
   return (
-    <html
-      lang={locale}
-      dir={dir}
-      className={resolvedClass}
-      suppressHydrationWarning
-      style={paintStyle}
-    >
-      <body className={dir === "ltr" ? inter.className : vazir.className} suppressHydrationWarning>
+    <html lang={locale} dir={dir} className={resolvedClass} suppressHydrationWarning style={paintStyle}>
+      <body
+        className={dir === "ltr" ? inter.className : vazir.className}
+        suppressHydrationWarning
+      >
         <InitColorSchemeScript attribute="class" defaultMode={initialMode} />
         <AppRouterCacheProvider>
           <Provider locale={locale} sidebarCollapsed={sidebarCollapsed} initialMode={initialMode}>

@@ -13,7 +13,6 @@ export default function EndPointTypeChip({
   type: unknown;
   size?: "small" | "medium";
 }) {
-
   const variant = type as EndpointType;
   const config = ENDPOINT_CONFIG[variant];
   const color = ENDPOINT_COLORS[variant];
@@ -23,16 +22,19 @@ export default function EndPointTypeChip({
     <Chip
       size={size}
       avatar={<IconComponent style={{ padding: "0.2rem" }} color={color} />}
-      sx={mergeSx({
-        height: 28,
-        fontWeight: 700,
-        letterSpacing: "0.04em",
-        color,
-        borderRadius: "10px",
-        "& .MuiChip-label": {
-          px: 1.25
-        }
-      }, pillSurfaceSx())}
+      sx={mergeSx(
+        {
+          height: 28,
+          fontWeight: 700,
+          letterSpacing: "0.04em",
+          color,
+          borderRadius: "10px",
+          "& .MuiChip-label": {
+            px: 1.25
+          }
+        },
+        pillSurfaceSx()
+      )}
       label={config.title}
     />
   );

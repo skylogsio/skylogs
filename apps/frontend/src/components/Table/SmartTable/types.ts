@@ -37,6 +37,7 @@ export interface SmartTableToolbarSlots {
 
 export interface SmartTableProps<T> {
   title?: string;
+  titleExtra?: ReactNode;
   url: string;
   columns: ColumnDef<T>[];
   hasCheckbox?: boolean;
@@ -60,4 +61,5 @@ export interface SmartTableProps<T> {
   hideSearch?: boolean;
   excludeFilterKeys?: string[];
   tablePaperSx?: SxProps<Theme>;
+  getRowSx?: (row: T) => SxProps<Theme> | undefined;
 }

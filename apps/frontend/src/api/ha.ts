@@ -16,4 +16,3 @@ export async function getHaStatus(): Promise<IHaStatusResponse> {
     };
   }
 }
-

@@ -23,6 +23,7 @@ export interface IAlertRule {
   type: AlertRuleType;
   userId: string;
   acknowledgedBy: string | null;
+  acknowledgedByName: string | null;
   enableAutoResolve: boolean;
   autoResolveMinutes: number;
   updated_at: Date;
@@ -33,7 +34,9 @@ export interface IAlertRule {
   ownerName: string;
   hasActionAccess: boolean;
   status_label: AlertRuleStatus;
+  statusLabel: AlertRuleStatus;
   is_silent: boolean;
+  isSilent: boolean;
   isPinned: boolean;
   isPrivate: boolean;
   count_endpoints: number;
