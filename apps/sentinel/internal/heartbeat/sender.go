@@ -13,18 +13,20 @@ import (
 )
 
 type Sender struct {
-	Client *http.Client
-	Target string
-	State  *State
-	Secret string
+	Client         *http.Client
+	Target         string
+	State          *State
+	Secret         string
+	SelfSentinelID string
 }
 
-func NewSender(target string, state *State, secret string, timeout time.Duration) *Sender {
+func NewSender(target string, state *State, selfSentinelID, secret string, timeout time.Duration) *Sender {
 	return &Sender{
-		Client: &http.Client{Timeout: timeout},
-		Target: target,
-		State:  state,
-		Secret: secret,
+		Client:         &http.Client{Timeout: timeout},
+		Target:         target,
+		State:          state,
+		Secret:         secret,
+		SelfSentinelID: selfSentinelID,
 	}
 }
 
@@ -41,6 +43,9 @@ func (s *Sender) Send(ctx context.Context) error {
 	}
 	req.Header.Set("X-SkyLogs-Timestamp", ts)
 	req.Header.Set("X-SkyLogs-Signature", signature)
+	if s.SelfSentinelID != "" {
+		req.Header.Set("X-SkyLogs-Sentinel-Id", s.SelfSentinelID)
+	}
 
 	resp, err := s.Client.Do(req)
 	if err != nil {

@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Enums\AlertRuleType;
 use App\Models\AlertInstance;
+use App\Queue\Middleware\EnsureLeader;
 use App\Services\AlertRuleService;
 use App\Services\ApiService;
 use Illuminate\Bus\Queueable;
@@ -15,6 +16,14 @@ use Illuminate\Queue\SerializesModels;
 class AutoResolveApiAlertsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    /**
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new EnsureLeader];
+    }
 
     /**
      * Execute the job.

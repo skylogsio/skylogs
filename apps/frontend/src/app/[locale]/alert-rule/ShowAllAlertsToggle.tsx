@@ -110,10 +110,8 @@ export default function ShowAllAlertsToggle() {
           : "var(--mui-palette-background-paper)",
         color: showAllAlerts ? "primary.main" : "text.secondary",
         "&:hover": {
-          borderColor:
-            "color-mix(in srgb, var(--mui-palette-primary-main) 45%, transparent)",
-          bgcolor:
-            "color-mix(in srgb, var(--mui-palette-primary-main) 8%, transparent)"
+          borderColor: "color-mix(in srgb, var(--mui-palette-primary-main) 45%, transparent)",
+          bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 8%, transparent)"
         }
       }}
     >

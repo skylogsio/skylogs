@@ -60,7 +60,14 @@ type ProfileMenuRowProps = {
   hoverColor?: string;
 };
 
-function ProfileMenuRow({ label, icon, onClick, href, labelColor, hoverColor }: ProfileMenuRowProps) {
+function ProfileMenuRow({
+  label,
+  icon,
+  onClick,
+  href,
+  labelColor,
+  hoverColor
+}: ProfileMenuRowProps) {
   const theme = useTheme();
   const { palette } = theme;
 
@@ -178,7 +185,13 @@ export default function TopBarProfile() {
 
         {userInfo && <Divider sx={{ borderColor: alpha(palette.primary.main, 0.12), mx: 1 }} />}
 
-        <Box sx={{ ...profileMenuRowSx, cursor: "default", "&:hover": { backgroundColor: "transparent" } }}>
+        <Box
+          sx={{
+            ...profileMenuRowSx,
+            cursor: "default",
+            "&:hover": { backgroundColor: "transparent" }
+          }}
+        >
           <Typography variant="body2" sx={{ color: palette.text.secondary, fontSize: "0.8125rem" }}>
             Theme
           </Typography>
@@ -258,9 +271,7 @@ export default function TopBarProfile() {
           onClick={() => signOut()}
           labelColor={palette.error.main}
           hoverColor={palette.error.main}
-          icon={
-            <Image src="/static/icons/profile-log-out.svg" alt="" width={16} height={16} />
-          }
+          icon={<Image src="/static/icons/profile-log-out.svg" alt="" width={16} height={16} />}
         />
       </Menu>
     </>

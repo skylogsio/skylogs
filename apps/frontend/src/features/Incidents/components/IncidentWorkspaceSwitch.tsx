@@ -33,8 +33,7 @@ export default function IncidentWorkspaceSwitch() {
 
   const thumbDarkSx = (muiTheme: Theme) =>
     muiTheme.applyStyles("dark", {
-      boxShadow:
-        "0 -2px 8px color-mix(in srgb, var(--mui-palette-primary-main) 35%, transparent)"
+      boxShadow: "0 -2px 8px color-mix(in srgb, var(--mui-palette-primary-main) 35%, transparent)"
     });
 
   const thumbSx = {
@@ -42,8 +41,7 @@ export default function IncidentWorkspaceSwitch() {
     inset: 0,
     borderRadius: "9px",
     background: gradient,
-    boxShadow:
-      "0 -2px 8px color-mix(in srgb, var(--mui-palette-primary-main) 80%, transparent)",
+    boxShadow: "0 -2px 8px color-mix(in srgb, var(--mui-palette-primary-main) 80%, transparent)",
     pointerEvents: "none" as const
   };
 
@@ -58,16 +56,13 @@ export default function IncidentWorkspaceSwitch() {
           gap: 0.5,
           p: "3px",
           borderRadius: "11px",
-          backgroundColor:
-            "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
-          border:
-            "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 22%, transparent)"
+          backgroundColor: "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
+          border: "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 22%, transparent)"
         },
         (muiTheme) =>
           muiTheme.applyStyles("dark", {
             backgroundColor: "rgba(255, 255, 255, 0.06)",
-            border:
-              "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)"
+            border: "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)"
           })
       ]}
     >

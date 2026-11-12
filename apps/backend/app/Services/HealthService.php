@@ -60,7 +60,8 @@ class HealthService
 
             $pendingRequest = match ($alert->checkType) {
                 HealthAlertType::SOURCE_CLUSTER => $pendingRequest->withToken($alert->sourceToken),
-                HealthAlertType::AGENT_CLUSTER => $pendingRequest->withToken($alert->agentToken)
+                HealthAlertType::AGENT_CLUSTER => $pendingRequest->withToken($alert->agentToken),
+                default => $pendingRequest,
             };
 
             $response = $pendingRequest->get($check->url);
@@ -79,8 +80,7 @@ class HealthService
                         $alert->save();
                         $alert->removeAcknowledge();
 
-                        SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check, $alert->id);
-                        HealthHistory::create(
+                        $history = HealthHistory::create(
                             [
                                 'alertRuleId' => $alert->_id,
                                 'alertRuleName' => $alert->alertname,
@@ -90,6 +90,7 @@ class HealthService
                                 'counter' => 0,
                             ]
                         );
+                        app(SendNotifyService::class)->createNotify(SendNotifyJob::HEALTH_CHECK, $check, $alert->id, $history);
 
                     } else {
                         $check->save();
@@ -114,9 +115,7 @@ class HealthService
                     $check->save();
                     $alert->state = AlertRule::CRITICAL;
                     $alert->save();
-                    SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check, $alert->id);
-
-                    HealthHistory::create(
+                    $history = HealthHistory::create(
                         [
                             'alertRuleId' => $alert->_id,
                             'alertRuleName' => $alert->alertname,
@@ -127,6 +126,7 @@ class HealthService
                             'counter' => $check->counter,
                         ]
                     );
+                    app(SendNotifyService::class)->createNotify(SendNotifyJob::HEALTH_CHECK, $check, $alert->id, $history);
 
                 } else {
                     $check->save();

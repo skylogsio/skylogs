@@ -32,6 +32,10 @@ class ProfileService
                             $alerts = $this->generateElasticAlert($userId, $profileAsset->name, $env, $dataSourceToken, $dataSourceConfig);
                             $createdAlerts = $createdAlerts->concat($alerts);
                             break;
+                        case AlertRuleType::VICTORIA_LOGS:
+                            $alerts = $this->generateVictoriaLogsAlert($userId, $profileAsset->name, $env, $dataSourceToken, $dataSourceConfig);
+                            $createdAlerts = $createdAlerts->concat($alerts);
+                            break;
 
                     }
 
@@ -178,6 +182,61 @@ class ProfileService
                     ...$commonFields,
                     'dataviewName' => $alertConfig['dataviewName'],
                     'dataviewTitle' => $alertConfig['dataviewTitle'],
+                    'queryString' => $alertConfig['queryString'],
+                    'minutes' => $alertConfig['minutes'],
+                    'conditionType' => $alertConfig['conditionType'] == ElasticCheck::CONDITION_TYPE_GREATER_OR_EQUAL ? ElasticCheck::CONDITION_TYPE_GREATER_OR_EQUAL : ElasticCheck::CONDITION_TYPE_LESS_OR_EQUAL,
+                    'countDocument' => $alertConfig['countDocument'],
+                ];
+
+                $alertRule = AlertRule::firstOrNew([
+                    'name' => $alertRuleName,
+                ], $createData);
+
+                if ($alertRule->exists) {
+                    unset($createData['endpointIds']);
+                    unset($createData['description']);
+                    unset($createData['showAcknowledgeBtn']);
+                    unset($createData['userIds']);
+                    unset($createData['teamIds']);
+                    $alertRule->update($createData);
+                } else {
+                    $alertRule->save();
+                }
+                $resultAlerts[] = $alertRule;
+
+            }
+
+        }
+
+        return $resultAlerts;
+
+    }
+
+    private function generateVictoriaLogsAlert($userId, $service, $env, $dataSourceToken, $config)
+    {
+        $dataSource = $this->dataSourceService->byToken($dataSourceToken);
+        $tags = collect($config['tags'])->push($service, $env);
+        $resultAlerts = [];
+        $commonFields = [
+            'type' => AlertRuleType::VICTORIA_LOGS->value,
+            'dataSourceId' => $dataSource->id,
+            'description' => '',
+            'showAcknowledgeBtn' => false,
+            'tags' => $tags->toArray(),
+            'userId' => $userId,
+            'silentUserIds' => [],
+            'endpointIds' => [],
+            'userIds' => [],
+            'teamIds' => [],
+        ];
+
+        if (! empty($config['alerts'])) {
+
+            foreach ($config['alerts'] as $alertConfig) {
+                $alertRuleName = 'http-5xx-ArvanCDN-victoria-logs-'.$service.'-'.$env;
+
+                $createData = [
+                    ...$commonFields,
                     'queryString' => $alertConfig['queryString'],
                     'minutes' => $alertConfig['minutes'],
                     'conditionType' => $alertConfig['conditionType'] == ElasticCheck::CONDITION_TYPE_GREATER_OR_EQUAL ? ElasticCheck::CONDITION_TYPE_GREATER_OR_EQUAL : ElasticCheck::CONDITION_TYPE_LESS_OR_EQUAL,

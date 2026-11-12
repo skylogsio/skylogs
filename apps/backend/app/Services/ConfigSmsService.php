@@ -8,7 +8,7 @@ class ConfigSmsService
 {
     public function getDefault(): ?ConfigSms
     {
-        return cache()->tags(['config', 'sms'])->rememberForever('config:sms:default', function () {
+        return cache()->tags(['config', 'sms'])->remember('config:sms:default', (int) config('cache.ttl'), function () {
             return ConfigSms::query()->where('isDefault', true)->first();
         });
     }

@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Concerns\ProvidesChannelMessages;
+use App\Enums\EndpointType;
 use App\Interfaces\Messageable;
 use App\Models\DataSource\DataSource;
+use App\Services\AlertMessage\AlertMessageTemplateRenderer;
 use MongoDB\Laravel\Relations\BelongsTo;
-use Morilog\Jalali\Jalalian;
 
 class PrometheusCheck extends BaseModel implements Messageable
 {
+    use ProvidesChannelMessages;
+
     public $timestamps = true;
 
     protected $guarded = ['id', '_id'];
@@ -29,7 +33,7 @@ class PrometheusCheck extends BaseModel implements Messageable
         return $this->belongsTo(DataSource::class, 'dataSourceId', '_id');
     }
 
-    public function createHistory()
+    public function createHistory(): PrometheusHistory
     {
 
         $countResolve = 0;
@@ -42,7 +46,8 @@ class PrometheusCheck extends BaseModel implements Messageable
                 $countFire++;
             }
         }
-        PrometheusHistory::create(
+
+        return PrometheusHistory::create(
             [
                 'alertRuleId' => $this->alertRuleId,
                 'alerts' => $this->alerts,
@@ -77,113 +82,31 @@ class PrometheusCheck extends BaseModel implements Messageable
 
     public function defaultMessage(): string
     {
-        $needLabelArray = ['alertname', 'namespace', 'pod', 'reason', 'severity', 'job'];
-        $needLabelAnotArray = ['summary', 'description'];
-
         $alertRule = $this->alertRule;
 
-        $text = $alertRule->name."\n\n";
-        if (! empty($this->state)) {
-            switch ($this->state) {
-                case self::RESOLVED:
-                    $text .= 'State: Resolved ✅'."\n\n";
-                    break;
-                case self::FIRE:
-                    $text .= 'State: Fire 🔥'."\n\n";
-                    break;
-            }
+        if (! $alertRule) {
+            return '';
         }
 
-        if (! empty($this->alerts)) {
-            foreach ($this->alerts as $alert) {
-                if (empty($alert['skylogsStatus']) || $alert['skylogsStatus'] == self::FIRE) {
-                    $severity = $alert['labels']['severity'] ?? '';
-                    switch ($severity) {
-                        case 'warning':
-                            $text .= 'Warning ⚠️'."\n";
-                            break;
-                        case 'info':
-                            $text .= 'Info ℹ️'."\n";
-                            break;
-                        default:
-                            $text .= 'Fire 🔥'."\n";
-                            break;
-                    }
-                } else {
-                    $text .= 'Resolved ✅'."\n";
-
-                }
-
-                $text .= 'Data Source: '.$alert['dataSourceName']."\n";
-                if (! empty($alert['labels'])) {
-                    foreach ($needLabelArray as $label) {
-                        if (! empty($alert['labels'][$label])) {
-                            $text .= "$label : ".$alert['labels'][$label]."\n";
-                        }
-                    }
-                }
-                if (! empty($alert['annotations'])) {
-                    foreach ($needLabelAnotArray as $label) {
-                        if (! empty($alert['annotations'][$label])) {
-                            $text .= "$label : ".$alert['annotations'][$label]."\n";
-                        }
-                    }
-                }
-                $text .= "\n************\n\n";
-            }
-        }
-
-        $text .= 'date: '.Jalalian::now()->format('Y/m/d');
-
-        return $text;
+        return AlertMessageTemplateRenderer::make()->renderDefault($alertRule, $this->toArray());
     }
 
-    public function telegram()
+    /**
+     * @return array<string, mixed>|string|null
+     */
+    public function messageFor(EndpointType $type): array|string|null
     {
-
-        $result = [
-            'message' => $this->defaultMessage(),
-        ];
-        if ($this->alertRule->enableAcknowledgeBtnInMessage() && $this->state == self::FIRE) {
-            $result['meta'] = [
-                [
-                    'text' => 'Acknowledge',
-                    'url' => config('app.url').route('acknowledgeLink', ['id' => $this->alertRuleId], false),
-                ],
-            ];
-        }
-
-        return $result;
+        return match ($type) {
+            EndpointType::TELEGRAM, EndpointType::BALE => $this->messageWithAcknowledgeButton(
+                $this->alertRule->enableAcknowledgeBtnInMessage() && $this->state == self::FIRE,
+                $this->alertRuleId,
+            ),
+            EndpointType::CALL => $this->shortSummary(),
+            default => null,
+        };
     }
 
-    public function matterMostMessage()
-    {
-        return $this->defaultMessage();
-    }
-
-    public function teamsMessage(): string
-    {
-        return $this->defaultMessage();
-
-    }
-
-    public function emailMessage(): string
-    {
-        return $this->defaultMessage();
-
-    }
-
-    public function smsMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function discordMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function callMessage(): string
+    private function shortSummary(): string
     {
 
         $text = 'Alert '.$this->alertRuleName;

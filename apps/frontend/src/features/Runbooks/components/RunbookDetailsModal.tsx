@@ -11,8 +11,7 @@ import {
   Link,
   Stack,
   Typography,
-  alpha,
-
+  alpha
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 
@@ -87,7 +86,6 @@ function MetaItem({ label, value }: { label: string; value: ReactNode }) {
 }
 
 function ChipGroup({ label, items }: { label: string; items: string[] }) {
-
   return (
     <Stack spacing={0.75} sx={{ alignItems: "flex-start" }}>
       <FieldLabel>{label}</FieldLabel>
@@ -131,7 +129,6 @@ export default function RunbookDetailsModal({
   onClose,
   runbookId
 }: RunbookDetailsModalProps) {
-
   const {
     data: runbook,
     isPending,
@@ -169,7 +166,12 @@ export default function RunbookDetailsModal({
             <Stack
               spacing={2}
               divider={
-                <Divider sx={{ borderColor: "color-mix(in srgb, var(--mui-palette-primary-main) 16%, transparent)" }} />
+                <Divider
+                  sx={{
+                    borderColor:
+                      "color-mix(in srgb, var(--mui-palette-primary-main) 16%, transparent)"
+                  }}
+                />
               }
             >
               <Stack spacing={1.5}>
@@ -201,13 +203,13 @@ export default function RunbookDetailsModal({
                     />
                   </Grid>
                   <Grid size={6}>
-                    <MetaItem label="Version" value={runbook.version != null ? String(runbook.version) : "—"} />
+                    <MetaItem
+                      label="Version"
+                      value={runbook.version != null ? String(runbook.version) : "—"}
+                    />
                   </Grid>
                   <Grid size={6}>
-                    <MetaItem
-                      label="Updated At"
-                      value={formatRunbookDateTime(runbook.updatedAt)}
-                    />
+                    <MetaItem label="Updated At" value={formatRunbookDateTime(runbook.updatedAt)} />
                   </Grid>
                 </Grid>
                 <Stack spacing={0.35}>
@@ -228,18 +230,11 @@ export default function RunbookDetailsModal({
                 <GroupHeading>Related</GroupHeading>
                 <ChipGroup
                   label="Teams"
-                  items={
-                    runbook.teams?.map((team) => team.name) ??
-                    runbook.teamIds ??
-                    []
-                  }
+                  items={runbook.teams?.map((team) => team.name) ?? runbook.teamIds ?? []}
                 />
                 <ChipGroup label="Tags" items={runbook.tags ?? []} />
                 <ChipGroup label="Applies Tags" items={runbook.appliesTo?.tags ?? []} />
-                <ChipGroup
-                  label="Applies Severities"
-                  items={runbook.appliesTo?.severities ?? []}
-                />
+                <ChipGroup label="Applies Severities" items={runbook.appliesTo?.severities ?? []} />
               </Stack>
 
               <Stack spacing={1.5}>

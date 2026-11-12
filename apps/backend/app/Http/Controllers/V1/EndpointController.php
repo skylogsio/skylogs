@@ -4,13 +4,15 @@ namespace App\Http\Controllers\V1;
 
 use App\Enums\EndpointType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Endpoint\SendEndpointOtpRequest;
+use App\Http\Requests\Endpoint\StoreEndpointRequest;
+use App\Http\Requests\Endpoint\UpdateEndpointRequest;
 use App\Models\Endpoint;
 use App\Models\User;
 use App\Services\EndpointService;
 use App\Services\TeamService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Symfony\Component\HttpFoundation\Response;
 
 class EndpointController extends Controller
 {
@@ -20,6 +22,13 @@ class EndpointController extends Controller
     {
         $endpoints = $this->endpointService->selectableUserEndpoint(\Auth::user());
         $endpoints = $endpoints->where('type', '!=', EndpointType::FLOW->value)->values();
+
+        return response()->json($endpoints);
+    }
+
+    public function SelectableEndpoints()
+    {
+        $endpoints = $this->endpointService->selectableUserEndpoint(\Auth::user())->values();
 
         return response()->json($endpoints);
     }
@@ -80,19 +89,20 @@ class EndpointController extends Controller
             $endpoint->hasActionAccess = $this->endpointService->hasActionAccess($user, $endpoint);
         }
 
+        $this->endpointService->attachFlowStepEndpoints($data->getCollection());
+
         return response()->json($data);
     }
 
     public function Show(Request $request, $id)
     {
-        $model = Endpoint::where('id', $id);
-        $isAdmin = auth()->user()->isAdmin();
-        if (! $isAdmin) {
-            $model = $model->where('userId', auth()->id());
-        }
-        $model = $model->firstOrFail();
+        $user = auth()->user();
+        $model = Endpoint::where('_id', $id)->firstOrFail();
+
+        abort_unless($this->endpointService->userCanUseEndpoint($user, $model), 404);
 
         $model->botToken = $model->botToken ?? '';
+        $model->hasActionAccess = $this->endpointService->hasActionAccess($user, $model);
 
         return response()->json($model);
     }
@@ -111,69 +121,20 @@ class EndpointController extends Controller
         return response()->json($model);
     }
 
-    public function Create(Request $request)
+    public function Create(StoreEndpointRequest $request): JsonResponse
     {
-        $va = \Validator::make(
-            $request->all(),
-            [
-                'name' => 'required',
-                'type' => [
-                    'required',
-                    Rule::in([
-                        'telegram',
-                        'email',
-                        'sms',
-                        'flow',
-                        'call',
-                        'discord',
-                        'teams',
-                        'matter-most',
-                    ]),
-                ],
-            ],
-        );
-        if ($va->passes()) {
-            $model = $this->endpointService->create($request);
-
-            return response()->json([
-                'status' => true,
-                'data' => $model,
-            ]);
-        } else {
-            return response()->json([
-                'status' => false,
-            ]);
-        }
+        return response()->json([
+            'status' => true,
+            'data' => $this->endpointService->create($request->validated()),
+        ]);
     }
 
-    public function SendOTPCode(Request $request)
+    public function SendOTPCode(SendEndpointOtpRequest $request): JsonResponse
     {
-
-        $va = \Validator::make(
-            $request->all(),
-            [
-                'type' => [
-                    'required',
-                    Rule::in([
-                        'email',
-                        'sms',
-                        'call',
-                    ]),
-                ],
-                'value' => 'required',
-            ],
-        );
-
-        if ($va->fails()) {
-            abort(Response::HTTP_UNPROCESSABLE_ENTITY, 'Invalid Entry');
-        }
-
-        $endpointOtpResult = $this->endpointService->otpRequest($request);
-
-        return response()->json($endpointOtpResult);
+        return response()->json($this->endpointService->otpRequest($request->validated()));
     }
 
-    public function Update(Request $request, $id)
+    public function Update(UpdateEndpointRequest $request, $id): JsonResponse
     {
         $model = Endpoint::where('_id', $id);
         $isAdmin = auth()->user()->isAdmin();
@@ -182,37 +143,10 @@ class EndpointController extends Controller
         }
         $model = $model->firstOrFail();
 
-        $va = \Validator::make(
-            $request->all(),
-            [
-                'name' => 'required',
-                'type' => [
-                    'required',
-                    Rule::in([
-                        'telegram',
-                        'email',
-                        'sms',
-                        'discord',
-                        'call',
-                        'flow',
-                        'teams',
-                        'matter-most',
-                    ]),
-                ],
-            ],
-        );
-        if ($va->passes()) {
-            $this->endpointService->update($model, $request);
-
-            return response()->json([
-                'status' => true,
-                'data' => $model,
-            ]);
-        } else {
-            return response()->json([
-                'status' => false,
-            ]);
-        }
+        return response()->json([
+            'status' => true,
+            'data' => $this->endpointService->update($model, $request->validated()),
+        ]);
     }
 
     public function ChangeOwner(Request $request, $id)

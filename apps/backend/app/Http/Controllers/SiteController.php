@@ -3,22 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Services\SkylogsInstanceService;
-use Illuminate\Http\Request;
 
 class SiteController extends Controller
 {
-    /*    public function Health()
-        {
-            $isLeader = SkylogsInstanceService::isLeader();
-
-            if ($isLeader) {
-                return response()->json(["status" => true]);
-            } else {
-                abort(500,"error");
-            }
-
-        }
-       */
     public function Health()
     {
 
@@ -36,13 +23,5 @@ class SiteController extends Controller
             abort(500, 'error');
         }
 
-    }
-
-    public function LeaderPing(Request $request)
-    {
-        $priority = $request->priority;
-        SkylogsInstanceService::UpdateLastLeaderPing($priority);
-
-        return response()->json(['status' => true]);
     }
 }

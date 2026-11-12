@@ -6,6 +6,7 @@ enum EndpointType: string
 {
     case FLOW = 'flow';
     case TELEGRAM = 'telegram';
+    case BALE = 'bale';
     case SMS = 'sms';
     case CALL = 'call';
     case TEAMS = 'teams';
@@ -17,6 +18,7 @@ enum EndpointType: string
     {
         return [
             self::TELEGRAM,
+            self::BALE,
             self::SMS,
             self::CALL,
             self::TEAMS,

@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\EndpointType;
 use App\Interfaces\Messageable;
+use App\Support\NotifyMessagePayload;
 use MongoDB\Laravel\Relations\BelongsTo;
+use MongoDB\Laravel\Relations\HasMany;
 
 class Notify extends BaseModel implements Messageable
 {
@@ -30,43 +33,26 @@ class Notify extends BaseModel implements Messageable
         return $this->belongsTo(AlertRule::class, 'alertRuleId', '_id');
     }
 
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(NotificationDelivery::class, 'notifyId');
+    }
+
     public function defaultMessage(): string
     {
-        return $this->messages['defaultMessage'];
+        return $this->messagePayload()->defaultMessage();
     }
 
-    public function telegram()
+    /**
+     * @return array<string, mixed>|string|null
+     */
+    public function messageFor(EndpointType $type): array|string|null
     {
-        return $this->messages['telegram'];
+        return $this->messagePayload()->messageFor($type);
     }
 
-    public function matterMostMessage()
+    public function messagePayload(): NotifyMessagePayload
     {
-        return $this->messages['matterMostMessage'];
-    }
-
-    public function teamsMessage()
-    {
-        return $this->messages['teamsMessage'];
-    }
-
-    public function emailMessage()
-    {
-        return $this->messages['emailMessage'];
-    }
-
-    public function smsMessage()
-    {
-        return $this->messages['smsMessage'];
-    }
-
-    public function discordMessage()
-    {
-        return $this->messages['discordMessage'];
-    }
-
-    public function callMessage()
-    {
-        return $this->messages['callMessage'];
+        return NotifyMessagePayload::fromStored(is_array($this->messages) ? $this->messages : []);
     }
 }

@@ -17,7 +17,7 @@ class WebhookAuth
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -40,10 +40,8 @@ class WebhookAuth
             abort(Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $token = $request->route('token');
-        $dataSource = $this->dataSourceService->get($dataSourceType)
-            ->where('webhookToken', $token)
-            ->first();
+        $token = (string) $request->route('token');
+        $dataSource = $this->dataSourceService->byWebhookToken($token, $dataSourceType);
         if (! $dataSource) {
             abort(403);
         }

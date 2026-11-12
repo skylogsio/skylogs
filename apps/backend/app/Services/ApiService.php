@@ -9,8 +9,6 @@ use App\Models\AlertRule;
 
 class ApiService
 {
-    public function __construct(protected AlertRuleService $alertRuleService) {}
-
     public function fireAlert($post): array
     {
         $alertRule = AlertRule::firstWhere('apiToken', $post['apiToken']);
@@ -36,11 +34,11 @@ class ApiService
             $alert->touch();
             $alert->save();
 
-            SendNotifyService::CreateNotify(SendNotifyJob::API_FIRE, $alert, $alertRule->_id);
-
-            $this->refreshStatus($alert->alertRule);
             $apiHistory = $alert->createHistory();
             $alert->createStatusHistory($apiHistory);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::API_FIRE, $alert, $alertRule->_id, $apiHistory);
+
+            $this->refreshStatus($alert->alertRule);
 
             return [
                 'status' => true,
@@ -62,10 +60,10 @@ class ApiService
 
             $model->save();
 
-            SendNotifyService::CreateNotify(SendNotifyJob::API_FIRE, $model, $alertRule->_id);
-            $this->refreshStatus($model->alertRule);
             $apiHistory = $model->createHistory();
             $model->createStatusHistory($apiHistory);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::API_FIRE, $model, $alertRule->_id, $apiHistory);
+            $this->refreshStatus($model->alertRule);
 
             return [
                 'status' => true,
@@ -94,11 +92,11 @@ class ApiService
                 $alert->touch();
 
                 $alert->save();
-                SendNotifyService::CreateNotify(SendNotifyJob::API_RESOLVE, $alert, $alert->alertRule->_id);
-
-                $this->refreshStatus($alert->alertRule);
                 $apiHistory = $alert->createHistory();
                 $alert->createStatusHistory($apiHistory);
+                app(SendNotifyService::class)->createNotify(SendNotifyJob::API_RESOLVE, $alert, $alert->alertRule->_id, $apiHistory);
+
+                $this->refreshStatus($alert->alertRule);
 
                 return [
                     'status' => true,
@@ -183,9 +181,8 @@ class ApiService
         $alert->touch();
         $alert->save();
 
-        SendNotifyService::CreateNotify(SendNotifyJob::API_NOTIFICATION, $alert, $alertRule->_id);
-
-        $alert->createHistory();
+        $history = $alert->createHistory();
+        app(SendNotifyService::class)->createNotify(SendNotifyJob::API_NOTIFICATION, $alert, $alertRule->_id, $history);
 
         return [
             'status' => true,
@@ -196,16 +193,13 @@ class ApiService
 
     public function alertRuleByToken($token, ?AlertRuleType $type = null)
     {
-
-        $alertRules = $this->alertRuleService->getAlerts($type);
-
-        $alert = $alertRules->where('apiToken', $token)->first();
-
-        if ($alert) {
-            return $alert;
+        if (! is_string($token) || $token === '') {
+            return null;
         }
 
-        return null;
+        return AlertRule::where('apiToken', $token)
+            ->when($type, fn ($query) => $query->where('type', $type))
+            ->first();
     }
 
     public function refreshStatus(AlertRule $alertRule)

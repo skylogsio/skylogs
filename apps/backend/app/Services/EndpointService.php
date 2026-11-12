@@ -4,45 +4,199 @@ namespace App\Services;
 
 use App\Enums\EndpointType;
 use App\Enums\FlowEndpointStepType;
-use App\Helpers\Call;
-use App\Helpers\Email;
-use App\Helpers\SMS;
 use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\EndpointOTP;
 use App\Models\User;
+use App\Services\Notification\ChannelRegistry;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 class EndpointService
 {
-    public function __construct(protected TeamService $teamService) {}
+    public function __construct(
+        protected TeamService $teamService,
+        protected AlertRuleService $alertRuleService,
+        protected ChannelRegistry $channels,
+    ) {}
 
     public function selectableUserEndpoint(User $user, ?AlertRule $alert = null)
     {
 
         if ($user->isAdmin()) {
             return Cache::tags(['endpoint', 'admin'])
-                ->rememberForever('endpoint:admin', fn () => Endpoint::get());
+                ->remember('endpoint:admin', (int) config('cache.ttl'), fn () => Endpoint::get());
         }
 
-        if (! $alert || $alert->userId == $user->_id) {
-            return Cache::tags(['endpoint', $user->id])
-                ->rememberForever("endpoint:global:$user->id", function () use ($user) {
-                    $teamIds = $this->teamService->userTeams($user)->pluck('id')->toArray();
-
-                    return Endpoint::where('userId', $user->_id)
-                        ->orWhereIn('accessUserIds', [$user->id])
-                        ->orWhereIn('accessTeamIds', $teamIds)
-                        ->get();
-                });
-        } elseif (in_array($user->_id, $alert->userIds)) {
-            return Cache::tags(['endpoint', $user->id])
-                ->rememberForever("endpoint:user:$user->id", fn () => Endpoint::where('userId', $user->_id)->get());
+        if (
+            ! $alert
+            || $this->alertRuleService->hasUserAccessAlert($user, $alert)
+        ) {
+            return $this->rememberGlobalSelectableEndpoints($user);
         }
 
         return collect();
 
+    }
+
+    public function rememberGlobalSelectableEndpoints(User $user)
+    {
+        return Cache::tags(['endpoint', $user->id])
+            ->remember("endpoint:global:$user->id", (int) config('cache.ttl'), function () use ($user) {
+                $teamIds = $this->userTeamIds($user);
+
+                return Endpoint::query()
+                    ->where(function ($query) use ($user, $teamIds) {
+                        $query->where('userId', $user->id)
+                            ->orWhereIn('accessUserIds', [$user->id]);
+
+                        if ($teamIds !== []) {
+                            $query->orWhereIn('accessTeamIds', $teamIds);
+                        }
+                    })
+                    ->get();
+            });
+    }
+
+    public function userCanUseEndpoint(User $user, Endpoint $endpoint): bool
+    {
+        return $user->isAdmin() || $this->isEndpointSharedWithUser($user, $endpoint);
+    }
+
+    /**
+     * Whether the user owns the endpoint or it is shared with them or one of
+     * their teams, ignoring the admin override.
+     */
+    public function isEndpointSharedWithUser(User $user, Endpoint $endpoint): bool
+    {
+        $userId = (string) $user->id;
+
+        if ((string) $endpoint->userId === $userId) {
+            return true;
+        }
+
+        $accessUserIds = array_map(strval(...), $endpoint->accessUserIds ?? []);
+        if (in_array($userId, $accessUserIds, true)) {
+            return true;
+        }
+
+        $accessTeamIds = array_map(strval(...), $endpoint->accessTeamIds ?? []);
+
+        return array_intersect($this->userTeamIds($user), $accessTeamIds) !== [];
+    }
+
+    public function userCanRemoveAlertEndpoint(User $user, AlertRule $alert, Endpoint $endpoint): bool
+    {
+        if ($user->isAdmin() || $this->alertRuleService->userOwnsAlert($user, $alert)) {
+            return true;
+        }
+
+        return $this->userCanUseEndpoint($user, $endpoint);
+    }
+
+    /**
+     * Alert endpoint payload. Destination fields stay hidden unless the user can use the endpoint.
+     *
+     * @return array<string, mixed>
+     */
+    public function presentAlertEndpoint(User $user, AlertRule $alert, Endpoint $endpoint): array
+    {
+        if (! $this->userCanUseEndpoint($user, $endpoint)) {
+            $endpoint->makeHidden(['value', 'chatId', 'botToken', 'threadId', 'steps', 'otpCode']);
+        }
+
+        $payload = $endpoint->toArray();
+        $payload['canRemove'] = $this->userCanRemoveAlertEndpoint($user, $alert, $endpoint);
+
+        return $payload;
+    }
+
+    /**
+     * Endpoint ids from $endpointIds that this user owns or can access.
+     *
+     * @param  list<mixed>  $endpointIds
+     * @return list<string>
+     */
+    public function assignableEndpointIds(User $user, array $endpointIds): array
+    {
+        $endpointIds = $this->normalizeEndpointIds($endpointIds);
+
+        if ($endpointIds === []) {
+            return [];
+        }
+
+        return Endpoint::query()
+            ->whereIn('_id', $endpointIds)
+            ->get()
+            ->filter(fn (Endpoint $endpoint) => $this->userCanUseEndpoint($user, $endpoint))
+            ->map(fn (Endpoint $endpoint) => (string) $endpoint->id)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Add endpoints the user can use. Existing alert endpoints are left in place.
+     *
+     * @param  list<mixed>  $endpointIds
+     */
+    public function attachAlertEndpoints(User $user, AlertRule $alert, array $endpointIds): void
+    {
+        foreach ($this->assignableEndpointIds($user, $endpointIds) as $endpointId) {
+            $alert->push('endpointIds', $endpointId, true);
+        }
+    }
+
+    /**
+     * Make the alert endpoints match $endpointIds. Deselected endpoints are only
+     * removed when the user may remove them (alert owner, admin, or an endpoint
+     * they can use); new endpoints are only added when the user can use them.
+     *
+     * @param  list<mixed>  $endpointIds
+     */
+    public function syncAlertEndpoints(User $user, AlertRule $alert, array $endpointIds): void
+    {
+        $requestedEndpointIds = $this->normalizeEndpointIds($endpointIds);
+        $currentEndpointIds = array_map(strval(...), $alert->endpointIds ?? []);
+
+        $deselectedEndpointIds = Endpoint::query()
+            ->whereIn('_id', array_values(array_diff($currentEndpointIds, $requestedEndpointIds)))
+            ->get()
+            ->filter(fn (Endpoint $endpoint) => $this->userCanRemoveAlertEndpoint($user, $alert, $endpoint))
+            ->map(fn (Endpoint $endpoint) => (string) $endpoint->id);
+
+        foreach ($deselectedEndpointIds as $endpointId) {
+            $alert->pull('endpointIds', $endpointId);
+        }
+
+        $this->attachAlertEndpoints($user, $alert, $requestedEndpointIds);
+    }
+
+    /**
+     * @param  list<mixed>  $endpointIds
+     * @return list<string>
+     */
+    private function normalizeEndpointIds(array $endpointIds): array
+    {
+        return collect($endpointIds)
+            ->filter(fn ($endpointId) => is_string($endpointId))
+            ->map(fn (string $endpointId) => trim($endpointId))
+            ->filter(fn (string $endpointId) => $endpointId !== '')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function userTeamIds(User $user): array
+    {
+        return $this->teamService->userTeams($user)
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->filter(fn (string $id) => $id !== '')
+            ->values()
+            ->all();
     }
 
     public function hasActionAccess(User $user, Endpoint $endpoint)
@@ -51,19 +205,53 @@ class EndpointService
             return true;
         }
 
-        if ($user->_id == $endpoint->userId) {
+        if ($user->id == $endpoint->userId) {
             return true;
         }
 
         return false;
     }
 
-    public function countUserEndpointAlert(User $user, ?AlertRule $alert = null)
+    /**
+     * Attach the name and type of every endpoint referenced by each flow's
+     * steps, so users a flow is shared with can read it without access to
+     * those endpoints. Destination fields are never included.
+     *
+     * @param  iterable<Endpoint>  $flows
+     */
+    public function attachFlowStepEndpoints(iterable $flows): void
     {
-        $selectableEndpoints = $this->selectableUserEndpoint($user, $alert);
-        $alertEndpoints = collect($alert->endpointIds);
+        $endpointIds = collect($flows)
+            ->flatMap(fn (Endpoint $flow) => collect($flow->steps ?? [])->flatMap(fn ($step) => $step['endpointIds'] ?? []))
+            ->all();
 
-        return $selectableEndpoints->pluck('id')->intersect($alertEndpoints)->count();
+        $endpoints = Endpoint::query()
+            ->whereIn('_id', $this->normalizeEndpointIds($endpointIds))
+            ->get(['name', 'type'])
+            ->keyBy(fn (Endpoint $endpoint) => (string) $endpoint->id);
+
+        foreach ($flows as $flow) {
+            $flow->stepEndpoints = collect($flow->steps ?? [])
+                ->flatMap(fn ($step) => $step['endpointIds'] ?? [])
+                ->map(fn ($endpointId) => $endpoints->get((string) $endpointId))
+                ->filter()
+                ->unique(fn (Endpoint $endpoint) => (string) $endpoint->id)
+                ->map(fn (Endpoint $endpoint) => [
+                    'id' => (string) $endpoint->id,
+                    'name' => $endpoint->name,
+                    'type' => $endpoint->type,
+                ])
+                ->values()
+                ->all();
+        }
+    }
+
+    /**
+     * Number of endpoints assigned to the alert, regardless of who can use them.
+     */
+    public function countAlertEndpoints(AlertRule $alert): int
+    {
+        return count($this->normalizeEndpointIds(array_map(strval(...), $alert->endpointIds ?? [])));
     }
 
     public function deleteEndpointOfAlertRules(Endpoint $endpoint): void
@@ -87,168 +275,69 @@ class EndpointService
         }
     }
 
-    public function create($request)
+    /**
+     * @param  array<string, mixed>  $data  validated endpoint input
+     */
+    public function create(array $data): Endpoint
     {
-        $value = trim($request->value);
-        $isPublic = $request->boolean('isPublic', false);
-        $accessUserIds = $request->accessUserIds ?? [];
-        $accessTeamIds = $request->accessTeamIds ?? [];
+        $this->assertCanWrite($data);
 
-        switch ($request->type) {
-            case EndpointType::TELEGRAM->value:
+        $model = Endpoint::create([
+            'userId' => \Auth::id(),
+            ...$this->attributesFor($data),
+        ]);
 
-                $model = Endpoint::create([
-                    'userId' => \Auth::id(),
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                    'chatId' => $value,
-                    'threadId' => $request->threadId,
-                    'botToken' => $request->botToken,
-                    'isPublic' => $isPublic,
-                ]);
-                break;
+        $this->syncOnCallFlag($model, $data);
 
-            case EndpointType::FLOW->value:
-                $this->validateFlowEndpointData($request);
-
-                $model = Endpoint::create([
-                    'userId' => \Auth::id(),
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                    'steps' => $request->steps,
-                    'isPublic' => $isPublic,
-                ]);
-                break;
-
-            case EndpointType::CALL->value:
-            case EndpointType::SMS->value:
-            case EndpointType::EMAIL->value:
-                $otp = EndpointOTP::where('value', $request->value)->first();
-
-                if (! $otp || $otp->expiredAt < Carbon::now()) {
-                    abort(422, 'otp code expired try again');
-                }
-
-                if ($otp->otpCode != $request->otpCode) {
-                    abort(422, 'otp code invalid');
-                }
-                $model = Endpoint::create([
-                    'userId' => \Auth::id(),
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'value' => $value,
-                    'isPublic' => $isPublic,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                ]);
-
-                break;
-            default:
-                $model = Endpoint::create([
-                    'userId' => \Auth::id(),
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                    'value' => $value,
-                    'isPublic' => $isPublic,
-                ]);
-                break;
-        }
-
-        return $model;
+        return $model->fresh();
     }
 
-    public function update($endpoint, $request)
+    /**
+     * @param  array<string, mixed>  $data  validated endpoint input
+     */
+    public function update(Endpoint $endpoint, array $data): Endpoint
     {
-        $value = trim($request->value);
-        $isPublic = $request->boolean('isPublic', false);
-        $accessUserIds = $request->accessUserIds ?? [];
-        $accessTeamIds = $request->accessTeamIds ?? [];
+        $this->assertCanWrite($data, $endpoint);
 
-        switch ($request->type) {
-            case EndpointType::TELEGRAM->value:
+        $endpoint->update($this->attributesFor($data));
 
-                $model = $endpoint->update([
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                    'chatId' => $value,
-                    'threadId' => $request->threadId,
-                    'botToken' => $request->botToken,
-                    'isPublic' => $isPublic,
-                ]);
-                break;
+        $this->syncOnCallFlag($endpoint->fresh(), $data);
 
-            case EndpointType::FLOW->value:
-                $this->validateFlowEndpointData($request);
-
-                $model = $endpoint->update([
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                    'steps' => $request->steps,
-                    'isPublic' => $isPublic,
-                ]);
-                break;
-
-            case EndpointType::CALL->value:
-            case EndpointType::SMS->value:
-            case EndpointType::EMAIL->value:
-
-                if ($endpoint->value != $request->value) {
-                    $otp = EndpointOTP::where('value', $request->value)->first();
-
-                    if (! $otp || $otp->expiredAt < Carbon::now()) {
-                        abort(422, 'otp code expired try again');
-                    }
-
-                    if ($otp->otpCode != $request->otpCode) {
-                        abort(422, 'otp code invalid');
-                    }
-                }
-
-                $model = $endpoint->update([
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'value' => $value,
-                    'isPublic' => $isPublic,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                ]);
-                break;
-
-            default:
-                $model = $endpoint->update([
-                    'name' => $request->name,
-                    'type' => $request->type,
-                    'accessUserIds' => $accessUserIds,
-                    'accessTeamIds' => $accessTeamIds,
-                    'value' => $value,
-                    'isPublic' => $isPublic,
-                ]);
-                break;
-        }
-
-        return $model;
+        return $endpoint->fresh();
     }
 
-    public function validateFlowEndpointData($request): void
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function syncOnCallFlag(Endpoint $endpoint, array $data): void
     {
+        if (! array_key_exists('onCall', $data)) {
+            return;
+        }
 
-        $steps = $request->steps;
+        $onCall = (bool) $data['onCall'];
 
+        if ($onCall) {
+            Endpoint::query()
+                ->where('userId', $endpoint->userId)
+                ->where('_id', '!=', $endpoint->id)
+                ->update(['onCall' => false]);
+        }
+
+        $endpoint->onCall = $onCall;
+        $endpoint->save();
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>|null  $steps
+     */
+    public function validateFlowEndpointData(?array $steps): void
+    {
         if (empty($steps)) {
             abort(422, 'wrong format for flow endpoints. empty steps.');
         }
         foreach ($steps as $step) {
-            switch ($step['type']) {
+            switch ($step['type'] ?? null) {
                 case FlowEndpointStepType::WAIT->value:
                     if (empty($step['timeUnit']) || ! in_array($step['timeUnit'], ['s', 'm', 'h']) || empty($step['duration']) || ! is_int($step['duration'])) {
                         abort(422, 'wrong format for flow endpoints');
@@ -267,9 +356,13 @@ class EndpointService
 
     }
 
-    public function otpRequest($request)
+    /**
+     * @param  array{type: string, value: mixed}  $data
+     * @return array{message: string, expiredAt: int, timeLeft: int}
+     */
+    public function otpRequest(array $data): array
     {
-        $endpointOtp = EndpointOTP::where('type', $request->type)->where('value', $request->value)->first();
+        $endpointOtp = $this->otpFor($data['type'], $data['value']);
 
         if ($endpointOtp) {
             if (Carbon::now()->lessThan($endpointOtp->expiredAt)) {
@@ -280,12 +373,11 @@ class EndpointService
                     'expiredAt' => $endpointOtp->expiredAt->getTimestamp(),
                     'timeLeft' => intval(Carbon::now()->diffInSeconds($endpointOtp->expiredAt)),
                 ];
-                //                abort(422, "You have to wait $seconds seconds before otp request.");
             }
         } else {
             $endpointOtp = new EndpointOTP;
-            $endpointOtp->type = $request->type;
-            $endpointOtp->value = $request->value;
+            $endpointOtp->type = $data['type'];
+            $endpointOtp->value = $data['value'];
         }
 
         $endpointOtp->status = EndpointOTP::STATUS_PENDING;
@@ -293,25 +385,76 @@ class EndpointService
         $endpointOtp->generateOtpCode();
         $endpointOtp->save();
 
-        switch ($request->type) {
-            case EndpointType::SMS->value:
-                $endpointOtp->result = SMS::sendOTP($endpointOtp);
-                break;
-            case EndpointType::CALL->value:
-                $endpointOtp->result = Call::sendOTP($endpointOtp);
-                break;
-
-            case EndpointType::EMAIL->value:
-                Email::sendOTP($endpointOtp);
-                break;
-        }
-
+        $endpointOtp->result = $this->channels->for($data['type'])->sendVerification($endpointOtp)->toArray();
         $endpointOtp->save();
 
         return [
             'message' => 'OTP code has been sent to your endpoint',
             'expiredAt' => $endpointOtp->expiredAt->getTimestamp(),
             'timeLeft' => intval(Carbon::now()->diffInSeconds($endpointOtp->expiredAt)),
+        ];
+    }
+
+    /**
+     * Flow steps must be well formed, and channels that verify ownership
+     * need a valid OTP whenever the address is new.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function assertCanWrite(array $data, ?Endpoint $existing = null): void
+    {
+        if ($data['type'] === EndpointType::FLOW->value) {
+            $this->validateFlowEndpointData($data['steps'] ?? null);
+
+            return;
+        }
+
+        if (! $this->channels->for($data['type'])->requiresVerification()) {
+            return;
+        }
+
+        if ($existing !== null && $existing->value == ($data['value'] ?? null)) {
+            return;
+        }
+
+        $otp = $this->otpFor($data['type'], $data['value'] ?? null);
+
+        if (! $otp || $otp->expiredAt < Carbon::now()) {
+            abort(422, 'otp code expired try again');
+        }
+
+        if ($otp->otpCode != ($data['otpCode'] ?? null)) {
+            abort(422, 'otp code invalid');
+        }
+    }
+
+    /**
+     * The row written by otpRequest, matched on channel and address together.
+     * Phone channels share a number, so a lookup by address alone can return
+     * another channel's expired code.
+     */
+    private function otpFor(string $type, mixed $value): ?EndpointOTP
+    {
+        return EndpointOTP::where('type', $type)->where('value', $value)->first();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function attributesFor(array $data): array
+    {
+        $type = $data['type'];
+
+        return [
+            'name' => $data['name'],
+            'type' => $type,
+            'accessUserIds' => $data['accessUserIds'] ?? [],
+            'accessTeamIds' => $data['accessTeamIds'] ?? [],
+            'isPublic' => (bool) ($data['isPublic'] ?? false),
+            ...($type === EndpointType::FLOW->value
+                ? ['steps' => $data['steps']]
+                : $this->channels->for($type)->attributes($data)),
         ];
     }
 }

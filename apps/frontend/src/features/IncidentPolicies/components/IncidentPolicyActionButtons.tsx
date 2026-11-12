@@ -5,7 +5,6 @@ import type { SxProps, Theme } from "@mui/material";
 import { HiDownload, HiPencil, HiTrash } from "react-icons/hi";
 import { mergeSx, mixPrimary, pillSurfaceSx } from "@/components/Wrapper/topBarStyles";
 
-
 type IncidentPolicyActionButtonsProps = {
   onEdit?: () => void;
   onExport?: () => void;
@@ -17,7 +16,6 @@ export default function IncidentPolicyActionButtons({
   onExport,
   onDelete
 }: IncidentPolicyActionButtonsProps) {
-
   const buttonSx = (color: string): SxProps<Theme> =>
     mergeSx(
       {

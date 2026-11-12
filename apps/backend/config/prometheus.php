@@ -1,5 +1,8 @@
 <?php
 
+use Spatie\Prometheus\Actions\RenderCollectorsAction;
+use Spatie\Prometheus\Http\Middleware\AllowIps;
+
 return [
     'enabled' => true,
 
@@ -13,22 +16,24 @@ return [
     /*
      * Only these IP's will be allowed to visit the above urls.
      * All IP's are allowed when empty.
+     * Comma-separated list via PROMETHEUS_ALLOWED_IPS.
      */
-    'allowed_ips' => [
-        // '1.2.3.4',
-    ],
+    'allowed_ips' => array_values(array_filter(array_map(
+        static fn (string $ip): string => trim($ip),
+        explode(',', (string) env('PROMETHEUS_ALLOWED_IPS', '')),
+    ))),
 
     /*
      * This is the default namespace that will be
      * used by all metrics
      */
-    'default_namespace' => 'app',
+    'default_namespace' => 'skylogs',
 
     /*
      * The middleware that will be applied to the urls above
      */
     'middleware' => [
-        Spatie\Prometheus\Http\Middleware\AllowIps::class,
+        AllowIps::class,
     ],
 
     /*
@@ -36,7 +41,7 @@ return [
      * In most cases, you can just use the defaults.
      */
     'actions' => [
-        'render_collectors' => Spatie\Prometheus\Actions\RenderCollectorsAction::class,
+        'render_collectors' => RenderCollectorsAction::class,
     ],
 
     /**

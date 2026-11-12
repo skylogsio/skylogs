@@ -1,3 +1,4 @@
+/.cursor/plans
 /.phpunit.cache
 /node_modules
 /public/build
@@ -22,12 +23,12 @@ yarn-error.log
 /.vscode
 /.zed
 docker-compose.override.yml
-test.json
+test*.json
 test.http
 *.swp
 tests/Api/http-client.private.env.json
-
+devFiles
 
 supervisord.log
 supervisord.pid
-"laradumps.yaml" 
+"laradumps.yaml"

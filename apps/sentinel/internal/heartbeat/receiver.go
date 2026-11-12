@@ -9,13 +9,20 @@ import (
 	"github.com/skylogsio/skylogs/apps/sentinel/internal/security"
 )
 
-func Receiver(state *State, secret string, maxSkew time.Duration) http.HandlerFunc {
+const sentinelIDHeader = "X-SkyLogs-Sentinel-Id"
+
+func Receiver(reg *Registry, secret string, maxSkew time.Duration) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tsStr := r.Header.Get("X-SkyLogs-Timestamp")
 		sig := r.Header.Get("X-SkyLogs-Signature")
+		senderID := r.Header.Get(sentinelIDHeader)
 
 		if tsStr == "" || sig == "" {
 			http.Error(w, "missing auth headers", http.StatusUnauthorized)
+			return
+		}
+		if senderID == "" {
+			http.Error(w, "missing sentinel id", http.StatusUnauthorized)
 			return
 		}
 
@@ -43,7 +50,8 @@ func Receiver(state *State, secret string, maxSkew time.Duration) http.HandlerFu
 			return
 		}
 
-		state.MarkSeen()
+		st := reg.GetOrCreate(senderID)
+		st.MarkSeen()
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	}

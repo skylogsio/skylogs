@@ -3,15 +3,7 @@
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import React, { useState } from "react";
 
-import {
-  Button,
-  IconButton,
-  Popover,
-  Stack,
-  Tooltip,
-  Typography,
-  useTheme
-} from "@mui/material";
+import { Button, IconButton, Popover, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { HiPencil, HiTrash } from "react-icons/hi";
 import { IoNotifications, IoNotificationsOff } from "react-icons/io5";
@@ -264,9 +256,7 @@ export default function ViewAlertRule() {
         >
           <AlertRuleTabSwitch tabs={visibleTabs} activeTab={activeTab} onChange={setCurrentTab} />
         </Stack>
-        <Stack
-          sx={{ width: "100%", bgcolor: "background.paper", borderRadius: 3, padding: 3 }}
-        >
+        <Stack sx={{ width: "100%", bgcolor: "background.paper", borderRadius: 3, padding: 3 }}>
           {renderSections()}
         </Stack>
       </Stack>

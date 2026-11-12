@@ -1,0 +1,13 @@
+# Scrape the Skylogs Laravel metrics endpoint.
+# Merge into prometheus.yml under scrape_configs, or use file_sd / include as your
+# Prometheus layout allows. Replace the target host for your deployment.
+
+scrape_configs:
+  - job_name: skylogs
+    metrics_path: /metrics
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - localhost:80
+        labels:
+          service: skylogs-api

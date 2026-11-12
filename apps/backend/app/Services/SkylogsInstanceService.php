@@ -2,11 +2,10 @@
 
 namespace App\Services;
 
-use App\Helpers\Constants;
 use App\Models\SkylogsInstance;
 use DB;
-use Illuminate\Http\Client\Pool;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Redis;
 use Predis\Connection\ConnectionException;
 use Queue;
 
@@ -28,106 +27,68 @@ class SkylogsInstanceService
 
     }
 
-    public static function SendPing()
+    /**
+     * Connection liveness plus that instance's Raft membership.
+     *
+     * Membership comes from the instance's own `GET /api/v1/ha/cluster/status`.
+     * A failed status call leaves the instance connected and the cluster unknown.
+     *
+     * @return array{isConnected: bool, enabled: bool|null, cluster: array<string, mixed>|null}
+     */
+    public function connectionStatus(string $instanceId, ?string $bearerToken): array
     {
-        $serverPriority = self::GetServerPriority();
-        $instances = SkylogsInstance::whereNotIn('priority', [$serverPriority])->get();
-        $urls = [];
-
-        foreach ($instances as $instance) {
-            $urls[] = $instance->getPingUrl();
+        if (! $this->isConnected($instanceId)) {
+            return $this->withoutCluster(false);
         }
 
-        $result = Http::pool(function (Pool $pool) use ($urls, $serverPriority) {
-            $result = [];
+        $instance = SkylogsInstance::query()->whereId($instanceId)->firstOrFail();
 
-            foreach ($urls as $url) {
-                $result[] = $pool->get($url, ['priority' => $serverPriority]);
-            }
-
-            return $result;
-        });
-
-    }
-
-    public static function GetServerPriority()
-    {
-        $serverPriority = intval(config('variables.priority'));
-
-        return $serverPriority;
-    }
-
-    public static function SetServerPriority(?SkylogsInstance $instance = null)
-    {
-        if (empty($instance)) {
-            $serverPriority = intval(config('variables.priority'));
-        } else {
-            $serverPriority = $instance->priority;
-        }
-
-        $leaderPriority = \Cache::store('database')->delete(Constants::LEADER_PRIORITY);
-        $leaderPriority = \Cache::store('database')->put(Constants::LEADER_PRIORITY, $serverPriority);
-
-    }
-
-    public static function GetLeaderPriority()
-    {
-        return \Cache::store('database')->get(Constants::LEADER_PRIORITY, PHP_INT_MAX);
-    }
-
-    public static function isLeader(SkylogsInstance $instance): bool
-    {
-
-        $serverPriority = empty($instance) ? self::getServerPriority() : $instance->priority;
-
-        $leaderPriority = self::GetLeaderPriority();
-
-        return $leaderPriority == $serverPriority;
-    }
-
-    public static function CheckLeaderPing()
-    {
-        $isLeader = self::isLeader();
-        $serverPriority = self::getServerPriority();
-        if (! $isLeader) {
-            $lastLeaderPing = \Cache::get(Constants::LAST_LEADER_PING, time());
-            if ($lastLeaderPing < time() - ($serverPriority * 10)) {
-                self::SetServerPriority();
-            }
-
-        }
-    }
-
-    public static function UpdateLastLeaderPing($priority)
-    {
-
-        //        if ($priority < self::GetServerPriority()) {
-        //            \Cache::put(Constants::LAST_LEADER_PING."_".$priority, time());
-        \Cache::put(Constants::LAST_LEADER_PING, time());
-        //        }
-
-    }
-
-    public static function getHealthCheck(SkylogsInstance $instance)
-    {
         try {
-            $request = \Http::acceptJson();
-            if (! empty($instance->username) && ! empty($instance->password)) {
-                $request = $request->withBasicAuth($instance->username, $instance->password);
-            }
-            $response = $request->timeout(5)->get($instance->getHealthUrl());
+            $pendingRequest = Http::timeout(5)->acceptJson();
 
-            return $response->status() == 200;
+            if (is_string($bearerToken) && $bearerToken !== '') {
+                $pendingRequest = $pendingRequest->withToken($bearerToken);
+            }
+
+            $response = $pendingRequest->get($this->clusterStatusUrl($instance));
         } catch (\Exception $e) {
-            return false;
+            return $this->withoutCluster(true);
         }
+
+        if (! $response->successful()) {
+            return $this->withoutCluster(true);
+        }
+
+        $payload = $response->json();
+
+        if (! is_array($payload)) {
+            return $this->withoutCluster(true);
+        }
+
+        $cluster = $payload['cluster'] ?? null;
+
+        return [
+            'isConnected' => true,
+            'enabled' => array_key_exists('enabled', $payload) ? (bool) $payload['enabled'] : null,
+            'cluster' => is_array($cluster) ? $cluster : null,
+        ];
     }
 
-    public static function GetPriorities()
+    private function clusterStatusUrl(SkylogsInstance $instance): string
     {
-        $instances = SkylogsInstance::all()->pluck('priority');
+        return rtrim($instance->getBaseUrl(), '/').'/api/v1/ha/cluster/status';
+    }
 
-        return $instances;
+    /**
+     * @return array{isConnected: bool, enabled: null, cluster: null}
+     */
+    private function withoutCluster(bool $isConnected): array
+    {
+        return [
+            'isConnected' => $isConnected,
+            'enabled' => null,
+            'cluster' => null,
+        ];
     }
 
     public static function CheckWorkers(): bool
@@ -142,7 +103,7 @@ class SkylogsInstanceService
     public static function CheckRedis(): bool
     {
         try {
-            \Illuminate\Support\Facades\Redis::ping();
+            Redis::ping();
 
             return true;
         } catch (ConnectionException $e) {

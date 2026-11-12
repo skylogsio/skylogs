@@ -2,12 +2,17 @@
 
 namespace App\Models;
 
+use App\Concerns\ProvidesChannelMessages;
+use App\Enums\EndpointType;
 use App\Interfaces\Messageable;
+use App\Services\AlertMessage\AlertMessageTemplateRenderer;
 use MongoDB\Laravel\Relations\BelongsTo;
 use Morilog\Jalali\Jalalian;
 
 class AlertInstance extends BaseModel implements Messageable
 {
+    use ProvidesChannelMessages;
+
     public $timestamps = true;
 
     protected $guarded = ['id', '_id'];
@@ -75,7 +80,7 @@ class AlertInstance extends BaseModel implements Messageable
             $isResolved = true;
             $alertFireInstances = [];
             foreach ($instances as $instance) {
-                if ($instance->instance == self::FIRE) {
+                if ($instance->state == self::FIRE) {
                     $isResolved = false;
                     $alertFireInstances[] = $history->toArray();
                 }
@@ -99,8 +104,14 @@ class AlertInstance extends BaseModel implements Messageable
 
     }
 
-    public function defaultMessage()
+    public function defaultMessage(): string
     {
+        $alertRule = $this->alertRule;
+
+        if ($alertRule) {
+            return AlertMessageTemplateRenderer::make()->renderDefault($alertRule, $this->toArray());
+        }
+
         $text = $this->alertRuleName;
 
         $text .= match ($this->state) {
@@ -119,44 +130,26 @@ class AlertInstance extends BaseModel implements Messageable
         }
 
         $text .= "\nDate: ".$this->updatedAtString();
-        //        $text .= $this->description;
 
         return $text;
     }
 
-    public function telegram()
+    /**
+     * @return array<string, mixed>|string|null
+     */
+    public function messageFor(EndpointType $type): array|string|null
     {
-        $result = [
-            'message' => $this->defaultMessage(),
-        ];
-        if ($this->alertRule->enableAcknowledgeBtnInMessage() && $this->state == self::FIRE) {
-            $result['meta'] = [
-                [
-                    'text' => 'Acknowledge',
-                    'url' => config('app.url').route('acknowledgeLink', ['id' => $this->alertRuleId], false),
-                ],
-            ];
-        }
-
-        return $result;
+        return match ($type) {
+            EndpointType::TELEGRAM, EndpointType::BALE => $this->messageWithAcknowledgeButton(
+                $this->alertRule->enableAcknowledgeBtnInMessage() && $this->state == self::FIRE,
+                $this->alertRuleId,
+            ),
+            EndpointType::CALL => $this->shortSummary(),
+            default => null,
+        };
     }
 
-    public function matterMostMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function smsMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function discordMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function callMessage(): string
+    private function shortSummary(): string
     {
         $text = 'Alert '.$this->alertRuleName;
 
@@ -168,16 +161,5 @@ class AlertInstance extends BaseModel implements Messageable
         };
 
         return $text;
-    }
-
-    public function teamsMessage()
-    {
-        return $this->defaultMessage();
-
-    }
-
-    public function emailMessage()
-    {
-        return $this->defaultMessage();
     }
 }

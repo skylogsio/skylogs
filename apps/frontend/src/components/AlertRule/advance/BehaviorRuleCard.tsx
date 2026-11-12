@@ -59,7 +59,8 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
           borderColor: "divider",
           transition: "all 0.2s ease",
           "&:hover": {
-            boxShadow: "0 4px 16px color-mix(in srgb, var(--mui-palette-common-black) 8%, transparent)",
+            boxShadow:
+              "0 4px 16px color-mix(in srgb, var(--mui-palette-common-black) 8%, transparent)",
             transform: "translateY(-2px)"
           }
         }}
@@ -171,8 +172,7 @@ export default function BehaviorRuleCard({ item, onEdit }: BehaviorRuleCardProps
                 onClick={() => setDeleteModalData(item)}
                 sx={{
                   border: 1,
-                  borderColor:
-                    "color-mix(in srgb, var(--mui-palette-error-main) 35%, transparent)",
+                  borderColor: "color-mix(in srgb, var(--mui-palette-error-main) 35%, transparent)",
                   color: "error.main",
                   "&:hover": {
                     borderColor: "error.main",

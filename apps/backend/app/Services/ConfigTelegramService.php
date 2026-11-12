@@ -8,7 +8,7 @@ class ConfigTelegramService
 {
     public function getActive(): ?ConfigTelegram
     {
-        return cache()->tags(['config', 'telegram'])->rememberForever('config:telegram:active', function () {
+        return cache()->tags(['config', 'telegram'])->remember('config:telegram:active', (int) config('cache.ttl'), function () {
             return ConfigTelegram::query()->where('active', true)->first();
         });
     }

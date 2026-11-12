@@ -5,14 +5,12 @@ import type { SxProps, Theme } from "@mui/material";
 import { HiPencil, HiTrash } from "react-icons/hi";
 import { mergeSx, mixPrimary, pillSurfaceSx } from "@/components/Wrapper/topBarStyles";
 
-
 type RunbookActionButtonsProps = {
   onEdit?: () => void;
   onDelete?: () => void;
 };
 
 export default function RunbookActionButtons({ onEdit, onDelete }: RunbookActionButtonsProps) {
-
   const buttonSx = (color: string): SxProps<Theme> =>
     mergeSx(
       {
@@ -50,11 +48,7 @@ export default function RunbookActionButtons({ onEdit, onDelete }: RunbookAction
         </IconButton>
       )}
       {onDelete && (
-        <IconButton
-          onClick={onDelete}
-          aria-label="Delete runbook"
-          sx={buttonSx("error.main")}
-        >
+        <IconButton onClick={onDelete} aria-label="Delete runbook" sx={buttonSx("error.main")}>
           <HiTrash size="1.15rem" />
         </IconButton>
       )}

@@ -5,6 +5,7 @@ namespace App\Models\Auth;
 use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
 use MongoDB\Laravel\Eloquent\Model;
 use Spatie\Permission\Contracts\Permission as PermissionContract;
 use Spatie\Permission\Exceptions\PermissionAlreadyExists;
@@ -15,8 +16,8 @@ use Spatie\Permission\Traits\HasRoles;
 use Spatie\Permission\Traits\RefreshesPermissionCache;
 
 /**
- * @property ?\Illuminate\Support\Carbon $createdAt
- * @property ?\Illuminate\Support\Carbon $updatedAt
+ * @property ?Carbon $createdAt
+ * @property ?Carbon $updatedAt
  */
 class Permission extends BaseModel implements PermissionContract
 {

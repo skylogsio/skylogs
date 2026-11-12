@@ -2,13 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 
-import {
-  Box,
-  Collapse,
-  IconButton,
-  InputAdornment,
-  TextField
-} from "@mui/material";
+import { Box, Collapse, IconButton, InputAdornment, TextField } from "@mui/material";
 import { HiOutlineSearch, HiOutlineX } from "react-icons/hi";
 
 import { useScopedI18n } from "@/locales/client";
@@ -91,15 +85,12 @@ export default function SearchControl({ title, value = "", onSearch }: SearchCon
     height: 33,
     borderRadius: 2,
     border: "1px solid",
-    borderColor:
-      "color-mix(in srgb, var(--mui-palette-text-primary) 12%, transparent)",
+    borderColor: "color-mix(in srgb, var(--mui-palette-text-primary) 12%, transparent)",
     bgcolor: "var(--mui-palette-background-paper)",
     color: "text.secondary",
     "&:hover": {
-      bgcolor:
-        "color-mix(in srgb, var(--mui-palette-primary-main) 6%, transparent)",
-      borderColor:
-        "color-mix(in srgb, var(--mui-palette-primary-main) 30%, transparent)",
+      bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 6%, transparent)",
+      borderColor: "color-mix(in srgb, var(--mui-palette-primary-main) 30%, transparent)",
       color: "primary.main"
     }
   } as const;
@@ -148,12 +139,10 @@ export default function SearchControl({ title, value = "", onSearch }: SearchCon
               margin: 0
             },
             "& .MuiOutlinedInput-notchedOutline": {
-              borderColor:
-                "color-mix(in srgb, var(--mui-palette-text-primary) 12%, transparent)"
+              borderColor: "color-mix(in srgb, var(--mui-palette-text-primary) 12%, transparent)"
             },
             "&:hover .MuiOutlinedInput-notchedOutline": {
-              borderColor:
-                "color-mix(in srgb, var(--mui-palette-primary-main) 35%, transparent)"
+              borderColor: "color-mix(in srgb, var(--mui-palette-primary-main) 35%, transparent)"
             }
           }}
           slotProps={{

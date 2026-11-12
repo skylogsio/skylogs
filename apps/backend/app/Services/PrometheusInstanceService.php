@@ -6,7 +6,8 @@ use App\Enums\DataSourceType;
 use App\Models\AlertRulePrometheus;
 use App\Models\DataSource\DataSource;
 use App\Models\PrometheusInstance;
-use App\Models\Service;
+use App\Services\DataSource\DataSourceAvailability;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -106,80 +107,6 @@ class PrometheusInstanceService
         }
 
         return $resultLabels->unique()->toArray();
-    }
-
-    public function GetRulesByName()
-    {
-        $prometheusAll = Service::where('type', 'prometheus');
-
-        if (! empty($names)) {
-            $prometheusAll = $prometheusAll->whereIn('name', $names);
-        }
-
-        $prometheusAll = $prometheusAll->get();
-        $alerts = [];
-        $responses = [];
-        if ($prometheusAll->isNotEmpty()) {
-
-            $responses = Http::pool(function (Pool $pool) use ($prometheusAll) {
-                $result = [];
-                foreach ($prometheusAll as $pro) {
-
-                    $request = $pool->as($pro->name)->acceptJson();
-                    if (! empty($pro->username) && ! empty($pro->password)) {
-                        $request = $request->withBasicAuth($pro->username, $pro->password);
-                    }
-                    $result[] = $request->get($pro->getPrometheusRulesUrl());
-                }
-
-                return $result;
-            });
-
-            foreach ($responses as $name => $response) {
-
-                try {
-
-                    if (! ($response instanceof Response && $response->ok())) {
-                        continue;
-                    }
-
-                    $response = $response->json();
-
-                    $ruleArr = $response['data']['groups'];
-                    foreach ($ruleArr as $group) {
-
-                        foreach ($group['rules'] as $rule) {
-                            $severity = $rule['labels']['severity'] ?? '';
-
-                            if (empty($severity)) {
-                                continue;
-                            }
-
-                            if (empty($alerts[$rule['name']])) {
-                                $alerts[$rule['name']] = [
-                                    'name' => $rule['name'],
-                                    'instance' => [$name],
-                                    'severity' => $severity,
-                                ];
-                            } else {
-                                $array = $alerts[$rule['name']]['instance'];
-                                array_push($array, $name);
-                                $alerts[$rule['name']]['instance'] = array_unique($array);
-                            }
-
-                        }
-
-                    }
-
-                } catch (\Exception $e) {
-
-                }
-
-            }
-
-        }
-
-        return $alerts;
     }
 
     public function getRules($dataSourceId = null): array
@@ -290,35 +217,91 @@ class PrometheusInstanceService
 
     public function getTriggered(): array
     {
+        return $this->fetchTriggeredAlertsFromDataSources()['alerts'];
+    }
 
+    /**
+     * @return array{alerts: array<int, mixed>, failedDataSourceIds: array<int|string>}
+     */
+    public function getTriggeredForAlertSync(): array
+    {
+        return $this->fetchTriggeredAlertsFromDataSources();
+    }
+
+    /**
+     * @return array{alerts: array<int, mixed>, failedDataSourceIds: array<int|string>}
+     */
+    private function fetchTriggeredAlertsFromDataSources(): array
+    {
         $prometheusAll = $this->dataSourceService->get(DataSourceType::PROMETHEUS);
         $alerts = [];
+        $failedDataSourceIds = [];
+        $availability = app(DataSourceAvailability::class);
 
-        $responses = [];
-        if ($prometheusAll->isNotEmpty()) {
+        if ($prometheusAll->isEmpty()) {
+            return ['alerts' => [], 'failedDataSourceIds' => []];
+        }
 
-            $responses = Http::pool(function (Pool $pool) use ($prometheusAll) {
-                $result = [];
-                /** @var $pro DataSource */
-                foreach ($prometheusAll as $pro) {
+        $reachable = $prometheusAll->reject(function ($pro) use ($availability, &$failedDataSourceIds) {
+            $id = (string) $pro->id;
 
-                    $request = $pool->as($pro->id)->acceptJson();
-                    if (! empty($pro->username) && ! empty($pro->password)) {
-                        $request = $request->withBasicAuth($pro->username, $pro->password);
-                    }
-                    $result[] = $request->get($pro->prometheusGetAlertsUrl());
+            if (! $availability->isCoolingDown($id)) {
+                return false;
+            }
+
+            $failedDataSourceIds[] = $id;
+
+            return true;
+        });
+
+        if ($reachable->isEmpty()) {
+            return [
+                'alerts' => [],
+                'failedDataSourceIds' => array_values(array_unique($failedDataSourceIds)),
+            ];
+        }
+
+        $connectTimeout = (int) config('datasource_checks.connect_timeout', 2);
+        $timeout = (int) config('datasource_checks.timeout', 5);
+
+        $responses = Http::pool(function (Pool $pool) use ($reachable, $connectTimeout, $timeout) {
+            $result = [];
+            foreach ($reachable as $pro) {
+                $request = $pool->as($pro->id)
+                    ->acceptJson()
+                    ->connectTimeout($connectTimeout)
+                    ->timeout($timeout);
+                if (! empty($pro->username) && ! empty($pro->password)) {
+                    $request = $request->withBasicAuth($pro->username, $pro->password);
                 }
+                $result[] = $request->get($pro->prometheusGetAlertsUrl());
+            }
 
-                return $result;
-            });
+            return $result;
+        });
 
-            foreach ($responses as $id => $response) {
-                if (! ($response instanceof Response && $response->ok())) {
+        foreach ($responses as $id => $response) {
+            if ($response instanceof ConnectionException) {
+                $availability->coolDown((string) $id);
+                $failedDataSourceIds[] = $id;
+
+                continue;
+            }
+
+            if (! ($response instanceof Response && $response->ok())) {
+                $failedDataSourceIds[] = $id;
+
+                continue;
+            }
+
+            try {
+                $decoded = $response->json();
+                $arr = $decoded['data']['alerts'] ?? null;
+                if (! is_array($arr)) {
+                    $failedDataSourceIds[] = $id;
+
                     continue;
                 }
-                $response = $response->json();
-
-                $arr = $response['data']['alerts'];
 
                 foreach ($arr as &$alert) {
                     $alert['dataSourceId'] = $id;
@@ -327,14 +310,16 @@ class PrometheusInstanceService
                     if ($alert['state'] == PrometheusInstance::STATE_FIRING) {
                         $alerts[] = $alert;
                     }
-
                 }
+            } catch (\Throwable) {
+                $failedDataSourceIds[] = $id;
             }
-
         }
 
-        return $alerts;
-
+        return [
+            'alerts' => $alerts,
+            'failedDataSourceIds' => array_values(array_unique($failedDataSourceIds)),
+        ];
     }
 
     public function getMetricLabels($id, $metric)

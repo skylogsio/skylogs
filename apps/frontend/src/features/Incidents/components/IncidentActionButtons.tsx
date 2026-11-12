@@ -5,7 +5,6 @@ import type { SxProps, Theme } from "@mui/material";
 import { HiCheckCircle, HiPencil, HiTrash } from "react-icons/hi";
 import { mergeSx, mixPrimary, pillSurfaceSx } from "@/components/Wrapper/topBarStyles";
 
-
 type IncidentActionButtonsProps = {
   onEdit?: () => void;
   onResolve?: () => void;
@@ -17,7 +16,6 @@ export default function IncidentActionButtons({
   onResolve,
   onDelete
 }: IncidentActionButtonsProps) {
-
   const buttonSx = (color: string): SxProps<Theme> =>
     mergeSx(
       {
@@ -55,20 +53,12 @@ export default function IncidentActionButtons({
         </IconButton>
       )}
       {onResolve && (
-        <IconButton
-          onClick={onResolve}
-          aria-label="Resolve incident"
-          sx={buttonSx("success.main")}
-        >
+        <IconButton onClick={onResolve} aria-label="Resolve incident" sx={buttonSx("success.main")}>
           <HiCheckCircle size="1.2rem" />
         </IconButton>
       )}
       {onDelete && (
-        <IconButton
-          onClick={onDelete}
-          aria-label="Delete incident"
-          sx={buttonSx("error.main")}
-        >
+        <IconButton onClick={onDelete} aria-label="Delete incident" sx={buttonSx("error.main")}>
           <HiTrash size="1.15rem" />
         </IconButton>
       )}

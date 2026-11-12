@@ -56,6 +56,8 @@ class SendNotifyJob implements ShouldQueue
 
     public const SENTRY_WEBHOOK_TEST = 'sentry-webhook-test';
 
+    public const INCIDENT_POLICY_PAGE = 'incident-policy-page';
+
     /**
      * Create a new job instance.
      *
@@ -92,13 +94,14 @@ class SendNotifyJob implements ShouldQueue
             case self::ZABBIX_WEBHOOK:
             case self::PROMETHEUS_RESOLVE:
             case self::PROMETHEUS_FIRE:
-                SendNotifyService::SendMessage($this->notify);
+            case self::INCIDENT_POLICY_PAGE:
+                app(SendNotifyService::class)->SendMessage($this->notify);
                 break;
             case self::ALERT_RULE_TEST:
-                SendNotifyService::SendMessage($this->notify, isTest: true);
+                app(SendNotifyService::class)->SendMessage($this->notify, isTest: true);
                 break;
             case self::ALERT_RULE_ACKNOWLEDGED:
-                SendNotifyService::SendMessage($this->notify, isAcknowledged: true);
+                app(SendNotifyService::class)->SendMessage($this->notify, isAcknowledged: true);
                 break;
         }
         $this->notify->status = Notify::STATUS_DONE;

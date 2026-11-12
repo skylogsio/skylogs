@@ -1,7 +1,11 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\HorizonServiceProvider;
+use App\Providers\PrometheusServiceProvider;
+
 return [
-    App\Providers\AppServiceProvider::class,
-    App\Providers\PrometheusServiceProvider::class,
-    App\Providers\HorizonServiceProvider::class,
+    AppServiceProvider::class,
+    PrometheusServiceProvider::class,
+    HorizonServiceProvider::class,
 ];

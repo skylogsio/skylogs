@@ -11,9 +11,7 @@ import {
   IconButton,
   TextField,
   Typography,
-  
   Stack,
-  
   Menu,
   MenuItem,
   ListItemIcon,
@@ -387,302 +385,302 @@ export default function AuthenticationPage() {
           ...(Array.isArray(cardSx) ? cardSx : [cardSx])
         ]}
       >
-      <Box
-        component={motion.div}
-        initial={reduceMotion ? false : { opacity: 0, y: 28, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.7, ease: easeOut }}
-        sx={{ width: 1 }}
-      >
-        <Stack
+        <Box
           component={motion.div}
-          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.08, ease: easeOut }}
-          spacing={1.75}
-          sx={{
-            alignItems: "center",
-            px: { xs: 3, sm: 4 },
-            pt: { xs: 3.5, sm: 4 },
-            pb: { xs: 2.5, sm: 3 }
-          }}
+          initial={reduceMotion ? false : { opacity: 0, y: 28, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.7, ease: easeOut }}
+          sx={{ width: 1 }}
         >
-          <Box
+          <Stack
+            component={motion.div}
+            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.08, ease: easeOut }}
+            spacing={1.75}
             sx={{
-              width: { xs: 168, sm: 196 },
-              aspectRatio: "3 / 2",
-              borderRadius: 3,
-              backgroundColor: "transparent",
-              display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-              px: 1.5
+              px: { xs: 3, sm: 4 },
+              pt: { xs: 3.5, sm: 4 },
+              pb: { xs: 2.5, sm: 3 }
             }}
           >
             <Box
-              component="img"
-              src="/static/images/logo.png"
-              alt="Skylogs"
               sx={{
-                width: "100%",
-                height: "auto",
-                display: "block",
-                objectFit: "contain"
+                width: { xs: 168, sm: 196 },
+                aspectRatio: "3 / 2",
+                borderRadius: 3,
+                backgroundColor: "transparent",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+                px: 1.5
               }}
-            />
-          </Box>
+            >
+              <Box
+                component="img"
+                src="/static/images/logo.png"
+                alt="Skylogs"
+                sx={{
+                  width: "100%",
+                  height: "auto",
+                  display: "block",
+                  objectFit: "contain"
+                }}
+              />
+            </Box>
 
-          <Stack spacing={0.75} sx={{ alignItems: "center" }}>
-            <Typography
-              component="h1"
-              sx={[
+            <Stack spacing={0.75} sx={{ alignItems: "center" }}>
+              <Typography
+                component="h1"
+                sx={[
+                  {
+                    color: "text.primary",
+                    fontWeight: 700,
+                    fontSize: { xs: "1.35rem", sm: "1.5rem" },
+                    letterSpacing: "0.28em",
+                    textTransform: "uppercase",
+                    textAlign: "center",
+                    lineHeight: 1
+                  },
+                  (muiTheme) =>
+                    muiTheme.applyStyles("dark", {
+                      color: "var(--mui-palette-secondary-main)"
+                    })
+                ]}
+              >
+                Skylogs
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  textAlign: "center",
+                  letterSpacing: "0.02em",
+                  maxWidth: 300,
+                  lineHeight: 1.55
+                }}
+              >
+                {translate("Please enter your username and password to continue")}
+              </Typography>
+            </Stack>
+          </Stack>
+
+          <Box
+            sx={[
               {
-                color: "text.primary",
-                fontWeight: 700,
-                fontSize: { xs: "1.35rem", sm: "1.5rem" },
-                letterSpacing: "0.28em",
-                textTransform: "uppercase",
-                textAlign: "center",
-                lineHeight: 1
+                px: { xs: 3, sm: 4.5 },
+                pt: 3,
+                pb: { xs: 4, sm: 4.5 },
+                borderTop:
+                  "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
               },
               (muiTheme) =>
                 muiTheme.applyStyles("dark", {
-                  color: "var(--mui-palette-secondary-main)"
+                  borderTop:
+                    "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 12%, transparent)"
                 })
             ]}
-            >
-              Skylogs
-            </Typography>
+          >
             <Typography
-              variant="body2"
+              variant="h5"
               sx={{
-                color: "text.secondary",
-                textAlign: "center",
-                letterSpacing: "0.02em",
-                maxWidth: 300,
-                lineHeight: 1.55
+                mb: 2.5,
+                fontWeight: 700,
+                letterSpacing: "-0.02em",
+                color: "text.primary",
+                textAlign: "center"
               }}
             >
-              {translate("Please enter your username and password to continue")}
+              {translate("Login to Account")}
             </Typography>
-          </Stack>
-        </Stack>
 
-        <Box
-          sx={[
-            {
-              px: { xs: 3, sm: 4.5 },
-              pt: 3,
-              pb: { xs: 4, sm: 4.5 },
-              borderTop:
-                "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
-            },
-            (muiTheme) =>
-              muiTheme.applyStyles("dark", {
-                borderTop:
-                  "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 12%, transparent)"
-              })
-          ]}
-        >
-          <Typography
-            variant="h5"
-            sx={{
-              mb: 2.5,
-              fontWeight: 700,
-              letterSpacing: "-0.02em",
-              color: "text.primary",
-              textAlign: "center"
-            }}
-          >
-            {translate("Login to Account")}
-          </Typography>
-
-          <Stack component="form" onSubmit={handleSubmit(handleSubmitSignIn)} spacing={0}>
-            <Box
-              component={motion.div}
-              initial={reduceMotion ? false : { opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.22, ease: easeOut }}
-            >
-              <TextField
-                variant="filled"
-                size="medium"
-                label={translate("Username")}
-                sx={{ mb: 1.5 }}
-                error={!!errors.username}
-                helperText={
-                  errors.username?.message
-                    ? translate(errors.username.message as "RequiredUsername")
-                    : undefined
-                }
-                disabled={loading}
-                autoComplete="username"
-                {...register("username")}
-              />
-            </Box>
-
-            <Box
-              component={motion.div}
-              initial={reduceMotion ? false : { opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.32, ease: easeOut }}
-            >
-              <TextField
-                type={showPassword ? "text" : "password"}
-                variant="filled"
-                size="medium"
-                label={translate("Password")}
-                sx={{ mb: 0.5 }}
-                error={!!errors.password}
-                helperText={
-                  errors.password?.message
-                    ? translate(errors.password.message as "RequiredPassword")
-                    : undefined
-                }
-                slotProps={{
-                  input: {
-                    endAdornment: (
-                      <IconButton
-                        disableRipple
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                        onClick={() => setShowPassword((prev) => !prev)}
-                      >
-                        {showPassword ? (
-                          <HiEyeOff color="var(--mui-palette-grey-400)" size={20} />
-                        ) : (
-                          <HiEye color="var(--mui-palette-grey-400)" size={20} />
-                        )}
-                      </IconButton>
-                    )
-                  }
-                }}
-                disabled={loading}
-                autoComplete="current-password"
-                {...register("password")}
-              />
-            </Box>
-
-            <Box
-              component={motion.div}
-              initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.4, ease: easeOut }}
-              sx={{ display: "flex", justifyContent: "flex-end" }}
-            >
-              <Button
-                disableRipple
-                size="small"
-                sx={{
-                  textTransform: "none",
-                  width: "auto",
-                  px: 0.5,
-                  backgroundColor: "transparent !important",
-                  color: "text.secondary",
-                  transition: "color 200ms ease",
-                  "&:hover": {
-                    color: "primary.main",
-                    textDecoration: "underline"
-                  }
-                }}
+            <Stack component="form" onSubmit={handleSubmit(handleSubmitSignIn)} spacing={0}>
+              <Box
+                component={motion.div}
+                initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.22, ease: easeOut }}
               >
-                {translate("Forget Password")}
-              </Button>
-            </Box>
+                <TextField
+                  variant="filled"
+                  size="medium"
+                  label={translate("Username")}
+                  sx={{ mb: 1.5 }}
+                  error={!!errors.username}
+                  helperText={
+                    errors.username?.message
+                      ? translate(errors.username.message as "RequiredUsername")
+                      : undefined
+                  }
+                  disabled={loading}
+                  autoComplete="username"
+                  {...register("username")}
+                />
+              </Box>
 
-            <Box
-              component={motion.div}
-              initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.48, ease: easeOut }}
-              whileHover={reduceMotion || loading ? undefined : { scale: 1.015 }}
-              whileTap={reduceMotion || loading ? undefined : { scale: 0.985 }}
-              sx={{ mt: 3 }}
-            >
-              <Button
-                type="submit"
-                variant="contained"
-                fullWidth
-                size="large"
-                disabled={loading}
-                aria-busy={loading}
-                sx={{
-                  position: "relative",
-                  py: 1.5,
-                  minHeight: 52,
-                  fontWeight: 600,
-                  letterSpacing: "0.04em",
-                  color: "primary.contrastText",
-                  background:
-                    "linear-gradient(135deg, var(--mui-palette-secondary-main) 0%, var(--mui-palette-primary-main) 100%)",
-                  transition: "filter 220ms ease, opacity 220ms ease",
-                  overflow: "hidden",
-                  "&.Mui-disabled": {
+              <Box
+                component={motion.div}
+                initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.32, ease: easeOut }}
+              >
+                <TextField
+                  type={showPassword ? "text" : "password"}
+                  variant="filled"
+                  size="medium"
+                  label={translate("Password")}
+                  sx={{ mb: 0.5 }}
+                  error={!!errors.password}
+                  helperText={
+                    errors.password?.message
+                      ? translate(errors.password.message as "RequiredPassword")
+                      : undefined
+                  }
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <IconButton
+                          disableRipple
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          onClick={() => setShowPassword((prev) => !prev)}
+                        >
+                          {showPassword ? (
+                            <HiEyeOff color="var(--mui-palette-grey-400)" size={20} />
+                          ) : (
+                            <HiEye color="var(--mui-palette-grey-400)" size={20} />
+                          )}
+                        </IconButton>
+                      )
+                    }
+                  }}
+                  disabled={loading}
+                  autoComplete="current-password"
+                  {...register("password")}
+                />
+              </Box>
+
+              <Box
+                component={motion.div}
+                initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.4, ease: easeOut }}
+                sx={{ display: "flex", justifyContent: "flex-end" }}
+              >
+                <Button
+                  disableRipple
+                  size="small"
+                  sx={{
+                    textTransform: "none",
+                    width: "auto",
+                    px: 0.5,
+                    backgroundColor: "transparent !important",
+                    color: "text.secondary",
+                    transition: "color 200ms ease",
+                    "&:hover": {
+                      color: "primary.main",
+                      textDecoration: "underline"
+                    }
+                  }}
+                >
+                  {translate("Forget Password")}
+                </Button>
+              </Box>
+
+              <Box
+                component={motion.div}
+                initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, delay: 0.48, ease: easeOut }}
+                whileHover={reduceMotion || loading ? undefined : { scale: 1.015 }}
+                whileTap={reduceMotion || loading ? undefined : { scale: 0.985 }}
+                sx={{ mt: 3 }}
+              >
+                <Button
+                  type="submit"
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  disabled={loading}
+                  aria-busy={loading}
+                  sx={{
+                    position: "relative",
+                    py: 1.5,
+                    minHeight: 52,
+                    fontWeight: 600,
+                    letterSpacing: "0.04em",
                     color: "primary.contrastText",
                     background:
                       "linear-gradient(135deg, var(--mui-palette-secondary-main) 0%, var(--mui-palette-primary-main) 100%)",
-                    opacity: 0.92
-                  },
-                  "&:hover": {
-                    filter: loading ? "none" : "brightness(1.04)",
-                    background:
-                      "linear-gradient(135deg, var(--mui-palette-secondary-main) 0%, var(--mui-palette-primary-main) 100%)"
-                  }
-                }}
-              >
-                {loading ? (
-                  <>
-                    <Stack
-                      direction="row"
-                      spacing={1.25}
-                      sx={{
-                        alignItems: "center",
-                        justifyContent: "center"
-                      }}
-                    >
-                      <CircularProgress
-                        size={18}
-                        thickness={5}
-                        sx={{ color: "primary.contrastText" }}
-                      />
-                      <Typography
-                        component="span"
+                    transition: "filter 220ms ease, opacity 220ms ease",
+                    overflow: "hidden",
+                    "&.Mui-disabled": {
+                      color: "primary.contrastText",
+                      background:
+                        "linear-gradient(135deg, var(--mui-palette-secondary-main) 0%, var(--mui-palette-primary-main) 100%)",
+                      opacity: 0.92
+                    },
+                    "&:hover": {
+                      filter: loading ? "none" : "brightness(1.04)",
+                      background:
+                        "linear-gradient(135deg, var(--mui-palette-secondary-main) 0%, var(--mui-palette-primary-main) 100%)"
+                    }
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <Stack
+                        direction="row"
+                        spacing={1.25}
                         sx={{
-                          fontWeight: 600,
-                          letterSpacing: "0.04em",
-                          fontSize: "0.95rem"
+                          alignItems: "center",
+                          justifyContent: "center"
                         }}
                       >
-                        {translate("Signing In")}
-                      </Typography>
-                    </Stack>
-                    {!reduceMotion && (
-                      <Box
-                        component={motion.div}
-                        animate={{ x: ["-120%", "120%"] }}
-                        transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-                        sx={{
-                          position: "absolute",
-                          top: 0,
-                          bottom: 0,
-                          width: "45%",
-                          background:
-                            "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent)",
-                          pointerEvents: "none"
-                        }}
-                      />
-                    )}
-                  </>
-                ) : (
-                  <Typography component="span" sx={{ fontWeight: 600, letterSpacing: "0.04em" }}>
-                    {translate("Sign In")}
-                  </Typography>
-                )}
-              </Button>
-            </Box>
-          </Stack>
+                        <CircularProgress
+                          size={18}
+                          thickness={5}
+                          sx={{ color: "primary.contrastText" }}
+                        />
+                        <Typography
+                          component="span"
+                          sx={{
+                            fontWeight: 600,
+                            letterSpacing: "0.04em",
+                            fontSize: "0.95rem"
+                          }}
+                        >
+                          {translate("Signing In")}
+                        </Typography>
+                      </Stack>
+                      {!reduceMotion && (
+                        <Box
+                          component={motion.div}
+                          animate={{ x: ["-120%", "120%"] }}
+                          transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+                          sx={{
+                            position: "absolute",
+                            top: 0,
+                            bottom: 0,
+                            width: "45%",
+                            background:
+                              "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent)",
+                            pointerEvents: "none"
+                          }}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <Typography component="span" sx={{ fontWeight: 600, letterSpacing: "0.04em" }}>
+                      {translate("Sign In")}
+                    </Typography>
+                  )}
+                </Button>
+              </Box>
+            </Stack>
+          </Box>
         </Box>
-      </Box>
       </Box>
     </Box>
   );

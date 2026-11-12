@@ -8,7 +8,7 @@ class TagService
 {
     public function all(): array
     {
-        return cache()->tags(['alertRule', 'tags'])->rememberForever('alertRule:tags', function () {
+        return cache()->tags(['alertRule', 'tags'])->remember('alertRule:tags', (int) config('cache.ttl'), function () {
 
             $array = AlertRule::select('tags')->distinct()->get()->toArray();
 

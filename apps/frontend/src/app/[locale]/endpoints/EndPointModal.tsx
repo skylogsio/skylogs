@@ -1,15 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Button,
-  Collapse,
-  collapseClasses,
-  Grid,
-  MenuItem,
-  Stack,
-  TextField
-} from "@mui/material";
+import { Button, Collapse, collapseClasses, Grid, MenuItem, Stack, TextField } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
@@ -256,7 +248,11 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
         </Grid>
         <Grid size={watch("type") === "telegram" ? 6 : 12}>
           <TextField
-            label={watch("type") === "telegram" || watch("type") === "bale" ? t("modal.field.chatId") : t("modal.field.value")}
+            label={
+              watch("type") === "telegram" || watch("type") === "bale"
+                ? t("modal.field.chatId")
+                : t("modal.field.value")
+            }
             variant="filled"
             error={!!errors.value}
             helperText={errors.value?.message}
@@ -345,11 +341,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
         )}
         {(!showOTPSection || (showOTPSection && isOTPSent)) && (
           <Grid size={12}>
-            <GradientSubmitButton
-              type="submit"
-              fullWidth
-              loading={isCreating || isUpdating}
-            >
+            <GradientSubmitButton type="submit" fullWidth loading={isCreating || isUpdating}>
               {isCreate ? t("modal.submit.create") : t("modal.submit.update")}
             </GradientSubmitButton>
           </Grid>

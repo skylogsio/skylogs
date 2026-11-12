@@ -6,6 +6,7 @@ use App\Models\AlertRule;
 use App\Models\ElasticCheck;
 use App\Models\HealthCheck;
 use App\Models\PrometheusCheck;
+use App\Queue\Middleware\EnsureLeader;
 use App\Services\SendNotifyService;
 use App\Utility\Constants;
 use Illuminate\Bus\Queueable;
@@ -19,6 +20,14 @@ class IntervalJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function __construct() {}
+
+    /**
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new EnsureLeader];
+    }
 
     /**
      * Execute the job.
@@ -51,7 +60,7 @@ class IntervalJob implements ShouldQueue
                                     if (! empty($sentryWebhook)) {
                                         $alert->notify_at = time();
                                         $alert->save();
-                                        SendNotifyService::CreateNotify(SendNotifyJob::SENTRY_WEBHOOK, $sentryWebhook, $alert->_id);
+                                        app(SendNotifyService::class)->createNotify(SendNotifyJob::SENTRY_WEBHOOK, $sentryWebhook, $alert->_id);
                                     }
                                 }
                             }
@@ -62,7 +71,7 @@ class IntervalJob implements ShouldQueue
                                 if ($check->notify_at + (60 * $check->interval) < time()) {
                                     $check->notify_at = time();
                                     $check->save();
-                                    SendNotifyService::CreateNotify(SendNotifyJob::HEALTH_CHECK, $check, $alert->_id);
+                                    app(SendNotifyService::class)->createNotify(SendNotifyJob::HEALTH_CHECK, $check, $alert->_id);
                                 }
                             }
                             break;
@@ -72,7 +81,7 @@ class IntervalJob implements ShouldQueue
                                 if (($check->notify_at + (60 * $alert->interval)) < time()) {
                                     $check->notify_at = time();
                                     $check->save();
-                                    SendNotifyService::CreateNotify(SendNotifyJob::PROMETHEUS_FIRE, $check, $alert->_id);
+                                    app(SendNotifyService::class)->createNotify(SendNotifyJob::PROMETHEUS_FIRE, $check, $alert->_id);
                                 }
                             }
                             break;
@@ -83,7 +92,7 @@ class IntervalJob implements ShouldQueue
                                     if (! empty($check)) {
                                         $alert->notify_at = time();
                                         $alert->save();
-                                        SendNotifyService::CreateNotify(SendNotifyJob::ELASTIC_CHECK, $check, $alert->_id);
+                                        app(SendNotifyService::class)->createNotify(SendNotifyJob::ELASTIC_CHECK, $check, $alert->_id);
                                     }
                                 }
                             }

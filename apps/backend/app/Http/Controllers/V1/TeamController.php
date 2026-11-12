@@ -4,15 +4,20 @@ namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Team;
+use App\Services\TeamService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Validator;
 
 class TeamController extends Controller
 {
-    public function Index(Request $request)
-    {
+    public function __construct(protected TeamService $teamService) {}
 
-        $perPage = $request->perPage ?? 25;
+    public function Index(Request $request): JsonResponse
+    {
+        $perPage = (int) ($request->perPage ?? 25);
+        $user = auth()->user();
 
         $data = Team::query()->with(['owner']);
 
@@ -20,91 +25,108 @@ class TeamController extends Controller
             $data->where('name', 'like', '%'.$request->name.'%');
         }
 
-        $data = $data->paginate($perPage);
+        $paginator = $data->paginate($perPage);
 
-        return response()->json($data);
+        foreach ($paginator as $team) {
+            $this->teamService->applyTeamAccess($user, $team);
+        }
 
+        return response()->json($paginator);
     }
 
-    public function All()
+    public function All(): JsonResponse
     {
-        return response()->json(Team::all());
+        $user = auth()->user();
+
+        $teams = Team::query()
+            ->with(['owner'])
+            ->get();
+
+        $teams->each(fn (Team $team) => $this->teamService->applyTeamAccess($user, $team));
+
+        return response()->json($teams);
     }
 
-    public function Show($id)
+    public function Show(string $id): JsonResponse
     {
+        $team = Team::query()->with(['owner'])->where('_id', $id)->firstOrFail();
 
-        return response()->json(Team::findOrFail($id));
-
+        return response()->json(
+            $this->teamService->applyTeamAccess(auth()->user(), $team)
+        );
     }
 
-    public function Create(Request $request)
+    public function Create(Request $request): JsonResponse
     {
+        $validated = Validator::validate($request->all(), $this->teamRules());
 
-        $va = \Validator::make(
+        $team = Team::create([
+            'name' => $validated['name'],
+            'ownerId' => $validated['ownerId'],
+            'userIds' => $validated['userIds'],
+            'description' => $validated['description'] ?? '',
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'data' => $this->teamService->applyTeamAccess(auth()->user(), $team->fresh(['owner'])),
+        ]);
+    }
+
+    public function Update(Request $request, string $id): JsonResponse
+    {
+        $team = Team::query()->where('_id', $id)->firstOrFail();
+        $user = auth()->user();
+
+        if (! $this->teamService->canUpdateTeam($user, $team)) {
+            abort(403);
+        }
+
+        $validated = Validator::validate(
             $request->all(),
-            [
-                'name' => 'required|unique:teams',
-                'ownerId' => 'required',
-                'userIds' => 'required|array',
-            ],
+            $this->teamRules($team->id),
         );
 
-        if ($va->passes()) {
+        $team->update([
+            'name' => $validated['name'],
+            'ownerId' => $validated['ownerId'],
+            'userIds' => $validated['userIds'],
+            'description' => $validated['description'] ?? '',
+        ]);
 
-            $team = Team::create([
-                'name' => $request->name,
-                'ownerId' => $request->ownerId,
-                'userIds' => $request->userIds,
-                'description' => $request->description ?? '',
-            ]);
-
-            $team->save();
-
-            return ['status' => true];
-        } else {
-            return ['status' => false];
-        }
+        return response()->json([
+            'status' => true,
+            'data' => $this->teamService->applyTeamAccess($user, $team->fresh(['owner'])),
+        ]);
     }
 
-    public function Update(Request $request, $id)
+    public function Delete(Request $request, string $id): JsonResponse
     {
-
-        $va = \Validator::make(
-            $request->all(),
-            [
-                'name' => [
-                    'required',
-                    Rule::unique('teams')->ignore($id, '_id'),
-                ],
-                'ownerId' => 'required',
-                'userIds' => 'required|array',
-            ],
-        );
-
-        if ($va->passes()) {
-
-            $team = Team::where('id', $id)->firstOrFail();
-
-            $team->name = $request->name;
-            $team->ownerId = $request->ownerId;
-            $team->userIds = $request->userIds;
-            $team->description = $request->description ?? '';
-            $team->save();
-
-            return ['status' => true];
-        } else {
-            return ['status' => false];
-        }
-    }
-
-    public function Delete(Request $request, $id)
-    {
-
-        $model = Team::where('_id', $id)->firstOrFail();
-
+        $model = Team::query()->where('_id', $id)->firstOrFail();
         $model->delete();
 
-        return ['status' => true];
+        return response()->json(['status' => true]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function teamRules(?string $ignoreId = null): array
+    {
+        $nameRule = ['required', 'string', 'max:255'];
+
+        if ($ignoreId !== null) {
+            $nameRule[] = Rule::unique('teams')->ignore($ignoreId, '_id');
+        } else {
+            $nameRule[] = Rule::unique('teams');
+        }
+
+        return [
+            'name' => $nameRule,
+            'ownerId' => 'required|string',
+            'userIds' => 'required|array|min:1',
+            'userIds.*' => 'required|string',
+            'description' => 'nullable|string',
+        ];
     }
 }

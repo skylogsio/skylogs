@@ -1,0 +1,90 @@
+# Builds and pushes multi-arch images for all components when a version tag
+# (v0.72.0, v1.0.0, ...) is pushed, then creates a GitHub Release.
+#
+# REQUIRED SETUP (Docker Hub):
+#   Repo secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN (access token, not password)
+#
+# TO USE GHCR INSTEAD: replace the login step with
+#   uses: docker/login-action@v3
+#   with:
+#     registry: ghcr.io
+#     username: ${{ github.actor }}
+#     password: ${{ secrets.GITHUB_TOKEN }}
+# and change IMAGE_BASE to ghcr.io/skylogsio
+#
+# ADJUST: the dockerfile/context paths in the matrix below to match your repo.
+name: Release Images
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+env:
+  IMAGE_BASE: skylogsio   # Docker Hub namespace
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: skylogs-api
+            context: apps/backend
+            dockerfile: apps/backend/Dockerfile
+          - name: skylogs-frontend
+            context: apps/frontend
+            dockerfile: apps/frontend/Dockerfile
+          - name: skylogs-sentinel
+            context: apps/sentinel
+            dockerfile: apps/sentinel/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_BASE }}/${{ matrix.name }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  github-release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create GitHub Release with generated notes
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

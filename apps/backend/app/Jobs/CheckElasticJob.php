@@ -5,24 +5,59 @@ namespace App\Jobs;
 use App\Models\AlertRule;
 use App\Models\ElasticCheck;
 use App\Models\ElasticHistory;
+use App\Queue\Middleware\EnsureLeader;
 use App\Services\ElasticService;
 use App\Services\SendNotifyService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class CheckElasticJob implements ShouldQueue
+class CheckElasticJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public int $timeout = 15;
+
+    public int $uniqueFor;
 
     public $alert;
 
     public function __construct($alert)
     {
-        $this->onQueue('httpRequests');
+        $this->onQueue('logChecks');
         $this->alert = $alert;
+        $this->uniqueFor = (int) config('datasource_checks.unique_for', 30);
+    }
+
+    public function uniqueId(): string
+    {
+        return (string) $this->alert->_id;
+    }
+
+    /**
+     * Replaces Horizon's automatic model tag, so the alert rule tag is listed here.
+     *
+     * @return array<int, string>
+     */
+    public function tags(): array
+    {
+        return array_values(array_filter([
+            'datasource-check',
+            'elastic',
+            'alertRule:'.$this->alert->_id,
+            empty($this->alert->dataSourceId) ? null : 'dataSource:'.$this->alert->dataSourceId,
+        ]));
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function middleware(): array
+    {
+        return [new EnsureLeader];
     }
 
     /**
@@ -47,9 +82,13 @@ class CheckElasticJob implements ShouldQueue
             ]
         );
 
-        $documents = ElasticService::getDocuments($check);
+        $countDocuments = ElasticService::countDocuments($check);
+
+        if ($countDocuments === null) {
+            return;
+        }
+
         $check->refresh();
-        $countDocuments = count($documents);
         if (empty($this->alert->conditionType) || $this->alert->conditionType == ElasticCheck::CONDITION_TYPE_GREATER_OR_EQUAL) {
             $isFired = $countDocuments >= $check->countDocument;
         } else {
@@ -68,7 +107,7 @@ class CheckElasticJob implements ShouldQueue
 
                 $check->save();
 
-                ElasticHistory::create([
+                $history = ElasticHistory::create([
                     'alertRuleId' => $this->alert->_id,
                     'alertRuleName' => $this->alert->name,
                     'dataSourceId' => $this->alert->dataSourceId,
@@ -81,7 +120,7 @@ class CheckElasticJob implements ShouldQueue
                     'state' => ElasticCheck::FIRE,
                 ]);
 
-                SendNotifyService::CreateNotify(SendNotifyJob::ELASTIC_CHECK, $check, $this->alert->_id);
+                app(SendNotifyService::class)->createNotify(SendNotifyJob::ELASTIC_CHECK, $check, $this->alert->_id, $history);
             } elseif ($check->currentCountDocument !== $countDocuments) {
                 $check->currentCountDocument = $countDocuments;
                 $check->save();
@@ -99,7 +138,7 @@ class CheckElasticJob implements ShouldQueue
 
                 $check->save();
 
-                ElasticHistory::create([
+                $history = ElasticHistory::create([
                     'alertRuleId' => $this->alert->_id,
                     'alertRuleName' => $this->alert->name,
                     'dataSourceId' => $this->alert->dataSourceId,
@@ -112,7 +151,7 @@ class CheckElasticJob implements ShouldQueue
                     'state' => ElasticCheck::RESOLVED,
                 ]);
 
-                SendNotifyService::CreateNotify(SendNotifyJob::ELASTIC_CHECK, $check, $this->alert->_id);
+                app(SendNotifyService::class)->createNotify(SendNotifyJob::ELASTIC_CHECK, $check, $this->alert->_id, $history);
 
             }
         }

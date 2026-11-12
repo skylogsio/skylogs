@@ -3,42 +3,58 @@
 namespace App\Services;
 
 use App\Models\ElasticCheck;
-use Carbon\Carbon;
+use App\Services\DataSource\DataSourceAvailability;
+use Illuminate\Http\Client\ConnectionException;
 
 class ElasticService
 {
-    public static function getDocuments(ElasticCheck $elasticCheck): array
+    public const TIME_FIELD = 'timestamp';
+
+    public static function countDocuments(ElasticCheck $elasticCheck): ?int
     {
-        $documents = [];
-
         $dataSource = $elasticCheck->alertRule->dataSource;
-        try {
-            $nowCarbon = Carbon::now('UTC');
-            $nowString = $nowCarbon->format("Y-m-d\TH:i:s");
-            $agoString = $nowCarbon->subMinutes($elasticCheck->minutes)->format("Y-m-d\TH:i:s");
-            //        dd($nowString,$agoString);
-            $response = \Http::acceptJson()
-                ->withBasicAuth($dataSource->username, $dataSource->password)
-                ->post($dataSource->url."/$elasticCheck->dataviewTitle/_search",
-                    [
-                        'size' => $elasticCheck->countDocument + 10,
-                        'query' => [
-                            'query_string' => [
-                                'query' => "timestamp:[$agoString TO $nowString] $elasticCheck->queryString",
-                                'default_operator' => 'AND',
-                            ],
-                        ],
-                    ]
-                );
-            $body = $response->json();
+        $dataSourceId = (string) ($elasticCheck->alertRule->dataSourceId ?? '');
+        $availability = app(DataSourceAvailability::class);
 
-            $documents = $body['hits']['hits'];
-
-        } catch (\Exception $exception) {
-
+        if ($availability->isCoolingDown($dataSourceId)) {
+            return null;
         }
 
-        return $documents;
+        try {
+            $minutes = (int) $elasticCheck->minutes;
 
+            $response = \Http::acceptJson()
+                ->withBasicAuth($dataSource->username, $dataSource->password)
+                ->connectTimeout((int) config('datasource_checks.connect_timeout', 2))
+                ->timeout((int) config('datasource_checks.timeout', 5))
+                ->post($dataSource->url."/{$elasticCheck->dataviewTitle}/_count", [
+                    'query' => [
+                        'bool' => [
+                            'filter' => [
+                                ['range' => [self::TIME_FIELD => ['gte' => "now-{$minutes}m", 'lte' => 'now']]],
+                                ['query_string' => [
+                                    'query' => $elasticCheck->queryString,
+                                    'default_operator' => 'AND',
+                                ]],
+                            ],
+                        ],
+                    ],
+                ]);
+
+            if (! $response->successful()) {
+                return null;
+            }
+
+            $body = $response->json();
+
+            return (int) ($body['count'] ?? 0);
+
+        } catch (ConnectionException) {
+            $availability->coolDown($dataSourceId);
+
+            return null;
+        } catch (\Exception) {
+            return null;
+        }
     }
 }

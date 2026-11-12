@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Concerns\ProvidesChannelMessages;
+use App\Enums\EndpointType;
 use App\Interfaces\Messageable;
 use App\Models\DataSource\DataSource;
 use MongoDB\Laravel\Relations\BelongsTo;
@@ -9,6 +11,8 @@ use Morilog\Jalali\Jalalian;
 
 class ZabbixCheck extends BaseModel implements Messageable
 {
+    use ProvidesChannelMessages;
+
     public $timestamps = true;
 
     protected $guarded = ['id', '_id'];
@@ -97,52 +101,22 @@ class ZabbixCheck extends BaseModel implements Messageable
         return $text;
     }
 
-    public function telegram()
+    /**
+     * @return array<string, mixed>|string|null
+     */
+    public function messageFor(EndpointType $type): array|string|null
     {
-
-        $result = [
-            'message' => $this->defaultMessage(),
-        ];
-        if ($this->alertRule->enableAcknowledgeBtnInMessage() && $this->state == self::FIRE) {
-            $result['meta'] = [
-                [
-                    'text' => 'Acknowledge',
-                    'url' => config('app.url').route('acknowledgeLink', ['id' => $this->alertRuleId], false),
-                ],
-            ];
-        }
-
-        return $result;
+        return match ($type) {
+            EndpointType::TELEGRAM, EndpointType::BALE => $this->messageWithAcknowledgeButton(
+                $this->alertRule->enableAcknowledgeBtnInMessage() && $this->state == self::FIRE,
+                $this->alertRuleId,
+            ),
+            EndpointType::CALL => $this->shortSummary(),
+            default => null,
+        };
     }
 
-    public function matterMostMessage()
-    {
-        return $this->defaultMessage();
-    }
-
-    public function teamsMessage(): string
-    {
-        return $this->defaultMessage();
-
-    }
-
-    public function emailMessage(): string
-    {
-        return $this->defaultMessage();
-
-    }
-
-    public function smsMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function discordMessage(): string
-    {
-        return $this->defaultMessage();
-    }
-
-    public function callMessage(): string
+    private function shortSummary(): string
     {
 
         $text = 'Alert '.$this->alertRuleName;

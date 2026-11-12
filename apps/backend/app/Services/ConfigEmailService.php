@@ -8,7 +8,7 @@ class ConfigEmailService
 {
     public function getDefault(): ?ConfigEmail
     {
-        return cache()->tags(['config', 'email'])->rememberForever('config:email:default', function () {
+        return cache()->tags(['config', 'email'])->remember('config:email:default', (int) config('cache.ttl'), function () {
             return ConfigEmail::query()->where('isDefault', true)->first();
         });
     }

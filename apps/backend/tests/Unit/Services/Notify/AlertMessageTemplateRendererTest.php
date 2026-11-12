@@ -1,0 +1,585 @@
+<?php
+
+use App\Enums\AlertRuleType;
+use App\Enums\EndpointType;
+use App\Models\AlertInstance;
+use App\Models\AlertRule;
+use App\Models\GrafanaWebhookAlert;
+use App\Models\Notify;
+use App\Models\PrometheusCheck;
+use App\Services\AlertMessage\AlertMessageTemplateRenderer;
+use App\Services\AlertMessage\PrometheusAlertMessageBuilder;
+use App\Services\NotifyMessageComposer;
+use Carbon\Carbon;
+use Morilog\Jalali\Jalalian;
+use Tests\Support\Factories\AlertRuleFactory;
+
+/**
+ * @return array<string, mixed>
+ */
+function prometheus_test_payload(): array
+{
+    return [
+        'state' => PrometheusCheck::FIRE,
+        'alerts' => [
+            [
+                'skylogsStatus' => PrometheusCheck::FIRE,
+                'dataSourceName' => 'Prom DS',
+                'labels' => [
+                    'alertname' => 'HighCPU',
+                    'namespace' => 'prod',
+                    'pod' => 'api-1',
+                    'reason' => 'ThresholdExceeded',
+                    'severity' => 'critical',
+                    'job' => 'kube',
+                ],
+                'annotations' => [
+                    'summary' => 'CPU is high',
+                    'description' => 'Pod api-1 CPU above 90%',
+                ],
+            ],
+        ],
+    ];
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function grafana_test_payload(): array
+{
+    return [
+        'status' => GrafanaWebhookAlert::FIRING,
+        'dataSourceName' => 'Grafana DS',
+        'alerts' => [
+            [
+                'status' => GrafanaWebhookAlert::FIRING,
+                'labels' => [
+                    'alertname' => 'DiskFull',
+                    'instance' => 'host-a',
+                    'job' => 'node',
+                    'severity' => 'warning',
+                ],
+                'annotations' => [
+                    'summary' => 'Disk almost full',
+                    'description' => 'Mount /data at 95%',
+                    'runbook_url' => 'https://example.test/runbook',
+                ],
+            ],
+        ],
+    ];
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function api_test_payload(): array
+{
+    return [
+        'alertRuleName' => 'API Alert',
+        'state' => AlertInstance::FIRE,
+        'instance' => 'host-1',
+        'description' => 'disk full',
+        'summary' => 'capacity',
+        'job' => 'api-check',
+        'updatedAt' => '2026-09-19T16:30:00.000000Z',
+    ];
+}
+
+describe('AlertMessageTemplateRenderer', function () {
+    it('renders prometheus label and alert_items placeholders', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'CPU Alert',
+            'type' => AlertRuleType::PROMETHEUS,
+            'state' => AlertRule::CRITICAL,
+            'fireCount' => 1,
+        ]);
+
+        $body = AlertMessageTemplateRenderer::make()->renderFromPayload(
+            $rule,
+            prometheus_test_payload(),
+            "{{name}}\n{{label.alertname}}\n{{alert_items labels=\"pod\" annotations=\"summary\"}}",
+        );
+
+        expect($body)
+            ->toContain('CPU Alert')
+            ->toContain('HighCPU')
+            ->toContain('pod : api-1')
+            ->toContain('summary : CPU is high')
+            ->not->toContain('namespace :');
+    });
+
+    it('renders prometheus exclude_labels in alert_items', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'CPU Alert',
+            'type' => AlertRuleType::PROMETHEUS,
+        ]);
+
+        $body = AlertMessageTemplateRenderer::make()->renderFromPayload(
+            $rule,
+            prometheus_test_payload(),
+            '{{alert_items labels="*" exclude_labels="job"}}',
+        );
+
+        expect($body)
+            ->toContain('alertname : HighCPU')
+            ->toContain('pod : api-1')
+            ->not->toContain('job :');
+    });
+
+    it('renders grafana labels exclude block', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'Disk Alert',
+            'type' => AlertRuleType::GRAFANA,
+        ]);
+
+        $body = AlertMessageTemplateRenderer::make()->renderFromPayload(
+            $rule,
+            grafana_test_payload(),
+            "{{labels:* exclude=job}}\n{{annotations:summary}}",
+        );
+
+        expect($body)
+            ->toContain('alertname : DiskFull')
+            ->toContain('instance : host-a')
+            ->toContain('summary : Disk almost full')
+            ->not->toContain('job :')
+            ->not->toContain('runbook_url :');
+    });
+
+    it('renders pmm alerts using the grafana builder', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'PMM Alert',
+            'type' => AlertRuleType::PMM,
+        ]);
+
+        $body = AlertMessageTemplateRenderer::make()->renderFromPayload(
+            $rule,
+            grafana_test_payload(),
+            '{{name}}|{{dataSourceName}}|{{label.alertname}}',
+        );
+
+        expect($body)->toBe('PMM Alert|Grafana DS|DiskFull');
+    });
+
+    it('resolves payload from notify alert at send time', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'CPU Alert',
+            'type' => AlertRuleType::PROMETHEUS,
+        ]);
+
+        $notify = Notify::withoutEvents(fn () => new Notify([
+            'alert' => prometheus_test_payload(),
+            'messages' => [
+                'body' => 'stored default',
+                'overrides' => [],
+            ],
+        ]));
+
+        $body = AlertMessageTemplateRenderer::make()->render(
+            $rule,
+            $notify,
+            '{{name}} fired: {{label.alertname}} on {{label.pod}}',
+        );
+
+        expect($body)->toBe('CPU Alert fired: HighCPU on api-1');
+    });
+
+    it('renders prometheus default template with changed alerts only', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'CPU Alert',
+            'type' => AlertRuleType::PROMETHEUS,
+        ]);
+
+        $body = AlertMessageTemplateRenderer::make()->renderDefault($rule, prometheus_test_payload());
+
+        expect($body)
+            ->toContain("CPU Alert\n\n")
+            ->toContain("State: Fire 🔥\n\n")
+            ->toContain("Fire 🔥\n")
+            ->toContain("Data Source: Prom DS\n")
+            ->toContain("alertname : HighCPU\n")
+            ->toContain("namespace : prod\n")
+            ->toContain("pod : api-1\n")
+            ->toContain("summary : CPU is high\n")
+            ->toContain("description : Pod api-1 CPU above 90%\n")
+            ->toContain("************\n\n")
+            ->not->toContain('other alert')
+            ->toMatch('/date: \d{4}\/\d{2}\/\d{2}$/');
+    });
+
+    it('renders prometheus full template with all alerts', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'CPU Alert',
+            'type' => AlertRuleType::PROMETHEUS,
+        ]);
+
+        $payload = [
+            'state' => PrometheusCheck::FIRE,
+            'alerts' => [
+                [
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                    'skylogsChanged' => false,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => ['alertname' => 'StillFiring', 'pod' => 'api-0'],
+                    'annotations' => ['summary' => 'unchanged'],
+                ],
+                [
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                    'skylogsChanged' => true,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => ['alertname' => 'HighCPU', 'pod' => 'api-1'],
+                    'annotations' => ['summary' => 'CPU is high'],
+                ],
+            ],
+        ];
+
+        $body = AlertMessageTemplateRenderer::make()->renderFromPayload(
+            $rule,
+            $payload,
+            PrometheusAlertMessageBuilder::FULL_TEMPLATE,
+        );
+
+        expect($body)
+            ->toContain('StillFiring')
+            ->toContain('HighCPU')
+            ->not->toContain('other alert');
+    });
+
+    it('filters unchanged alerts and appends other firing footer', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'CPU Alert',
+            'type' => AlertRuleType::PROMETHEUS,
+        ]);
+
+        $payload = [
+            'state' => PrometheusCheck::FIRE,
+            'alerts' => [
+                [
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                    'skylogsChanged' => false,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => [
+                        'alertname' => 'StillFiring',
+                        'pod' => 'api-0',
+                    ],
+                    'annotations' => [
+                        'summary' => 'still up',
+                    ],
+                ],
+                [
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                    'skylogsChanged' => false,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => [
+                        'alertname' => 'AlsoStillFiring',
+                        'pod' => 'api-2',
+                    ],
+                    'annotations' => [
+                        'summary' => 'also still up',
+                    ],
+                ],
+                [
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                    'skylogsChanged' => true,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => [
+                        'alertname' => 'HighCPU',
+                        'pod' => 'api-1',
+                    ],
+                    'annotations' => [
+                        'summary' => 'CPU is high',
+                    ],
+                ],
+                [
+                    'skylogsStatus' => PrometheusCheck::RESOLVED,
+                    'skylogsChanged' => true,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => [
+                        'alertname' => 'DiskFull',
+                        'pod' => 'api-3',
+                    ],
+                    'annotations' => [
+                        'summary' => 'disk recovered',
+                    ],
+                ],
+            ],
+        ];
+
+        $body = AlertMessageTemplateRenderer::make()->renderDefault($rule, $payload);
+
+        expect($body)
+            ->toContain('HighCPU')
+            ->toContain('DiskFull')
+            ->not->toContain('StillFiring')
+            ->not->toContain('AlsoStillFiring')
+            ->toContain('2 other alerts still firing.')
+            ->not->toContain('{{other_firing_count}}');
+
+        expect(
+            AlertMessageTemplateRenderer::make()->renderFromPayload(
+                $rule,
+                $payload,
+                '{{other_firing_count}}',
+            )
+        )->toBe('2');
+    });
+
+    it('uses singular other firing footer for one unchanged alert', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'CPU Alert',
+            'type' => AlertRuleType::PROMETHEUS,
+        ]);
+
+        $body = AlertMessageTemplateRenderer::make()->renderDefault($rule, [
+            'state' => PrometheusCheck::FIRE,
+            'alerts' => [
+                [
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                    'skylogsChanged' => false,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => ['alertname' => 'StillFiring', 'pod' => 'api-0'],
+                    'annotations' => ['summary' => 'unchanged'],
+                ],
+                [
+                    'skylogsStatus' => PrometheusCheck::FIRE,
+                    'skylogsChanged' => true,
+                    'dataSourceName' => 'Prom DS',
+                    'labels' => ['alertname' => 'HighCPU', 'pod' => 'api-1'],
+                    'annotations' => ['summary' => 'CPU is high'],
+                ],
+            ],
+        ]);
+
+        expect($body)
+            ->toContain('1 other alert still firing.')
+            ->not->toContain('StillFiring')
+            ->toContain('HighCPU');
+    });
+
+    it('renders grafana default template matching legacy structure', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'Disk Alert',
+            'type' => AlertRuleType::GRAFANA,
+        ]);
+
+        $body = AlertMessageTemplateRenderer::make()->renderDefault($rule, grafana_test_payload());
+
+        expect($body)
+            ->toContain("Disk Alert\n\n")
+            ->toContain("State: Firing 🔥\n\n")
+            ->toContain("Data Source: Grafana DS\n\n")
+            ->toContain("Warning ⚠️\n")
+            ->toContain("alertname : DiskFull\n")
+            ->toContain("instance : host-a\n")
+            ->toContain("job : node\n")
+            ->toContain("summary : Disk almost full\n")
+            ->toContain("description : Mount /data at 95%\n")
+            ->toContain("runbook_url : https://example.test/runbook\n")
+            ->toMatch('/Date: \d{4}\/\d{2}\/\d{2}$/');
+    });
+
+    it('renders api instance placeholders', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'API Alert',
+            'type' => AlertRuleType::API,
+        ]);
+
+        $body = AlertMessageTemplateRenderer::make()->renderFromPayload(
+            $rule,
+            api_test_payload(),
+            '{{name}}|{{instance}}|{{description}}|{{summary}}|{{job}}|{{alert.instance}}',
+        );
+
+        expect($body)->toBe('API Alert|host-1|disk full|capacity|api-check|host-1');
+    });
+
+    it('renders api default template matching legacy structure', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'API Alert',
+            'type' => AlertRuleType::API,
+        ]);
+
+        $payload = api_test_payload();
+        $body = AlertMessageTemplateRenderer::make()->renderDefault($rule, $payload);
+        $expectedDate = 'Date: '.Jalalian::fromCarbon(Carbon::parse($payload['updatedAt']))->format('Y/m/d H:i:s');
+
+        expect($body)->toBe(
+            "API Alert\nState: Fire 🔥\nInstance: host-1\nDescription: disk full\n".$expectedDate
+        );
+    });
+
+    it('omits empty api instance and description lines', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'API Alert',
+            'type' => AlertRuleType::API,
+        ]);
+
+        $body = AlertMessageTemplateRenderer::make()->renderDefault($rule, [
+            'state' => AlertInstance::RESOLVED,
+            'updatedAt' => '2026-09-19T16:30:00.000000Z',
+        ]);
+
+        expect($body)
+            ->toContain("API Alert\nState: Resolve ✅\nDate: ")
+            ->not->toContain('Instance:')
+            ->not->toContain('Description:');
+    });
+
+    it('renders notification alerts using the api builder', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'Notify Alert',
+            'type' => AlertRuleType::NOTIFICATION,
+        ]);
+
+        $body = AlertMessageTemplateRenderer::make()->renderFromPayload(
+            $rule,
+            [
+                'state' => AlertInstance::NOTIFICATION,
+                'instance' => 'worker-7',
+                'description' => 'deploy finished',
+            ],
+            '{{name}}|{{state}}|{{state_line}}|{{instance}}',
+        );
+
+        expect($body)->toBe('Notify Alert|notification|State: Notification 📢|worker-7');
+    });
+});
+
+describe('PrometheusCheck defaultMessage', function () {
+    it('uses the shared default template renderer', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'CPU Alert',
+            'type' => AlertRuleType::PROMETHEUS,
+        ]);
+
+        $check = PrometheusCheck::withoutEvents(function () {
+            $model = new PrometheusCheck;
+            $model->forceFill(prometheus_test_payload());
+
+            return $model;
+        });
+        $check->setRelation('alertRule', $rule);
+
+        $expected = AlertMessageTemplateRenderer::make()->renderDefault($rule, prometheus_test_payload());
+
+        expect($check->defaultMessage())->toBe($expected);
+    });
+});
+
+describe('GrafanaWebhookAlert defaultMessage', function () {
+    it('uses the shared default template renderer', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'Disk Alert',
+            'type' => AlertRuleType::GRAFANA,
+        ]);
+
+        $alert = GrafanaWebhookAlert::withoutEvents(function () {
+            $model = new GrafanaWebhookAlert;
+            $model->forceFill(grafana_test_payload());
+
+            return $model;
+        });
+        $alert->setRelation('alertRule', $rule);
+
+        $expected = AlertMessageTemplateRenderer::make()->renderDefault($rule, grafana_test_payload());
+
+        expect($alert->defaultMessage())->toBe($expected);
+    });
+});
+
+describe('AlertInstance defaultMessage', function () {
+    it('uses the shared default template renderer for api alerts', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'API Alert',
+            'type' => AlertRuleType::API,
+        ]);
+
+        $instance = AlertInstance::withoutEvents(function () {
+            $model = new AlertInstance;
+            $model->forceFill(api_test_payload());
+
+            return $model;
+        });
+        $instance->setRelation('alertRule', $rule);
+
+        $expected = AlertMessageTemplateRenderer::make()->renderDefault($rule, $instance->toArray());
+
+        expect($instance->defaultMessage())->toBe($expected);
+    });
+});
+
+describe('NotifyMessageComposer prometheus templates', function () {
+    it('preserves telegram meta when applying prometheus template via notify', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'CPU Alert',
+            'type' => AlertRuleType::PROMETHEUS,
+            'showAcknowledgeBtn' => true,
+        ]);
+
+        $check = PrometheusCheck::withoutEvents(function () {
+            $model = new PrometheusCheck;
+            $model->forceFill([
+                ...prometheus_test_payload(),
+                'alertRuleId' => '507f1f77bcf86cd799439011',
+            ]);
+
+            return $model;
+        });
+        $check->setRelation('alertRule', $rule);
+
+        $notify = Notify::withoutEvents(fn () => new Notify([
+            'alert' => $check->toArray(),
+            'messages' => NotifyMessageComposer::fromMessageable($check)->toArray(),
+        ]));
+
+        $payload = NotifyMessageComposer::composeFromSingleTemplate(
+            $rule,
+            $notify,
+            '{{name}} on {{label.pod}}',
+        );
+
+        $telegram = $payload->forChannel(EndpointType::TELEGRAM);
+
+        expect($telegram)->toBeArray()
+            ->and($telegram['message'])->toBe('CPU Alert on api-1')
+            ->and($telegram['meta'][0]['text'] ?? null)->toBe('Acknowledge');
+    });
+});
+
+describe('NotifyMessageComposer api templates', function () {
+    it('applies api template placeholders via notify', function () {
+        $rule = AlertRuleFactory::unsaved([
+            'name' => 'API Alert',
+            'type' => AlertRuleType::API,
+            'showAcknowledgeBtn' => true,
+        ]);
+
+        $instance = AlertInstance::withoutEvents(function () {
+            $model = new AlertInstance;
+            $model->forceFill([
+                ...api_test_payload(),
+                'alertRuleId' => '507f1f77bcf86cd799439011',
+            ]);
+
+            return $model;
+        });
+        $instance->setRelation('alertRule', $rule);
+
+        $notify = Notify::withoutEvents(fn () => new Notify([
+            'alert' => $instance->toArray(),
+            'messages' => NotifyMessageComposer::fromMessageable($instance)->toArray(),
+        ]));
+
+        $payload = NotifyMessageComposer::composeFromSingleTemplate(
+            $rule,
+            $notify,
+            '{{name}} on {{instance}}: {{description}}',
+        );
+
+        $telegram = $payload->forChannel(EndpointType::TELEGRAM);
+
+        expect($telegram)->toBeArray()
+            ->and($telegram['message'])->toBe('API Alert on host-1: disk full')
+            ->and($payload->defaultMessage())->toBe('API Alert on host-1: disk full');
+    });
+});

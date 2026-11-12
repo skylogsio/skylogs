@@ -10,7 +10,6 @@ type UserRoleToggleProps = {
 };
 
 export default function UserRoleToggle({ value, onChange }: UserRoleToggleProps) {
-
   return (
     <ToggleButtonGroup
       exclusive
@@ -25,8 +24,7 @@ export default function UserRoleToggle({ value, onChange }: UserRoleToggleProps)
           p: 0.25,
           borderRadius: "8px",
           backgroundColor: "#F1EBE1",
-          border:
-            "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)",
+          border: "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 18%, transparent)",
           "& .MuiToggleButtonGroup-grouped": {
             border: "none",
             borderRadius: "6px !important",
@@ -51,8 +49,7 @@ export default function UserRoleToggle({ value, onChange }: UserRoleToggleProps)
         (muiTheme) =>
           muiTheme.applyStyles("dark", {
             backgroundColor: "rgba(255, 255, 255, 0.09)",
-            border:
-              "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
+            border: "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
           })
       ]}
     >

@@ -5,7 +5,6 @@ import type { SxProps, Theme } from "@mui/material";
 import { HiKey, HiPencil, HiTrash } from "react-icons/hi";
 import { mergeSx, mixPrimary, pillSurfaceSx } from "@/components/Wrapper/topBarStyles";
 
-
 type UserActionButtonsProps = {
   onEdit?: () => void;
   onChangePassword?: () => void;
@@ -17,7 +16,6 @@ export default function UserActionButtons({
   onChangePassword,
   onDelete
 }: UserActionButtonsProps) {
-
   const buttonSx = (color: string): SxProps<Theme> =>
     mergeSx(
       {

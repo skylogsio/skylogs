@@ -43,8 +43,4 @@ class Constants
     public const XOR = 'XOR';
 
     public const NOT = 'NOT';
-
-    public const LAST_LEADER_PING = 'LAST_LEADER_PING';
-
-    public const LEADER_PRIORITY = 'LEADER_PRIORITY';
 }

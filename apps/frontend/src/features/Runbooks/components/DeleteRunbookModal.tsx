@@ -7,7 +7,6 @@ import { toast } from "react-toastify";
 import DeleteModalContainer from "@/components/DeleteModal/DeleteModalContainer";
 import type { DeleteModalProps } from "@/components/DeleteModal/DeleteModalTypes";
 import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
-import { useCurrentTheme } from "@/hooks";
 
 import { deleteRunbook } from "../runbook.api";
 import type { IRunbook } from "../runbook.type";

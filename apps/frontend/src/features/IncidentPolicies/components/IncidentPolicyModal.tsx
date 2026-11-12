@@ -261,9 +261,7 @@ function toWritePayload(values: PolicyFormType): IIncidentPolicyWriteRequest {
       communication: {
         ...(parseOptionalNumber(rule.stakeholderUpdateEveryMinutes) != null
           ? {
-              stakeholderUpdateEveryMinutes: parseOptionalNumber(
-                rule.stakeholderUpdateEveryMinutes
-              )
+              stakeholderUpdateEveryMinutes: parseOptionalNumber(rule.stakeholderUpdateEveryMinutes)
             }
           : {}),
         statusPageUpdateRequired: rule.statusPageUpdateRequired
@@ -364,8 +362,7 @@ export default function IncidentPolicyModal({
   });
 
   const runbookNameOptions = useMemo(
-    () =>
-      (publishedRunbooks ?? []).map((runbook) => runbook.slug || runbook.name).filter(Boolean),
+    () => (publishedRunbooks ?? []).map((runbook) => runbook.slug || runbook.name).filter(Boolean),
     [publishedRunbooks]
   );
 
@@ -465,7 +462,10 @@ export default function IncidentPolicyModal({
                 render={({ field }) => (
                   <FormControlLabel
                     control={
-                      <Switch checked={field.value} onChange={(_, checked) => field.onChange(checked)} />
+                      <Switch
+                        checked={field.value}
+                        onChange={(_, checked) => field.onChange(checked)}
+                      />
                     }
                     label="Enabled"
                   />
@@ -793,7 +793,13 @@ export default function IncidentPolicyModal({
                         control={control}
                         name="defaultSeverity"
                         render={({ field }) => (
-                          <TextField {...field} select label="Default Severity" variant="filled" fullWidth>
+                          <TextField
+                            {...field}
+                            select
+                            label="Default Severity"
+                            variant="filled"
+                            fullWidth
+                          >
                             {INCIDENT_SEVERITIES.map((severity) => (
                               <MenuItem key={severity} value={severity}>
                                 {severity}
@@ -808,7 +814,13 @@ export default function IncidentPolicyModal({
                         control={control}
                         name="severityMapCritical"
                         render={({ field }) => (
-                          <TextField {...field} select label="Map critical →" variant="filled" fullWidth>
+                          <TextField
+                            {...field}
+                            select
+                            label="Map critical →"
+                            variant="filled"
+                            fullWidth
+                          >
                             <MenuItem value="">—</MenuItem>
                             {INCIDENT_SEVERITIES.map((severity) => (
                               <MenuItem key={severity} value={severity}>
@@ -824,7 +836,13 @@ export default function IncidentPolicyModal({
                         control={control}
                         name="severityMapWarning"
                         render={({ field }) => (
-                          <TextField {...field} select label="Map warning →" variant="filled" fullWidth>
+                          <TextField
+                            {...field}
+                            select
+                            label="Map warning →"
+                            variant="filled"
+                            fullWidth
+                          >
                             <MenuItem value="">—</MenuItem>
                             {INCIDENT_SEVERITIES.map((severity) => (
                               <MenuItem key={severity} value={severity}>

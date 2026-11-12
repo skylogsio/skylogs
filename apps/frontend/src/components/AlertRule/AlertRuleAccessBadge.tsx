@@ -7,7 +7,6 @@ interface AlertRuleAccessBadgeProps {
 }
 
 export default function AlertRuleAccessBadge({ accessLevel }: AlertRuleAccessBadgeProps) {
-
   if (accessLevel !== "readonly") {
     return null;
   }
@@ -21,8 +20,7 @@ export default function AlertRuleAccessBadge({ accessLevel }: AlertRuleAccessBad
         fontSize: 11,
         fontWeight: 600,
         color: "text.secondary",
-        backgroundColor:
-          "color-mix(in srgb, var(--mui-palette-text-secondary) 8%, transparent)",
+        backgroundColor: "color-mix(in srgb, var(--mui-palette-text-secondary) 8%, transparent)",
         "& .MuiChip-icon": {
           color: "text.secondary",
           marginLeft: 0.75

@@ -7,6 +7,7 @@ use App\Helpers\Utilities;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertRule;
 use App\Models\PrometheusCheck;
+use Illuminate\Support\Collection;
 
 class PrometheusService
 {
@@ -51,12 +52,56 @@ class PrometheusService
         throw new \Exception('invalid token type');
     }
 
+    /**
+     * When the scrape against a datasource fails, missing alerts must not be interpreted as resolved.
+     *
+     * @param  array<int, array<string, mixed>>  $fetchedAlerts
+     * @param  array<int, array<string, mixed>>  $storedFiringAlerts
+     * @param  array<int|string>  $failedDataSourceIds
+     * @return array<int, array<string, mixed>>
+     */
+    public static function mergeFetchedPrometheusAlertsPreservingUnreachableSources(
+        array $fetchedAlerts,
+        array $storedFiringAlerts,
+        array $failedDataSourceIds,
+    ): array {
+        if ($failedDataSourceIds === []) {
+            return $fetchedAlerts;
+        }
+
+        $failedSet = array_fill_keys(array_map('strval', $failedDataSourceIds), true);
+        $merged = $fetchedAlerts;
+
+        foreach ($storedFiringAlerts as $savedAlert) {
+            $status = $savedAlert['skylogsStatus'] ?? PrometheusCheck::FIRE;
+            if ($status === PrometheusCheck::RESOLVED) {
+                continue;
+            }
+
+            $dataSourceId = (string) ($savedAlert['dataSourceId'] ?? '');
+            if ($dataSourceId === '' || ! isset($failedSet[$dataSourceId])) {
+                continue;
+            }
+
+            foreach ($merged as $existing) {
+                if (($existing['labels'] ?? null) == ($savedAlert['labels'] ?? null)) {
+                    continue 2;
+                }
+            }
+
+            $merged[] = $savedAlert;
+        }
+
+        return $merged;
+    }
+
     public function CheckPrometheusFiredAlerts($alerts, $alertRules): array
     {
 
         $fireAlertsByRule = [];
         foreach ($alerts as $alert) {
             foreach ($alertRules as $alertRule) {
+                $ruleKey = (string) $alertRule->getKey();
                 $isMatch = true;
                 $matchLabels = [];
                 $matchAnnotations = [];
@@ -100,11 +145,11 @@ class PrometheusService
                 if ($isMatch) {
                     // check with database checkprometheus
 
-                    if (empty($fireAlertsByRule[$alertRule->_id])) {
-                        $fireAlertsByRule[$alertRule->_id] = [];
+                    if (empty($fireAlertsByRule[$ruleKey])) {
+                        $fireAlertsByRule[$ruleKey] = [];
                     }
 
-                    $fireAlertsByRule[$alertRule->_id][] = [
+                    $fireAlertsByRule[$ruleKey][] = [
                         'dataSourceId' => $alert['dataSourceId'],
                         'dataSourceName' => $alert['dataSourceName'],
                         'alertRuleName' => $alertRule->name,
@@ -124,7 +169,7 @@ class PrometheusService
 
     }
 
-    public function CheckAlerts($alertRules, $prometheusFiredAlerts)
+    public function CheckAlerts($alertRules, $prometheusFiredAlerts, array $failedDataSourceIds = [])
     {
         self::CleanChecks();
         foreach ($alertRules as $alertRule) {
@@ -139,7 +184,13 @@ class PrometheusService
             $resolvedAlertsArray = collect();
             $commonAlertsArray = collect();
             $updatedAlertsArray = collect();
-            $prometheusAlerts = empty($prometheusFiredAlerts[$alertRule->id]) ? [] : $prometheusFiredAlerts[$alertRule->id];
+            $ruleKey = (string) $alertRule->getKey();
+            $prometheusAlerts = empty($prometheusFiredAlerts[$ruleKey]) ? [] : $prometheusFiredAlerts[$ruleKey];
+            $prometheusAlerts = self::mergeFetchedPrometheusAlertsPreservingUnreachableSources(
+                $prometheusAlerts,
+                $check->alerts,
+                $failedDataSourceIds,
+            );
             foreach ($prometheusAlerts as $prometheusAlert) {
                 $isExists = false;
                 foreach ($check->alerts as $alert) {
@@ -175,22 +226,11 @@ class PrometheusService
                 }
             }
 
-            //            $updatedAlertsArray = $commonAlertsArray->clone();
-
-            foreach ($commonAlertsArray as $commonAlert) {
-                $commonAlert['skylogsStatus'] = empty($commonAlert['skylogsStatus']) ? PrometheusCheck::FIRE : $commonAlert['skylogsStatus'];
-                $updatedAlertsArray->add($commonAlert);
-            }
-
-            foreach ($newFiredAlertsArray as $newFiredAlert) {
-                $newFiredAlert['skylogsStatus'] = PrometheusCheck::FIRE;
-                $updatedAlertsArray->add($newFiredAlert);
-            }
-
-            foreach ($resolvedAlertsArray as $resolvedAlert) {
-                $resolvedAlert['skylogsStatus'] = PrometheusCheck::RESOLVED;
-                $updatedAlertsArray->add($resolvedAlert);
-            }
+            $updatedAlertsArray = self::buildUpdatedAlertsWithChangeFlags(
+                $commonAlertsArray,
+                $newFiredAlertsArray,
+                $resolvedAlertsArray,
+            );
 
             $firedAlerts = $updatedAlertsArray->filter(function ($alert) {
                 return empty($alert['skylogsStatus']) || $alert['skylogsStatus'] == PrometheusCheck::FIRE;
@@ -222,14 +262,14 @@ class PrometheusService
             if ($alertRule->state == AlertRule::RESOlVED) {
                 $alertRule->removeAcknowledge();
             }
-            $check->createHistory();
+            $history = $check->createHistory();
 
             //            $updatedAlertsArray->isNotEmpty() ? AlertRule::
             //            \Bus::chain([
             //                new SendNotifyJob(SendNotifyJob::PROMETHEUS_FIRE, $check),
             //                new RefreshPrometheusCheckJob,
             //            ])->dispatch();
-            SendNotifyService::CreateNotify(SendNotifyJob::PROMETHEUS_FIRE, $check, $alertRule->_id);
+            app(SendNotifyService::class)->createNotify(SendNotifyJob::PROMETHEUS_FIRE, $check, $alertRule->_id, $history);
 
         }
 
@@ -256,5 +296,39 @@ class PrometheusService
             $check->alerts = $onlyFiredAlerts->toArray();
             $check->save();
         }
+    }
+
+    /**
+     * Tag alerts for message templates: newly fired and resolved are changed;
+     * still-firing unchanged alerts are not.
+     *
+     * @param  Collection<int, array<string, mixed>>  $commonAlerts
+     * @param  Collection<int, array<string, mixed>>  $newFiredAlerts
+     * @param  Collection<int, array<string, mixed>>  $resolvedAlerts
+     * @return Collection<int, array<string, mixed>>
+     */
+    public static function buildUpdatedAlertsWithChangeFlags($commonAlerts, $newFiredAlerts, $resolvedAlerts)
+    {
+        $updatedAlerts = collect();
+
+        foreach ($commonAlerts as $commonAlert) {
+            $commonAlert['skylogsStatus'] = empty($commonAlert['skylogsStatus']) ? PrometheusCheck::FIRE : $commonAlert['skylogsStatus'];
+            $commonAlert['skylogsChanged'] = false;
+            $updatedAlerts->add($commonAlert);
+        }
+
+        foreach ($newFiredAlerts as $newFiredAlert) {
+            $newFiredAlert['skylogsStatus'] = PrometheusCheck::FIRE;
+            $newFiredAlert['skylogsChanged'] = true;
+            $updatedAlerts->add($newFiredAlert);
+        }
+
+        foreach ($resolvedAlerts as $resolvedAlert) {
+            $resolvedAlert['skylogsStatus'] = PrometheusCheck::RESOLVED;
+            $resolvedAlert['skylogsChanged'] = true;
+            $updatedAlerts->add($resolvedAlert);
+        }
+
+        return $updatedAlerts;
     }
 }

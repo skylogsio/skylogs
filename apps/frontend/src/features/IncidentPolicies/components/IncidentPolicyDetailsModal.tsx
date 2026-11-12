@@ -10,8 +10,7 @@ import {
   Grid,
   Stack,
   Typography,
-  alpha,
-
+  alpha
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 
@@ -70,7 +69,6 @@ function MetaItem({ label, value }: { label: string; value: string }) {
 }
 
 function ChipGroup({ label, items }: { label: string; items: string[] }) {
-
   return (
     <Stack spacing={0.75}>
       <FieldLabel>{label}</FieldLabel>
@@ -114,8 +112,12 @@ export default function IncidentPolicyDetailsModal({
   onClose,
   policyId
 }: IncidentPolicyDetailsModalProps) {
-
-  const { data: policy, isPending, isError, error } = useQuery({
+  const {
+    data: policy,
+    isPending,
+    isError,
+    error
+  } = useQuery({
     queryKey: ["incident-policy", policyId],
     queryFn: () => getIncidentPolicyById(policyId),
     enabled: open && Boolean(policyId)
@@ -147,7 +149,12 @@ export default function IncidentPolicyDetailsModal({
             <Stack
               spacing={2}
               divider={
-                <Divider sx={{ borderColor: "color-mix(in srgb, var(--mui-palette-primary-main) 16%, transparent)" }} />
+                <Divider
+                  sx={{
+                    borderColor:
+                      "color-mix(in srgb, var(--mui-palette-primary-main) 16%, transparent)"
+                  }}
+                />
               }
             >
               <Stack spacing={1.5}>

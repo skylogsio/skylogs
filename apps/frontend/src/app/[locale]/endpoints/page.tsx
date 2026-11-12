@@ -72,7 +72,9 @@ export default function EndPoints() {
             {
               header: t("list.column.value"),
               accessorFn: (row) =>
-                row.type === "telegram" || row.type === "bale" ? row.chatId ?? row.value : row.value
+                row.type === "telegram" || row.type === "bale"
+                  ? (row.chatId ?? row.value)
+                  : row.value
             },
             {
               header: "Action",
