@@ -15,6 +15,9 @@ use Throwable;
  */
 final class DeliveryResult
 {
+    /**
+     * @param  list<array{profileId: string|null, priority: int|null, provider: string, status: string, error: string|null, httpStatus: int|null}>  $steps
+     */
     private function __construct(
         public readonly NotificationDeliveryStatus $status,
         public readonly bool $retryable,
@@ -22,6 +25,8 @@ final class DeliveryResult
         public readonly ?string $providerMessageId = null,
         public readonly mixed $response = null,
         public readonly ?string $error = null,
+        public readonly bool $failover = false,
+        public readonly array $steps = [],
     ) {}
 
     public static function sent(?int $httpStatus = null, mixed $response = null, ?string $providerMessageId = null): self
@@ -29,14 +34,14 @@ final class DeliveryResult
         return new self(NotificationDeliveryStatus::SENT, false, $httpStatus, $providerMessageId, $response);
     }
 
-    public static function failed(string $error, ?int $httpStatus = null, mixed $response = null): self
+    public static function failed(string $error, ?int $httpStatus = null, mixed $response = null, bool $failover = false): self
     {
-        return new self(NotificationDeliveryStatus::FAILED, false, $httpStatus, null, $response, $error);
+        return new self(NotificationDeliveryStatus::FAILED, false, $httpStatus, null, $response, $error, $failover);
     }
 
-    public static function retryableFailure(string $error, ?int $httpStatus = null, mixed $response = null): self
+    public static function retryableFailure(string $error, ?int $httpStatus = null, mixed $response = null, bool $failover = false): self
     {
-        return new self(NotificationDeliveryStatus::FAILED, true, $httpStatus, null, $response, $error);
+        return new self(NotificationDeliveryStatus::FAILED, true, $httpStatus, null, $response, $error, $failover);
     }
 
     /**
@@ -48,7 +53,7 @@ final class DeliveryResult
         $retryable = $exception instanceof ConnectionException
             || $exception instanceof TransportExceptionInterface;
 
-        return new self(NotificationDeliveryStatus::FAILED, $retryable, error: $exception->getMessage());
+        return new self(NotificationDeliveryStatus::FAILED, $retryable, error: $exception->getMessage(), failover: $retryable);
     }
 
     /**
@@ -98,17 +103,36 @@ final class DeliveryResult
     }
 
     /**
-     * @return array{status: string, retryable: bool, httpStatus: int|null, providerMessageId: string|null, response: mixed, error: string|null}
+     * @param  list<array{profileId: string|null, priority: int|null, provider: string, status: string, error: string|null, httpStatus: int|null}>  $steps
+     */
+    public function withSteps(array $steps): self
+    {
+        return new self(
+            $this->status,
+            $this->retryable,
+            $this->httpStatus,
+            $this->providerMessageId,
+            $this->response,
+            $this->error,
+            $this->failover,
+            $steps,
+        );
+    }
+
+    /**
+     * @return array{status: string, retryable: bool, failover: bool, httpStatus: int|null, providerMessageId: string|null, response: mixed, error: string|null, steps: list<array{profileId: string|null, priority: int|null, provider: string, status: string, error: string|null, httpStatus: int|null}>}
      */
     public function toArray(): array
     {
         return [
             'status' => $this->status->value,
             'retryable' => $this->retryable,
+            'failover' => $this->failover,
             'httpStatus' => $this->httpStatus,
             'providerMessageId' => $this->providerMessageId,
             'response' => self::truncate($this->response),
             'error' => $this->error === null ? null : Str::limit($this->error, self::maxLength()),
+            'steps' => $this->steps,
         ];
     }
 

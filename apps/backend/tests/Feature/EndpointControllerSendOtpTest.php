@@ -32,8 +32,8 @@ describe('EndpointController send OTP', function () {
 
     it('sends a call endpoint otp through sms', function () {
         mock(ConfigSmsService::class)
-            ->shouldReceive('getDefault')
-            ->andReturn(null);
+            ->shouldReceive('chain')
+            ->andReturn(collect());
 
         Http::preventStrayRequests();
         Http::fake([

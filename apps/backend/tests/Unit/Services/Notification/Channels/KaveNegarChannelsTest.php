@@ -12,20 +12,30 @@ use App\Services\Notification\Channels\SmsChannel;
 use App\Support\NotifyMessagePayload;
 use Illuminate\Support\Facades\Http;
 
-function smsChannel(?ConfigSms $config = null): SmsChannel
+function smsChannel(ConfigSms ...$configs): SmsChannel
 {
     $service = Mockery::mock(ConfigSmsService::class);
-    $service->shouldReceive('getDefault')->andReturn($config);
+    $service->shouldReceive('chain')->andReturn(collect($configs));
+    app()->instance(ConfigSmsService::class, $service);
 
-    return new SmsChannel($service);
+    return app(SmsChannel::class);
 }
 
-function callChannel(?ConfigCall $config = null, ?ConfigSms $smsConfig = null): CallChannel
+/**
+ * @param  list<ConfigCall>  $configs
+ * @param  list<ConfigSms>  $smsConfigs
+ */
+function callChannel(array $configs = [], array $smsConfigs = []): CallChannel
 {
     $service = Mockery::mock(ConfigCallService::class);
-    $service->shouldReceive('getDefault')->andReturn($config);
+    $service->shouldReceive('chain')->andReturn(collect($configs));
+    app()->instance(ConfigCallService::class, $service);
 
-    return new CallChannel($service, smsChannel($smsConfig));
+    $sms = Mockery::mock(ConfigSmsService::class);
+    $sms->shouldReceive('chain')->andReturn(collect($smsConfigs));
+    app()->instance(ConfigSmsService::class, $sms);
+
+    return app(CallChannel::class);
 }
 
 /**
@@ -139,6 +149,67 @@ describe('SmsChannel', function () {
         Http::assertSent(fn ($request) => str_contains($request['message'], '12345'));
         expect($result->isSent())->toBeTrue();
     });
+
+    it('uses the next account when the first one fails for an account reason', function () {
+        Http::fake([
+            'api.kavenegar.com/v1/dead-token/*' => Http::response(['return' => ['status' => 418, 'message' => 'credit']], 418),
+            'api.kavenegar.com/v1/live-token/*' => Http::response(kaveNegarAccepted(99)),
+        ]);
+
+        $result = smsChannel(
+            new ConfigSms(['provider' => 'kaveNegar', 'apiToken' => 'dead-token', 'senderNumber' => '1000', 'priority' => 1]),
+            new ConfigSms(['provider' => 'kaveNegar', 'apiToken' => 'live-token', 'senderNumber' => '2000', 'priority' => 2]),
+        )->send(
+            new Endpoint(['type' => EndpointType::SMS->value, 'value' => '09120000000']),
+            NotifyMessagePayload::fromBody('hi'),
+        );
+
+        Http::assertSentCount(2);
+        expect($result->isSent())->toBeTrue()
+            ->and($result->providerMessageId)->toBe('99')
+            ->and($result->steps)->toHaveCount(2)
+            ->and($result->steps[0]['status'])->toBe('failed')
+            ->and($result->steps[0]['priority'])->toBe(1)
+            ->and($result->steps[1]['status'])->toBe('sent')
+            ->and($result->steps[1]['provider'])->toBe('kaveNegar');
+    });
+
+    it('stops the chain when the receptor is rejected', function () {
+        Http::fake([
+            'api.kavenegar.com/*' => Http::response(['return' => ['status' => 411, 'message' => 'receptor']], 411),
+        ]);
+
+        $result = smsChannel(
+            new ConfigSms(['provider' => 'kaveNegar', 'apiToken' => 'first', 'senderNumber' => '1000', 'priority' => 1]),
+            new ConfigSms(['provider' => 'kaveNegar', 'apiToken' => 'second', 'senderNumber' => '2000', 'priority' => 2]),
+        )->send(
+            new Endpoint(['type' => EndpointType::SMS->value, 'value' => '0912']),
+            NotifyMessagePayload::fromBody('hi'),
+        );
+
+        Http::assertSentCount(1);
+        expect($result->isSent())->toBeFalse()
+            ->and($result->retryable)->toBeFalse()
+            ->and($result->failover)->toBeFalse()
+            ->and($result->steps)->toHaveCount(1);
+    });
+
+    it('keeps a server error retryable after every profile fails', function () {
+        Http::fake(['api.kavenegar.com/*' => Http::response('Bad Gateway', 502)]);
+
+        $result = smsChannel(
+            new ConfigSms(['provider' => 'kaveNegar', 'apiToken' => 'first', 'senderNumber' => '1000', 'priority' => 1]),
+            new ConfigSms(['provider' => 'kaveNegar', 'apiToken' => 'second', 'senderNumber' => '2000', 'priority' => 2]),
+        )->send(
+            new Endpoint(['type' => EndpointType::SMS->value, 'value' => '0912']),
+            NotifyMessagePayload::fromBody('hi'),
+        );
+
+        Http::assertSentCount(2);
+        expect($result->retryable)->toBeTrue()
+            ->and($result->failover)->toBeTrue()
+            ->and($result->steps)->toHaveCount(2);
+    });
 });
 
 describe('CallChannel', function () {
@@ -149,7 +220,7 @@ describe('CallChannel', function () {
     it('sends the call text to the tts api without a sender', function () {
         Http::fake(['api.kavenegar.com/*' => Http::response(kaveNegarAccepted(77))]);
 
-        $result = callChannel(new ConfigCall(['provider' => 'kaveNegar', 'apiToken' => 'call-token']))->send(
+        $result = callChannel([new ConfigCall(['provider' => 'kaveNegar', 'apiToken' => 'call-token'])])->send(
             new Endpoint(['type' => EndpointType::CALL->value, 'value' => '0912']),
             NotifyMessagePayload::fromBody('long body', ['call' => 'Alert CPU fired']),
         );
@@ -167,8 +238,8 @@ describe('CallChannel', function () {
         $otp = new EndpointOTP(['type' => EndpointType::CALL->value, 'value' => '0912', 'otpCode' => 54321]);
 
         $result = callChannel(
-            new ConfigCall(['provider' => 'kaveNegar', 'apiToken' => 'call-token']),
-            new ConfigSms(['provider' => 'kaveNegar', 'apiToken' => 'sms-token', 'senderNumber' => '10004346']),
+            [new ConfigCall(['provider' => 'kaveNegar', 'apiToken' => 'call-token'])],
+            [new ConfigSms(['provider' => 'kaveNegar', 'apiToken' => 'sms-token', 'senderNumber' => '10004346'])],
         )->sendVerification($otp);
 
         Http::assertSent(fn ($request) => str_starts_with($request->url(), 'https://api.kavenegar.com/v1/sms-token/sms/send.json')

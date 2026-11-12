@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\V1\Config;
 
 use App\Enums\CallProviderType;
+use App\Enums\EndpointType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Config\SetConfigCallPrioritiesRequest;
+use App\Http\Requests\Config\StoreConfigCallRequest;
+use App\Http\Requests\Config\UpdateConfigCallRequest;
 use App\Models\Config\ConfigCall;
 use App\Services\ConfigCallService;
+use App\Services\Notification\NotificationProviderRegistry;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class CallController extends Controller
 {
@@ -33,7 +37,8 @@ class CallController extends Controller
 
         $data = ConfigCall::query()
             ->orderByDesc('isDefault')
-            ->orderByDesc('isBackup')
+            ->orderByDesc('isBackUp')
+            ->orderBy('priority')
             ->latest()
             ->get();
 
@@ -70,86 +75,56 @@ class CallController extends Controller
         return response()->json($model);
     }
 
-    public function Create(Request $request)
+    public function Create(StoreConfigCallRequest $request)
     {
-        $va = \Validator::make(
-            $request->all(),
-            [
-                'name' => 'required',
-                'provider' => ['required', Rule::enum(CallProviderType::class)],
-                'apiToken' => 'required_if:provider,'.CallProviderType::KAVE_NEGAR->value,
-            ],
-        );
-        if ($va->passes()) {
+        $provider = app(NotificationProviderRegistry::class)->for($request->validated('provider'));
+        $isDefault = ConfigCall::query()->where('isDefault', true)->doesntExist();
 
-            if ($request->provider == CallProviderType::KAVE_NEGAR->value) {
-
-                $isDefault = false;
-                if (ConfigCall::where('isDefault', true)->count() == 0) {
-                    $isDefault = true;
-                }
-
-                $modelArray = [
-                    'name' => $request->name,
-                    'provider' => $request->provider,
-                    'apiToken' => $request->apiToken,
-                    'isDefault' => $isDefault,
-                    'isBackUp' => false,
-                ];
-
-                $model = ConfigCall::create($modelArray);
-
-                return response()->json([
-                    'status' => true,
-                    'data' => $model,
-                ]);
-            }
-        }
+        $model = ConfigCall::create([
+            'name' => $request->validated('name'),
+            'provider' => $request->validated('provider'),
+            ...$provider->attributes(EndpointType::CALL, $request->validated()),
+            'isDefault' => $isDefault,
+            'isBackUp' => false,
+            'priority' => $isDefault ? 1 : null,
+        ]);
 
         return response()->json([
-            'status' => false,
-            'message' => implode(' ', $va->errors()->all()),
-        ], 422);
-
+            'status' => true,
+            'data' => $model,
+        ]);
     }
 
-    public function Update(Request $request, $id)
+    public function Update(UpdateConfigCallRequest $request, $id)
     {
-        $model = ConfigCall::where('_id', $id);
-        $model = $model->firstOrFail();
+        $model = ConfigCall::where('_id', $id)->firstOrFail();
+        $provider = app(NotificationProviderRegistry::class)->for($request->validated('provider'));
 
-        $va = \Validator::make(
-            $request->all(),
-            [
-                'name' => 'required',
-                'provider' => ['required', Rule::enum(CallProviderType::class)],
-                'apiToken' => 'required_if:provider,'.CallProviderType::KAVE_NEGAR->value,
-            ],
-        );
-
-        if ($va->passes()) {
-            if ($request->provider == CallProviderType::KAVE_NEGAR->value) {
-
-                $modelArray = [
-                    'name' => $request->name,
-                    'provider' => $request->provider,
-                    'apiToken' => $request->apiToken,
-                ];
-
-                $model->update($modelArray);
-
-                return response()->json([
-                    'status' => true,
-                    'data' => $model,
-                ]);
-            }
-
-        }
+        $model->update([
+            'name' => $request->validated('name'),
+            'provider' => $request->validated('provider'),
+            ...$provider->attributes(EndpointType::CALL, $request->validated()),
+        ]);
 
         return response()->json([
-            'status' => false,
-            'message' => implode(' ', $va->errors()->all()),
-        ], 422);
+            'status' => true,
+            'data' => $model,
+        ]);
+    }
+
+    public function priorities(SetConfigCallPrioritiesRequest $request)
+    {
+        $this->configService->setPriorities($request->validated('ids'));
+
+        return response()->json([
+            'status' => true,
+            'data' => ConfigCall::query()
+                ->orderByDesc('isDefault')
+                ->orderByDesc('isBackUp')
+                ->orderBy('priority')
+                ->latest()
+                ->get(),
+        ]);
     }
 
     public function makeDefault($id)
@@ -159,7 +134,7 @@ class CallController extends Controller
 
         return response()->json([
             'status' => true,
-            'data' => $model,
+            'data' => $model->refresh(),
         ]);
     }
 
@@ -178,7 +153,7 @@ class CallController extends Controller
 
         return response()->json([
             'status' => true,
-            'data' => $model,
+            'data' => $model->refresh(),
         ]);
     }
 }

@@ -19,15 +19,19 @@ describe('DeliveryResult', function () {
         expect($result->toArray())->toBe([
             'status' => 'failed',
             'retryable' => false,
+            'failover' => false,
             'httpStatus' => 400,
             'providerMessageId' => null,
             'response' => ['ok' => false],
             'error' => 'HTTP 400',
+            'steps' => [],
         ]);
     });
 
     it('only retries network exceptions', function () {
         expect(DeliveryResult::fromException(new ConnectionException('timeout'))->retryable)->toBeTrue()
-            ->and(DeliveryResult::fromException(new RuntimeException('bug'))->retryable)->toBeFalse();
+            ->and(DeliveryResult::fromException(new ConnectionException('timeout'))->failover)->toBeTrue()
+            ->and(DeliveryResult::fromException(new RuntimeException('bug'))->retryable)->toBeFalse()
+            ->and(DeliveryResult::fromException(new RuntimeException('bug'))->failover)->toBeFalse();
     });
 });

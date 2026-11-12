@@ -447,6 +447,7 @@ Route::prefix('v1')->group(function () {
                         Route::post('/', 'Create');
                         Route::post('/deactivate', 'Deactivate');
                         Route::post('/activate/{id}', 'Activate');
+                        Route::put('/priorities', 'priorities');
                         Route::put('/{id}', 'Update');
                         Route::delete('/{id}', 'Delete');
                     });
@@ -461,6 +462,7 @@ Route::prefix('v1')->group(function () {
                         Route::get('/providers', 'providers');
                         Route::post('/make-default/{id}', 'makeDefault');
                         Route::post('/make-backup/{id}', 'makeBackup');
+                        Route::put('/priorities', 'priorities');
                         Route::put('/{id}', 'Update');
                         Route::delete('/{id}', 'Delete');
                     });
@@ -474,6 +476,7 @@ Route::prefix('v1')->group(function () {
                         Route::get('/providers', 'providers');
                         Route::post('/make-default/{id}', 'makeDefault');
                         Route::post('/make-backup/{id}', 'makeBackup');
+                        Route::put('/priorities', 'priorities');
                         Route::put('/{id}', 'Update');
                         Route::delete('/{id}', 'Delete');
                     });

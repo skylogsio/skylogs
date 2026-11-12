@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\V1\Config;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Config\ConfigTelegramRequest;
+use App\Http\Requests\Config\SetConfigTelegramPrioritiesRequest;
 use App\Models\Config\ConfigTelegram;
 use App\Services\ConfigTelegramService;
 use Illuminate\Http\Request;
@@ -14,7 +16,7 @@ class TelegramController extends Controller
     public function Index(Request $request)
     {
 
-        $data = ConfigTelegram::query()->orderByDesc('active')->latest();
+        $data = ConfigTelegram::query()->orderByDesc('active')->orderBy('priority')->latest();
         if ($request->filled('name')) {
             $data->where('name', 'like', '%'.$request->name.'%');
         }
@@ -41,80 +43,55 @@ class TelegramController extends Controller
         return response()->json($model);
     }
 
-    public function Create(Request $request)
+    public function Create(ConfigTelegramRequest $request)
     {
-        $va = \Validator::make(
-            $request->all(),
-            [
-                'name' => 'required',
-                'type' => 'required|in:http,socks5',
-                'host' => 'required',
-                'port' => 'required',
-            ],
-        );
-        if ($va->passes()) {
+        $direct = $request->validated('type') === 'direct';
 
-            $modelArray = [
-                'name' => $request->name,
-                'type' => $request->type,
-                'host' => $request->host,
-                'port' => $request->port,
-                'username' => $request->username ?? '',
-                'password' => $request->password ?? '',
-                'active' => false,
-            ];
+        $model = ConfigTelegram::create([
+            'name' => $request->validated('name'),
+            'type' => $request->validated('type'),
+            'host' => $direct ? null : $request->validated('host'),
+            'port' => $direct ? null : $request->validated('port'),
+            'username' => $request->validated('username') ?? '',
+            'password' => $request->validated('password') ?? '',
+            'active' => false,
+            'priority' => null,
+        ]);
 
-            $model = ConfigTelegram::create($modelArray);
-
-            return response()->json([
-                'status' => true,
-                'data' => $model,
-            ]);
-        } else {
-            return response()->json([
-                'status' => false,
-            ]);
-        }
+        return response()->json([
+            'status' => true,
+            'data' => $model,
+        ]);
     }
 
-    public function Update(Request $request, $id)
+    public function Update(ConfigTelegramRequest $request, $id)
     {
-        $model = ConfigTelegram::where('_id', $id);
-        $model = $model->firstOrFail();
+        $model = ConfigTelegram::where('_id', $id)->firstOrFail();
+        $direct = $request->validated('type') === 'direct';
 
-        $va = \Validator::make(
-            $request->all(),
-            [
-                'name' => 'required',
-                'type' => 'required|in:http,socks5',
-                'host' => 'required',
-                'port' => 'required',
-            ],
-        );
+        $model->update([
+            'name' => $request->validated('name'),
+            'type' => $request->validated('type'),
+            'host' => $direct ? null : $request->validated('host'),
+            'port' => $direct ? null : $request->validated('port'),
+            'username' => $request->validated('username') ?? '',
+            'password' => $request->validated('password') ?? '',
+        ]);
 
-        if ($va->passes()) {
+        return response()->json([
+            'status' => true,
+            'data' => $model,
+        ]);
+    }
 
-            $modelArray = [
-                'name' => $request->name,
-                'type' => $request->type,
-                'host' => $request->host,
-                'port' => $request->port,
-                'username' => $request->username ?? '',
-                'password' => $request->password ?? '',
-                'active' => false,
-            ];
+    public function priorities(SetConfigTelegramPrioritiesRequest $request)
+    {
+        $this->configService->setPriorities($request->validated('ids'));
 
-            $model->update($modelArray);
-
-            return response()->json([
-                'status' => true,
-                'data' => $model,
-            ]);
-        } else {
-            return response()->json([
-                'status' => false,
-            ]);
-        }
+        return response()->json([
+            'status' => true,
+            'data' => ConfigTelegram::query()->orderByDesc('active')->orderBy('priority')->latest()->get(),
+        ]);
     }
 
     public function Activate($id)
@@ -124,7 +101,7 @@ class TelegramController extends Controller
 
         return response()->json([
             'status' => true,
-            'data' => $model,
+            'data' => $model->refresh(),
         ]);
     }
 

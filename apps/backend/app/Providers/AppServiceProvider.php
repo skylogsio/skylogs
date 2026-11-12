@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Interfaces\NotificationChannel;
+use App\Interfaces\NotificationProvider;
 use App\Models\AlertInstance;
 use App\Models\AlertRule;
 use App\Models\BaseModel;
@@ -26,6 +27,8 @@ use App\Services\Notification\Channels\MatterMostChannel;
 use App\Services\Notification\Channels\SmsChannel;
 use App\Services\Notification\Channels\TeamsChannel;
 use App\Services\Notification\Channels\TelegramChannel;
+use App\Services\Notification\NotificationProviderRegistry;
+use App\Services\Notification\Providers\KaveNegarProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
@@ -67,6 +70,16 @@ class AppServiceProvider extends ServiceProvider
     ];
 
     /**
+     * One class per provider API. Adding a provider means adding its class here
+     * and a case on the SMS or call provider enum.
+     *
+     * @var array<int, class-string<NotificationProvider>>
+     */
+    private const NOTIFICATION_PROVIDERS = [
+        KaveNegarProvider::class,
+    ];
+
+    /**
      * Register any application services.
      */
     public function register(): void
@@ -78,6 +91,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             ChannelRegistry::class,
             fn (Application $app): ChannelRegistry => new ChannelRegistry($app->tagged('notification.channels')),
+        );
+
+        $this->app->tag(self::NOTIFICATION_PROVIDERS, 'notification.providers');
+        $this->app->singleton(
+            NotificationProviderRegistry::class,
+            fn (Application $app): NotificationProviderRegistry => new NotificationProviderRegistry($app->tagged('notification.providers')),
         );
     }
 

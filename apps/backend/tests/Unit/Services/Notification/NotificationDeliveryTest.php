@@ -7,10 +7,12 @@ use App\Jobs\SendNotificationDeliveryJob;
 use App\Jobs\SendNotifyJob;
 use App\Models\AlertRule;
 use App\Models\ApiAlertHistory;
+use App\Models\Config\ConfigSms;
 use App\Models\Endpoint;
 use App\Models\NotificationDelivery;
 use App\Models\Notify;
 use App\Models\SentryWebhookAlert;
+use App\Services\ConfigSmsService;
 use App\Services\Ha\HaReplicationContext;
 use App\Services\Notification\DeliveryTarget;
 use App\Services\Notification\NotificationDeliveryService;
@@ -402,5 +404,42 @@ describe('notification delivery', function () {
             ->and($notify->historyAlias)->toBe('sentryWebhookAlerts')
             ->and((int) $counts['sent'])->toBe(0)
             ->and((int) $counts['failed'])->toBe(0);
+    });
+
+    it('stores each sms profile step on the attempt log', function () {
+        $service = Mockery::mock(ConfigSmsService::class);
+        $service->shouldReceive('chain')->andReturn(collect([
+            new ConfigSms([
+                'provider' => 'kaveNegar',
+                'apiToken' => 'dead-token',
+                'senderNumber' => '1000',
+                'priority' => 1,
+            ]),
+            new ConfigSms([
+                'provider' => 'kaveNegar',
+                'apiToken' => 'live-token',
+                'senderNumber' => '2000',
+                'priority' => 2,
+            ]),
+        ]));
+        app()->instance(ConfigSmsService::class, $service);
+
+        Queue::fake();
+        Http::fake([
+            'api.kavenegar.com/v1/dead-token/*' => Http::response(['return' => ['status' => 403, 'message' => 'invalid api key']], 403),
+            'api.kavenegar.com/v1/live-token/*' => Http::response(['return' => ['status' => 200, 'message' => 'ok'], 'entries' => [['messageid' => 55]]], 200),
+        ]);
+
+        $delivery = dispatchToEndpoints([
+            deliveryTestEndpoint(['type' => EndpointType::SMS->value, 'value' => '09120000000']),
+        ])->first();
+        $delivery = runDeliveryJob((string) $delivery->id);
+
+        expect($delivery->status)->toBe(NotificationDeliveryStatus::SENT)
+            ->and($delivery->attemptLog[0]['steps'])->toHaveCount(2)
+            ->and($delivery->attemptLog[0]['steps'][0]['provider'])->toBe('kaveNegar')
+            ->and($delivery->attemptLog[0]['steps'][0]['status'])->toBe('failed')
+            ->and($delivery->attemptLog[0]['steps'][1]['status'])->toBe('sent')
+            ->and($delivery->attemptLog[0]['providerMessageId'])->toBe('55');
     });
 });

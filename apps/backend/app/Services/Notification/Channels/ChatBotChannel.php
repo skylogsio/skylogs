@@ -51,6 +51,11 @@ abstract class ChatBotChannel extends AbstractChannel
 
     protected function deliver(Endpoint $endpoint, NotifyMessagePayload $message): DeliveryResult
     {
+        return $this->post($this->request(), $endpoint, $message);
+    }
+
+    protected function post(PendingRequest $request, Endpoint $endpoint, NotifyMessagePayload $message): DeliveryResult
+    {
         $content = $message->forChannel($this->type());
         $meta = is_array($content) ? ($content['meta'] ?? []) : [];
 
@@ -65,7 +70,7 @@ abstract class ChatBotChannel extends AbstractChannel
             ];
         }
 
-        $response = $this->request()->post(
+        $response = $request->post(
             $this->sendUrl($endpoint->botToken ?: $this->defaultBotToken()),
             $this->withEndpointOptions($body, $endpoint),
         );

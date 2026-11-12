@@ -154,6 +154,29 @@ class ConfigCallDoc
     )]
     public function makeBackup() {}
 
+    #[OA\Put(
+        path: '/api/v1/config/call/priorities',
+        operationId: 'setConfigCallPriorities',
+        summary: 'Set the call failover order',
+        description: 'Ids are tried in order. Configs left out of the list are removed from the chain. Priority 1 stays the default and priority 2 stays the backup.',
+        security: [['bearerAuth' => []]],
+        tags: ['ConfigCall'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['ids'],
+                properties: [
+                    new OA\Property(property: 'ids', type: 'array', items: new OA\Items(type: 'string')),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Reordered'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
+    public function priorities() {}
+
     // ----------------------------
     // GET /api/v1/config/call/types
     // ----------------------------
@@ -170,11 +193,12 @@ class ConfigCallDoc
 #[OA\Schema(
     schema: 'KaveNegarConfig',
     title: 'Kave Negar Call Config',
-    required: ['name', 'provider', 'apiToken', 'senderNumber'],
+    required: ['name', 'provider', 'apiToken'],
     properties: [
         new OA\Property(property: 'name', type: 'string', example: 'Primary Call'),
         new OA\Property(property: 'provider', type: 'string', enum: ['kaveNegar'], example: 'kaveNegar'),
         new OA\Property(property: 'apiToken', type: 'string', example: 'your-api-token-here'),
+        new OA\Property(property: 'priority', type: 'integer', nullable: true, description: 'Send order. 1 is tried first. Null keeps the config out of the chain.'),
     ]
 )]
 class CallConfigSchemas {}

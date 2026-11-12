@@ -4,20 +4,42 @@ namespace App\Services\Notification\Channels;
 
 use App\Enums\CallProviderType;
 use App\Enums\EndpointType;
+use App\Models\Config\ConfigCall;
+use App\Models\Endpoint;
 use App\Models\EndpointOTP;
 use App\Services\ConfigCallService;
 use App\Services\Notification\DeliveryResult;
+use App\Services\Notification\NotificationProviderRegistry;
+use App\Services\Notification\ProfileChain;
+use App\Support\NotifyMessagePayload;
 
-class CallChannel extends KaveNegarChannel
+class CallChannel extends AbstractChannel
 {
     public function __construct(
         private readonly ConfigCallService $configCallService,
+        private readonly NotificationProviderRegistry $providers,
+        private readonly ProfileChain $profileChain,
         private readonly SmsChannel $smsChannel,
     ) {}
 
     public function type(): EndpointType
     {
         return EndpointType::CALL;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        return [
+            'value' => ['required', 'string', 'max:32'],
+        ];
+    }
+
+    public function requiresVerification(): bool
+    {
+        return true;
     }
 
     /**
@@ -29,32 +51,52 @@ class CallChannel extends KaveNegarChannel
         return $this->smsChannel->sendVerification($otp);
     }
 
-    protected function apiPath(): string
+    protected function deliver(Endpoint $endpoint, NotifyMessagePayload $message): DeliveryResult
     {
-        return 'call/maketts.json';
+        return $this->sendText((string) $endpoint->value, $message->textFor($this->type()));
     }
 
-    /**
-     * @return array{token: string, sender: mixed}|string
-     */
-    protected function credentials(): array|string
+    private function sendText(string $receptor, string $message): DeliveryResult
     {
-        $config = $this->configCallService->getDefault();
+        $chain = $this->configCallService->chain();
 
-        if (! empty($config)) {
-            if ($config->provider !== CallProviderType::KAVE_NEGAR->value) {
-                return "Call provider {$config->provider} is not supported";
-            }
-
-            return ['token' => (string) $config->apiToken, 'sender' => null];
+        if ($chain->isEmpty()) {
+            return $this->legacy($receptor, $message);
         }
 
+        return $this->profileChain->run(
+            $chain,
+            fn (ConfigCall $config): DeliveryResult => $this->sendWith($config, $receptor, $message),
+        );
+    }
+
+    private function sendWith(ConfigCall $config, string $receptor, string $message): DeliveryResult
+    {
+        $provider = (string) $config->provider;
+
+        if (! $this->providers->has($provider)) {
+            return DeliveryResult::failed("Call provider {$provider} is not supported", failover: true);
+        }
+
+        return $this->providers->for($provider)->sendCall($config, $receptor, $message);
+    }
+
+    private function legacy(string $receptor, string $message): DeliveryResult
+    {
         $token = (string) config('variables.kavenegarToken');
 
         if ($token === '') {
-            return 'Call is not configured';
+            return DeliveryResult::failed('Call is not configured');
         }
 
-        return ['token' => $token, 'sender' => null];
+        $config = new ConfigCall([
+            'provider' => CallProviderType::KAVE_NEGAR->value,
+            'apiToken' => $token,
+        ]);
+
+        return $this->profileChain->run(
+            [$config],
+            fn (ConfigCall $config): DeliveryResult => $this->sendWith($config, $receptor, $message),
+        );
     }
 }

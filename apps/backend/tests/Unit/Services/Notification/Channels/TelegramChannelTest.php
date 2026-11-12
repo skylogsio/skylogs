@@ -9,12 +9,13 @@ use App\Support\NotifyMessagePayload;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
-function telegramChannel(?ConfigTelegram $activeConfig = null): TelegramChannel
+function telegramChannel(ConfigTelegram ...$configs): TelegramChannel
 {
     $configService = Mockery::mock(ConfigTelegramService::class);
-    $configService->shouldReceive('getActive')->andReturn($activeConfig);
+    $configService->shouldReceive('chain')->andReturn(collect($configs));
+    app()->instance(ConfigTelegramService::class, $configService);
 
-    return new TelegramChannel($configService);
+    return app(TelegramChannel::class);
 }
 
 function telegramEndpoint(array $attributes = []): Endpoint
@@ -125,4 +126,55 @@ describe('TelegramChannel', function () {
 
         expect($result->isSent())->toBeTrue();
     });
+
+    it('sends directly when the chain is empty', function () {
+        Http::fake([
+            'api.telegram.org/*' => Http::response(['ok' => true, 'result' => ['message_id' => 3]]),
+        ]);
+
+        $result = telegramChannel()->send(telegramEndpoint(), NotifyMessagePayload::fromBody('x'));
+
+        expect($result->isSent())->toBeTrue()
+            ->and($result->steps[0]['provider'])->toBe('direct');
+    });
+
+    it('fails over to the next proxy when the connection fails', function () {
+        $attempts = 0;
+        Http::fake(function () use (&$attempts) {
+            $attempts++;
+
+            if ($attempts === 1) {
+                throw new ConnectionException('cURL error 28: timed out');
+            }
+
+            return Http::response(['ok' => true, 'result' => ['message_id' => 9]]);
+        });
+
+        $result = telegramChannel(
+            new ConfigTelegram(['type' => 'direct', 'priority' => 1]),
+            new ConfigTelegram(['type' => 'socks5', 'host' => 'proxy.local', 'port' => 1080, 'username' => 'u', 'password' => 'p', 'priority' => 2]),
+        )->send(telegramEndpoint(), NotifyMessagePayload::fromBody('x'));
+
+        expect($attempts)->toBe(2)
+            ->and($result->isSent())->toBeTrue()
+            ->and($result->steps[0]['provider'])->toBe('direct')
+            ->and($result->steps[0]['status'])->toBe('failed')
+            ->and($result->steps[1]['provider'])->toBe('socks5')
+            ->and($result->steps[1]['status'])->toBe('sent');
+    });
+
+    it('does not fail over when telegram answers, including rate limits', function (int $status) {
+        Http::fake([
+            'api.telegram.org/*' => Http::response(['ok' => false, 'description' => 'nope'], $status),
+        ]);
+
+        $result = telegramChannel(
+            new ConfigTelegram(['type' => 'http', 'host' => 'one', 'port' => 1, 'priority' => 1]),
+            new ConfigTelegram(['type' => 'socks5', 'host' => 'two', 'port' => 2, 'priority' => 2]),
+        )->send(telegramEndpoint(), NotifyMessagePayload::fromBody('x'));
+
+        Http::assertSentCount(1);
+        expect($result->failover)->toBeFalse()
+            ->and($result->steps)->toHaveCount(1);
+    })->with([400, 429]);
 });

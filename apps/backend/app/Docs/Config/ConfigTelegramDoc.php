@@ -6,7 +6,7 @@ use OpenApi\Attributes as OA;
 
 #[OA\Tag(
     name: 'ConfigTelegram',
-    description: 'Telegram bot proxy configuration (HTTP/SOCKS5). Owner role only. Only one config can be active at a time.'
+    description: 'Telegram transports. direct calls api.telegram.org. http and socks5 are proxies. Owner role only. The priorities endpoint sets the failover order; priority 1 stays the active config.'
 )]
 class ConfigTelegramDoc
 {
@@ -133,6 +133,29 @@ class ConfigTelegramDoc
         ]
     )]
     public function deactivate() {}
+
+    #[OA\Put(
+        path: '/api/v1/config/telegram/priorities',
+        operationId: 'setConfigTelegramPriorities',
+        summary: 'Set the Telegram transport failover order',
+        description: 'Ids are tried in order. A direct config sends without a proxy. Configs left out of the list are removed from the chain. Priority 1 stays active.',
+        security: [['bearerAuth' => []]],
+        tags: ['ConfigTelegram'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['ids'],
+                properties: [
+                    new OA\Property(property: 'ids', type: 'array', items: new OA\Items(type: 'string')),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Reordered'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
+    public function priorities() {}
 }
 
 #[OA\Schema(
@@ -140,20 +163,21 @@ class ConfigTelegramDoc
     properties: [
         new OA\Property(property: '_id', type: 'string'),
         new OA\Property(property: 'name', type: 'string'),
-        new OA\Property(property: 'type', type: 'string', enum: ['http', 'socks5']),
-        new OA\Property(property: 'host', type: 'string'),
-        new OA\Property(property: 'port', type: 'string'),
+        new OA\Property(property: 'type', type: 'string', enum: ['direct', 'http', 'socks5']),
+        new OA\Property(property: 'host', type: 'string', nullable: true),
+        new OA\Property(property: 'port', type: 'string', nullable: true),
         new OA\Property(property: 'username', type: 'string'),
         new OA\Property(property: 'password', type: 'string'),
-        new OA\Property(property: 'active', type: 'boolean'),
+        new OA\Property(property: 'active', type: 'boolean', description: 'True for priority 1.'),
+        new OA\Property(property: 'priority', type: 'integer', nullable: true),
     ]
 )]
 #[OA\Schema(
     schema: 'ConfigTelegramInput',
-    required: ['name', 'type', 'host', 'port'],
+    required: ['name', 'type'],
     properties: [
         new OA\Property(property: 'name', type: 'string'),
-        new OA\Property(property: 'type', type: 'string', enum: ['http', 'socks5']),
+        new OA\Property(property: 'type', type: 'string', enum: ['direct', 'http', 'socks5']),
         new OA\Property(property: 'host', type: 'string'),
         new OA\Property(property: 'port', type: 'string'),
         new OA\Property(property: 'username', type: 'string'),

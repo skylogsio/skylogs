@@ -3,13 +3,20 @@
 namespace App\Services\Notification\Channels;
 
 use App\Enums\EndpointType;
+use App\Models\Config\ConfigTelegram;
 use App\Models\Endpoint;
 use App\Services\ConfigTelegramService;
+use App\Services\Notification\DeliveryResult;
+use App\Services\Notification\ProfileChain;
+use App\Support\NotifyMessagePayload;
 use Illuminate\Http\Client\PendingRequest;
 
 class TelegramChannel extends ChatBotChannel
 {
-    public function __construct(private readonly ConfigTelegramService $configTelegramService) {}
+    public function __construct(
+        private readonly ConfigTelegramService $configTelegramService,
+        private readonly ProfileChain $profileChain,
+    ) {}
 
     public function type(): EndpointType
     {
@@ -70,21 +77,31 @@ class TelegramChannel extends ChatBotChannel
         return $body;
     }
 
-    protected function request(): PendingRequest
+    protected function deliver(Endpoint $endpoint, NotifyMessagePayload $message): DeliveryResult
     {
-        $proxy = $this->proxy();
+        $chain = $this->configTelegramService->chain();
 
-        return $proxy === null ? $this->http() : $this->http()->withOptions(['proxy' => $proxy]);
-    }
-
-    private function proxy(): ?string
-    {
-        $config = $this->configTelegramService->getActive();
-
-        if (empty($config)) {
-            return null;
+        if ($chain->isEmpty()) {
+            $chain = [new ConfigTelegram(['type' => 'direct'])];
         }
 
+        return $this->profileChain->run(
+            $chain,
+            fn (ConfigTelegram $config): DeliveryResult => $this->post($this->client($config), $endpoint, $message),
+        );
+    }
+
+    private function client(ConfigTelegram $config): PendingRequest
+    {
+        if ($config->type === 'direct' || $config->type === null || $config->type === '') {
+            return $this->http();
+        }
+
+        return $this->http()->withOptions(['proxy' => $this->proxyUrl($config)]);
+    }
+
+    private function proxyUrl(ConfigTelegram $config): string
+    {
         $auth = '';
 
         if (! empty($config->username) && ! empty($config->password)) {

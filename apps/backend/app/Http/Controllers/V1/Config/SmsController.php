@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\V1\Config;
 
+use App\Enums\EndpointType;
 use App\Enums\SmsProviderType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Config\SetConfigSmsPrioritiesRequest;
+use App\Http\Requests\Config\StoreConfigSmsRequest;
+use App\Http\Requests\Config\UpdateConfigSmsRequest;
 use App\Models\Config\ConfigSms;
 use App\Services\ConfigSmsService;
+use App\Services\Notification\NotificationProviderRegistry;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class SmsController extends Controller
 {
@@ -33,7 +37,8 @@ class SmsController extends Controller
 
         $data = ConfigSms::query()
             ->orderByDesc('isDefault')
-            ->orderByDesc('isBackup')
+            ->orderByDesc('isBackUp')
+            ->orderBy('priority')
             ->latest()
             ->get();
 
@@ -69,89 +74,56 @@ class SmsController extends Controller
         return response()->json($model);
     }
 
-    public function Create(Request $request)
+    public function Create(StoreConfigSmsRequest $request)
     {
-        $va = \Validator::make(
-            $request->all(),
-            [
-                'name' => 'required',
-                'provider' => ['required', Rule::enum(SmsProviderType::class)],
-                'apiToken' => 'required_if:provider,'.SmsProviderType::KAVE_NEGAR->value,
-                'senderNumber' => 'required_if:provider,'.SmsProviderType::KAVE_NEGAR->value,
-            ],
-        );
-        if ($va->passes()) {
+        $provider = app(NotificationProviderRegistry::class)->for($request->validated('provider'));
+        $isDefault = ConfigSms::query()->where('isDefault', true)->doesntExist();
 
-            if ($request->provider == SmsProviderType::KAVE_NEGAR->value) {
-
-                $isDefault = false;
-                if (ConfigSms::where('isDefault', true)->count() == 0) {
-                    $isDefault = true;
-                }
-
-                $modelArray = [
-                    'name' => $request->name,
-                    'provider' => $request->provider,
-                    'apiToken' => $request->apiToken,
-                    'senderNumber' => $request->senderNumber,
-                    'isDefault' => $isDefault,
-                    'isBackUp' => false,
-                ];
-
-                $model = ConfigSms::create($modelArray);
-
-                return response()->json([
-                    'status' => true,
-                    'data' => $model,
-                ]);
-            }
-        }
+        $model = ConfigSms::create([
+            'name' => $request->validated('name'),
+            'provider' => $request->validated('provider'),
+            ...$provider->attributes(EndpointType::SMS, $request->validated()),
+            'isDefault' => $isDefault,
+            'isBackUp' => false,
+            'priority' => $isDefault ? 1 : null,
+        ]);
 
         return response()->json([
-            'status' => false,
-            'message' => implode(' ', $va->errors()->all()),
-        ], 422);
+            'status' => true,
+            'data' => $model,
+        ]);
     }
 
-    public function Update(Request $request, $id)
+    public function Update(UpdateConfigSmsRequest $request, $id)
     {
-        $model = ConfigSms::where('_id', $id);
-        $model = $model->firstOrFail();
+        $model = ConfigSms::where('_id', $id)->firstOrFail();
+        $provider = app(NotificationProviderRegistry::class)->for($request->validated('provider'));
 
-        $va = \Validator::make(
-            $request->all(),
-            [
-                'name' => 'required',
-                'provider' => ['required', Rule::enum(SmsProviderType::class)],
-                'apiToken' => 'required_if:provider,'.SmsProviderType::KAVE_NEGAR->value,
-                'senderNumber' => 'required_if:provider,'.SmsProviderType::KAVE_NEGAR->value,
-            ],
-        );
-
-        if ($va->passes()) {
-            if ($request->provider == SmsProviderType::KAVE_NEGAR->value) {
-
-                $modelArray = [
-                    'name' => $request->name,
-                    'provider' => $request->provider,
-                    'apiToken' => $request->apiToken,
-                    'senderNumber' => $request->senderNumber,
-                ];
-
-                $model->update($modelArray);
-
-                return response()->json([
-                    'status' => true,
-                    'data' => $model,
-                ]);
-            }
-
-        }
+        $model->update([
+            'name' => $request->validated('name'),
+            'provider' => $request->validated('provider'),
+            ...$provider->attributes(EndpointType::SMS, $request->validated()),
+        ]);
 
         return response()->json([
-            'status' => false,
-            'message' => implode(' ', $va->errors()->all()),
-        ], 422);
+            'status' => true,
+            'data' => $model,
+        ]);
+    }
+
+    public function priorities(SetConfigSmsPrioritiesRequest $request)
+    {
+        $this->configService->setPriorities($request->validated('ids'));
+
+        return response()->json([
+            'status' => true,
+            'data' => ConfigSms::query()
+                ->orderByDesc('isDefault')
+                ->orderByDesc('isBackUp')
+                ->orderBy('priority')
+                ->latest()
+                ->get(),
+        ]);
     }
 
     public function makeDefault($id)
@@ -161,7 +133,7 @@ class SmsController extends Controller
 
         return response()->json([
             'status' => true,
-            'data' => $model,
+            'data' => $model->refresh(),
         ]);
     }
 
@@ -180,7 +152,7 @@ class SmsController extends Controller
 
         return response()->json([
             'status' => true,
-            'data' => $model,
+            'data' => $model->refresh(),
         ]);
     }
 }
