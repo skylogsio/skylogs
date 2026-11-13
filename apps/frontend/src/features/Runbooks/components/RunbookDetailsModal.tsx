@@ -24,7 +24,6 @@ import { useCurrentTheme } from "@/hooks";
 import { getRunbookById } from "../runbook.api";
 import type { IRunbook } from "../runbook.type";
 import { formatRunbookDateTime } from "../runbook.utils";
-
 import RunbookModalBody from "./RunbookModalBody";
 import RunbookSourceTypeChip from "./RunbookSourceTypeChip";
 import RunbookStatusChip from "./RunbookStatusChip";

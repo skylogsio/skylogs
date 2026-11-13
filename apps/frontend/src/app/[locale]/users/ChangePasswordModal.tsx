@@ -9,12 +9,12 @@ import { toast } from "react-toastify";
 import { z } from "zod";
 
 import { changePassword } from "@/api/user";
+import GradientSubmitButton from "@/components/GradientSubmitButton";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
 import { useCurrentTheme } from "@/hooks";
 
-import GradientSubmitButton from "@/components/GradientSubmitButton";
 import UserModalBody from "./UserModalBody";
 
 const changePasswordSchema = z

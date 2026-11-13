@@ -2,6 +2,7 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 
 import { FlatCompat } from "@eslint/eslintrc";
+import nextConfig from "eslint-config-next";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -14,6 +15,7 @@ const eslintConfig = [
   {
     ignores: [".next/**", "node_modules/**", "out/**", "public/**"]
   },
+  ...nextConfig,
   ...compat.config({
     env: {
       browser: true,
@@ -21,7 +23,6 @@ const eslintConfig = [
       es6: true
     },
     extends: [
-      "next",
       "prettier",
       "plugin:import/recommended",
       "plugin:import/errors",
@@ -73,7 +74,7 @@ const eslintConfig = [
       quotes: ["error", "double"],
       semi: ["error", "always"],
       "no-use-before-define": ["warn", { variables: true, functions: true }],
-      eqeqeq: "error",
+      eqeqeq: ["error", "always", { null: "ignore" }],
       "no-duplicate-imports": "error",
       "import/no-unresolved": "off",
       "newline-per-chained-call": "off",

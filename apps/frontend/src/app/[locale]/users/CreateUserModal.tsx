@@ -10,12 +10,12 @@ import { z } from "zod";
 
 import type { BasicCreateOrUpdateModalProps } from "@/@types/global";
 import { createUser } from "@/api/user";
+import GradientSubmitButton from "@/components/GradientSubmitButton";
 import ModalContainer from "@/components/Modal";
 import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
 import { useCurrentTheme, useRole } from "@/hooks";
 import { ROLE_TYPES } from "@/utils/userUtils";
 
-import GradientSubmitButton from "@/components/GradientSubmitButton";
 import UserModalBody from "./UserModalBody";
 import UserRoleToggle from "./UserRoleToggle";
 

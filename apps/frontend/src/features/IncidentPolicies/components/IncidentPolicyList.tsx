@@ -16,7 +16,6 @@ import { useCurrentTheme, useRole } from "@/hooks";
 import { exportIncidentPolicyYaml } from "../incident-policy.api";
 import type { IIncidentPolicy } from "../incident-policy.type";
 import { formatIncidentPolicyDateTime } from "../incident-policy.utils";
-
 import DeleteIncidentPolicyModal from "./DeleteIncidentPolicyModal";
 import IncidentPolicyActionButtons from "./IncidentPolicyActionButtons";
 import IncidentPolicyDetailsModal from "./IncidentPolicyDetailsModal";

@@ -1,7 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import {
   Box,
@@ -26,7 +25,6 @@ import { useCurrentTheme } from "@/hooks";
 import { getIncidentById } from "../incident.api";
 import type { IIncident } from "../incident.type";
 import { formatIncidentDateTime } from "../incident.utils";
-
 import IncidentDocumentsPanel from "./IncidentDocumentsPanel";
 import IncidentModalBody from "./IncidentModalBody";
 import IncidentPostmortemPanel from "./IncidentPostmortemPanel";

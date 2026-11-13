@@ -51,7 +51,6 @@ import {
   type IIncidentPolicyWriteRequest,
   type IncidentPolicyRules
 } from "../incident-policy.type";
-
 import IncidentPolicyModalBody from "./IncidentPolicyModalBody";
 
 const severityRuleSchema = z.object({

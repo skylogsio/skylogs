@@ -15,7 +15,6 @@ import { useCurrentTheme } from "@/hooks";
 
 import { resolveIncident } from "../incident.api";
 import type { IIncident } from "../incident.type";
-
 import IncidentModalBody from "./IncidentModalBody";
 
 type ResolveIncidentModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {

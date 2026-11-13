@@ -13,7 +13,6 @@ import { useCurrentTheme } from "@/hooks";
 
 import type { IIncident } from "../incident.type";
 import { formatIncidentDateTime } from "../incident.utils";
-
 import DeleteIncidentModal from "./DeleteIncidentModal";
 import IncidentActionButtons from "./IncidentActionButtons";
 import IncidentDetailsModal from "./IncidentDetailsModal";
