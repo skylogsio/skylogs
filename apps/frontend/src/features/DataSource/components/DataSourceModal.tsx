@@ -134,6 +134,7 @@ export default function DataSourceModal({ open, onClose, data, onSubmit }: DataS
     >
       <Grid
         component="form"
+        autoComplete="off"
         onSubmit={handleSubmit(handleSubmitForm)}
         container
         spacing={2}
@@ -178,8 +179,12 @@ export default function DataSourceModal({ open, onClose, data, onSubmit }: DataS
           <TextField
             label="Username"
             variant="filled"
+            autoComplete="new-password"
             error={!!errors.username}
             helperText={errors.username?.message}
+            slotProps={{
+              htmlInput: { autoComplete: "new-password" }
+            }}
             {...register("username")}
           />
         </Grid>
@@ -192,6 +197,7 @@ export default function DataSourceModal({ open, onClose, data, onSubmit }: DataS
             helperText={errors.password?.message}
             {...register("password")}
             slotProps={{
+              htmlInput: { autoComplete: "off" },
               input: {
                 endAdornment: (
                   <IconButton disableRipple onClick={() => setShowPassword((prev) => !prev)}>
