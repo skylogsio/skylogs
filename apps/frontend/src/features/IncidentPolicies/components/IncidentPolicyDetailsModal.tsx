@@ -24,6 +24,7 @@ import { useCurrentTheme } from "@/hooks";
 import { getIncidentPolicyById } from "../incident-policy.api";
 import type { IIncidentPolicy } from "../incident-policy.type";
 import { formatIncidentPolicyDateTime } from "../incident-policy.utils";
+
 import IncidentPolicyModalBody from "./IncidentPolicyModalBody";
 
 type IncidentPolicyDetailsModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {

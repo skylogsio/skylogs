@@ -120,19 +120,21 @@ class ControlBarStore {
 const ControlBarContext = createContext<ControlBarStore | undefined>(undefined);
 
 export function ControlBarProvider({ children }: PropsWithChildren) {
-  const storeRef = useRef<ControlBarStore | null>(null);
-  if (storeRef.current === null) {
+  const storeRef = useRef<ControlBarStore>(undefined);
+  if (!storeRef.current) {
     storeRef.current = new ControlBarStore();
   }
-  const store = storeRef.current!;
 
   useEffect(() => {
+    const store = storeRef.current!;
     const handlePointerUp = () => store.endSelection();
     window.addEventListener("mouseup", handlePointerUp);
     return () => window.removeEventListener("mouseup", handlePointerUp);
-  }, [store]);
+  }, []);
 
-  return <ControlBarContext.Provider value={store}>{children}</ControlBarContext.Provider>;
+  return (
+    <ControlBarContext.Provider value={storeRef.current}>{children}</ControlBarContext.Provider>
+  );
 }
 
 function useControlBarStore(): ControlBarStore {
@@ -191,10 +193,7 @@ export function useIsSelecting(): boolean {
 export function useOnSelectionEnd(callback: (range: SelectionTimeRange) => void): void {
   const store = useControlBarStore();
   const callbackRef = useRef(callback);
-
-  useEffect(() => {
-    callbackRef.current = callback;
-  }, [callback]);
+  callbackRef.current = callback;
 
   useEffect(() => {
     return store.onSelectionEnd((range) => callbackRef.current(range));

@@ -40,6 +40,7 @@ import {
   type IRunbookWriteRequest
 } from "../runbook.type";
 import { RUNBOOK_SOURCE_TYPE_LABELS, RUNBOOK_STATUS_LABELS } from "../runbook.utils";
+
 import RunbookModalBody from "./RunbookModalBody";
 
 const stepSchema = z.object({
@@ -94,7 +95,7 @@ const runbookSchema = z
     }
     if (values.sourceType === "externalUrl") {
       try {
-
+        // eslint-disable-next-line no-new
         new URL(values.externalUrl.trim());
       } catch {
         ctx.addIssue({

@@ -26,6 +26,7 @@ import {
   validateIncidentPolicyYaml
 } from "../incident-policy.api";
 import type { IIncidentPolicyYamlResult } from "../incident-policy.type";
+
 import IncidentPolicyModalBody from "./IncidentPolicyModalBody";
 
 type IncidentPolicyYamlModalProps = Pick<ModalContainerProps, "open" | "onClose"> & {

@@ -1,7 +1,7 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
 import { type PropsWithChildren } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 import { alpha, Box, IconButton, Tooltip, useTheme } from "@mui/material";
 import { signOut, useSession } from "next-auth/react";

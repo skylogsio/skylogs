@@ -11,6 +11,7 @@ import { useCurrentTheme } from "@/hooks";
 
 import { deleteIncident } from "../incident.api";
 import type { IIncident } from "../incident.type";
+
 import IncidentSeverityChip from "./IncidentSeverityChip";
 import IncidentStatusChip from "./IncidentStatusChip";
 
