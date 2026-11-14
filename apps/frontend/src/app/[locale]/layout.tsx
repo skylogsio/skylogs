@@ -1,27 +1,28 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import localfont from "next/font/local";
+import localFont from 'next/font/local';
 import { cookies } from "next/headers";
 import { type PropsWithChildren } from "react";
 
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v14-appRouter";
+import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
 import { ToastContainer, Zoom } from "react-toastify";
 
 import Wrapper from "@/components/Wrapper";
 import { getCurrentDirection } from "@/locales/server";
 import Provider from "@/provider";
+import { isThemeInitialMode, type ThemeInitialMode } from "@/provider/themeStorage";
 
 import "react-toastify/dist/ReactToastify.css";
 import "../globals.css";
 
-const inter = Inter({
-  weight: ["300", "400", "700"],
-  style: ["normal"],
-  subsets: ["latin"],
-  display: "swap"
+const inter = localFont({
+  src: '../../../public/static/fonts/Inter-Variable.woff2',
+  weight: '100 900',
+  style: 'normal',
+  display: 'swap',
 });
 
-const vazir = localfont({
+const vazir = localFont({
   src: [
     { path: "../../../public/static/fonts/Vazir-Bold-FD.woff2", style: "normal", weight: "700" },
     { path: "../../../public/static/fonts/Vazir-FD.woff2", style: "normal", weight: "400" },
@@ -42,13 +43,27 @@ export default async function RootLayout({
   const dir = await getCurrentDirection();
   const cookieStore = await cookies();
   const theme = cookieStore.get("theme")?.value;
+  const storedMode = cookieStore.get("mui-mode")?.value;
+  const initialMode: ThemeInitialMode = isThemeInitialMode(storedMode)
+    ? storedMode
+    : isThemeInitialMode(theme)
+      ? theme
+      : "system";
+  const resolvedClass = initialMode === "light" || initialMode === "dark" ? initialMode : undefined;
+  const isDark = initialMode === "dark";
+  const paintStyle =
+    resolvedClass === undefined ? undefined : { colorScheme: isDark ? "dark" : "light" };
   const sidebarCollapsed = cookieStore.get("skylogs-sidebar-collapsed")?.value === "true";
 
   return (
-    <html lang={locale} dir={dir}>
-      <body className={dir === "ltr" ? inter.className : vazir.className}>
+    <html lang={locale} dir={dir} className={resolvedClass} suppressHydrationWarning style={paintStyle}>
+      <body
+        className={dir === "ltr" ? inter.className : vazir.className}
+        suppressHydrationWarning
+      >
+        <InitColorSchemeScript attribute="class" defaultMode={initialMode} />
         <AppRouterCacheProvider>
-          <Provider locale={locale} sidebarCollapsed={sidebarCollapsed}>
+          <Provider locale={locale} sidebarCollapsed={sidebarCollapsed} initialMode={initialMode}>
             <Wrapper>{children}</Wrapper>
           </Provider>
         </AppRouterCacheProvider>

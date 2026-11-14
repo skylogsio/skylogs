@@ -29,7 +29,7 @@ import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGenera
 import ExtraField from "@/components/AlertRule/Forms/ExtraField";
 import type { ModalContainerProps } from "@/components/Modal/types";
 import ToggleButtonGroup from "@/components/ToggleButtonGroup";
-import { type DataSourceType } from "@/utils/dataSourceUtils";
+import { type DataSourceType } from "@/features/DataSource/dataSource.utils";
 import { capitalizeFirstLetter } from "@/utils/general";
 
 const QUERY_TYPE = ["dynamic", "textQuery"] as const;
@@ -40,7 +40,7 @@ const extraFieldSchema = z.object({
   value: z.string().trim().min(1, "This field is Required.")
 });
 
-const generalAlertRuleSchema = z.object({
+export const generalAlertRuleSchema = z.object({
   name: z.string().trim().min(1, "This field is Required."),
   type: z.enum(ALERT_RULE_TYPES),
   endpointIds: z.array(z.string()),
@@ -220,6 +220,7 @@ export default function GeneralAlertRuleForm({
         <AlertRuleGeneralFields<GeneralAlertRuleType>
           methods={{ control, getValues, setValue, watch }}
           errors={errors}
+          alertId={data && data !== "NEW" ? data.id : undefined}
         >
           <Grid
             size={12}

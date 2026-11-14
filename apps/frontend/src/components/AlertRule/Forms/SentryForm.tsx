@@ -18,7 +18,7 @@ import {
 import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGeneralFields";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
-const sentryAlertRuleSchema = z.object({
+export const sentryAlertRuleSchema = z.object({
   name: z.string().trim().min(1, "This field is Required."),
   type: z.literal("sentry"),
   endpointIds: z.array(z.string()),
@@ -175,6 +175,7 @@ export default function SentryAlertRuleForm({
         <AlertRuleGeneralFields<SentryFromType>
           methods={{ control, getValues, setValue, watch }}
           errors={errors}
+          alertId={data && data !== "NEW" ? data.id : undefined}
         >
           <Grid size={6}>
             <Autocomplete

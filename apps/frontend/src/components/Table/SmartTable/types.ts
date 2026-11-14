@@ -1,7 +1,7 @@
 import { type MouseEventHandler, type ReactNode } from "react";
 
 import type { Theme } from "@mui/material";
-import type { SystemStyleObject } from "@mui/system";
+import type { SxProps } from "@mui/material";
 import { type ColumnDef } from "@tanstack/react-table";
 
 import type { TableComponentRef, TableFilterComponentProps } from "../types";
@@ -37,6 +37,7 @@ export interface SmartTableToolbarSlots {
 
 export interface SmartTableProps<T> {
   title?: string;
+  titleExtra?: ReactNode;
   url: string;
   columns: ColumnDef<T>[];
   hasCheckbox?: boolean;
@@ -59,5 +60,6 @@ export interface SmartTableProps<T> {
   forceShowFilter?: boolean;
   hideSearch?: boolean;
   excludeFilterKeys?: string[];
-  tablePaperSx?: SystemStyleObject<Theme>;
+  tablePaperSx?: SxProps<Theme>;
+  getRowSx?: (row: T) => SxProps<Theme> | undefined;
 }

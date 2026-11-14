@@ -62,7 +62,6 @@ export default function CreateUserModal({
   });
   const theme = useTheme();
   const { palette } = theme;
-  const { isDark } = useCurrentTheme();
   const { hasRole } = useRole();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -93,7 +92,7 @@ export default function CreateUserModal({
       open={open}
       onClose={onClose}
       disableEscapeKeyDown
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <UserModalBody>
         <Grid

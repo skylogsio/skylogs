@@ -8,9 +8,7 @@ import {
   Divider,
   List,
   ListItemButton,
-  ListItemText,
-  alpha,
-  useTheme
+  ListItemText
 } from "@mui/material";
 import { LocalizationProvider, DateCalendar } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -49,7 +47,6 @@ export default function AbsoluteDateTime({
   calendar: "persian" | "gregorian";
   variant?: "start" | "end";
 }) {
-  const { palette } = useTheme();
   const { start, end, setStartAbsolute, setEndAbsolute } = useDebuggingTimeRange();
   const selection = variant === "end" ? end : start;
   const contextDateTime = selection.dateTime;
@@ -101,7 +98,14 @@ export default function AbsoluteDateTime({
 
           <Divider orientation="vertical" flexItem />
 
-          <Box sx={{ width: 140, overflowY: "auto", bgcolor: alpha(palette.divider, 0.02) }}>
+          <Box
+            sx={{
+              width: 140,
+              overflowY: "auto",
+              bgcolor:
+                "color-mix(in srgb, var(--mui-palette-divider) 2%, transparent)"
+            }}
+          >
             <List sx={{ p: 1 }}>
               {TIME_SLOTS.map((time) => (
                 <ListItemButton
@@ -119,7 +123,8 @@ export default function AbsoluteDateTime({
                     mb: 0.5,
                     justifyContent: "center",
                     "&.Mui-selected": {
-                      bgcolor: alpha(palette.primary.main, 0.1),
+                      bgcolor:
+                        "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
                       color: "primary.main"
                     }
                   }}
@@ -137,7 +142,7 @@ export default function AbsoluteDateTime({
           <Box
             sx={{
               display: "flex",
-              border: `1px solid ${palette.divider}`,
+              border: "1px solid var(--mui-palette-divider)",
               borderRadius: "8px",
               overflow: "hidden",
               fontSize: 14
@@ -146,10 +151,11 @@ export default function AbsoluteDateTime({
             <Typography
               variant="body2"
               sx={{
-                bgcolor: alpha(palette.divider, 0.1),
+                bgcolor:
+                  "color-mix(in srgb, var(--mui-palette-divider) 10%, transparent)",
                 px: 2,
                 py: 1,
-                borderRight: `1px solid ${palette.divider}`,
+                borderRight: "1px solid var(--mui-palette-divider)",
                 fontWeight: 600,
                 textWrap: "nowrap",
                 lineHeight: 1.5

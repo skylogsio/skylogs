@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Box, Popover, Tabs, Tab, useTheme, alpha, Typography } from "@mui/material";
+import { Box, Popover, Tabs, Tab, Typography } from "@mui/material";
 import { format } from "date-fns";
 
 import { useDebuggingTimeRange } from "@/features/Debugging/context/DebuggingTimeRange.context";
@@ -25,7 +25,6 @@ export default function AnalysisTimeRangePopover({
   variant,
   arrowPosition = "center"
 }: AnalysisTimeRangePopoverProps) {
-  const { palette } = useTheme();
   const { start, end, setStartNow, setEndNow } = useDebuggingTimeRange();
   const selection = variant === "end" ? end : start;
   const [tabValue, setTabValue] = useState<"absolute" | "relative" | "now">("relative");
@@ -87,7 +86,7 @@ export default function AnalysisTimeRangePopover({
             boxShadow: "0px 10px 30px rgba(0,0,0,0.1)",
             overflow: "visible",
             position: "relative",
-            backgroundColor: palette.background.paper,
+            backgroundColor: "background.paper",
             backgroundImage: "none",
             "&::before": {
               content: "''",
@@ -96,10 +95,10 @@ export default function AnalysisTimeRangePopover({
               ...getArrowPosition(),
               width: 14,
               height: 14,
-              backgroundColor: palette.background.paper,
+              backgroundColor: "background.paper",
               borderTop: "1px solid",
               borderLeft: "1px solid",
-              borderColor: palette.background.paper,
+              borderColor: "background.paper",
               zIndex: 0
             }
           }
@@ -135,7 +134,7 @@ export default function AnalysisTimeRangePopover({
           <Box
             sx={{
               display: "flex",
-              border: `1px solid ${palette.divider}`,
+              border: "1px solid var(--mui-palette-divider)",
               borderRadius: "8px",
               overflow: "hidden",
               fontSize: 14
@@ -144,10 +143,11 @@ export default function AnalysisTimeRangePopover({
             <Typography
               variant="body2"
               sx={{
-                bgcolor: alpha(palette.divider, 0.1),
+                bgcolor:
+                  "color-mix(in srgb, var(--mui-palette-divider) 10%, transparent)",
                 px: 2,
                 py: 1,
-                borderRight: `1px solid ${palette.divider}`,
+                borderRight: "1px solid var(--mui-palette-divider)",
                 fontWeight: 600,
                 textWrap: "nowrap",
                 lineHeight: 1.5

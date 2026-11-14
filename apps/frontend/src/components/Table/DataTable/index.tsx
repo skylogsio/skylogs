@@ -94,16 +94,22 @@ export default function DataTable<T>({
       }}
     >
       <Box
-        sx={{
-          width: 1,
-          maxHeight: "70vh",
-          mt: 1,
-          bgcolor: "background.paper",
-          borderRadius: 3,
-          border: `1px solid ${alpha(palette.text.primary, 0.08)}`,
-          overflow: "hidden",
-          boxShadow: `0 1px 2px ${alpha(palette.common.black, palette.mode === "dark" ? 0.2 : 0.04)}`
-        }}
+        sx={[
+          {
+            width: 1,
+            maxHeight: "70vh",
+            mt: 1,
+            bgcolor: "background.paper",
+            borderRadius: 3,
+            border: `1px solid ${alpha(palette.text.primary, 0.08)}`,
+            overflow: "hidden",
+            boxShadow: `0 1px 2px ${alpha(palette.common.black, 0.04)}`
+          },
+          (theme) =>
+            theme.applyStyles("dark", {
+              boxShadow: `0 1px 2px ${alpha(palette.common.black, 0.2)}`
+            })
+        ]}
       >
         <TableContainer sx={{ width: 1, maxHeight: "70vh", overflow: "auto" }}>
           <MuiTable stickyHeader sx={{ width: 1 }}>
@@ -111,15 +117,20 @@ export default function DataTable<T>({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
                   key={headerGroup.id}
-                  sx={{
-                    "& th": {
-                      backgroundColor:
-                        palette.mode === "dark"
-                          ? alpha(palette.common.white, 0.04)
-                          : alpha(palette.grey[500], 0.06),
-                      backdropFilter: "blur(8px)"
-                    }
-                  }}
+                  sx={[
+                    {
+                      "& th": {
+                        backgroundColor: alpha(palette.grey[500], 0.06),
+                        backdropFilter: "blur(8px)"
+                      }
+                    },
+                    (theme) =>
+                      theme.applyStyles("dark", {
+                        "& th": {
+                          backgroundColor: alpha(palette.common.white, 0.04)
+                        }
+                      })
+                  ]}
                 >
                   {headerGroup.headers.map((header) => (
                     <TableCell

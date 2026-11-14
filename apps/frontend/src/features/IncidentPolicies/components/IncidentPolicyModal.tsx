@@ -38,7 +38,7 @@ import { getAllAlertRules } from "@/features/Debugging/debugging.api";
 import { INCIDENT_SEVERITIES } from "@/features/Incidents/incident.type";
 import { getPublishedRunbooks } from "@/features/Runbooks/runbook.api";
 import { useCurrentTheme } from "@/hooks";
-import { DATA_SOURCE_VARIANTS, type DataSourceType } from "@/utils/dataSourceUtils";
+import { DATA_SOURCE_VARIANTS, type DataSourceType } from "@/features/DataSource/dataSource.utils";
 
 import {
   createIncidentPolicy,
@@ -261,9 +261,7 @@ function toWritePayload(values: PolicyFormType): IIncidentPolicyWriteRequest {
       communication: {
         ...(parseOptionalNumber(rule.stakeholderUpdateEveryMinutes) != null
           ? {
-              stakeholderUpdateEveryMinutes: parseOptionalNumber(
-                rule.stakeholderUpdateEveryMinutes
-              )
+              stakeholderUpdateEveryMinutes: parseOptionalNumber(rule.stakeholderUpdateEveryMinutes)
             }
           : {}),
         statusPageUpdateRequired: rule.statusPageUpdateRequired
@@ -329,7 +327,6 @@ export default function IncidentPolicyModal({
   onSubmit
 }: IncidentPolicyModalProps) {
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const queryClient = useQueryClient();
   const isCreate = data === "NEW";
   const policyId = data && data !== "NEW" ? data.id : null;
@@ -365,8 +362,7 @@ export default function IncidentPolicyModal({
   });
 
   const runbookNameOptions = useMemo(
-    () =>
-      (publishedRunbooks ?? []).map((runbook) => runbook.slug || runbook.name).filter(Boolean),
+    () => (publishedRunbooks ?? []).map((runbook) => runbook.slug || runbook.name).filter(Boolean),
     [publishedRunbooks]
   );
 
@@ -430,7 +426,7 @@ export default function IncidentPolicyModal({
       onClose={onClose}
       disableEscapeKeyDown
       maxWidth={900}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <IncidentPolicyModalBody>
         {isError ? (
@@ -466,7 +462,10 @@ export default function IncidentPolicyModal({
                 render={({ field }) => (
                   <FormControlLabel
                     control={
-                      <Switch checked={field.value} onChange={(_, checked) => field.onChange(checked)} />
+                      <Switch
+                        checked={field.value}
+                        onChange={(_, checked) => field.onChange(checked)}
+                      />
                     }
                     label="Enabled"
                   />
@@ -794,7 +793,13 @@ export default function IncidentPolicyModal({
                         control={control}
                         name="defaultSeverity"
                         render={({ field }) => (
-                          <TextField {...field} select label="Default Severity" variant="filled" fullWidth>
+                          <TextField
+                            {...field}
+                            select
+                            label="Default Severity"
+                            variant="filled"
+                            fullWidth
+                          >
                             {INCIDENT_SEVERITIES.map((severity) => (
                               <MenuItem key={severity} value={severity}>
                                 {severity}
@@ -809,7 +814,13 @@ export default function IncidentPolicyModal({
                         control={control}
                         name="severityMapCritical"
                         render={({ field }) => (
-                          <TextField {...field} select label="Map critical →" variant="filled" fullWidth>
+                          <TextField
+                            {...field}
+                            select
+                            label="Map critical →"
+                            variant="filled"
+                            fullWidth
+                          >
                             <MenuItem value="">—</MenuItem>
                             {INCIDENT_SEVERITIES.map((severity) => (
                               <MenuItem key={severity} value={severity}>
@@ -825,7 +836,13 @@ export default function IncidentPolicyModal({
                         control={control}
                         name="severityMapWarning"
                         render={({ field }) => (
-                          <TextField {...field} select label="Map warning →" variant="filled" fullWidth>
+                          <TextField
+                            {...field}
+                            select
+                            label="Map warning →"
+                            variant="filled"
+                            fullWidth
+                          >
                             <MenuItem value="">—</MenuItem>
                             {INCIDENT_SEVERITIES.map((severity) => (
                               <MenuItem key={severity} value={severity}>

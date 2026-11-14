@@ -23,6 +23,7 @@ export interface IAlertRule {
   type: AlertRuleType;
   userId: string;
   acknowledgedBy: string | null;
+  acknowledgedByName: string | null;
   enableAutoResolve: boolean;
   autoResolveMinutes: number;
   updated_at: Date;
@@ -33,14 +34,28 @@ export interface IAlertRule {
   ownerName: string;
   hasActionAccess: boolean;
   status_label: AlertRuleStatus;
+  statusLabel: AlertRuleStatus;
   is_silent: boolean;
+  isSilent: boolean;
   isPinned: boolean;
   isPrivate: boolean;
   count_endpoints: number;
   tags: string[];
+  description?: string;
+  teamIds?: string[];
+  showAcknowledgeBtn?: boolean;
+  queryType?: "dynamic" | "textQuery";
+  extraField?: Array<{ key: string; value: string }>;
+  dataSourceId?: string;
   dataSourceAlertName?: string;
   dataSourceIds?: string[];
   dataSourceLabels?: string[];
+  queryString?: string;
+  dataviewName?: string;
+  dataviewTitle?: string;
+  conditionType?: "greaterOrEqual" | "lessOrEqual";
+  countDocument?: number;
+  minutes?: number;
 }
 
 export interface IZabbixAlertRule extends IAlertRule {

@@ -1,6 +1,6 @@
 "use server";
 
-import type { IDataSource } from "@/@types/dataSource";
+import type { IDataSource } from "./dataSource.type";
 import type { IConnectionStatus, ServerResponse } from "@/@types/global";
 import axios from "@/lib/axios";
 

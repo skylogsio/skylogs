@@ -1,4 +1,4 @@
-import { Box, Typography, Stack, useTheme, alpha } from "@mui/material";
+import { Box, Typography, Stack } from "@mui/material";
 import { AiFillNotification } from "react-icons/ai";
 import { HiOutlineCollection } from "react-icons/hi";
 import { IoNotificationsOff } from "react-icons/io5";
@@ -18,8 +18,6 @@ const EmptyBehaviorRuleState: React.FC<EmptyBehaviorRuleStateProps> = ({
   showNotification,
   showTemplate
 }) => {
-  const { palette } = useTheme();
-
   const getEmptyContent = () => {
     switch (filter) {
       case "template":
@@ -65,9 +63,11 @@ const EmptyBehaviorRuleState: React.FC<EmptyBehaviorRuleStateProps> = ({
         justifyContent: "center",
         py: 8,
         px: 3,
-        backgroundColor: alpha(palette.divider, 0.03),
+        backgroundColor:
+          "color-mix(in srgb, var(--mui-palette-divider) 3%, transparent)",
         borderRadius: 3,
-        border: `1px dashed ${alpha(palette.divider, 0.3)}`
+        border:
+          "1px dashed color-mix(in srgb, var(--mui-palette-divider) 30%, transparent)"
       }}
     >
       <Box
@@ -75,21 +75,23 @@ const EmptyBehaviorRuleState: React.FC<EmptyBehaviorRuleStateProps> = ({
           width: 80,
           height: 80,
           borderRadius: "50%",
-          backgroundColor: alpha(color, 0.1),
+          backgroundColor: `color-mix(in srgb, ${color} 10%, transparent)`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           mb: 3
         }}
       >
-        <Box sx={{ color: alpha(color, 0.7), display: "flex" }}>{icon}</Box>
+        <Box sx={{ color: `color-mix(in srgb, ${color} 70%, transparent)`, display: "flex" }}>
+          {icon}
+        </Box>
       </Box>
       <Stack spacing={1} sx={{ alignItems: "center", maxWidth: 370 }}>
         <Typography
           variant="h6"
           sx={{
             fontWeight: 600,
-            color: palette.text.primary,
+            color: "text.primary",
             textAlign: "center"
           }}
         >
@@ -98,7 +100,7 @@ const EmptyBehaviorRuleState: React.FC<EmptyBehaviorRuleStateProps> = ({
         <Typography
           variant="body2"
           sx={{
-            color: palette.text.secondary,
+            color: "text.secondary",
             textAlign: "center",
             lineHeight: 1.6
           }}

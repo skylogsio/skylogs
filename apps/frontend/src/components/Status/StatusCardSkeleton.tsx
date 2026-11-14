@@ -1,5 +1,4 @@
 import { Card, CardContent, Box, Skeleton } from "@mui/material";
-import { grey } from "@mui/material/colors";
 
 const StatusCardSkeleton = () => {
   return (
@@ -11,7 +10,7 @@ const StatusCardSkeleton = () => {
         overflow: "hidden",
         boxShadow: "none",
         border: 2,
-        borderColor: grey[300]
+        borderColor: "divider"
       }}
     >
       <CardContent sx={{ padding: "16px !important", height: "100%" }}>

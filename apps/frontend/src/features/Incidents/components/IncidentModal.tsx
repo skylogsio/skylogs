@@ -146,7 +146,6 @@ function getFormValues(incident?: IIncident): IncidentFormType {
 
 export default function IncidentModal({ open, onClose, data, onSubmit }: IncidentModalProps) {
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const queryClient = useQueryClient();
   const isCreate = data === "NEW";
   const incidentId = data && data !== "NEW" ? data.id : null;
@@ -296,7 +295,7 @@ export default function IncidentModal({ open, onClose, data, onSubmit }: Inciden
       onClose={onClose}
       disableEscapeKeyDown
       maxWidth={720}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <IncidentModalBody>
         {isIncidentError ? (

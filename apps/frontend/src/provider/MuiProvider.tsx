@@ -4,91 +4,28 @@ import { useMemo, type PropsWithChildren } from "react";
 
 import { alpha, inputBaseClasses, menuItemClasses } from "@mui/material";
 import { grey } from "@mui/material/colors";
-import { createTheme, ThemeProvider, type StorageManager } from "@mui/material/styles";
-import Cookies from "js-cookie";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 
-const THEME_KEY = "theme";
+import { createThemeStorageManager, type ThemeInitialMode } from "./themeStorage";
 
-function resolveMode(mode: string | undefined | null): "light" | "dark" {
-  if (mode === "light" || mode === "dark") return mode;
-  if (typeof window !== "undefined") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-  return "light";
-}
-
-function syncThemeCookie(mode: string | undefined | null): void {
-  Cookies.set(THEME_KEY, resolveMode(mode));
-}
-
-function createStorageManager(): StorageManager {
-  return ({ key }) => ({
-    get(defaultValue) {
-      return Cookies.get(key) ?? defaultValue;
-    },
-    set(value) {
-      if (value === null) {
-        Cookies.remove(key, { path: "/" });
-        Cookies.remove(THEME_KEY, { path: "/" });
-      } else {
-        Cookies.set(key, value);
-        syncThemeCookie(value);
-      }
-    },
-    subscribe(handler) {
-      if (typeof window === "undefined") return () => {};
-
-      let current = Cookies.get(key);
-
-      let mediaQuery: MediaQueryList | null = null;
-
-      const handleMediaChange = () => {
-        if (Cookies.get(key) === "system" || Cookies.get(key) === undefined) {
-          syncThemeCookie("system");
-        }
-      };
-
-      if (typeof window !== "undefined") {
-        mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-        mediaQuery.addEventListener("change", handleMediaChange);
-      }
-
-      const intervalId = window.setInterval(() => {
-        const next = Cookies.get(key);
-        if (next !== current) {
-          current = next;
-          syncThemeCookie(next);
-          handler(next ?? null);
-        }
-      }, 1000);
-
-      return () => {
-        window.clearInterval(intervalId);
-        mediaQuery?.removeEventListener("change", handleMediaChange);
-      };
-    }
-  });
-}
-
-if (typeof window !== "undefined") {
-  syncThemeCookie(Cookies.get("mui-mode"));
-}
-
-const storageManager = createStorageManager();
+const storageManager = createThemeStorageManager();
 
 export const ENDPOINT_COLORS = {
   sms: "#4880FF",
-  telegram: "#2AABEE",
-  bale: "#00A693",
-  teams: "#454DB3",
+  telegram: "#24A1DE",
+  bale: "#00B894",
+  teams: "#5059C9",
   call: "#11AC26",
-  email: "#F05A28",
-  flow: "#ff00ff",
+  email: "#EA4335",
+  flow: "#8B5CF6",
   discord: "#5865F2",
-  "matter-most": "#284077"
+  "matter-most": "#1C58D9"
 } as const;
 
-export default function MuiProvider({ children }: PropsWithChildren<object>) {
+export default function MuiProvider({
+  children,
+  defaultMode = "system"
+}: PropsWithChildren<{ defaultMode?: ThemeInitialMode }>) {
   /*
     info: Read the below document to create new theme
     @link: https://mui.com/material-ui/experimental-api/css-theme-variables/customization/
@@ -118,7 +55,7 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
               success: { light: "#7BEA85", main: "#13C82B", dark: "#0E8F1F" },
               warning: { light: "#FABF7A", main: "#F28D22", dark: "#B86419" },
               error: { light: "#FF7D76", main: "#E64940", dark: "#A8322C" },
-              info: { light: "#D4B896", main: "#C4A07A", dark: "#9A7548" },
+              info: { light: "#93C5FD", main: "#3B82F6", dark: "#1D4ED8" },
               background: { default: "#F3EEE6", paper: "#FFFCF7" },
               divider: "#E4D9C8",
               text: {
@@ -152,7 +89,7 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
               success: { light: "#0E8F1F", main: "#13C82B", dark: "#7BEA85" },
               warning: { light: "#B86419", main: "#F28D22", dark: "#FABF7A" },
               error: { light: "#A8322C", main: "#E64940", dark: "#FF7D76" },
-              info: { light: "#E0C9A8", main: "#C8A882", dark: "#A8845C" },
+              info: { light: "#1D4ED8", main: "#3B82F6", dark: "#93C5FD" },
               background: { default: "#121110", paper: "#1E1B18" },
               divider: "#2E2A26",
               text: {
@@ -240,16 +177,22 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
                 width: "100%",
                 [`& .${inputBaseClasses.root}`]: {
                   borderRadius: "0.55rem",
-                  backgroundColor:
-                    theme.palette.mode === "light" ? "#F1EBE1" : "rgba(255, 255, 255, 0.09)",
+                  backgroundColor: "#F1EBE1",
+                  ...theme.applyStyles("dark", {
+                    backgroundColor: "rgba(255, 255, 255, 0.09)"
+                  }),
                   color: theme.palette.text.primary,
                   "&:hover": {
-                    backgroundColor:
-                      theme.palette.mode === "light" ? "#E8E0D4" : "rgba(255, 255, 255, 0.13)"
+                    backgroundColor: "#E8E0D4",
+                    ...theme.applyStyles("dark", {
+                      backgroundColor: "rgba(255, 255, 255, 0.13)"
+                    })
                   },
                   [`&.${inputBaseClasses.focused}`]: {
-                    backgroundColor:
-                      theme.palette.mode === "light" ? "#E8E0D4" : "rgba(255, 255, 255, 0.13)"
+                    backgroundColor: "#E8E0D4",
+                    ...theme.applyStyles("dark", {
+                      backgroundColor: "rgba(255, 255, 255, 0.13)"
+                    })
                   },
                   [`&.${inputBaseClasses.disabled}`]: {
                     backgroundColor: `${alpha(grey[600], 0.1)}!important`,
@@ -294,7 +237,7 @@ export default function MuiProvider({ children }: PropsWithChildren<object>) {
   return (
     <ThemeProvider
       theme={theme}
-      defaultMode="system"
+      defaultMode={defaultMode}
       storageManager={storageManager}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       {...({ forceThemeRerender: true } as any)}

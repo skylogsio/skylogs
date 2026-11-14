@@ -16,7 +16,12 @@ import {
   useTheme
 } from "@mui/material";
 import { useQueries } from "@tanstack/react-query";
-import { HiOutlineFire, HiOutlineGlobeAlt, HiOutlineUser } from "react-icons/hi";
+import {
+  HiOutlineBadgeCheck,
+  HiOutlineFire,
+  HiOutlineGlobeAlt,
+  HiOutlineUser
+} from "react-icons/hi";
 import { IoNotifications, IoNotificationsOff } from "react-icons/io5";
 
 import { getAlertFilterEndpointList, getAlertRuleTags } from "@/api/alertRule";
@@ -33,6 +38,7 @@ interface IAlertRuleFilters {
   endpointId?: string | string[];
   tags?: string | string[];
   silentStatus?: AlertRuleSilentStatus;
+  acknowledged?: boolean | string;
   scope?: AlertRuleScope;
 }
 
@@ -57,6 +63,7 @@ export default function AlertRuleFilter({
 
   const showAllAlerts = filter.scope === "organization";
   const onlyFiredAlerts = filter.status === "critical";
+  const onlyAcknowledgedAlerts = filter.acknowledged === true || filter.acknowledged === "true";
 
   const [{ data: tagsList }, { data: endpointList }] = useQueries({
     queries: [
@@ -134,6 +141,14 @@ export default function AlertRuleFilter({
     onChange("status", status);
     onChange("scope", scope);
     setFilter((prev) => ({ ...prev, status, scope }));
+  }
+
+  function handleAcknowledgedAlertsChange(checked: boolean) {
+    const acknowledged = checked ? "true" : "";
+    const scope = filter.scope ?? "assigned";
+    onChange("acknowledged", acknowledged);
+    onChange("scope", scope);
+    setFilter((prev) => ({ ...prev, acknowledged, scope }));
   }
 
   function renderAlertRuleList() {
@@ -274,7 +289,7 @@ export default function AlertRuleFilter({
           </MenuItem>
         </TextField>
       </Grid>
-      <Grid size={showScopeToggle ? 6 : 9}>
+      <Grid size={showScopeToggle ? 3 : 6}>
         <Autocomplete
           multiple
           id="alert-tags-filter"
@@ -426,6 +441,68 @@ export default function AlertRuleFilter({
             onClick={(event) => event.stopPropagation()}
             color="error"
             slotProps={{ input: { "aria-label": "Only show fired alerts" } }}
+          />
+        </Box>
+      </Grid>
+      <Grid size={3}>
+        <Box
+          onClick={() => handleAcknowledgedAlertsChange(!onlyAcknowledgedAlerts)}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 1,
+            height: 1,
+            minHeight: 48,
+            px: 1.5,
+            borderRadius: 2,
+            cursor: "pointer",
+            bgcolor: onlyAcknowledgedAlerts
+              ? alpha(palette.info.main, 0.1)
+              : alpha(palette.secondary.main, 0.06),
+            border: 1,
+            borderColor: onlyAcknowledgedAlerts ? alpha(palette.info.main, 0.35) : palette.divider,
+            transition: "background-color 0.2s ease, border-color 0.2s ease"
+          }}
+        >
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 28,
+                height: 28,
+                borderRadius: 1.5,
+                flexShrink: 0,
+                bgcolor: onlyAcknowledgedAlerts
+                  ? alpha(palette.info.main, 0.16)
+                  : alpha(palette.secondary.main, 0.12),
+                color: onlyAcknowledgedAlerts ? palette.info.main : palette.text.secondary
+              }}
+            >
+              <HiOutlineBadgeCheck size="1.1rem" />
+            </Box>
+            <Stack spacing={0} sx={{ minWidth: 0 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+                Acknowledged
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{ color: "text.secondary", lineHeight: 1.2 }}
+                noWrap
+              >
+                {onlyAcknowledgedAlerts ? "Acknowledged only" : "All alerts"}
+              </Typography>
+            </Stack>
+          </Stack>
+          <Switch
+            size="small"
+            checked={onlyAcknowledgedAlerts}
+            onChange={(_, checked) => handleAcknowledgedAlertsChange(checked)}
+            onClick={(event) => event.stopPropagation()}
+            color="info"
+            slotProps={{ input: { "aria-label": "Only show acknowledged alerts" } }}
           />
         </Box>
       </Grid>

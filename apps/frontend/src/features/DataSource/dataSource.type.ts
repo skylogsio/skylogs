@@ -1,4 +1,4 @@
-import { type DataSourceType } from "@/utils/dataSourceUtils";
+import { type DataSourceType } from "./dataSource.utils";
 
 export interface IDataSource {
   type: DataSourceType;

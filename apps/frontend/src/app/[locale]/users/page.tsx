@@ -20,7 +20,6 @@ import UserRoleChip from "./UserRoleChip";
 export default function Users() {
   const tableRef = useRef<TableComponentRef>(null);
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const { hasRole } = useRole();
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [editModalUserData, setEditModalUserData] = useState<IUser | null>(null);
@@ -53,7 +52,7 @@ export default function Users() {
         url="user"
         searchKey="username"
         defaultPageSize={10}
-        tablePaperSx={getGlassCardSx(theme, isDark)}
+        tablePaperSx={getGlassCardSx()}
         onCreate={() => setOpenCreateModal(true)}
         columns={[
           { header: "Row", accessorFn: (_, index) => ++index },

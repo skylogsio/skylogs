@@ -8,9 +8,7 @@ import {
   Select,
   Stack,
   TextField,
-  Typography,
-  alpha,
-  useTheme
+  Typography
 } from "@mui/material";
 import { format } from "date-fns";
 
@@ -25,7 +23,6 @@ interface RelativeDateTimeProps {
 }
 
 export default function RelativeDateTime({ variant = "start" }: RelativeDateTimeProps) {
-  const { palette } = useTheme();
   const { referenceNow, start, end, setStartRelative, setEndRelative } = useDebuggingTimeRange();
 
   const [value, setValue] = useState(15);
@@ -107,7 +104,7 @@ export default function RelativeDateTime({ variant = "start" }: RelativeDateTime
       <Box
         sx={{
           display: "flex",
-          border: `1px solid ${palette.divider}`,
+          border: "1px solid var(--mui-palette-divider)",
           borderRadius: "8px",
           overflow: "hidden",
           fontSize: 14
@@ -116,10 +113,11 @@ export default function RelativeDateTime({ variant = "start" }: RelativeDateTime
         <Typography
           variant="body2"
           sx={{
-            bgcolor: alpha(palette.divider, 0.1),
+            bgcolor:
+              "color-mix(in srgb, var(--mui-palette-divider) 10%, transparent)",
             px: 2,
             py: 1,
-            borderRight: `1px solid ${palette.divider}`,
+            borderRight: "1px solid var(--mui-palette-divider)",
             fontWeight: 600,
             textWrap: "nowrap",
             lineHeight: 1.5

@@ -2,22 +2,25 @@
 
 import type { ReactNode } from "react";
 
-import { Box, alpha, useTheme } from "@mui/material";
-
-import { useCurrentTheme } from "@/hooks";
+import { Box } from "@mui/material";
 
 export default function IncidentModalBody({ children }: { children: ReactNode }) {
-  const { palette } = useTheme();
-  const { isDark } = useCurrentTheme();
-
   return (
     <Box
-      sx={{
-        mt: 1.5,
-        pt: 2.5,
-        minWidth: 0,
-        borderTop: `1px solid ${alpha(palette.primary.main, isDark ? 0.12 : 0.14)}`
-      }}
+      sx={[
+        {
+          mt: 1.5,
+          pt: 2.5,
+          minWidth: 0,
+          borderTop:
+            "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
+        },
+        (muiTheme) =>
+          muiTheme.applyStyles("dark", {
+            borderTop:
+              "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 12%, transparent)"
+          })
+      ]}
     >
       {children}
     </Box>

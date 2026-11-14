@@ -22,7 +22,6 @@ export default function DeleteIncidentModal({
 }: DeleteModalProps & { data: IIncident }) {
   const { id, title, severity, status } = data;
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const queryClient = useQueryClient();
 
   const { mutate: deleteIncidentMutation, isPending } = useMutation({
@@ -43,7 +42,7 @@ export default function DeleteIncidentModal({
       {...props}
       onAfterDelete={deleteIncidentMutation}
       isLoading={isPending}
-      paperSx={getGlassCardSx(theme, isDark)}
+      paperSx={getGlassCardSx()}
     >
       <Stack spacing={1.25} sx={{ width: 1 }}>
         <Typography variant="body2" sx={{ color: "text.secondary" }}>

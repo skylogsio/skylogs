@@ -1,7 +1,6 @@
 import { PropsWithChildren, type ReactNode } from "react";
 
-import type { ModalProps, Theme } from "@mui/material";
-import type { SystemStyleObject } from "@mui/system";
+import type { ModalProps, SxProps, Theme } from "@mui/material";
 
 export interface ModalContainerProps extends PropsWithChildren {
   open: ModalProps["open"];
@@ -12,5 +11,5 @@ export interface ModalContainerProps extends PropsWithChildren {
   disableAccidentalClose?: boolean;
   disableEscapeKeyDown?: boolean;
   onClose?: () => void;
-  paperSx?: SystemStyleObject<Theme>;
+  paperSx?: SxProps<Theme>;
 }

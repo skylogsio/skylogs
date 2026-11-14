@@ -1,29 +1,24 @@
 import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Button,
-  Checkbox,
-  Collapse,
-  collapseClasses,
-  FormControlLabel,
-  Grid,
-  MenuItem,
-  Stack,
-  TextField
-} from "@mui/material";
+import { Button, Collapse, collapseClasses, Grid, MenuItem, Stack, TextField } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { z } from "zod";
 
 import type { IEndpoint } from "@/@types/endpoint";
-import { type CreateUpdateModal } from "@/@types/global";
+import { type CreateUpdateModal, type ErrorResponse } from "@/@types/global";
 import { createEndpoint, sendOTP, updateEndpoint } from "@/api/endpoint";
 import AccessUsersAndTeams from "@/components/AccessUsersAndTeams";
 import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
+import { getGlassCardSx } from "@/components/Wrapper/topBarStyles";
+import GradientSubmitButton from "@/components/GradientSubmitButton";
 import OTP from "@/components/OTP";
+import { useCurrentTheme } from "@/hooks";
+import { useTheme } from "@mui/material";
+import { useScopedI18n } from "@/locales/client";
 
 const ENDPOINTS_TYPE = [
   "sms",
@@ -43,7 +38,6 @@ const endpointSchema = z.object({
   type: z.enum(ENDPOINTS_TYPE, "This field is Required."),
   value: z.string().trim().min(1, "This field is Required."),
   otpCode: z.string().optional(),
-  isPublic: z.boolean(),
   threadId: z.string().nullable().optional(),
   botToken: z.string().nullable().optional(),
   accessTeamIds: z.array(z.string()),
@@ -60,7 +54,6 @@ const emptyFormValues: EndpointFormType = {
   name: "",
   type: ENDPOINTS_TYPE[0],
   value: "",
-  isPublic: false,
   accessTeamIds: [],
   accessUserIds: []
 };
@@ -75,7 +68,6 @@ function getFormValues(data: CreateUpdateModal<IEndpoint>): EndpointFormType {
       name: data.name,
       type: data.type,
       value: data.chatId ?? data.value,
-      isPublic: data.isPublic ?? false,
       threadId: data.type === "telegram" ? (data.threadId ?? null) : null,
       botToken: null,
       accessTeamIds: data.accessTeamIds ?? [],
@@ -87,20 +79,21 @@ function getFormValues(data: CreateUpdateModal<IEndpoint>): EndpointFormType {
     name: data.name,
     type: data.type,
     value: data.value,
-    isPublic: data.isPublic ?? false,
     accessTeamIds: data.accessTeamIds ?? [],
     accessUserIds: data.accessUserIds ?? []
   };
 }
 
 export default function EndPointModal({ open, onClose, data, onSubmit }: EndpointModalProps) {
+  const theme = useTheme();
+  const t = useScopedI18n("endpoints");
+
   const {
     register,
     handleSubmit,
     watch,
     reset,
     setValue,
-    getValues,
     setError,
     formState: { errors }
   } = useForm<EndpointFormType>({
@@ -111,9 +104,22 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
   const [isOTPSent, setIsOTPSent] = useState(false);
   const [remainedSeconds, setRemainedSeconds] = useState(0);
 
+  function showServerError(response: ErrorResponse) {
+    Object.entries(response.errors ?? {}).forEach(([field, messages]) => {
+      if (field in endpointSchema.shape) {
+        setError(field as keyof typeof endpointSchema.shape, { message: messages[0] });
+      }
+    });
+    toast.error(response.message);
+  }
+
   const { mutate: createEndpointMutation, isPending: isCreating } = useMutation({
     mutationFn: (body: EndpointFormType) => createEndpoint(body),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      if (!response.status) {
+        showServerError(response);
+        return;
+      }
       toast.success("EndPoint Created Successfully.");
       onSubmit();
       onClose?.();
@@ -121,7 +127,11 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
   });
   const { mutate: updateEndpointMutation, isPending: isUpdating } = useMutation({
     mutationFn: ({ id, body }: { id: string; body: EndpointFormType }) => updateEndpoint(id, body),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      if (!response.status) {
+        showServerError(response);
+        return;
+      }
       toast.success("EndPoint Updated Successfully.");
       onSubmit();
       onClose?.();
@@ -129,16 +139,27 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
   });
   const { mutate: sendOTPMutation, isPending: isSendingOTP } = useMutation({
     mutationFn: (body: unknown) => sendOTP(body),
-    onSuccess: (data) => {
-      toast.success(data.message);
+    onSuccess: (response) => {
+      if ("status" in response) {
+        showServerError(response);
+        return;
+      }
+      toast.success(response.message);
       setIsOTPSent(true);
-      setRemainedSeconds(data.timeLeft);
+      setRemainedSeconds(response.timeLeft);
     }
   });
 
+  function requiresOTP(type: EndpointFormType["type"], value: string) {
+    return (
+      OTP_REQUIRED_ENDPOINT_TYPES.includes(type) &&
+      (data === "NEW" || data?.value !== value || data?.type !== type)
+    );
+  }
+
   function handleSubmitForm(body: EndpointFormType) {
     const trimmedOTP = body.otpCode?.trim() ?? "";
-    if (OTP_REQUIRED_ENDPOINT_TYPES.includes(body.type) && trimmedOTP.length !== 5) {
+    if (requiresOTP(body.type, body.value) && trimmedOTP.length !== 5) {
       setError("otpCode", { message: "Enter a valid OTP code." });
       return null;
     }
@@ -150,7 +171,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
   }
 
   function handleSendOTP() {
-    const [type, value] = getValues(["type", "value"]);
+    const [type, value] = watch(["type", "value"]);
     if (value.trim().length === 0) {
       setError("value", { message: "This field is Required." });
       return;
@@ -159,9 +180,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
     sendOTPMutation(body);
   }
 
-  const showOTPSection =
-    OTP_REQUIRED_ENDPOINT_TYPES.includes(getValues("type")) &&
-    (data === "NEW" || data?.value !== watch("value") || data?.type !== getValues("type"));
+  const showOTPSection = requiresOTP(watch("type"), watch("value"));
 
   useEffect(() => {
     reset(getFormValues(data));
@@ -174,12 +193,16 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
     }
   }, [remainedSeconds]);
 
+  const isCreate = data === "NEW";
+
   return (
     <ModalContainer
-      title={`${data === "NEW" ? "Create New" : "Update"} Endpoint`}
+      title={isCreate ? t("modal.createTitle") : t("modal.updateTitle")}
       open={open}
       onClose={onClose}
       disableEscapeKeyDown
+      maxWidth={640}
+      paperSx={getGlassCardSx()}
     >
       <Grid
         component="form"
@@ -194,16 +217,17 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
       >
         <Grid size={6}>
           <TextField
-            label="Name"
+            label={t("modal.field.name")}
             variant="filled"
             error={!!errors.name}
             helperText={errors.name?.message}
             {...register("name")}
+            fullWidth
           />
         </Grid>
         <Grid size={6}>
           <TextField
-            label="Type"
+            label={t("modal.field.type")}
             variant="filled"
             error={!!errors.type}
             helperText={errors.type?.message}
@@ -224,7 +248,11 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
         </Grid>
         <Grid size={watch("type") === "telegram" ? 6 : 12}>
           <TextField
-            label={watch("type") === "telegram" || watch("type") === "bale" ? "ChatID" : "Value"}
+            label={
+              watch("type") === "telegram" || watch("type") === "bale"
+                ? t("modal.field.chatId")
+                : t("modal.field.value")
+            }
             variant="filled"
             error={!!errors.value}
             helperText={errors.value?.message}
@@ -234,7 +262,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
         {watch("type") === "telegram" && (
           <Grid size={6}>
             <TextField
-              label="ThreadID"
+              label={t("modal.field.threadId")}
               variant="filled"
               error={!!errors.threadId}
               helperText={errors.threadId?.message}
@@ -245,7 +273,7 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
         {(watch("type") === "telegram" || watch("type") === "bale") && (
           <Grid size={12}>
             <TextField
-              label="Bot Token"
+              label={t("modal.field.botToken")}
               variant="filled"
               error={!!errors.botToken}
               helperText={errors.botToken?.message}
@@ -259,18 +287,6 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
             selectedUserIds={watch("accessUserIds")}
             onTeamIdsChange={(teamIds) => setValue("accessTeamIds", teamIds)}
             onUserIdsChange={(userIds) => setValue("accessUserIds", userIds)}
-          />
-        </Grid>
-        <Grid size={12}>
-          <FormControlLabel
-            sx={{ margin: 0 }}
-            label="Is Public"
-            control={
-              <Checkbox
-                checked={watch("isPublic")}
-                onChange={(_, checked) => setValue("isPublic", checked)}
-              />
-            }
           />
         </Grid>
         {showOTPSection && (
@@ -317,23 +333,17 @@ export default function EndPointModal({ open, onClose, data, onSubmit }: Endpoin
                     ? `${`0${parseInt(String(remainedSeconds / 60))}`.slice(-2)}:${`0${parseInt(String(remainedSeconds % 60))}`.slice(
                         -2
                       )}`
-                    : "Resend"
-                  : "Send OTP Code"}
+                    : t("modal.otp.resend")
+                  : t("modal.otp.send")}
               </Button>
             </Stack>
           </Grid>
         )}
         {(!showOTPSection || (showOTPSection && isOTPSent)) && (
           <Grid size={12}>
-            <Button
-              disabled={isCreating || isUpdating}
-              type="submit"
-              variant="contained"
-              size="large"
-              fullWidth
-            >
-              {data === "NEW" ? "Create" : "Update"}
-            </Button>
+            <GradientSubmitButton type="submit" fullWidth loading={isCreating || isUpdating}>
+              {isCreate ? t("modal.submit.create") : t("modal.submit.update")}
+            </GradientSubmitButton>
           </Grid>
         )}
       </Grid>

@@ -1,5 +1,6 @@
 import table from "./components/table";
 import wrapper from "./components/wrapper";
+import endpoints from "./components/endpoints";
 import global from "./global";
 import page from "./page";
 import auth from "./pages/auth/signIn";
@@ -13,5 +14,6 @@ export default {
   ...auth,
   //components
   ...wrapper,
-  ...table
+  ...table,
+  ...endpoints
 } as const;

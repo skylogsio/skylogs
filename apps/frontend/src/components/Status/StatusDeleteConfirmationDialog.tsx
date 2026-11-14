@@ -1,4 +1,4 @@
-import { Typography, Chip, Stack, useTheme } from "@mui/material";
+import { Typography, Chip, Stack } from "@mui/material";
 
 import { IStatusCard } from "@/@types/status";
 import DeleteModalContainer from "@/components/DeleteModal/DeleteModalContainer";
@@ -20,7 +20,6 @@ export default function StatusDeleteConfirmationDialog({
   onClose,
   isLoading = false
 }: StatusDeleteConfirmationDialogProps) {
-  const { palette } = useTheme();
   if (!statusCard) return null;
 
   return (
@@ -66,7 +65,7 @@ export default function StatusDeleteConfirmationDialog({
               label="All Systems OK"
               size="small"
               sx={{
-                backgroundColor: palette.success.main,
+                backgroundColor: "success.main",
                 color: "white",
                 fontSize: 12
               }}
@@ -77,7 +76,7 @@ export default function StatusDeleteConfirmationDialog({
               label={`${statusCard.criticalCount} Critical`}
               size="small"
               sx={{
-                backgroundColor: palette.error.main,
+                backgroundColor: "error.main",
                 color: "white",
                 fontSize: 12
               }}
@@ -88,7 +87,7 @@ export default function StatusDeleteConfirmationDialog({
               label={`${statusCard.warningCount} Warning`}
               size="small"
               sx={{
-                backgroundColor: palette.warning.main,
+                backgroundColor: "warning.main",
                 color: "white",
                 fontSize: 12
               }}
@@ -123,8 +122,8 @@ export default function StatusDeleteConfirmationDialog({
                   sx={{
                     height: 18,
                     fontSize: 10,
-                    borderColor: palette.grey[300],
-                    color: palette.grey[600]
+                    borderColor: "var(--mui-palette-grey-300)",
+                    color: "var(--mui-palette-grey-600)"
                   }}
                 />
               ))}
@@ -136,8 +135,8 @@ export default function StatusDeleteConfirmationDialog({
                   sx={{
                     height: 18,
                     fontSize: 10,
-                    borderColor: palette.grey[300],
-                    color: palette.grey[600]
+                    borderColor: "var(--mui-palette-grey-300)",
+                    color: "var(--mui-palette-grey-600)"
                   }}
                 />
               )}

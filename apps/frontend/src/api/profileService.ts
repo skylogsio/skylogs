@@ -29,9 +29,13 @@ export async function updateProfileService(
   }
 }
 
-export async function deleteProfileService(profileServiceId: string): Promise<ServerResponse<unknown>> {
+export async function deleteProfileService(
+  profileServiceId: string
+): Promise<ServerResponse<unknown>> {
   try {
-    const response = await axios.delete<ServerResponse<unknown>>(`${PROFILE_SERVICE_URL}/${profileServiceId}`);
+    const response = await axios.delete<ServerResponse<unknown>>(
+      `${PROFILE_SERVICE_URL}/${profileServiceId}`
+    );
     return response.data;
   } catch (error) {
     throw error;

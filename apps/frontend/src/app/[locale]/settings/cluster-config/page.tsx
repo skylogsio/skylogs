@@ -14,10 +14,8 @@ import {
   Stack,
   TextField,
   Typography,
-  useTheme,
   Alert,
-  CircularProgress,
-  alpha
+  CircularProgress
 } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
@@ -67,7 +65,6 @@ const defaultValues: ClusterFormType = {
 };
 
 export default function ClusterConfigurationPage() {
-  const { palette } = useTheme();
   const [isInitialized, setIsInitialized] = useState(false);
 
   const {
@@ -148,7 +145,7 @@ export default function ClusterConfigurationPage() {
             alignItems: "center"
           }}
         >
-          <HiServer size="2rem" color={palette.primary.main} />
+          <HiServer size="2rem" color="var(--mui-palette-primary-main)" />
           <Typography
             variant="h5"
             sx={{
@@ -162,7 +159,7 @@ export default function ClusterConfigurationPage() {
         <Alert severity="info">
           No cluster configuration found. You can create a new configuration below.
         </Alert>
-        <Card sx={{ backgroundColor: palette.background.paper }}>
+        <Card sx={{ backgroundColor: "background.paper" }}>
           <CardContent sx={{ padding: 4 }}>
             <Grid component="form" onSubmit={handleSubmit(handleSubmitForm)} container spacing={3}>
               <Grid size={12}>
@@ -284,7 +281,7 @@ export default function ClusterConfigurationPage() {
           alignItems: "center"
         }}
       >
-        <HiServer size="2rem" color={palette.primary.main} />
+        <HiServer size="2rem" color="var(--mui-palette-primary-main)" />
         <Typography
           variant="h5"
           sx={{
@@ -305,7 +302,7 @@ export default function ClusterConfigurationPage() {
           )}
         </Alert>
       )}
-      <Card sx={{ backgroundColor: palette.background.paper, boxShadow: "none" }}>
+      <Card sx={{ backgroundColor: "background.paper", boxShadow: "none" }}>
         <CardContent sx={{ padding: 4 }}>
           <Grid component="form" onSubmit={handleSubmit(handleSubmitForm)} container spacing={2}>
             <Grid size={12}>
@@ -409,7 +406,13 @@ export default function ClusterConfigurationPage() {
           </Grid>
         </CardContent>
       </Card>
-      <Card sx={{ backgroundColor: alpha(palette.info.light, 0.08), boxShadow: "none" }}>
+      <Card
+        sx={{
+          backgroundColor:
+            "color-mix(in srgb, var(--mui-palette-info-light) 8%, transparent)",
+          boxShadow: "none"
+        }}
+      >
         <CardContent>
           <Typography
             variant="h6"

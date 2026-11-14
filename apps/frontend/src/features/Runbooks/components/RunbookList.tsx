@@ -25,7 +25,6 @@ import RunbookStatusChip from "./RunbookStatusChip";
 export default function RunbookList() {
   const tableRef = useRef<TableComponentRef>(null);
   const theme = useTheme();
-  const { isDark } = useCurrentTheme();
   const { hasRole } = useRole();
   const canWrite = hasRole(["owner", "manager"]);
 
@@ -50,7 +49,7 @@ export default function RunbookList() {
         url="runbook"
         searchKey="name"
         defaultPageSize={10}
-        tablePaperSx={getGlassCardSx(theme, isDark)}
+        tablePaperSx={getGlassCardSx()}
         onCreate={canWrite ? () => setModalData("NEW") : undefined}
         onRowClick={(row) => setDetailsRunbookId(row.id)}
         filterComponent={({ onChange }) => <RunbookFilter onChange={onChange} />}

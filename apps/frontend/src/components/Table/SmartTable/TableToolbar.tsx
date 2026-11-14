@@ -2,7 +2,7 @@
 
 import { type MouseEventHandler, type ReactNode } from "react";
 
-import { Badge, Box, Button, IconButton, Stack, Typography, alpha, useTheme } from "@mui/material";
+import { Badge, Box, Button, IconButton, Stack, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { HiOutlinePlusSm, HiFilter } from "react-icons/hi";
 
@@ -14,6 +14,7 @@ import { isBuiltInToolbarAction } from "./utils";
 
 interface TableToolbarProps {
   title?: string;
+  titleExtra?: ReactNode;
   searchTitle?: string;
   searchValue: string;
   onSearch: (value: string) => void;
@@ -51,9 +52,9 @@ export default function TableToolbar({
   toolbarActions = DEFAULT_ACTIONS,
   toolbarStart,
   toolbarEnd,
+  titleExtra,
   renderToolbar
 }: TableToolbarProps) {
-  const { palette } = useTheme();
   const t = useScopedI18n("table");
 
   const actionCtx: ToolbarActionContext = {
@@ -73,35 +74,65 @@ export default function TableToolbar({
   const filterNode = showFilter ? (
     <Button
       size="small"
-      variant="outlined"
-      startIcon={<HiFilter size="0.95rem" />}
+      startIcon={<HiFilter size="1rem" />}
       onClick={onToggleFilter}
       aria-expanded={openFilter}
-      sx={{
-        height: 33,
-        minHeight: 33,
-        borderRadius: 2,
-        px: 1.35,
-        fontSize: 12.5,
-        textTransform: "none",
-        fontWeight: 400,
-        "& .MuiButton-startIcon": {
-          mr: 0.5
-        },
-        borderColor:
-          openFilter || hasActiveFilters
-            ? alpha(palette.primary.main, 0.45)
-            : alpha(palette.text.primary, 0.12),
-        bgcolor:
-          openFilter || hasActiveFilters
-            ? alpha(palette.primary.main, 0.1)
-            : palette.background.paper,
-        color: openFilter || hasActiveFilters ? palette.primary.main : palette.text.secondary,
-        "&:hover": {
-          borderColor: alpha(palette.primary.main, 0.45),
-          bgcolor: alpha(palette.primary.main, 0.08)
+      sx={[
+        (theme) => {
+          const isActive = openFilter || hasActiveFilters;
+          return {
+            height: 33,
+            minHeight: 33,
+            borderRadius: "10px",
+            px: 1.5,
+            fontSize: "0.8125rem",
+            textTransform: "none",
+            fontWeight: 550,
+            letterSpacing: "0.01em",
+            border: "1px solid",
+            transition: "all 0.18s cubic-bezier(0.22, 1, 0.36, 1)",
+            "& .MuiButton-startIcon": {
+              mr: 0.65
+            },
+            ...(isActive
+              ? {
+                  borderColor: `color-mix(in srgb, ${theme.palette.primary.main} 45%, transparent)`,
+                  bgcolor: `color-mix(in srgb, ${theme.palette.primary.main} 12%, transparent)`,
+                  color: "primary.main",
+                  boxShadow: `0 2px 8px color-mix(in srgb, ${theme.palette.primary.main} 18%, transparent)`,
+                  ...theme.applyStyles("dark", {
+                    borderColor: `color-mix(in srgb, ${theme.palette.primary.main} 55%, transparent)`,
+                    bgcolor: `color-mix(in srgb, ${theme.palette.primary.main} 18%, transparent)`,
+                    color: "primary.light",
+                    boxShadow: `0 2px 8px color-mix(in srgb, ${theme.palette.primary.main} 25%, transparent)`
+                  }),
+                  "&:hover": {
+                    borderColor: `color-mix(in srgb, ${theme.palette.primary.main} 60%, transparent)`,
+                    bgcolor: `color-mix(in srgb, ${theme.palette.primary.main} 18%, transparent)`
+                  }
+                }
+              : {
+                  borderColor: "color-mix(in srgb, var(--mui-palette-text-primary) 12%, transparent)",
+                  bgcolor: theme.palette.background.paper,
+                  color: "text.secondary",
+                  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
+                  ...theme.applyStyles("dark", {
+                    bgcolor: "rgba(18, 0, 0, 0.05)",
+                    borderColor: `color-mix(in srgb, ${theme.palette.text.primary} 12%, transparent)`
+                  }),
+                  "&:hover": {
+                    borderColor: `color-mix(in srgb, ${theme.palette.primary.main} 35%, transparent)`,
+                    bgcolor: `color-mix(in srgb, ${theme.palette.primary.main} 8%, transparent)`,
+                    color: "primary.main",
+                    ...theme.applyStyles("dark", {
+                      bgcolor: "rgba(255, 255, 255, 0.09)",
+                      color: "primary.light"
+                    })
+                  }
+                }),
+          };
         }
-      }}
+      ]}
     >
       {t("filterButton")}
       <Box
@@ -139,10 +170,12 @@ export default function TableToolbar({
                 "& .MuiBadge-badge": {
                   position: "static",
                   transform: "none",
-                  fontSize: "0.6rem",
-                  height: 16,
-                  minWidth: 16,
-                  borderRadius: 1
+                  fontSize: "0.65rem",
+                  fontWeight: 700,
+                  height: 17,
+                  minWidth: 17,
+                  borderRadius: "999px",
+                  px: 0.5
                 }
               }}
             />
@@ -161,10 +194,10 @@ export default function TableToolbar({
         width: 33,
         height: 33,
         borderRadius: 2,
-        bgcolor: palette.primary.main,
-        color: palette.primary.contrastText,
+        bgcolor: "primary.main",
+        color: "primary.contrastText",
         "&:hover": {
-          bgcolor: palette.primary.dark
+          bgcolor: "primary.dark"
         }
       }}
     >
@@ -247,7 +280,18 @@ export default function TableToolbar({
         width: 1
       }}
     >
-      {titleNode}
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          alignItems: "center",
+          flexWrap: "wrap",
+          rowGap: 1
+        }}
+      >
+        {titleNode}
+        {titleExtra}
+      </Stack>
       <Stack
         direction="row"
         spacing={0.75}

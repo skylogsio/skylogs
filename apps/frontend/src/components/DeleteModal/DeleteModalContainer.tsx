@@ -1,10 +1,10 @@
-import { alpha, Button, Grid, Stack, Typography, useTheme } from "@mui/material";
+import { Button, Grid, Stack, Typography } from "@mui/material";
 import { BsExclamationCircle } from "react-icons/bs";
 import { HiX } from "react-icons/hi";
 
 import type { DeleteModalProps } from "@/components/DeleteModal/DeleteModalTypes";
 import ModalContainer from "@/components/Modal";
-import { useCurrentTheme } from "@/hooks";
+import { mergeSx, mixPrimary, pillSurfaceSx } from "@/components/Wrapper/topBarStyles";
 
 export default function DeleteModalContainer({
   open,
@@ -15,8 +15,6 @@ export default function DeleteModalContainer({
   paperSx,
   contentSx
 }: DeleteModalProps) {
-  const { palette } = useTheme();
-  const { isDark } = useCurrentTheme();
   return (
     <ModalContainer open={open} onClose={onClose} width="90%" maxWidth="400px" paperSx={paperSx}>
       <Stack
@@ -25,7 +23,7 @@ export default function DeleteModalContainer({
           alignItems: "center"
         }}
       >
-        <BsExclamationCircle color={palette.error.main} size="4rem" />
+        <BsExclamationCircle color="var(--mui-palette-error-main)" size="4rem" />
         <Typography
           variant="h5"
           component="div"
@@ -44,16 +42,25 @@ export default function DeleteModalContainer({
         <Grid
           container
           spacing={1}
-          sx={{
-            minWidth: "100% !important",
-            boxSizing: "border-box",
-            padding: 2,
-            alignItems: "center",
-            bgcolor: alpha(palette.secondary.light, isDark ? 0.08 : 0.16),
-            border: `1px solid ${alpha(palette.primary.main, isDark ? 0.14 : 0.18)}`,
-            borderRadius: 3,
-            ...contentSx
-          }}
+          sx={mergeSx(
+            {
+              minWidth: "100% !important",
+              boxSizing: "border-box",
+              padding: 2,
+              alignItems: "center",
+              bgcolor:
+                "color-mix(in srgb, var(--mui-palette-secondary-light) 16%, transparent)",
+              border: `1px solid ${mixPrimary(18)}`,
+              borderRadius: 3
+            },
+            (muiTheme) =>
+              muiTheme.applyStyles("dark", {
+                bgcolor:
+                  "color-mix(in srgb, var(--mui-palette-secondary-light) 8%, transparent)",
+                border: `1px solid ${mixPrimary(14)}`
+              }),
+            contentSx
+          )}
         >
           {children}
         </Grid>
@@ -80,21 +87,31 @@ export default function DeleteModalContainer({
             variant="outlined"
             onClick={onClose}
             startIcon={<HiX />}
-            sx={{
-              textTransform: "none",
-              fontWeight: 600,
-              letterSpacing: "0.02em",
-              color: palette.text.primary,
-              backgroundColor: isDark ? "rgba(255, 255, 255, 0.09)" : "#F1EBE1",
-              borderColor: alpha(palette.primary.main, isDark ? 0.14 : 0.18),
-              "&:hover": {
-                backgroundColor: isDark ? "rgba(255, 255, 255, 0.13)" : "#E8E0D4",
-                borderColor: alpha(palette.primary.main, isDark ? 0.22 : 0.28)
+            sx={mergeSx(
+              {
+                textTransform: "none",
+                fontWeight: 600,
+                letterSpacing: "0.02em",
+                color: "text.primary",
+                borderColor: mixPrimary(18),
+                "&:hover": {
+                  backgroundColor: "#E8E0D4",
+                  borderColor: mixPrimary(28)
+                },
+                "& .MuiButton-startIcon": {
+                  color: "text.secondary"
+                }
               },
-              "& .MuiButton-startIcon": {
-                color: palette.text.secondary
-              }
-            }}
+              pillSurfaceSx(),
+              (muiTheme) =>
+                muiTheme.applyStyles("dark", {
+                  borderColor: mixPrimary(14),
+                  "&:hover": {
+                    backgroundColor: "rgba(255, 255, 255, 0.13)",
+                    borderColor: mixPrimary(22)
+                  }
+                })
+            )}
           >
             Cancel
           </Button>
