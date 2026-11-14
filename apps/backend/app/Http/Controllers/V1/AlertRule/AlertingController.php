@@ -470,8 +470,26 @@ class AlertingController extends Controller
                 $model->conditionType = $request->conditionType;
                 $model->minutes = ((int) $request->minutes);
                 $model->countDocument = ((int) $request->countDocument);
+
+                $resetsCheck = $model->isDirty([
+                    'dataSourceId',
+                    'dataviewName',
+                    'dataviewTitle',
+                    'queryString',
+                    'conditionType',
+                    'minutes',
+                    'countDocument',
+                ]);
+
+                if ($resetsCheck) {
+                    $model->state = AlertRule::RESOlVED;
+                }
+
                 $model->save();
-                ElasticCheck::where('alertRuleId', $model->_id)->delete();
+
+                if ($resetsCheck) {
+                    ElasticCheck::where('alertRuleId', $model->_id)->delete();
+                }
                 break;
 
             case AlertRuleType::VICTORIA_LOGS:
@@ -481,8 +499,24 @@ class AlertingController extends Controller
                 $model->conditionType = $request->conditionType;
                 $model->minutes = ((int) $request->minutes);
                 $model->countDocument = ((int) $request->countDocument);
+
+                $resetsCheck = $model->isDirty([
+                    'dataSourceId',
+                    'queryString',
+                    'conditionType',
+                    'minutes',
+                    'countDocument',
+                ]);
+
+                if ($resetsCheck) {
+                    $model->state = AlertRule::RESOlVED;
+                }
+
                 $model->save();
-                VictoriaLogsCheck::where('alertRuleId', $model->_id)->delete();
+
+                if ($resetsCheck) {
+                    VictoriaLogsCheck::where('alertRuleId', $model->_id)->delete();
+                }
                 break;
 
             case AlertRuleType::HEALTH:
@@ -566,12 +600,15 @@ class AlertingController extends Controller
 
     public function ResolveAlert($id)
     {
-
-        $alert = AlertRule::where('_id', $id)->first();
+        $alert = AlertRule::where('_id', $id)->firstOrFail();
 
         $currentUser = auth()->user();
         if (! $this->alertRuleService->hasAdminAccessAlert($currentUser, $alert)) {
             abort(403);
+        }
+
+        if ($alert->type !== AlertRuleType::API) {
+            abort(422, 'Manual resolve is only supported for API alert rules.');
         }
 
         $this->alertRuleService->resolveAlertManually($alert);
