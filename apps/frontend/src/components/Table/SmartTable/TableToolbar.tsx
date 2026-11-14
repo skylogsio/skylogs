@@ -71,68 +71,40 @@ export default function TableToolbar({
     <SearchControl title={searchTitle ?? title} value={searchValue} onSearch={onSearch} />
   );
 
+  const isActive = openFilter || hasActiveFilters;
+
   const filterNode = showFilter ? (
     <Button
       size="small"
-      startIcon={<HiFilter size="1rem" />}
+      variant="outlined"
+      startIcon={<HiFilter size="0.95rem" />}
       onClick={onToggleFilter}
       aria-expanded={openFilter}
-      sx={[
-        (theme) => {
-          const isActive = openFilter || hasActiveFilters;
-          return {
-            height: 33,
-            minHeight: 33,
-            borderRadius: "10px",
-            px: 1.5,
-            fontSize: "0.8125rem",
-            textTransform: "none",
-            fontWeight: 550,
-            letterSpacing: "0.01em",
-            border: "1px solid",
-            transition: "all 0.18s cubic-bezier(0.22, 1, 0.36, 1)",
-            "& .MuiButton-startIcon": {
-              mr: 0.65
-            },
-            ...(isActive
-              ? {
-                  borderColor: `color-mix(in srgb, ${theme.palette.primary.main} 45%, transparent)`,
-                  bgcolor: `color-mix(in srgb, ${theme.palette.primary.main} 12%, transparent)`,
-                  color: "primary.main",
-                  boxShadow: `0 2px 8px color-mix(in srgb, ${theme.palette.primary.main} 18%, transparent)`,
-                  ...theme.applyStyles("dark", {
-                    borderColor: `color-mix(in srgb, ${theme.palette.primary.main} 55%, transparent)`,
-                    bgcolor: `color-mix(in srgb, ${theme.palette.primary.main} 18%, transparent)`,
-                    color: "primary.light",
-                    boxShadow: `0 2px 8px color-mix(in srgb, ${theme.palette.primary.main} 25%, transparent)`
-                  }),
-                  "&:hover": {
-                    borderColor: `color-mix(in srgb, ${theme.palette.primary.main} 60%, transparent)`,
-                    bgcolor: `color-mix(in srgb, ${theme.palette.primary.main} 18%, transparent)`
-                  }
-                }
-              : {
-                  borderColor: "color-mix(in srgb, var(--mui-palette-text-primary) 12%, transparent)",
-                  bgcolor: theme.palette.background.paper,
-                  color: "text.secondary",
-                  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.03)",
-                  ...theme.applyStyles("dark", {
-                    bgcolor: "rgba(18, 0, 0, 0.05)",
-                    borderColor: `color-mix(in srgb, ${theme.palette.text.primary} 12%, transparent)`
-                  }),
-                  "&:hover": {
-                    borderColor: `color-mix(in srgb, ${theme.palette.primary.main} 35%, transparent)`,
-                    bgcolor: `color-mix(in srgb, ${theme.palette.primary.main} 8%, transparent)`,
-                    color: "primary.main",
-                    ...theme.applyStyles("dark", {
-                      bgcolor: "rgba(255, 255, 255, 0.09)",
-                      color: "primary.light"
-                    })
-                  }
-                }),
-          };
+      sx={{
+        height: 33,
+        minHeight: 33,
+        borderRadius: 2,
+        px: 1.35,
+        fontSize: 12.5,
+        textTransform: "none",
+        fontWeight: 400,
+        whiteSpace: "nowrap",
+        transition: "color 0.12s ease, background-color 0.12s ease, border-color 0.12s ease",
+        "& .MuiButton-startIcon": {
+          mr: 0.5
+        },
+        borderColor: isActive
+          ? "color-mix(in srgb, var(--mui-palette-primary-main) 45%, transparent)"
+          : "color-mix(in srgb, var(--mui-palette-text-primary) 12%, transparent)",
+        bgcolor: isActive
+          ? "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)"
+          : "var(--mui-palette-background-paper)",
+        color: isActive ? "primary.main" : "text.secondary",
+        "&:hover": {
+          borderColor: "color-mix(in srgb, var(--mui-palette-primary-main) 45%, transparent)",
+          bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 8%, transparent)"
         }
-      ]}
+      }}
     >
       {t("filterButton")}
       <Box
@@ -174,7 +146,7 @@ export default function TableToolbar({
                   fontWeight: 700,
                   height: 17,
                   minWidth: 17,
-                  borderRadius: "999px",
+                  borderRadius: 1,
                   px: 0.5
                 }
               }}
