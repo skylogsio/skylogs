@@ -406,6 +406,7 @@ class AlertingController extends Controller
                 $queryText = '';
                 $dataSourceIds = [];
                 $dataSourceAlertname = '';
+                $model->name = $request->name;
                 $model->queryType = $request->queryType;
                 if ($request->queryType == AlertRule::DYNAMIC_QUERY_TYPE) {
                     $dataSourceIds = array_unique($request->dataSourceIds);
@@ -429,8 +430,14 @@ class AlertingController extends Controller
                 $model->dataSourceAlertName = $dataSourceAlertname ?? '';
                 $model->queryText = $queryText;
 
-                if ($model->isDirty()) {
+                $monitoringFieldsChanged = collect(array_keys($model->getDirty()))
+                    ->contains(fn (string $attribute): bool => $attribute !== 'name');
+
+                if ($monitoringFieldsChanged) {
                     $model->state = null;
+                }
+
+                if ($model->isDirty()) {
                     $model->save();
                 }
 
