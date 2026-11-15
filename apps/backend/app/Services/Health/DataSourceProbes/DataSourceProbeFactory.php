@@ -30,6 +30,10 @@ final class DataSourceProbeFactory
             return app(ElasticProbe::class)->connection($dataSource);
         }
 
+        if ($dataSource->type === DataSourceType::PMM) {
+            return app(PmmProbe::class)->connection($dataSource);
+        }
+
         return $this->for($dataSource);
     }
 }

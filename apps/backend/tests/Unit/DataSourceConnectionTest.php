@@ -26,6 +26,7 @@ describe('data source connection checks', function () {
         int $status,
         string $body,
         bool $connected,
+        ?string $contentType = null,
     ) {
         Http::preventStrayRequests();
         Http::fake([
@@ -43,12 +44,14 @@ describe('data source connection checks', function () {
 
         expect($isConnected)->toBe($connected);
 
-        Http::assertSent(function (Request $request) use ($url, $method, $authorization) {
+        Http::assertSent(function (Request $request) use ($url, $method, $authorization, $contentType) {
             $header = $request->header('Authorization')[0] ?? null;
+            $sentContentType = $request->header('Content-Type')[0] ?? null;
 
             return $request->url() === $url
                 && $request->method() === $method
-                && $header === $authorization;
+                && $header === $authorization
+                && ($contentType === null || $sentContentType === $contentType);
         });
     })->with([
         'prometheus' => [
@@ -84,12 +87,13 @@ describe('data source connection checks', function () {
         'pmm' => [
             DataSourceType::PMM,
             ['username' => 'pmm-user', 'password' => 'pmm-pass'],
-            'https://source.example.com/api/health',
+            'https://source.example.com/v1/version',
             'GET',
             'Basic '.base64_encode('pmm-user:pmm-pass'),
             200,
-            'ok',
+            '{"version":"2.41.0"}',
             true,
+            'application/json',
         ],
         'zabbix' => [
             DataSourceType::ZABBIX,
