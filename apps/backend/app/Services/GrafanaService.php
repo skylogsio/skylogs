@@ -199,20 +199,17 @@ class GrafanaService
         $merged = self::mergeGrafanaCheckAlertBatch($check->alerts ?? [], $alerts);
 
         $fireCount = count($merged);
+        $alertRule->state = $fireCount == 0 ? AlertRule::RESOlVED : AlertRule::CRITICAL;
+        $alertRule->fireCount = $fireCount;
 
         $check->alerts = $merged;
         $check->state = $fireCount == 0 ? GrafanaWebhookAlert::RESOLVED : GrafanaWebhookAlert::FIRING;
+        $check->setRelation('alertRule', $alertRule);
         $check->save();
 
-        $alertRuleState = $fireCount == 0 ? AlertRule::RESOlVED : AlertRule::CRITICAL;
-
-        if ($alertRule) {
-            $alertRule->state = $alertRuleState;
-            $alertRule->fireCount = $fireCount;
-            $alertRule->save();
-            if ($alertRule->state == AlertRule::RESOlVED) {
-                $alertRule->removeAcknowledge();
-            }
+        $alertRule->save();
+        if ($alertRule->state == AlertRule::RESOlVED) {
+            $alertRule->removeAcknowledge();
         }
 
     }
