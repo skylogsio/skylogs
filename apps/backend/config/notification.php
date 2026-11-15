@@ -49,4 +49,16 @@ return [
 
     'http_connect_timeout' => (int) env('NOTIFICATION_HTTP_CONNECT_TIMEOUT', 5),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Failover metrics
+    |--------------------------------------------------------------------------
+    |
+    | Profile attempts are counted in Redis so a scrape can export counters.
+    | This is the database.php redis connection those hashes are stored on.
+    |
+    */
+
+    'metrics_redis_connection' => env('NOTIFICATION_METRICS_REDIS_CONNECTION', 'default'),
+
 ];

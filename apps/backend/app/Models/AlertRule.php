@@ -253,7 +253,7 @@ class AlertRule extends BaseModel implements Messageable
                 $alertCount = $this->fireCount ?? 0;
                 break;
             case AlertRuleType::HEALTH:
-                $check = HealthCheck::where('alertRuleId', $this->_id)->first();
+                $check = HealthCheck::where('alertRuleId', $this->getKey())->first();
                 if (empty($check) || $check->state == HealthCheck::UP) {
                     $alertState = self::RESOlVED;
                 } else {
@@ -262,7 +262,7 @@ class AlertRule extends BaseModel implements Messageable
                 break;
 
             case AlertRuleType::ELASTIC:
-                $check = ElasticCheck::where('alertRuleId', $this->_id)->first();
+                $check = ElasticCheck::where('alertRuleId', $this->getKey())->first();
                 if (empty($check) || $check->state == ElasticCheck::RESOLVED) {
                     $alertState = self::RESOlVED;
                 } else {
@@ -270,7 +270,7 @@ class AlertRule extends BaseModel implements Messageable
                 }
                 break;
             case AlertRuleType::VICTORIA_LOGS:
-                $check = VictoriaLogsCheck::where('alertRuleId', $this->_id)->first();
+                $check = VictoriaLogsCheck::where('alertRuleId', $this->getKey())->first();
                 if (empty($check) || $check->state == VictoriaLogsCheck::RESOLVED) {
                     $alertState = self::RESOlVED;
                 } else {

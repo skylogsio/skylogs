@@ -30,8 +30,9 @@ interface StateProjector
     public function projectDeletion(BaseModel $check, AlertRule $alertRule): array;
 
     /**
-     * The slots to refresh when the rule aggregate itself changed. Bounded to
-     * the firing instances: a resolved slot's own write already replicated it.
+     * The slots to refresh when the rule aggregate itself changed. Firing
+     * instances carry it. When none are firing, one remaining slot still has
+     * to, or the aggregate never reaches a follower.
      *
      * @return array<int, AlertStateChange>
      */

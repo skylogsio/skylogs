@@ -85,17 +85,17 @@ class AlertRuleService
                 }
                 break;
             case AlertRuleType::ELASTIC:
-                $check = ElasticCheck::where('alertRuleId', $alertRuleId)->first();
-                if ($check) {
-                    return $check->toArray() ?? [];
-                }
-                break;
+                $check = ElasticCheck::where('alertRuleId', $alertRuleId)
+                    ->where('state', ElasticCheck::FIRE)
+                    ->first();
+
+                return $check ? $check->toArray() : [];
             case AlertRuleType::VICTORIA_LOGS:
-                $check = VictoriaLogsCheck::where('alertRuleId', $alertRuleId)->first();
-                if ($check) {
-                    return $check->toArray() ?? [];
-                }
-                break;
+                $check = VictoriaLogsCheck::where('alertRuleId', $alertRuleId)
+                    ->where('state', VictoriaLogsCheck::FIRE)
+                    ->first();
+
+                return $check ? $check->toArray() : [];
 
         }
 
@@ -1124,136 +1124,37 @@ class AlertRuleService
 
     }
 
-    public function resolveAlertManually($alert)
+    public function resolveAlertManually(AlertRule $alert): void
     {
+        if ($alert->type !== AlertRuleType::API) {
+            return;
+        }
+
         $sendResolve = false;
         $history = null;
 
-        switch ($alert->type) {
-            case AlertRuleType::API:
-                $apiAlerts = AlertInstance::where('alertRuleId', $alert->id)
-                    ->where('state', AlertInstance::FIRE)
-                    ->get();
-                if ($apiAlerts->isNotEmpty()) {
-                    $sendResolve = true;
-                    foreach ($apiAlerts as $apiAlert) {
-                        $apiAlert->description = '';
-                        $apiAlert->state = AlertInstance::RESOLVED;
-                        $apiAlert->save();
-                        $apiHistory = $apiAlert->createHistory();
-                        $apiAlert->createStatusHistory($apiHistory);
-                    }
-                }
-                app(ApiService::class)->refreshStatus($alert);
-                break;
-            case AlertRuleType::SENTRY:
-                if (empty($alert->state) || $alert->state != AlertRule::RESOlVED) {
-                    $sendResolve = true;
-                    $alert->state = AlertRule::RESOlVED;
-                    $alert->save();
+        $apiAlerts = AlertInstance::where('alertRuleId', $alert->id)
+            ->where('state', AlertInstance::FIRE)
+            ->get();
 
-                    $history = SentryWebhookAlert::create([
-                        'alertRuleName' => $alert->name,
-                        'dataSourceAlertName' => $alert->dataSourceAlertName,
-                        'alertRuleId' => $alert->_id,
-                        'action' => 'resolved',
-                        'message' => 'resolved manually.',
-                        'description' => 'resolved manually.',
-                    ]);
-                }
-                break;
-            case AlertRuleType::ZABBIX:
-                if (empty($alert->state) || $alert->state != AlertRule::RESOlVED) {
-                    $sendResolve = true;
-                    $alert->state = AlertRule::RESOlVED;
-                    $alert->fireCount = 0;
-                    $alert->save();
-                    $zabbixCheck = ZabbixCheck::where('alertRuleId', $alert->id)->first();
-                    if ($zabbixCheck) {
-                        $zabbixCheck->fireEvents = [];
-                        $zabbixCheck->save();
-                    }
-                }
-                break;
-            case AlertRuleType::PROMETHEUS:
-                $prometheusAlert = PrometheusCheck::where('alertRuleId', $alert->_id)->where('state', PrometheusCheck::FIRE)->first();
-                if ($prometheusAlert && $prometheusAlert->state == PrometheusCheck::FIRE) {
-                    $prometheusAlert->state = PrometheusCheck::RESOLVED;
-                    $prometheusAlert->save();
-                    $history = $prometheusAlert->createHistory();
-                    $sendResolve = true;
-                }
-                break;
-            case AlertRuleType::ELASTIC:
-                $check = ElasticCheck::where('alertRuleId', $alert->_id)->where('state', ElasticCheck::FIRE)->first();
-                if ($check && $check->state == ElasticCheck::FIRE) {
-                    $check->state = ElasticCheck::RESOLVED;
-                    $check->save();
-
-                    $history = ElasticHistory::create([
-                        'alertRuleId' => $alert->_id,
-                        'alertRuleName' => $alert->name,
-                        'dataSourceId' => $alert->dataSourceId,
-                        'dataviewName' => $alert->dataviewName,
-                        'dataviewTitle' => $alert->dataviewTitle,
-                        'queryString' => $alert->queryString,
-                        'conditionType' => $alert->conditionType,
-                        'minutes' => $alert->minutes,
-                        'countDocument' => $alert->countDocument,
-                        'currentCountDocument' => -1,
-                        'state' => ElasticCheck::RESOLVED,
-                    ]);
-                    $sendResolve = true;
-                }
-                break;
-            case AlertRuleType::VICTORIA_LOGS:
-                $check = VictoriaLogsCheck::where('alertRuleId', $alert->_id)
-                    ->where('state', VictoriaLogsCheck::FIRE)
-                    ->first();
-                if ($check && $check->state == VictoriaLogsCheck::FIRE) {
-                    $check->state = VictoriaLogsCheck::RESOLVED;
-                    $check->save();
-
-                    $history = VictoriaLogsHistory::create([
-                        'alertRuleId' => $alert->_id,
-                        'alertRuleName' => $alert->name,
-                        'dataSourceId' => $alert->dataSourceId,
-                        'queryString' => $alert->queryString,
-                        'conditionType' => $alert->conditionType,
-                        'minutes' => $alert->minutes,
-                        'countDocument' => $alert->countDocument,
-                        'currentCountDocument' => -1,
-                        'state' => VictoriaLogsCheck::RESOLVED,
-                    ]);
-                    $sendResolve = true;
-                }
-                break;
-            case AlertRuleType::PMM:
-            case AlertRuleType::GRAFANA:
-                if ($alert->state == AlertRule::CRITICAL) {
-                    $sendResolve = true;
-                    $alert->state = AlertRule::RESOlVED;
-                    $alert->save();
-                    $check = GrafanaCheck::where('alertRuleId', $alert->id)->first();
-                    if ($check) {
-                        $check->alerts = [];
-                        $check->state = GrafanaWebhookAlert::RESOLVED;
-                        $check->save();
-                    }
-                }
-                break;
-
-            case AlertRuleType::SPLUNK:
-            case AlertRuleType::NOTIFICATION:
-            case AlertRuleType::METABASE:
-                break;
-
+        if ($apiAlerts->isNotEmpty()) {
+            $sendResolve = true;
+            foreach ($apiAlerts as $apiAlert) {
+                $apiAlert->description = '';
+                $apiAlert->state = AlertInstance::RESOLVED;
+                $apiAlert->save();
+                $apiHistory = $apiAlert->createHistory();
+                $apiAlert->createStatusHistory($apiHistory);
+            }
         }
+
+        app(ApiService::class)->refreshStatus($alert);
+
         $alert->removeAcknowledge();
+
         if ($sendResolve) {
             app(SendNotifyService::class)->createNotify(SendNotifyJob::RESOLVED_MANUALLY, $alert, $alert->_id, $history);
         }
-
     }
 
     /**

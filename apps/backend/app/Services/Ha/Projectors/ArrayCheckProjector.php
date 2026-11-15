@@ -69,6 +69,11 @@ abstract class ArrayCheckProjector extends AbstractStateProjector
         return $changes;
     }
 
+    /**
+     * Firing entries carry the aggregate. When every remaining entry is
+     * resolved, one of them still has to: otherwise a full resolve, or an
+     * acknowledge clear after it, never reaches a follower.
+     */
     public function projectRule(AlertRule $alertRule): array
     {
         $check = $this->findCheck($alertRule);
@@ -77,17 +82,34 @@ abstract class ArrayCheckProjector extends AbstractStateProjector
             return [];
         }
 
-        $changes = [];
+        $firing = [];
+        $resolved = [];
 
         foreach ($this->slots($check->getAttribute($this->attribute())) as $instanceId => $entry) {
-            if (! $this->isFiring($entry)) {
-                continue;
+            if ($this->isFiring($entry)) {
+                $firing[$instanceId] = $entry;
+            } else {
+                $resolved[$instanceId] = $entry;
             }
-
-            $changes[] = $this->change($alertRule, $check, (string) $instanceId, $entry, false);
         }
 
-        return $changes;
+        if ($firing !== []) {
+            $changes = [];
+
+            foreach ($firing as $instanceId => $entry) {
+                $changes[] = $this->change($alertRule, $check, (string) $instanceId, $entry, false);
+            }
+
+            return $changes;
+        }
+
+        if ($resolved === []) {
+            return [];
+        }
+
+        $instanceId = (string) array_key_first($resolved);
+
+        return [$this->change($alertRule, $check, $instanceId, $resolved[$instanceId], true)];
     }
 
     /**

@@ -393,7 +393,8 @@ class AlertingDoc
     #[OA\Post(
         path: '/api/v1/alert-rule/resolve/{id}',
         operationId: 'resolveAlertRule',
-        summary: 'Manually resolve alert',
+        summary: 'Manually resolve API alert',
+        description: 'Resolves all firing instances for an API alert rule. Other alert rule types are not supported and return 422.',
         security: [['bearerAuth' => []]],
         tags: ['AlertRule'],
         parameters: [
@@ -406,6 +407,7 @@ class AlertingDoc
                 content: new OA\JsonContent(ref: '#/components/schemas/StatusResponse')
             ),
             new OA\Response(response: 403, description: 'Forbidden'),
+            new OA\Response(response: 422, description: 'Manual resolve is only supported for API alert rules'),
         ]
     )]
     public function resolve() {}
