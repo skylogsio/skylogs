@@ -1,74 +1,155 @@
 "use client";
-import React, { useRef, useState } from "react";
+
+import { useState } from "react";
+
+import { Box, Button, Skeleton, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { IoAddOutline } from "react-icons/io5";
 
 import type { ICluster } from "@/@types/cluster";
 import type { CreateUpdateModal } from "@/@types/global";
-import ActionColumn from "@/components/ActionColumn";
-import ConnectionStatus from "@/components/ConnectionStatus";
-import Table from "@/components/Table/SmartTable";
-import { type TableComponentRef } from "@/components/Table/types";
+import { getAllClusters } from "@/api/cluster";
 
 import ClusterModal from "./ClusterModal";
 import DeleteClusterModal from "./DeleteClusterModal";
+import AgentClusterCard from "./components/AgentClusterCard";
+import MainClusterCard from "./components/MainClusterCard";
+import NoAgentClustersEmptyState from "./components/NoAgentClustersEmptyState";
 
-export default function Cluster() {
-  const tableRef = useRef<TableComponentRef>(null);
+export default function ClustersPage() {
   const [modalData, setModalData] = useState<CreateUpdateModal<ICluster>>(null);
   const [deleteModalData, setDeleteModalData] = useState<ICluster | null>(null);
 
-  function handleRefreshData() {
-    if (tableRef.current) {
-      tableRef.current.refreshData();
-    }
-  }
-
-  function handleDelete() {
-    setDeleteModalData(null);
-    handleRefreshData();
-  }
+  const {
+    data: clusters = [],
+    isLoading,
+    refetch
+  } = useQuery({
+    queryKey: ["all-clusters"],
+    queryFn: () => getAllClusters()
+  });
 
   return (
-    <>
-      <Table<ICluster>
-        ref={tableRef}
-        title="Clusters"
-        url="skylogs-instance"
-        defaultPageSize={10}
-        columns={[
-          { header: "Row", accessorFn: (_, index) => ++index },
-          { header: "Name", accessorKey: "name" },
-          { header: "Type", accessorKey: "type" },
-          { header: "URL", accessorKey: "url" },
-          { header: "Status", cell: ({ row }) => <ConnectionStatus clusterId={row.original.id} /> },
-          {
-            header: "Action",
-            cell: ({ row }) => (
-              <ActionColumn
-                onEdit={() => setModalData(row.original)}
-                onDelete={() => setDeleteModalData(row.original)}
-                copyValue={row.original.token}
-              />
-            )
-          }
-        ]}
-        onCreate={() => setModalData("NEW")}
-      />
+    <Box sx={{ maxWidth: 1400, mx: "auto", pb: 6 }}>
+      <Typography
+        variant="h5"
+        sx={{
+          fontWeight: 700,
+          fontSize: "1.5rem",
+          color: "text.primary",
+          mb: 3
+        }}
+      >
+        Clusters
+      </Typography>
+
+      <MainClusterCard />
+
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mt: 4,
+          mb: 2.5
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 700,
+            fontSize: "1.125rem",
+            color: "text.primary"
+          }}
+        >
+          Agent Clusters
+        </Typography>
+
+        <Button
+          variant="contained"
+          startIcon={<IoAddOutline size={18} />}
+          onClick={() => setModalData("NEW")}
+          disabled={clusters.length >= 9}
+          sx={{
+            backgroundColor: "primary.main",
+            color: "primary.contrastText",
+            borderRadius: "8px",
+            fontWeight: 600,
+            fontSize: "0.875rem",
+            textTransform: "none",
+            px: 2,
+            py: 0.85,
+            boxShadow: "none",
+            "&:hover": {
+              backgroundColor: "primary.dark",
+              boxShadow: "none"
+            }
+          }}
+        >
+          Add Agent Cluster
+        </Button>
+      </Box>
+
+      {isLoading ? (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              md: "repeat(2, 1fr)",
+              lg: "repeat(3, 1fr)"
+            },
+            gap: 2.5
+          }}
+        >
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} variant="rounded" height={170} sx={{ borderRadius: "16px" }} />
+          ))}
+        </Box>
+      ) : clusters.length === 0 ? (
+        <NoAgentClustersEmptyState />
+      ) : (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              md: "repeat(2, 1fr)",
+              lg: "repeat(3, 1fr)"
+            },
+            gap: 2.5
+          }}
+        >
+          {clusters.map((cluster) => (
+            <AgentClusterCard
+              key={cluster.id}
+              cluster={cluster}
+              onDelete={(target) => setDeleteModalData(target)}
+            />
+          ))}
+        </Box>
+      )}
+
       {modalData && (
         <ClusterModal
-          open={!!modalData}
+          open={Boolean(modalData)}
           onClose={() => setModalData(null)}
           data={modalData}
-          onSubmit={handleRefreshData}
+          onSubmit={() => refetch()}
         />
       )}
+
       {deleteModalData && (
         <DeleteClusterModal
-          open={!!deleteModalData}
+          open={Boolean(deleteModalData)}
           onClose={() => setDeleteModalData(null)}
           data={deleteModalData}
-          onAfterDelete={handleDelete}
+          onAfterDelete={() => {
+            setDeleteModalData(null);
+            refetch();
+          }}
         />
       )}
-    </>
+    </Box>
   );
 }

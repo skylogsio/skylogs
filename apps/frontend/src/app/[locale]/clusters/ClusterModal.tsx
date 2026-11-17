@@ -1,8 +1,10 @@
+"use client";
+
 import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Grid, TextField } from "@mui/material";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { z } from "zod";
@@ -14,13 +16,9 @@ import ModalContainer from "@/components/Modal";
 import type { ModalContainerProps } from "@/components/Modal/types";
 
 const clusterSchema = z.object({
-  name: z.string().trim().min(1, "This field is Required."),
-  type: z.string().trim().min(1, "This field is Required."),
-  url: z
-    .string()
-    .trim()
-    .min(1, "This field is Required.")
-    .pipe(z.url( "Please enter a valid URL." ))
+  name: z.string().trim().min(1, "This field is required."),
+  type: z.enum(["agent", "main"]),
+  url: z.string().trim().min(1, "This field is required.").pipe(z.url("Please enter a valid URL."))
 });
 
 type ClusterFormType = z.infer<typeof clusterSchema>;
@@ -47,14 +45,9 @@ function getFormValues(data: CreateUpdateModal<ICluster>): ClusterFormType {
   };
 }
 
-// const clusterTypes = [
-//   { value: "agent", label: "Agent" },
-//   { value: "server", label: "Server" },
-//   { value: "worker", label: "Worker" },
-//   { value: "master", label: "Master" }
-// ];
-
 export default function ClusterModal({ open, onClose, data, onSubmit }: ClusterModalProps) {
+  const queryClient = useQueryClient();
+
   const {
     register,
     handleSubmit,
@@ -69,7 +62,9 @@ export default function ClusterModal({ open, onClose, data, onSubmit }: ClusterM
   const { mutate: createClusterMutation, isPending: isCreating } = useMutation({
     mutationFn: (body: ClusterFormType) => createCluster(body),
     onSuccess: () => {
-      toast.success("Cluster Created Successfully.");
+      toast.success("Agent Cluster Created Successfully.");
+      queryClient.invalidateQueries({ queryKey: ["all-clusters"] });
+      queryClient.invalidateQueries({ queryKey: ["all-zone-list"] });
       onSubmit();
       onClose?.();
     }
@@ -79,18 +74,12 @@ export default function ClusterModal({ open, onClose, data, onSubmit }: ClusterM
     mutationFn: ({ id, body }: { id: string; body: ClusterFormType }) => updateCluster(id, body),
     onSuccess: () => {
       toast.success("Cluster Updated Successfully.");
+      queryClient.invalidateQueries({ queryKey: ["all-clusters"] });
+      queryClient.invalidateQueries({ queryKey: ["all-zone-list"] });
       onSubmit();
       onClose?.();
     }
   });
-
-  // function renderClusterTypeList() {
-  //   return clusterTypes.map((type) => (
-  //     <MenuItem key={type.value} value={type.value}>
-  //       <Typography component="span">{type.label}</Typography>
-  //     </MenuItem>
-  //   ));
-  // }
 
   function handleSubmitForm(body: ClusterFormType) {
     if (data === "NEW") {
@@ -104,47 +93,39 @@ export default function ClusterModal({ open, onClose, data, onSubmit }: ClusterM
     reset(getFormValues(data));
   }, [data, reset]);
 
+  const isNew = data === "NEW";
+
   return (
     <ModalContainer
-      title={`${data === "NEW" ? "Create New" : "Update"} Cluster`}
+      title={isNew ? "Add Agent Cluster" : "Update Cluster"}
       open={open}
       onClose={onClose}
       disableEscapeKeyDown
+      maxWidth={480}
     >
       <Grid
         component="form"
         onSubmit={handleSubmit(handleSubmitForm)}
         container
-        spacing={2}
+        spacing={2.5}
         sx={{
           width: "100%",
           display: "flex",
-          marginTop: 4
+          mt: 2
         }}
       >
-        {/*<Grid size={12}>*/}
-        {/*  <TextField*/}
-        {/*    label="Type Of Cluster"*/}
-        {/*    variant="filled"*/}
-        {/*    error={!!errors.type}*/}
-        {/*    helperText={errors.type?.message}*/}
-        {/*    {...register("type")}*/}
-        {/*    value={watch("type") ?? ""}*/}
-        {/*    select*/}
-        {/*  >*/}
-        {/*    {renderClusterTypeList()}*/}
-        {/*  </TextField>*/}
-        {/*</Grid>*/}
         <Grid size={12}>
           <TextField
             label="Name"
             variant="filled"
+            placeholder="agent-east"
             error={!!errors.name}
             helperText={errors.name?.message}
             {...register("name")}
             fullWidth
           />
         </Grid>
+
         <Grid size={12}>
           <TextField
             label="URL"
@@ -152,24 +133,26 @@ export default function ClusterModal({ open, onClose, data, onSubmit }: ClusterM
             error={!!errors.url}
             helperText={errors.url?.message}
             {...register("url")}
-            placeholder="http://example.com"
+            placeholder="http://172.28.8.11:7000"
             fullWidth
           />
         </Grid>
-        <Grid
-          size={12}
-          sx={{
-            marginTop: 2
-          }}
-        >
+
+        <Grid size={12} sx={{ mt: 1 }}>
           <Button
             disabled={isCreating || isUpdating}
             type="submit"
             variant="contained"
             size="large"
             fullWidth
+            sx={{
+              borderRadius: "8px",
+              py: 1.25,
+              fontWeight: 600,
+              textTransform: "none"
+            }}
           >
-            {data === "NEW" ? "Create" : "Update"}
+            {isNew ? "Add Agent Cluster" : "Update"}
           </Button>
         </Grid>
       </Grid>
