@@ -15,11 +15,12 @@ High availability is separate from the cluster agent. Each HA node has its own b
 - Domain data uses the `mongodb` connection (`DB_CONNECTION=mongodb` in `.env.example`). Use the Boost `database-query-mongodb` tool for read-only queries. `database-query` and `database-schema` are SQL-shaped and do not describe these documents.
 - The Laravel rule about repeating every column attribute when modifying a column applies to SQL migrations. MongoDB documents do not use that rule.
 - All domain models extend `App\Models\BaseModel` (or `User`, which extends MongoDB's authenticatable base).
-- Primary key is `_id` (MongoDB ObjectId). Route constraints use `[0-9a-fA-F]{24}`.
+- MongoDB stores the primary key as `_id` (ObjectId). Route constraints use `[0-9a-fA-F]{24}`.
+- On read, the MongoDB Laravel driver renames `_id` to `id` and drops `_id` from the result. Read and pluck the primary key as `id`: `$model->id`, `Model::query()->pluck('id')`. `pluck('_id')` returns empty values. Store and compare references as `(string) $model->id`.
 - Timestamps are camelCase: `createdAt`, `updatedAt`, `deletedAt`.
 - Use `MongoDB\Laravel\Schema\Blueprint` in migrations, not the SQL blueprint.
-- Foreign keys use camelCase field names (e.g. `ownerId`, `userIds`, `userId`). Both `$model->id` and `$model->_id` may appear in existing code — match the surrounding file.
-- Unique validation rules must specify the MongoDB key column: `Rule::unique('teams')->ignore($id, '_id')`.
+- Foreign keys use camelCase field names (e.g. `ownerId`, `userIds`, `userId`).
+- Unique validation still names the stored column: `Rule::unique('teams')->ignore($id, '_id')`.
 
 ## API Layer
 
