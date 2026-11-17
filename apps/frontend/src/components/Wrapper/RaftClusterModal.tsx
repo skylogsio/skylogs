@@ -123,19 +123,15 @@ export default function RaftClusterModal({ open, onClose, cluster }: RaftCluster
                           backgroundColor: isActive
                             ? "color-mix(in srgb, var(--mui-palette-primary-main) 6%, #F1EBE1)"
                             : "#F1EBE1",
-                          border: isActive
-                            ? "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 40%, transparent)"
-                            : "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)",
-                          transition: "border-color 150ms ease, background-color 150ms ease"
+                          border: "none",
+                          transition: "background-color 150ms ease"
                         },
                         (muiTheme) =>
                           muiTheme.applyStyles("dark", {
                             backgroundColor: isActive
                               ? "color-mix(in srgb, var(--mui-palette-primary-main) 10%, rgba(255, 255, 255, 0.05))"
                               : "rgba(255, 255, 255, 0.05)",
-                            border: isActive
-                              ? "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 36%, transparent)"
-                              : "1px solid color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)"
+                            border: "none"
                           })
                       ]}
                     >
@@ -178,9 +174,6 @@ export default function RaftClusterModal({ open, onClose, cluster }: RaftCluster
                               {
                                 height: 18,
                                 fontSize: "0.625rem",
-                                fontWeight: 700,
-                                letterSpacing: "0.04em",
-                                textTransform: "uppercase",
                                 color: "var(--mui-palette-primary-main)",
                                 backgroundColor:
                                   "color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)",
