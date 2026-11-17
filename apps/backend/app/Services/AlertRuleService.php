@@ -1055,21 +1055,53 @@ class AlertRuleService
         Cache::tags(['alertRule'])->flush();
     }
 
-    public function deleteForUser(User $user, AlertRule $alert)
+    public function deleteForUser(User $user, AlertRule $alert): void
     {
-        if ($alert->userId == $user->id || \Auth::user()->isAdmin()) {
+        $actor = auth()->user();
+
+        if ((string) $alert->userId === (string) $user->id || ($actor !== null && $actor->isAdmin())) {
             $this->delete($alert);
-        } else {
-            $alert->pull('userIds', $user->id);
-            if (! empty($alert->endpointIds)) {
-                $userEndpoints = Endpoint::whereIn('_id', $alert->endpointIds)->where('userId', $user->id)->get();
-                foreach ($userEndpoints as $endpoint) {
-                    $alert->pull('endpointIds', $endpoint->_id);
-                }
 
-            }
-
+            return;
         }
+
+        $ownedEndpointIds = Endpoint::query()
+            ->where('userId', $user->id)
+            ->whereIn('_id', $this->referencedEndpointIds($alert))
+            ->get()
+            ->map(fn (Endpoint $endpoint) => (string) $endpoint->id)
+            ->all();
+
+        $alert->userIds = array_values(array_diff($alert->userIds ?? [], [$user->id]));
+
+        if ($ownedEndpointIds !== []) {
+            $alert->endpointIds = array_values(array_diff($alert->endpointIds ?? [], $ownedEndpointIds));
+            $alert->rules = collect($alert->rules ?? [])
+                ->map(function (array $rule) use ($ownedEndpointIds): array {
+                    if (! isset($rule['endpointIds'])) {
+                        return $rule;
+                    }
+
+                    $rule['endpointIds'] = array_values(array_diff($rule['endpointIds'], $ownedEndpointIds));
+
+                    return $rule;
+                })
+                ->all();
+        }
+
+        $alert->save();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function referencedEndpointIds(AlertRule $alert): array
+    {
+        return collect($alert->endpointIds ?? [])
+            ->merge(collect($alert->rules ?? [])->flatMap(fn (array $rule) => $rule['endpointIds'] ?? []))
+            ->unique()
+            ->values()
+            ->all();
     }
 
     public function delete(AlertRule $alertRule)

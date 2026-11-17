@@ -256,9 +256,17 @@ class EndpointService
 
     public function deleteEndpointOfAlertRules(Endpoint $endpoint): void
     {
-        foreach (app(AlertRuleService::class)->getAlertsDB() as $alertRule) {
-            $alertRule->pull('endpointIds', $endpoint->_id);
-        }
+        $endpointId = (string) $endpoint->id;
+
+        AlertRule::query()
+            ->where('endpointIds', $endpointId)
+            ->pull('endpointIds', $endpointId);
+
+        AlertRule::query()
+            ->where('rules.endpointIds', $endpointId)
+            ->pull('rules.$[].endpointIds', $endpointId);
+
+        $this->alertRuleService->flushCache();
     }
 
     public function flushCache(): void

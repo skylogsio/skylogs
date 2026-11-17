@@ -221,6 +221,12 @@ Skylogs is a monitoring and alerting platform. It integrates with Prometheus, Za
 - Roles use Spatie Permission (`Constants` enum: `owner`, `manager`, `member`). Apply via `role:` middleware on routes.
 - Custom middleware aliases (registered in `bootstrap/app.php`): `apiAuth`, `webhookAuth`, `clusterAuth`, `clusterProxy`, `clusterAgentValidate`, `horizonBasicAuth`.
 
+## Data shape
+
+Write code for the shape the application stores now. Endpoint ids on alert rules are strings. Do not add branches for other stored types, legacy field names, or missing nested formats.
+
+When a change would need that compatibility, ask first. Existing documents can be normalized with a tinker command or a script so the application code stays on one shape.
+
 ## Services & Business Logic
 
 - Put reusable business logic in `App\Services\` (e.g. `TeamService`, `AlertRuleService`). Inject services via constructor property promotion.
