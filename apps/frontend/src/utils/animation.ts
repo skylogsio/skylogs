@@ -7,15 +7,12 @@ export function createPulseKeyframes(color: string) {
   if (!cached) {
     cached = keyframes`
       0% {
-        transform: scale(0.95);
         box-shadow: 0 0 0 0 color-mix(in srgb, ${color} 70%, transparent);
       }
       70% {
-        transform: scale(1.05);
         box-shadow: 0 0 0 5px color-mix(in srgb, ${color} 0%, transparent);
       }
       100% {
-        transform: scale(0.95);
         box-shadow: 0 0 0 0 color-mix(in srgb, ${color} 0%, transparent);
       }
     `;
