@@ -189,6 +189,7 @@ const StatusMonitoringCards = ({
 
     if (state === "critical") {
       filters.status = "critical";
+      filters.scope = "organization";
     } else if (state === "warning") {
       filters.status = "warning";
     }
@@ -351,17 +352,17 @@ const StatusMonitoringCards = ({
                 <Typography
                   variant="caption"
                   sx={[
-                  {
-                    color: "var(--mui-palette-grey-600)",
-                    fontWeight: 500,
-                    mb: 0.5,
-                    display: "block"
-                  },
-                  (muiTheme) =>
-                    muiTheme.applyStyles("dark", {
-                      color: "var(--mui-palette-grey-300)"
-                    })
-                ]}
+                    {
+                      color: "var(--mui-palette-grey-600)",
+                      fontWeight: 500,
+                      mb: 0.5,
+                      display: "block"
+                    },
+                    (muiTheme) =>
+                      muiTheme.applyStyles("dark", {
+                        color: "var(--mui-palette-grey-300)"
+                      })
+                  ]}
                 >
                   Alerts Tags
                 </Typography>
