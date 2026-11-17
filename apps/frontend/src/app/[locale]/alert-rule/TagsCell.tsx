@@ -95,7 +95,6 @@ function computeVisibleCount(
   if (containerWidth <= 0) return 0;
   if (totalTags === 1) return 1;
 
-  // 1. Check if all tags fit without the "+N" button
   let totalAll = 0;
   for (let i = 0; i < totalTags; i++) {
     totalAll += tagWidths[i] + (i > 0 ? gap : 0);
@@ -104,7 +103,6 @@ function computeVisibleCount(
     return totalTags;
   }
 
-  // 2. Otherwise find maximum number of tags that fit alongside the "+N" button
   let runningWidth = 0;
   let maxFit = 0;
 
@@ -183,13 +181,11 @@ export default function TagsCell({
     };
   }, [updateVisibleCount]);
 
-  if (!tags || tags.length === 0) {
-    return null;
-  }
+  const safeTags = tags ?? [];
 
-  const effectiveCount = Math.min(visibleCount, tags.length);
-  const visibleTags = tags.slice(0, effectiveCount);
-  const hiddenTags = tags.slice(effectiveCount);
+  const effectiveCount = Math.min(visibleCount, safeTags.length);
+  const visibleTags = safeTags.slice(0, effectiveCount);
+  const hiddenTags = safeTags.slice(effectiveCount);
 
   const filteredHiddenTags = useMemo(() => {
     if (!searchTerm.trim()) return hiddenTags;
@@ -208,6 +204,10 @@ export default function TagsCell({
 
   const open = Boolean(showMoreAnchorEl);
   const showMorePopoverId = open ? "show-more-tags-popover" : undefined;
+
+  if (safeTags.length === 0) {
+    return null;
+  }
 
   return (
     <>
@@ -391,7 +391,6 @@ export default function TagsCell({
                   </Box>
                 )}
 
-                {/* Tag List */}
                 <Box
                   sx={{
                     p: 1.25,
