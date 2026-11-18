@@ -17,24 +17,25 @@ export default function MainNodeCard({ peer, isLeader = false }: MainNodeCardPro
 
   return (
     <Box
-      sx={{
+      sx={(theme) => ({
         p: 2,
+        cursor: "default",
         borderRadius: "10px",
-        backgroundColor: (theme) =>
-          isLeader
-            ? theme.palette.mode === "dark"
-              ? alpha(theme.palette.info.main, 0.15)
-              : "#EDF5FD"
-            : theme.palette.mode === "dark"
-              ? "rgba(255, 255, 255, 0.03)"
-              : "#FAF8F5",
+        backgroundColor: isLeader
+          ? alpha(theme.palette.info.main, 0.08)
+          : theme.palette.background.default,
+        ...theme.applyStyles("dark", {
+          backgroundColor: isLeader
+            ? alpha(theme.palette.info.main, 0.16)
+            : alpha(theme.palette.text.primary, 0.05)
+        }),
         border: "none",
         outline: "none",
         display: "flex",
         flexDirection: "column",
         gap: 0.5,
         minWidth: 160
-      }}
+      })}
     >
       <Box sx={{ display: "flex", alignItems: "center" }}>
         <Typography
