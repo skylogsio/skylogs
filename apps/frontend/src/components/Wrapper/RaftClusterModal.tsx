@@ -36,7 +36,6 @@ export default function RaftClusterModal({ open, onClose, cluster }: RaftCluster
         ]}
       >
         <Stack spacing={2.5}>
-          {/* Known Leader ID */}
           <Stack spacing={0.5}>
             <Typography
               variant="caption"
@@ -62,7 +61,6 @@ export default function RaftClusterModal({ open, onClose, cluster }: RaftCluster
             </Typography>
           </Stack>
 
-          {/* Nodes */}
           <Stack spacing={1}>
             <Typography
               variant="caption"
@@ -121,8 +119,8 @@ export default function RaftClusterModal({ open, onClose, cluster }: RaftCluster
                           py: 1,
                           borderRadius: "8px",
                           backgroundColor: isActive
-                            ? "color-mix(in srgb, var(--mui-palette-primary-main) 6%, #F1EBE1)"
-                            : "#F1EBE1",
+                            ? "color-mix(in srgb, var(--mui-palette-primary-main) 8%, #F1EBE1 60%)"
+                            : "#f1ebe165",
                           border: "none",
                           transition: "background-color 150ms ease"
                         },
