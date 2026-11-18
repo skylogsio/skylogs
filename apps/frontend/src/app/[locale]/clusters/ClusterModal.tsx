@@ -39,9 +39,9 @@ function getFormValues(data: CreateUpdateModal<ICluster>): ClusterFormType {
   }
 
   return {
-    name: data.name,
-    type: data.type,
-    url: data.url
+    name: data.name || "",
+    type: (data.type as "agent" | "main") || "agent",
+    url: data.url || ""
   };
 }
 
@@ -61,31 +61,48 @@ export default function ClusterModal({ open, onClose, data, onSubmit }: ClusterM
 
   const { mutate: createClusterMutation, isPending: isCreating } = useMutation({
     mutationFn: (body: ClusterFormType) => createCluster(body),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Agent Cluster Created Successfully.");
-      queryClient.invalidateQueries({ queryKey: ["all-clusters"] });
-      queryClient.invalidateQueries({ queryKey: ["all-zone-list"] });
+      await queryClient.invalidateQueries({ queryKey: ["all-clusters"] });
+      await queryClient.invalidateQueries({ queryKey: ["all-zone-list"] });
+      await queryClient.invalidateQueries({ queryKey: ["agent-cluster-status"] });
       onSubmit();
       onClose?.();
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to create cluster");
     }
   });
 
   const { mutate: updateClusterMutation, isPending: isUpdating } = useMutation({
     mutationFn: ({ id, body }: { id: string; body: ClusterFormType }) => updateCluster(id, body),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Cluster Updated Successfully.");
-      queryClient.invalidateQueries({ queryKey: ["all-clusters"] });
-      queryClient.invalidateQueries({ queryKey: ["all-zone-list"] });
+      await queryClient.invalidateQueries({ queryKey: ["all-clusters"] });
+      await queryClient.invalidateQueries({ queryKey: ["all-zone-list"] });
+      await queryClient.invalidateQueries({ queryKey: ["agent-cluster-status"] });
       onSubmit();
       onClose?.();
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to update cluster");
     }
   });
 
   function handleSubmitForm(body: ClusterFormType) {
+    const payload: ClusterFormType = {
+      name: body.name.trim(),
+      type: body.type || (data !== "NEW" && data?.type) || "agent",
+      url: body.url.trim()
+    };
+
     if (data === "NEW") {
-      createClusterMutation(body);
+      createClusterMutation(payload);
     } else if (data) {
-      updateClusterMutation({ id: data.id, body });
+      const clusterId = data.id || (data as any)?._id;
+      if (clusterId) {
+        updateClusterMutation({ id: clusterId, body: payload });
+      }
     }
   }
 
@@ -114,6 +131,7 @@ export default function ClusterModal({ open, onClose, data, onSubmit }: ClusterM
           mt: 2
         }}
       >
+        <input type="hidden" {...register("type")} />
         <Grid size={12}>
           <TextField
             label="Name"

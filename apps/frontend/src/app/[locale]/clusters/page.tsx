@@ -124,6 +124,7 @@ export default function ClustersPage() {
             <AgentClusterCard
               key={cluster.id}
               cluster={cluster}
+              onEdit={(target) => setModalData(target)}
               onDelete={(target) => setDeleteModalData(target)}
             />
           ))}
@@ -135,7 +136,10 @@ export default function ClustersPage() {
           open={Boolean(modalData)}
           onClose={() => setModalData(null)}
           data={modalData}
-          onSubmit={() => refetch()}
+          onSubmit={() => {
+            setModalData(null);
+            refetch();
+          }}
         />
       )}
 

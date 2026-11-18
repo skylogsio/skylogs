@@ -17,11 +17,17 @@ export const getCluster = async (id: string): Promise<ICluster> => {
 
 export const createCluster = async (data: unknown): Promise<ICluster> => {
   const response = await axios.post(`${CLUSTER_URL}`, data);
+  if (response.data && response.data.status === false) {
+    throw new Error(response.data.message || "Failed to create cluster");
+  }
   return response.data;
 };
 
 export const updateCluster = async (id: string, data: unknown): Promise<ICluster> => {
   const response = await axios.put(`${CLUSTER_URL}/${id}`, data);
+  if (response.data && response.data.status === false) {
+    throw new Error(response.data.message || "Failed to update cluster");
+  }
   return response.data;
 };
 

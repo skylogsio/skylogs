@@ -14,7 +14,7 @@ import {
   Typography
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { HiChevronDown, HiChevronUp, HiTrash } from "react-icons/hi";
+import { HiChevronDown, HiChevronUp, HiPencil, HiTrash } from "react-icons/hi";
 
 import type { ICluster } from "@/@types/cluster";
 import { getClusterStatus } from "@/api/cluster";
@@ -26,9 +26,10 @@ const pulseGreen = createPulseAnimation("var(--mui-palette-success-main)");
 interface AgentClusterCardProps {
   cluster: ICluster;
   onDelete: (cluster: ICluster) => void;
+  onEdit?: (cluster: ICluster) => void;
 }
 
-export default function AgentClusterCard({ cluster, onDelete }: AgentClusterCardProps) {
+export default function AgentClusterCard({ cluster, onDelete, onEdit }: AgentClusterCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const isExpanded = Boolean(anchorEl);
@@ -62,8 +63,9 @@ export default function AgentClusterCard({ cluster, onDelete }: AgentClusterCard
         borderRadius: "16px",
         border: "1px solid",
         borderColor: (theme) =>
-          isExpanded ? alpha(theme.palette.primary.main, 0.45) : theme.palette.divider,
+          isExpanded ? alpha(theme.palette.primary.main, 0.45) : alpha(theme.palette.divider, 0.6),
         p: 2.5,
+        cursor: "default",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
@@ -123,14 +125,26 @@ export default function AgentClusterCard({ cluster, onDelete }: AgentClusterCard
             </Typography>
           </Box>
 
-          <IconButton
-            onClick={() => onDelete(cluster)}
-            size="small"
-            aria-label={`Delete ${cluster.name}`}
-            sx={actionButtonSx("error.main")}
-          >
-            <HiTrash size={18} />
-          </IconButton>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
+            {onEdit && (
+              <IconButton
+                onClick={() => onEdit(cluster)}
+                size="small"
+                aria-label={`Edit ${cluster.name}`}
+                sx={actionButtonSx("primary.main")}
+              >
+                <HiPencil size={18} />
+              </IconButton>
+            )}
+            <IconButton
+              onClick={() => onDelete(cluster)}
+              size="small"
+              aria-label={`Delete ${cluster.name}`}
+              sx={actionButtonSx("error.main")}
+            >
+              <HiTrash size={18} />
+            </IconButton>
+          </Box>
         </Box>
 
         <Box sx={{ mt: 1.5 }}>
