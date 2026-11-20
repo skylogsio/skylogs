@@ -22,6 +22,7 @@ import { createPulseAnimation } from "@/utils/animation";
 import { actionButtonSx } from "@/components/ActionColumn";
 
 const pulseGreen = createPulseAnimation("var(--mui-palette-success-main)");
+const pulseOrange = createPulseAnimation("var(--mui-palette-warning-main)");
 
 interface AgentClusterCardProps {
   cluster: ICluster;
@@ -46,6 +47,10 @@ export default function AgentClusterCard({ cluster, onDelete, onEdit }: AgentClu
   const haPeers = useMemo(() => haCluster?.peers ?? [], [haCluster]);
   const hasHaNodes = isConnected && haPeers.length > 0;
   const leaderId = haCluster?.known_leader_id?.trim();
+
+  const isAllDisconnected = !isConnected || (haPeers.length > 0 && haPeers.every((p) => !p.tcp_reachable));
+  const hasDisconnectedNode = !isAllDisconnected && haPeers.some((p) => !p.tcp_reachable);
+  const statusColor = isAllDisconnected ? "error" : hasDisconnectedNode ? "warning" : "success";
 
   const handleToggleDetails = (event: React.MouseEvent<HTMLElement>) => {
     if (isExpanded) {
@@ -160,13 +165,11 @@ export default function AgentClusterCard({ cluster, onDelete, onEdit }: AgentClu
                 borderRadius: "6px",
                 fontSize: 13,
                 fontWeight: 500,
-                backgroundColor: isConnected
-                  ? (theme) => alpha(theme.palette.success.main, 0.08)
-                  : (theme) => alpha(theme.palette.error.main, 0.08),
-                color: isConnected ? "success.main" : "error.main"
+                backgroundColor: (theme) => alpha(theme.palette[statusColor].main, 0.08),
+                color: `${statusColor}.main`
               }}
             >
-              {isConnected && (
+              {!isAllDisconnected && (
                 <Box
                   component="span"
                   sx={{
@@ -175,14 +178,14 @@ export default function AgentClusterCard({ cluster, onDelete, onEdit }: AgentClu
                     borderRadius: "50%",
                     backgroundColor: "currentColor",
                     mr: 0.75,
-                    animation: pulseGreen,
+                    animation: hasDisconnectedNode ? pulseOrange : pulseGreen,
                     "@media (prefers-reduced-motion: reduce)": {
                       animation: "none"
                     }
                   }}
                 />
               )}
-              {isConnected ? "Connected" : "Disconnected"}
+              {isAllDisconnected ? "Disconnected" : "Connected"}
             </Box>
           )}
         </Box>

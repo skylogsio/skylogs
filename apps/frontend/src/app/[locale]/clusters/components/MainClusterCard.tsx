@@ -10,6 +10,7 @@ import { createPulseAnimation } from "@/utils/animation";
 import MainNodeCard from "./MainNodeCard";
 
 const pulseGreen = createPulseAnimation("var(--mui-palette-success-main)");
+const pulseOrange = createPulseAnimation("var(--mui-palette-warning-main)");
 
 export default function MainClusterCard() {
   const { data, isLoading, isError } = useQuery({
@@ -23,6 +24,10 @@ export default function MainClusterCard() {
   const peers = useMemo(() => cluster?.peers ?? [], [cluster]);
   const leaderId = cluster?.known_leader_id?.trim() || "";
   const isConnected = !isError && Boolean(data !== undefined && (data.enabled || !isError));
+
+  const isAllDisconnected = !isConnected || (peers.length > 0 && peers.every((p) => !p.tcp_reachable));
+  const hasDisconnectedNode = !isAllDisconnected && peers.some((p) => !p.tcp_reachable);
+  const statusColor = isAllDisconnected ? "error" : hasDisconnectedNode ? "warning" : "success";
 
   return (
     <Box
@@ -86,13 +91,11 @@ export default function MainClusterCard() {
               borderRadius: "6px",
               fontSize: 13,
               fontWeight: 500,
-              backgroundColor: isConnected
-                ? (theme) => alpha(theme.palette.success.main, 0.08)
-                : (theme) => alpha(theme.palette.error.main, 0.08),
-              color: isConnected ? "success.main" : "error.main"
+              backgroundColor: (theme) => alpha(theme.palette[statusColor].main, 0.08),
+              color: `${statusColor}.main`
             }}
           >
-            {isConnected && (
+            {!isAllDisconnected && (
               <Box
                 component="span"
                 sx={{
@@ -101,14 +104,14 @@ export default function MainClusterCard() {
                   borderRadius: "50%",
                   backgroundColor: "currentColor",
                   mr: 0.75,
-                  animation: pulseGreen,
+                  animation: hasDisconnectedNode ? pulseOrange : pulseGreen,
                   "@media (prefers-reduced-motion: reduce)": {
                     animation: "none"
                   }
                 }}
               />
             )}
-            {isConnected ? "Connected" : "Disconnected"}
+            {isAllDisconnected ? "Disconnected" : "Connected"}
           </Box>
         )}
       </Box>
