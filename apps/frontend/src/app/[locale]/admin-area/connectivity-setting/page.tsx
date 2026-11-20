@@ -108,7 +108,8 @@ export default function ConnectivitySetting() {
           container
           spacing={3}
           sx={{
-            marginTop: 3
+            marginTop: 3,
+            maxWidth: 1200
           }}
         >
           {connectivityCards.map((item, index) => (
@@ -150,6 +151,7 @@ export default function ConnectivitySetting() {
                   component={Link}
                   href={pathname + item.href}
                   sx={{
+                    minWidth: 1,
                     padding: 3,
                     display: "flex",
                     alignItems: "center",
