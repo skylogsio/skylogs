@@ -28,7 +28,7 @@ export default function AlertRuleState({
   acknowledgedBy,
   acknowledgedByName
 }: AlertRuleStateProps) {
-  const ackUser = acknowledgedBy ?? acknowledgedByName;
+  const ackUser = acknowledgedByName || acknowledgedBy;
 
   if (isSilent) {
     return (

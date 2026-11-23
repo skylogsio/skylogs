@@ -203,7 +203,7 @@ export default function ViewAlertRule() {
       <Stack spacing={3}>
         {!isReadonly && renderActionButtons()}
         {data!.apiToken && <AlertRuleApiToken token={data!.apiToken} />}
-        <AlertRuleDetailsTab alert={data!} />
+        <AlertRuleDetailsTab alert={data!} onAfterAction={refetch} />
       </Stack>
     );
   }

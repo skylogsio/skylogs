@@ -4,10 +4,14 @@ import type { ReactNode } from "react";
 
 import { Chip, Divider, Grid, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 
 import type { IAlertRule } from "@/@types/alertRule";
-import { getAlertRuleAccessList, getAlertRuleEndpointsList } from "@/api/alertRule";
-import { getAlertRuleDataSourcesByAlertType } from "@/api/alertRule";
+import {
+  getAlertRuleAccessList,
+  getAlertRuleDataSourcesByAlertType,
+  getAlertRuleEndpointsList
+} from "@/api/alertRule";
 import type { DataSourceType } from "@/features/DataSource/dataSource.utils";
 
 import { DETAIL_FIELD_LABELS, getDetailSections } from "./alertDetailConfig";
@@ -51,10 +55,10 @@ function FieldLabel({ children }: { children: ReactNode }) {
 
 interface AlertRuleDetailsTabProps {
   alert: IAlertRule;
+  onAfterAction?: () => void;
 }
 
 export default function AlertRuleDetailsTab({ alert }: AlertRuleDetailsTabProps) {
-
   const { data: endpointsList, isLoading: isLoadingEndpoints } = useQuery({
     queryKey: ["alert-rule-endpoint-list", alert.id],
     queryFn: () => getAlertRuleEndpointsList(alert.id)
@@ -146,6 +150,14 @@ export default function AlertRuleDetailsTab({ alert }: AlertRuleDetailsTabProps)
   }
 
   const sections = getDetailSections(alert.type);
+  const isNotification = alert.type === "notification";
+  const ackUser = alert.acknowledgedByName;
+  const formattedAckAt = alert.acknowledgedAt
+    ? (() => {
+        const date = new Date(alert.acknowledgedAt);
+        return Number.isNaN(date.getTime()) ? null : format(date, "EEEE, yyyy/MM/dd HH:mm");
+      })()
+    : null;
 
   return (
     <Stack
@@ -153,8 +165,7 @@ export default function AlertRuleDetailsTab({ alert }: AlertRuleDetailsTabProps)
       divider={
         <Divider
           sx={{
-            borderColor:
-              "color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
+            borderColor: "color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)"
           }}
         />
       }
@@ -194,6 +205,44 @@ export default function AlertRuleDetailsTab({ alert }: AlertRuleDetailsTabProps)
               )}
             </Stack>
           </Grid>
+          {!isNotification && (
+            <>
+              <Grid size={6}>
+                <Stack spacing={0.35} sx={{ minWidth: 0, alignItems: "flex-start" }}>
+                  <FieldLabel>Acknowledged By</FieldLabel>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: "0.9375rem",
+                      lineHeight: 1.35,
+                      wordBreak: "break-word",
+                      color: ackUser ? "text.primary" : "text.disabled"
+                    }}
+                  >
+                    {ackUser || EMPTY_VALUE}
+                  </Typography>
+                </Stack>
+              </Grid>
+              <Grid size={6}>
+                <Stack spacing={0.35} sx={{ minWidth: 0, alignItems: "flex-start" }}>
+                  <FieldLabel>Acknowledged At</FieldLabel>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: "0.9375rem",
+                      lineHeight: 1.35,
+                      wordBreak: "break-word",
+                      color: formattedAckAt ? "text.primary" : "text.disabled"
+                    }}
+                  >
+                    {formattedAckAt || EMPTY_VALUE}
+                  </Typography>
+                </Stack>
+              </Grid>
+            </>
+          )}
         </Grid>
       </Stack>
       {sections.map((section) => (

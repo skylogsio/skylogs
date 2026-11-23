@@ -23,6 +23,7 @@ export default function AlertRuleSummaryCard({
 }: AlertRuleSummaryCardProps) {
   const { Icon, defaultColor } = ALERT_RULE_VARIANTS[alert.type];
   const router = useRouter();
+  const isNotification = alert.type === "notification";
 
   return (
     <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
@@ -51,10 +52,14 @@ export default function AlertRuleSummaryCard({
           {alert.name} <AlertRuleAccessBadge accessLevel={alert.accessLevel} />
         </Typography>
         <AlertRuleStatusIndicator
-          status={alert.status_label}
-          id={isReadonly ? undefined : alertId}
+          status={alert.statusLabel ?? alert.status_label}
+          isSilent={alert.isSilent ?? alert.is_silent}
+          acknowledgedBy={isNotification ? null : alert.acknowledgedBy}
+          acknowledgedByName={isNotification ? null : alert.acknowledgedByName}
+          id={alertId}
+          type={alert.type}
+          isReadonly={isReadonly}
           onAfterResolve={onAfterResolve}
-          showAcknowledge={!isReadonly && !alert.acknowledgedBy}
         />
       </Stack>
     </Stack>

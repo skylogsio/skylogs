@@ -24,6 +24,8 @@ export interface IAlertRule {
   userId: string;
   acknowledgedBy: string | null;
   acknowledgedByName: string | null;
+  acknowledgedAt?: string | null;
+  isAcknowledged?: boolean;
   enableAutoResolve: boolean;
   autoResolveMinutes: number;
   updated_at: Date;

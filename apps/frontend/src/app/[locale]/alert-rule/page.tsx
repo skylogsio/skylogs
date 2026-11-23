@@ -208,6 +208,7 @@ export default function AlertRule() {
                 isSilent={row.original.isSilent}
                 status={row.original.statusLabel}
                 acknowledgedByName={row.original.acknowledgedByName}
+                acknowledgedBy={row.original.acknowledgedBy}
               />
             )
           },

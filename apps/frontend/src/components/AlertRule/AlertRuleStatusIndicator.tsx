@@ -1,29 +1,37 @@
 import { useMemo } from "react";
 
-import type { SxProps, Theme } from "@mui/material";
-import { Button, Chip, type ChipProps, CircularProgress, Stack, Tooltip } from "@mui/material";
+import { Chip, type ChipProps, CircularProgress, IconButton, Stack, Tooltip } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 
 import { type AlertRuleStatus, IAlertRule } from "@/@types/alertRule";
 import { acknowledgeFiredAlertRule, resolveFiredAlertRule } from "@/api/alertRule";
-import { mergeSx, pillSurfaceSx } from "@/components/Wrapper/topBarStyles";
+import { actionButtonSx } from "@/components/ActionColumn";
+import AlertRuleState from "@/components/AlertRule/AlertRuleState";
 
 interface AlertRuleStatusIndicatorProps extends Pick<ChipProps, "size"> {
   status: AlertRuleStatus;
-  id?: IAlertRule["id"];
-  onAfterResolve?: () => void;
   statusTitle?: string;
-  showAcknowledge?: boolean;
+  isSilent?: boolean;
+  acknowledgedBy?: string | null;
+  acknowledgedByName?: string | null;
+  id?: IAlertRule["id"];
+  type?: IAlertRule["type"];
+  isReadonly?: boolean;
+  onAfterResolve?: () => void;
 }
 
 export default function AlertRuleStatusIndicator({
   status,
-  onAfterResolve,
-  id,
   statusTitle,
   size = "medium",
-  showAcknowledge
+  isSilent,
+  acknowledgedBy,
+  acknowledgedByName,
+  id,
+  type,
+  isReadonly = false,
+  onAfterResolve
 }: AlertRuleStatusIndicatorProps) {
   const { mutate: resolveAlertRule, isPending: isPendingResolve } = useMutation({
     mutationFn: () => resolveFiredAlertRule(id!),
@@ -47,90 +55,6 @@ export default function AlertRuleStatusIndicator({
 
   const isPending = isPendingAcknowledge || isPendingResolve;
 
-  const resButtonSx: SxProps<Theme> = useMemo(
-    () =>
-      mergeSx(
-        pillSurfaceSx(),
-        {
-          minWidth: "auto",
-          height: 26,
-          px: 1,
-          py: 0,
-          fontSize: "0.65rem",
-          fontWeight: 700,
-          textTransform: "none",
-          borderRadius: "8px",
-          color: "#4ADE80",
-          borderColor: "color-mix(in srgb, #4ADE80 20%, transparent)",
-          backgroundColor: "color-mix(in srgb, #4ADE80 5%, #FAF7F2)",
-          transition:
-            "background-color 150ms ease, border-color 150ms ease, transform 150ms ease, color 150ms ease",
-          "&:hover": {
-            backgroundColor: "color-mix(in srgb, #4ADE80 10%, #EFE9E0)",
-            borderColor: "color-mix(in srgb, #4ADE80 35%, transparent)",
-            color: "#22C55E"
-          },
-          "&:active": {
-            transform: "scale(0.95)"
-          }
-        },
-        (muiTheme: Theme) =>
-          muiTheme.applyStyles("dark", {
-            color: "#16A34A",
-            borderColor: "color-mix(in srgb, #16A34A 25%, transparent)",
-            backgroundColor: "color-mix(in srgb, #16A34A 12%, rgba(0, 0, 0, 0.6))",
-            "&:hover": {
-              backgroundColor: "color-mix(in srgb, #16A34A 20%, rgba(0, 0, 0, 0.7))",
-              borderColor: "color-mix(in srgb, #16A34A 45%, transparent)",
-              color: "#22C55E"
-            }
-          })
-      ),
-    []
-  );
-
-  const ackButtonSx: SxProps<Theme> = useMemo(
-    () =>
-      mergeSx(
-        pillSurfaceSx(),
-        {
-          minWidth: "auto",
-          height: 26,
-          px: 1,
-          py: 0,
-          fontSize: "0.65rem",
-          fontWeight: 700,
-          textTransform: "none",
-          borderRadius: "8px",
-          color: "#60A5FA",
-          borderColor: "color-mix(in srgb, #60A5FA 20%, transparent)",
-          backgroundColor: "color-mix(in srgb, #60A5FA 5%, #FAF7F2)",
-          transition:
-            "background-color 150ms ease, border-color 150ms ease, transform 150ms ease, color 150ms ease",
-          "&:hover": {
-            backgroundColor: "color-mix(in srgb, #60A5FA 10%, #EFE9E0)",
-            borderColor: "color-mix(in srgb, #60A5FA 35%, transparent)",
-            color: "#3B82F6"
-          },
-          "&:active": {
-            transform: "scale(0.95)"
-          }
-        },
-        (muiTheme: Theme) =>
-          muiTheme.applyStyles("dark", {
-            color: "#2563EB",
-            borderColor: "color-mix(in srgb, #2563EB 25%, transparent)",
-            backgroundColor: "color-mix(in srgb, #2563EB 12%, rgba(0, 0, 0, 0.6))",
-            "&:hover": {
-              backgroundColor: "color-mix(in srgb, #2563EB 20%, rgba(0, 0, 0, 0.7))",
-              borderColor: "color-mix(in srgb, #2563EB 45%, transparent)",
-              color: "#3B82F6"
-            }
-          })
-      ),
-    []
-  );
-
   const color: Record<Exclude<AlertRuleStatus, "unknown">, string> = useMemo(
     () => ({
       resolved: "var(--mui-palette-success-main)",
@@ -141,64 +65,118 @@ export default function AlertRuleStatusIndicator({
     []
   );
 
-  if (!status || status === "unknown") {
+  const rawStatus = typeof status === "string" ? status.toLowerCase() : "";
+  const isFired = rawStatus === "critical" || rawStatus === "triggered";
+  const isAcked = Boolean(acknowledgedBy || acknowledgedByName);
+  const canResolve = !isReadonly && isFired && type === "api" && Boolean(id);
+  const canAcknowledge =
+    !isReadonly && isFired && type !== "notification" && !isAcked && Boolean(id);
+
+  const renderChip = () => {
+    if (!status || status === "unknown") {
+      if (!statusTitle) {
+        return (
+          <AlertRuleState
+            isSilent={isSilent}
+            status={status}
+            acknowledgedBy={acknowledgedBy}
+            acknowledgedByName={acknowledgedByName}
+          />
+        );
+      }
+      return (
+        <Chip
+          label={statusTitle}
+          size={size}
+          sx={{
+            textTransform: "capitalize",
+            color: "text.secondary",
+            backgroundColor: "color-mix(in srgb, var(--mui-palette-text-secondary) 7%, transparent)"
+          }}
+        />
+      );
+    }
+
+    if (statusTitle) {
+      return (
+        <Chip
+          label={statusTitle}
+          size={size}
+          sx={{
+            textTransform: "capitalize",
+            color: color[status as Exclude<AlertRuleStatus, "unknown">] ?? "text.secondary",
+            backgroundColor: `color-mix(in srgb, ${color[status as Exclude<AlertRuleStatus, "unknown">] ?? "var(--mui-palette-text-secondary)"} 7%, transparent)`
+          }}
+        />
+      );
+    }
+
     return (
-      <Chip
-        label="Unknown"
-        size={size}
-        sx={{
-          textTransform: "capitalize",
-          color: "text.secondary",
-          backgroundColor: "color-mix(in srgb, var(--mui-palette-text-secondary) 7%, transparent)"
-        }}
+      <AlertRuleState
+        isSilent={isSilent}
+        status={status}
+        acknowledgedBy={acknowledgedBy}
+        acknowledgedByName={acknowledgedByName}
       />
     );
+  };
+
+  if (!canResolve && !canAcknowledge) {
+    return renderChip();
   }
 
   return (
-    <Stack
-      direction="row"
-      spacing={1}
-      sx={{
-        justifyContent: "center"
-      }}
-    >
-      <Chip
-        label={statusTitle ?? status}
-        size={size}
-        sx={{
-          textTransform: "capitalize",
-          color: color[status],
-          backgroundColor: `color-mix(in srgb, ${color[status]} 7%, transparent)`
-        }}
-      />
-      {status === "critical" && id && (
-        <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
-          <Tooltip title="Resolve" placement="bottom" arrow>
-            <Button
+    <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
+      {renderChip()}
+      {canResolve && (
+        <Tooltip title="Resolve" placement="bottom" arrow>
+          <span>
+            <IconButton
               aria-label="Resolve"
               disabled={isPending}
-              size="small"
-              sx={resButtonSx}
+              sx={actionButtonSx("#22C55E", (theme) => ({
+                height: 25,
+                minWidth: "auto",
+                width: "auto",
+                px: 0.9,
+                py: 0,
+                fontSize: "0.6875rem",
+                fontWeight: 700,
+                letterSpacing: "0.02em",
+                borderRadius: "7px",
+                ...theme.applyStyles("dark", { color: "#4ADE80" })
+              }))}
               onClick={() => resolveAlertRule()}
             >
-              {isPendingResolve ? <CircularProgress size={16} color="inherit" /> : "Res"}
-            </Button>
-          </Tooltip>
-          {showAcknowledge && (
-            <Tooltip title="Acknowledge" placement="bottom" arrow>
-              <Button
-                aria-label="Acknowledge"
-                disabled={isPending}
-                size="small"
-                sx={ackButtonSx}
-                onClick={() => acknowledgeAlertRule()}
-              >
-                {isPendingAcknowledge ? <CircularProgress size={16} color="inherit" /> : "Ack"}
-              </Button>
-            </Tooltip>
-          )}
-        </Stack>
+              {isPendingResolve ? <CircularProgress size={13} color="inherit" /> : "Res"}
+            </IconButton>
+          </span>
+        </Tooltip>
+      )}
+      {canAcknowledge && (
+        <Tooltip title="Acknowledge" placement="bottom" arrow>
+          <span>
+            <IconButton
+              aria-label="Acknowledge"
+              disabled={isPending}
+              sx={actionButtonSx("#3B82F6", (theme) => ({
+                height: 25,
+                minWidth: "auto",
+                width: "auto",
+                px: 0.9,
+                py: 0,
+                fontSize: "0.6875rem",
+                fontWeight: 700,
+                letterSpacing: "0.02em",
+                borderRadius: "7px",
+                ...theme.applyStyles("dark", { color: "#60A5FA" })
+              }))}
+              onClick={() => acknowledgeAlertRule()}
+            >
+              {isPendingAcknowledge ? <CircularProgress size={13} color="inherit" /> : "Ack"}
+            </IconButton>
+          </span>
+        </Tooltip>
       )}
     </Stack>
   );

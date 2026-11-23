@@ -60,7 +60,10 @@ export const DETAIL_FIELD_LABELS: Record<string, string> = {
   countDocument: "Count Document",
   minutes: "Minutes",
   enableAutoResolve: "Auto Resolve",
-  autoResolveMinutes: "Auto Resolve After (Minutes)"
+  autoResolveMinutes: "Auto Resolve After (Minutes)",
+  acknowledgedBy: "Acknowledged By",
+  acknowledgedByName: "Acknowledged By",
+  acknowledgedAt: "Acknowledged At"
 };
 
 export interface DetailSection {
