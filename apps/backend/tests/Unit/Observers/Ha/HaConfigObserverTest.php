@@ -2,9 +2,12 @@
 
 use App\Enums\AlertRuleType;
 use App\Models\AlertRule;
+use App\Models\Endpoint;
+use App\Models\PrometheusCheck;
 use App\Models\Team;
 use App\Models\User;
 use App\Observers\Ha\HaConfigObserver;
+use App\Services\Ha\HaConfigCatalog;
 use App\Services\Ha\HaConfigVersionStore;
 use App\Services\Ha\HaReplicationContext;
 use Illuminate\Support\Facades\Event;
@@ -127,5 +130,32 @@ describe('HaConfigObserver', function () {
 
         haConfigObserver(expectedBumps: 0)->created(haCreatedRule());
         haConfigObserver(expectedBumps: 0)->updated(haChangedRule(['name' => 'local edit']));
+        haConfigObserver(expectedBumps: 0)->touch(haChangedRule([]), 'endpointIds');
+    });
+
+    it('bumps when an array assignment is reported', function (string $field) {
+        haConfigObserver(expectedBumps: 1)->touch(haChangedRule([]), $field);
+    })->with(['endpointIds', 'userIds', 'teamIds']);
+
+    it('bumps a query update that names no field', function () {
+        haConfigObserver(expectedBumps: 1)->touch(new Endpoint);
+    });
+
+    it('ignores a direct write of a field Raft owns', function (string $field) {
+        haConfigObserver(expectedBumps: 0)->touch(haChangedRule([]), $field);
+    })->with(HaConfigCatalog::RAFT_OWNED_ALERT_RULE_FIELDS);
+
+    it('ignores a running flow list', function () {
+        haConfigObserver(expectedBumps: 0)->touch(new Endpoint, 'runningAlertIds');
+    });
+
+    it('ignores a direct write on a model the snapshot does not carry', function () {
+        haConfigObserver(expectedBumps: 0)->touch(new PrometheusCheck, 'fireEvents');
+    });
+
+    it('stays quiet for a direct write while a snapshot is being applied', function () {
+        HaReplicationContext::apply(function () {
+            haConfigObserver(expectedBumps: 0)->touch(haChangedRule([]), 'endpointIds');
+        });
     });
 });

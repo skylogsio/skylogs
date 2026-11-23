@@ -2,11 +2,16 @@
 
 use App\Enums\AlertRuleType;
 use App\Enums\Constants;
+use App\Enums\EndpointType;
 use App\Http\Middleware\HaNodeAuth;
 use App\Models\AlertRule;
+use App\Models\Config\ConfigEmail;
+use App\Models\Endpoint;
 use App\Models\HaConfigVersion;
 use App\Models\PrometheusCheck;
 use App\Models\User;
+use App\Services\ConfigEmailService;
+use App\Services\EndpointService;
 use App\Services\Ha\HaConfigPuller;
 use App\Services\Ha\HaConfigSyncService;
 use App\Services\Ha\HaConfigVersionStore;
@@ -269,6 +274,116 @@ describe('configuration version counter', function () {
         $alertRule->save();
 
         expect($store->current())->toBe($before);
+    });
+
+    /*
+     | push writes the array and then marks it unchanged, so the save that
+     | follows does not fire updated. The assignment still has to reach a
+     | follower before the next election.
+     */
+    it('publishes an array assignment on the next snapshot', function (string $field) {
+        $alertRule = haConfigRule([$field => []]);
+        $store = app(HaConfigVersionStore::class);
+        $before = $store->current();
+        $id = '6512ab000000000000000099';
+
+        $alertRule->push($field, $id, true);
+
+        $published = $store->current();
+
+        expect($published)->toBe($before + 1);
+
+        $document = haSnapshotRule(
+            app(HaConfigSyncService::class)->snapshot($before),
+            (string) $alertRule->_id,
+        );
+
+        expect($document[$field])->toContain($id);
+
+        $alertRule->push($field, $id, true);
+
+        expect($store->current())->toBe($published);
+
+        $alertRule->pull($field, $id);
+
+        expect($store->current())->toBe($published + 1);
+
+        $afterRemoval = haSnapshotRule(
+            app(HaConfigSyncService::class)->snapshot($published),
+            (string) $alertRule->_id,
+        );
+
+        expect($afterRemoval[$field] ?? [])->not->toContain($id);
+    })->with(['endpointIds', 'userIds', 'teamIds']);
+
+    it('does not publish a running flow as configuration', function () {
+        $endpoint = Endpoint::create([
+            'userId' => $this->owner->id,
+            'name' => 'HA flow '.uniqid(),
+            'type' => EndpointType::FLOW->value,
+            'runningAlertIds' => [],
+        ]);
+        $store = app(HaConfigVersionStore::class);
+        $before = $store->current();
+
+        $endpoint->push('runningAlertIds', (string) $this->owner->id, true);
+
+        expect($store->current())->toBe($before);
+
+        $endpoint->delete();
+    });
+
+    it('publishes a cleared on-call flag when the chosen endpoint did not change', function () {
+        $service = app(EndpointService::class);
+        $kept = Endpoint::create([
+            'userId' => $this->owner->id,
+            'name' => 'HA on call kept '.uniqid(),
+            'type' => EndpointType::TELEGRAM->value,
+            'onCall' => true,
+        ]);
+        $other = Endpoint::create([
+            'userId' => $this->owner->id,
+            'name' => 'HA on call other '.uniqid(),
+            'type' => EndpointType::TELEGRAM->value,
+            'onCall' => true,
+        ]);
+        $store = app(HaConfigVersionStore::class);
+        $before = $store->current();
+
+        $service->syncOnCallFlag($kept->fresh(), ['onCall' => true]);
+
+        expect($store->current())->toBeGreaterThan($before)
+            ->and($other->fresh()->onCall)->toBeFalse();
+
+        $kept->delete();
+        $other->delete();
+    });
+
+    it('publishes an email default clear when the chosen row is already the default', function () {
+        $existing = ConfigEmail::query()->get();
+        $config = ConfigEmail::create([
+            'name' => 'ha-default-'.uniqid(),
+            'isDefault' => true,
+            'isBackUp' => false,
+        ]);
+
+        try {
+            $store = app(HaConfigVersionStore::class);
+            $before = $store->current();
+
+            app(ConfigEmailService::class)->makeDefault($config->fresh());
+
+            expect($store->current())->toBe($before + 1);
+        } finally {
+            $config->delete();
+
+            foreach ($existing as $row) {
+                ConfigEmail::query()->where('_id', $row->id)->update([
+                    'isDefault' => (bool) $row->isDefault,
+                    'isBackUp' => (bool) $row->isBackUp,
+                ]);
+            }
+        }
     });
 });
 

@@ -45,6 +45,28 @@ class HaConfigObserver
     }
 
     /**
+     * Publish a write that never fires updated.
+     *
+     * push and pull store the array and then mark it unchanged, and a query
+     * update never loads the other rows it clears. Both skip this observer.
+     * A null field means the whole document changed. runningAlertIds moves on
+     * every firing alert, and the Raft-owned fields move on every state
+     * transition; neither is a configuration change.
+     */
+    public function touch(Model $model, ?string $field = null): void
+    {
+        if (! $this->shouldTrack() || HaConfigCatalog::aliasFor($model) === null) {
+            return;
+        }
+
+        if ($field !== null && $this->ignoresDirectField($field)) {
+            return;
+        }
+
+        $this->versions->bump();
+    }
+
+    /**
      * A save that moved nothing but Raft's own fields is not a configuration
      * change. Without this the leader would bump the version on every alert
      * state transition and hand every follower a full snapshot every thirty
@@ -63,6 +85,14 @@ class HaConfigObserver
             array_keys($model->getChanges()),
             [...$excluded, ...HaConfigCatalog::IDENTITY_FIELDS],
         ) !== [];
+    }
+
+    private function ignoresDirectField(string $field): bool
+    {
+        return in_array($field, [
+            ...HaConfigCatalog::RAFT_OWNED_ALERT_RULE_FIELDS,
+            'runningAlertIds',
+        ], true);
     }
 
     /**

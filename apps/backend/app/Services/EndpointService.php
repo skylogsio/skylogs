@@ -8,6 +8,7 @@ use App\Models\AlertRule;
 use App\Models\Endpoint;
 use App\Models\EndpointOTP;
 use App\Models\User;
+use App\Observers\Ha\HaConfigObserver;
 use App\Services\Notification\ChannelRegistry;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -330,6 +331,8 @@ class EndpointService
                 ->where('userId', $endpoint->userId)
                 ->where('_id', '!=', $endpoint->id)
                 ->update(['onCall' => false]);
+
+            app(HaConfigObserver::class)->touch($endpoint);
         }
 
         $endpoint->onCall = $onCall;

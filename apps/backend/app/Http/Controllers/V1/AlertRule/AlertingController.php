@@ -632,7 +632,6 @@ class AlertingController extends Controller
         $this->alertRuleService->deleteForUser($user, $alert);
 
         return response()->json(['status' => true]);
-        //        return redirect()->route('role.index');
     }
 
     public function AlertStatus(AlertStatusRequest $request)
