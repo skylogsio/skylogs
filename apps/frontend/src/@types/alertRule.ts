@@ -16,6 +16,27 @@ export interface IZabbixCreateData {
 
 export type AlertRuleStatus = "resolved" | "warning" | "critical" | "triggered" | "unknown";
 
+export type QueryAstNode =
+  | {
+      token: {
+        type: "LITERAL";
+        literal: string;
+      };
+    }
+  | {
+      token: {
+        type: "AND" | "OR" | "XOR";
+      };
+      left: QueryAstNode;
+      right: QueryAstNode;
+    }
+  | {
+      token: {
+        type: "NOT";
+      };
+      right: QueryAstNode;
+    };
+
 export interface IAlertRule {
   accessLevel: "readonly" | "manage";
   apiToken?: string;
@@ -53,6 +74,8 @@ export interface IAlertRule {
   dataSourceIds?: string[];
   dataSourceLabels?: string[];
   queryString?: string;
+  queryText?: string;
+  queryObject?: QueryAstNode | null;
   dataviewName?: string;
   dataviewTitle?: string;
   conditionType?: "greaterOrEqual" | "lessOrEqual";

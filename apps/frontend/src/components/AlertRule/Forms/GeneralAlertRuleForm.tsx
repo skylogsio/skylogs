@@ -12,7 +12,7 @@ import {
   Typography
 } from "@mui/material";
 import { useMutation, useQueries } from "@tanstack/react-query";
-import { useFieldArray, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { HiPlus } from "react-icons/hi";
 import { toast } from "react-toastify";
 import { z } from "zod";
@@ -27,6 +27,11 @@ import {
 } from "@/api/alertRule";
 import AlertRuleGeneralFields from "@/components/AlertRule/Forms/AlertRuleGeneralFields";
 import ExtraField from "@/components/AlertRule/Forms/ExtraField";
+import {
+  compileTextQueryToAst,
+  validateTextQuery
+} from "@/components/AlertRule/Forms/textQuery/parser";
+import TextQueryEditor from "@/components/AlertRule/Forms/textQuery/TextQueryEditor";
 import type { ModalContainerProps } from "@/components/Modal/types";
 import ToggleButtonGroup from "@/components/ToggleButtonGroup";
 import { type DataSourceType } from "@/features/DataSource/dataSource.utils";
@@ -40,21 +45,44 @@ const extraFieldSchema = z.object({
   value: z.string().trim().min(1, "This field is Required.")
 });
 
-export const generalAlertRuleSchema = z.object({
-  name: z.string().trim().min(1, "This field is Required."),
-  type: z.enum(ALERT_RULE_TYPES),
-  endpointIds: z.array(z.string()),
-  userIds: z.array(z.string()),
-  teamIds: z.array(z.string()),
-  extraField: z.array(extraFieldSchema),
-  tags: z.array(z.string()),
-  dataSourceIds: z.array(z.string()).min(1, "Select at least one Data Source."),
-  queryType: z.enum(QUERY_TYPE),
-  dataSourceAlertName: z.string().nullable().optional(),
-  description: z.string(),
-  showAcknowledgeBtn: z.boolean(),
-  isPrivate: z.boolean()
-});
+export const generalAlertRuleSchema = z
+  .object({
+    name: z.string().trim().min(1, "This field is Required."),
+    type: z.enum(ALERT_RULE_TYPES),
+    endpointIds: z.array(z.string()),
+    userIds: z.array(z.string()),
+    teamIds: z.array(z.string()),
+    extraField: z.array(extraFieldSchema),
+    tags: z.array(z.string()),
+    dataSourceIds: z.array(z.string()),
+    queryType: z.enum(QUERY_TYPE),
+    queryText: z.string(),
+    queryObject: z.any().optional(),
+    dataSourceAlertName: z.string().nullable().optional(),
+    description: z.string(),
+    showAcknowledgeBtn: z.boolean(),
+    isPrivate: z.boolean()
+  })
+  .superRefine((values, ctx) => {
+    if (values.queryType === "dynamic") {
+      if (values.dataSourceIds.length < 1) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["dataSourceIds"],
+          message: "Select at least one Data Source."
+        });
+      }
+    } else {
+      const validation = validateTextQuery(values.queryText);
+      if (!validation.valid) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["queryText"],
+          message: validation.error
+        });
+      }
+    }
+  });
 
 type GeneralAlertRuleType = z.infer<typeof generalAlertRuleSchema>;
 type GeneralAlertRuleModalProps = Pick<ModalContainerProps, "onClose"> & {
@@ -76,6 +104,7 @@ const emptyFormValues: GeneralAlertRuleType = {
   dataSourceIds: [],
   dataSourceAlertName: "",
   queryType: "dynamic",
+  queryText: "",
   description: "",
   showAcknowledgeBtn: false,
   isPrivate: false
@@ -89,7 +118,12 @@ function getFormValues(
     return { ...emptyFormValues, type: alertType };
   }
 
-  return data as unknown as GeneralAlertRuleType;
+  return {
+    ...(data as unknown as GeneralAlertRuleType),
+    dataSourceIds: data.dataSourceIds ?? [],
+    queryType: data.queryType ?? "dynamic",
+    queryText: data.queryText ?? ""
+  };
 }
 
 export default function GeneralAlertRuleForm({
@@ -158,10 +192,18 @@ export default function GeneralAlertRuleForm({
   });
 
   function handleSubmitForm(values: GeneralAlertRuleType) {
+    const payload: GeneralAlertRuleType =
+      values.queryType === "textQuery"
+        ? {
+            ...values,
+            queryObject: compileTextQueryToAst(values.queryText, dataSourceList)
+          }
+        : values;
+
     if (data === "NEW") {
-      createPrometheusMutation(values);
+      createPrometheusMutation(payload);
     } else if (data) {
-      updatePrometheusMutation({ id: data.id, body: values });
+      updatePrometheusMutation({ id: data.id, body: payload });
     }
   }
 
@@ -237,7 +279,6 @@ export default function GeneralAlertRuleForm({
               {QUERY_TYPE.map((value) => (
                 <ToggleButton
                   key={value}
-                  disabled={value === "textQuery"}
                   value={value}
                   sx={{ textTransform: "capitalize !important" }}
                 >
@@ -338,7 +379,20 @@ export default function GeneralAlertRuleForm({
             </Grid>
           ) : (
             <Grid size={12}>
-              <TextField label="Query" variant="filled" multiline minRows={4} />
+              <Controller
+                name="queryText"
+                control={control}
+                render={({ field }) => (
+                  <TextQueryEditor
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={!!errors.queryText}
+                    helperText={errors.queryText?.message}
+                    type={type}
+                    alertId={data && data !== "NEW" ? data.id : undefined}
+                  />
+                )}
+              />
             </Grid>
           )}
         </AlertRuleGeneralFields>

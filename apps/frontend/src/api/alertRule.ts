@@ -234,7 +234,7 @@ export async function getAlertRuleTags(): Promise<string[]> {
 
 export async function getAlertRuleLabels(): Promise<string[]> {
   try {
-    const response = await axios.get<string[]>(`${ALERT_RULE_URL}/labels`);
+    const response = await axios.get<string[]>("prometheus/labels");
     return response.data;
   } catch (error) {
     throw error;
@@ -243,7 +243,9 @@ export async function getAlertRuleLabels(): Promise<string[]> {
 
 export async function getAlertRuleLabelValues(label: string): Promise<string[]> {
   try {
-    const response = await axios.get<string[]>(`${ALERT_RULE_URL}/label-values/${label}`);
+    const response = await axios.get<string[]>(
+      `prometheus/label-values/${encodeURIComponent(label)}`
+    );
     return response.data;
   } catch (error) {
     throw error;
@@ -281,9 +283,9 @@ export async function getAlertRuleDataSourcesByAlertType(
   }
 }
 
-export async function getDataSourceAlertName(type: DataSourceType) {
+export async function getDataSourceAlertName(type: DataSourceType): Promise<string[]> {
   try {
-    const response = await axios.get(`${ALERT_RULE_CREATE_DATA_URL}/rules?type=${type}`);
+    const response = await axios.get<string[]>(`${ALERT_RULE_CREATE_DATA_URL}/rules?type=${type}`);
     return response.data;
   } catch (error) {
     throw error;
