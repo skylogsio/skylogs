@@ -23,4 +23,17 @@ final class DataSourceProbeFactory
 
         return $builder->build($dataSource);
     }
+
+    public function forConnection(DataSource $dataSource): HealthProbe
+    {
+        if ($dataSource->type === DataSourceType::ELASTIC) {
+            return app(ElasticProbe::class)->connection($dataSource);
+        }
+
+        if ($dataSource->type === DataSourceType::PMM) {
+            return app(PmmProbe::class)->connection($dataSource);
+        }
+
+        return $this->for($dataSource);
+    }
 }

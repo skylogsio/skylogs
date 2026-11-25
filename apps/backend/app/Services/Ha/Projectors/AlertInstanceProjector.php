@@ -27,16 +27,46 @@ final class AlertInstanceProjector extends AbstractStateProjector
     }
 
     /**
-     * Only the firing instances carry the aggregate; a resolved instance was
-     * already replicated by its own write and does not need refreshing.
+     * Firing instances carry the aggregate. When none are left, one existing
+     * instance still has to: the resolve that cleared the last fire is published
+     * before the rule is refreshed, and without a carrier that refresh never
+     * reaches a follower.
      */
     public function projectRule(AlertRule $alertRule): array
     {
-        return AlertInstance::where('alertRuleId', $alertRule->getKey())
+        $firing = AlertInstance::where('alertRuleId', $alertRule->getKey())
             ->where('state', AlertInstance::FIRE)
-            ->get()
-            ->map(fn (AlertInstance $instance): AlertStateChange => $this->change($alertRule, $instance))
-            ->all();
+            ->get();
+
+        if ($firing->isNotEmpty()) {
+            return $firing
+                ->map(fn (AlertInstance $instance): AlertStateChange => $this->change($alertRule, $instance))
+                ->all();
+        }
+
+        $carrier = $this->carrier($alertRule);
+
+        return $carrier ? [$this->change($alertRule, $carrier)] : [];
+    }
+
+    /**
+     * A resolved row is the one the follower should rewrite. A notification row
+     * is only used when the rule has nothing else left to carry the aggregate.
+     */
+    private function carrier(AlertRule $alertRule): ?AlertInstance
+    {
+        $resolved = AlertInstance::where('alertRuleId', $alertRule->getKey())
+            ->where('state', AlertInstance::RESOLVED)
+            ->orderByDesc('updatedAt')
+            ->first();
+
+        if ($resolved) {
+            return $resolved;
+        }
+
+        return AlertInstance::where('alertRuleId', $alertRule->getKey())
+            ->orderByDesc('updatedAt')
+            ->first();
     }
 
     private function change(AlertRule $alertRule, BaseModel $instance): AlertStateChange

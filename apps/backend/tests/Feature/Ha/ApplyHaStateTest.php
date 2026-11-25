@@ -369,6 +369,29 @@ describe('POST /api/ha/apply other types', function () {
             ->and(ApiAlertStatusHistory::where('alertRuleId', $alertRule->_id)->count())->toBe(1);
     });
 
+    it('stores a resolved api rule aggregate from the slot', function () {
+        $alertRule = haAlertRuleOfType(AlertRuleType::API, [
+            'state' => AlertRule::CRITICAL,
+            'fireCount' => 1,
+        ]);
+        $instanceId = AlertStateKey::apiInstanceId('srv-1');
+
+        haApply(
+            'alert:'.$alertRule->_id.':api:'.$instanceId,
+            haValue($alertRule, 'api', $instanceId, AlertRule::RESOlVED, 1, [
+                'instance' => ['instance' => 'srv-1'],
+                'extra' => ['instanceState' => AlertInstance::RESOLVED],
+            ]),
+        )->assertOk();
+
+        $alertRule->refresh();
+        $instance = AlertInstance::where('alertRuleId', $alertRule->_id)->first();
+
+        expect($alertRule->state)->toBe(AlertRule::RESOlVED)
+            ->and((int) $alertRule->fireCount)->toBe(0)
+            ->and((int) $instance->state)->toBe(AlertInstance::RESOLVED);
+    });
+
     it('copies the whole check body for a single slot type', function () {
         $alertRule = haAlertRuleOfType(AlertRuleType::ELASTIC, [
             'queryString' => 'level:error',

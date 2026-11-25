@@ -31,6 +31,7 @@ class ApiService
             $alert->description = $post['description'] ?? '';
             $alert->summary = $post['summary'] ?? '';
 
+            $this->stageStatus($alertRule, $alert);
             $alert->touch();
             $alert->save();
 
@@ -58,6 +59,7 @@ class ApiService
             $model->description = $post['description'] ?? '';
             $model->summary = $post['summary'] ?? '';
 
+            $this->stageStatus($alertRule, $model);
             $model->save();
 
             $apiHistory = $model->createHistory();
@@ -89,6 +91,7 @@ class ApiService
                 $alert->description = $post['description'] ?? '';
                 $alert->summary = $post['summary'] ?? '';
 
+                $this->stageStatus($alertRule, $alert);
                 $alert->touch();
 
                 $alert->save();
@@ -200,6 +203,28 @@ class ApiService
         return AlertRule::where('apiToken', $token)
             ->when($type, fn ($query) => $query->where('type', $type))
             ->first();
+    }
+
+    /**
+     * Puts the post-change aggregate on the rule and on the instance relation
+     * before the instance is saved. The check observer snapshots that relation,
+     * so the slot leaves with the fire count this save produces. refreshStatus
+     * still persists the rule afterwards.
+     */
+    private function stageStatus(AlertRule $alertRule, AlertInstance $pending): void
+    {
+        $count = AlertInstance::where('alertRuleId', $alertRule->id)
+            ->where('state', AlertInstance::FIRE)
+            ->when($pending->exists, fn ($query) => $query->where('_id', '!=', $pending->getKey()))
+            ->count();
+
+        if ($pending->state === AlertInstance::FIRE) {
+            $count++;
+        }
+
+        $alertRule->state = $count === 0 ? AlertRule::RESOlVED : AlertRule::CRITICAL;
+        $alertRule->fireCount = $count;
+        $pending->setRelation('alertRule', $alertRule);
     }
 
     public function refreshStatus(AlertRule $alertRule)

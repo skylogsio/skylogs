@@ -25,7 +25,7 @@ class DataSourceService
         }
 
         try {
-            $probe = $this->probes->for($dataSource);
+            $probe = $this->probes->forConnection($dataSource);
 
             return $probe->errorFor($this->sender->send($probe)) === null;
         } catch (ConnectionException) {

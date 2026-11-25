@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Config\ConfigEmail;
+use App\Observers\Ha\HaConfigObserver;
 
 class ConfigEmailService
 {
@@ -16,6 +17,7 @@ class ConfigEmailService
     public function makeDefault(ConfigEmail $config): void
     {
         ConfigEmail::query()->update(['isDefault' => false]);
+        app(HaConfigObserver::class)->touch($config);
         $config->update(['isDefault' => true, 'isBackUp' => false]);
         $this->flushCache();
     }
@@ -25,6 +27,7 @@ class ConfigEmailService
         throw_if($config->isDefault, 'This Config Email is default');
 
         ConfigEmail::query()->update(['isBackUp' => false]);
+        app(HaConfigObserver::class)->touch($config);
         $config->update(['isBackUp' => true]);
         $this->flushCache();
     }

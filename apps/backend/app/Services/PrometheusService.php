@@ -208,6 +208,8 @@ class PrometheusService
             }
 
             if (collect($prometheusAlerts)->count() == $commonAlertsArray->count() && $commonAlertsArray->count() == collect($check->alerts)->count()) {
+                $this->alignUnchangedCheckState($alertRule, $check);
+
                 continue;
             }
 
@@ -273,6 +275,47 @@ class PrometheusService
 
         }
 
+    }
+
+    /**
+     * The alert set did not change, so this must not write history or notify.
+     * It only rewrites state and fireCount when they disagree with the stored alerts.
+     */
+    private function alignUnchangedCheckState(AlertRule $alertRule, PrometheusCheck $check): void
+    {
+        $firingCount = collect($check->alerts ?? [])->filter(function ($alert) {
+            return empty($alert['skylogsStatus']) || $alert['skylogsStatus'] == PrometheusCheck::FIRE;
+        })->count();
+
+        $checkState = $firingCount > 0 ? PrometheusCheck::FIRE : PrometheusCheck::RESOLVED;
+        $ruleState = $firingCount > 0 ? AlertRule::CRITICAL : AlertRule::RESOlVED;
+
+        $checkChanged = (int) $check->state !== $checkState;
+        $ruleChanged = $alertRule->state !== $ruleState || (int) $alertRule->fireCount !== $firingCount;
+        $shouldClearAcknowledge = $ruleState === AlertRule::RESOlVED && ! empty($alertRule->acknowledgedBy);
+
+        if (! $checkChanged && ! $ruleChanged && ! $shouldClearAcknowledge) {
+            return;
+        }
+
+        if ($ruleChanged) {
+            $alertRule->state = $ruleState;
+            $alertRule->fireCount = $firingCount;
+        }
+
+        if ($checkChanged) {
+            $check->state = $checkState;
+            $check->setRelation('alertRule', $alertRule);
+            $check->save();
+        }
+
+        if ($ruleChanged) {
+            $alertRule->save();
+        }
+
+        if ($shouldClearAcknowledge) {
+            $alertRule->removeAcknowledge();
+        }
     }
 
     public static function CleanChecks()
